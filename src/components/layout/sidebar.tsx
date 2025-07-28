@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -25,6 +26,7 @@ import {
   Shield,
   ArrowRightLeft,
 } from 'lucide-react';
+import { Button } from '../ui/button';
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -69,15 +71,15 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar
-      collapsible="none"
-      className="group/sidebar w-[250px] border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
-    >
-      <SidebarHeader className="flex h-16 items-center justify-between px-4">
+    <Sidebar>
+      <SidebarHeader className="flex h-14 items-center justify-between border-b px-4 sm:h-16">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <Logo className="size-7 shrink-0 text-primary" />
           <span className="text-lg font-semibold">Vinha Ministérios</span>
         </Link>
+         <div className="md:hidden">
+            <SidebarTrigger asChild><Button variant="ghost" size="icon" /></SidebarTrigger>
+        </div>
       </SidebarHeader>
       <SidebarContent className="flex-1 overflow-y-auto p-2">
         <SidebarMenu>

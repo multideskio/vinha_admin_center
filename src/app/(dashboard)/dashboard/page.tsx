@@ -31,8 +31,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   ChartContainer,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -149,14 +147,14 @@ const recentRegistrations = [
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
           Dashboard
         </h1>
         <DateRangePicker />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpiData.map((kpi) => (
           <Card key={kpi.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -193,10 +191,7 @@ export default function DashboardPage() {
                                 <TableCell className='font-medium'>{transaction.name}</TableCell>
                                 <TableCell className='text-right'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
                                 <TableCell className='hidden sm:table-cell'>
-                                     <Badge variant={transaction.status === 'Aprovada' ? 'default' : transaction.status === 'Pendente' ? 'secondary' : 'destructive'}
-                                        className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
-                                        : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
-                                        : 'bg-red-500/20 text-red-700 border-red-400'}>
+                                     <Badge variant={transaction.status === 'Aprovada' ? 'success' : transaction.status === 'Pendente' ? 'warning' : 'destructive'}>
                                         {transaction.status}
                                     </Badge>
                                 </TableCell>
