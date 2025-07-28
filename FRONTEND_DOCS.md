@@ -8,7 +8,7 @@ Este documento detalha a arquitetura, tecnologias e estrutura do frontend da apl
 *   **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
 *   **UI Framework:** [React](https://reactjs.org/)
 *   **Autenticação:** [Lucia Auth](https://lucia-auth.com/) para gerenciamento de sessões no lado do servidor.
-*   **Comunicação com Backend:** [Next.js Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) para chamadas seguras de API.
+*   **Comunicação com Backend:** **API RESTful**. O frontend utiliza `fetch` (principalmente dentro de hooks como `useEffect`) para se comunicar com os endpoints da API do Next.js localizados em `src/app/api/v1/`.
 *   **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
 *   **Componentes:** [ShadCN/UI](https://ui.shadcn.com/) - Uma coleção de componentes reutilizáveis e acessíveis.
 *   **Ícones:** [Lucide React](https://lucide.dev/)
@@ -24,15 +24,14 @@ A estrutura de pastas segue as convenções do Next.js App Router para uma organ
 ```
 src
 ├── app
+│   ├── api           # Endpoints da API RESTful (backend)
+│   │   └── v1
+│   │       └── regioes
 │   ├── admin         # Layout e páginas do painel de Administrador
 │   ├── auth          # Layout e páginas de autenticação (login, cadastro, etc.)
 │   ├── gerente       # Layout e páginas do painel de Gerente
-│   ├── igreja        # Layout e páginas do painel da Igreja
-│   ├── pastor        # Layout e páginas do painel do Pastor
-│   ├── supervisor    # Layout e páginas do painel do Supervisor
-│   ├── globals.css   # Estilos globais e variáveis de tema (Tailwind)
-│   └── layout.tsx    # Layout raiz da aplicação
-├── actions           # Server Actions para comunicação com o backend
+│   └── ...           # Outros painéis de perfil
+├── actions           # Server Actions (usadas primariamente para autenticação)
 ├── components
 │   ├── layout        # Componentes de layout (Sidebars, Header)
 │   └── ui            # Componentes da biblioteca ShadCN/UI
@@ -42,9 +41,10 @@ src
 
 ### Principais Diretórios
 
-*   **`src/app/[role]`**: Cada diretório dentro de `app` (como `admin`, `gerente`, etc.) representa um perfil de usuário diferente e contém seu próprio `layout.tsx` e sub-rotas. Isso permite criar painéis totalmente isolados e customizados para cada tipo de acesso.
-*   **`src/app/auth`**: Contém todas as páginas relacionadas à autenticação. O `layout.tsx` provê uma estrutura visual consistente para login, cadastro e recuperação de senha.
-*   **`src/actions`**: Armazena as Server Actions, que são funções assíncronas executadas no servidor. Elas são responsáveis por toda a lógica de negócio, como autenticar usuários e interagir com o banco de dados.
+*   **`src/app/[role]`**: Cada diretório dentro de `app` (como `admin`, `gerente`, etc.) representa um perfil de usuário diferente e contém seu próprio `layout.tsx` e sub-rotas.
+*   **`src/app/api`**: Contém os *Route Handlers* que formam a API RESTful do backend. É a principal fonte de dados para as páginas do cliente.
+*   **`src/app/auth`**: Contém todas as páginas relacionadas à autenticação.
+*   **`src/actions`**: Armazena as Server Actions. Com a migração para a API REST, seu uso principal se concentra em operações específicas como o fluxo de login (`loginUser`) e logout (`logoutUser`).
 *   **`src/lib/auth.ts`**: Arquivo central de configuração do Lucia Auth, responsável por definir o adaptador, a estratégia de sessão e a validação de requisições.
 
 ---
@@ -59,17 +59,25 @@ src
 
 ## 🔗 Fluxo de Autenticação
 
-1.  O usuário acessa uma rota protegida e, se não estiver logado, é redirecionado para `/auth/login`.
-2.  Na página de login, o formulário (`LoginPage`) utiliza `react-hook-form` para gerenciar o estado e a validação.
-3.  Ao submeter, o formulário chama a Server Action `loginUser` (`src/actions/auth.ts`).
-4.  A ação `loginUser` executa no servidor:
-    *   Valida os dados com Zod.
-    *   Busca o usuário no banco de dados.
-    *   Compara o hash da senha usando `bcrypt`.
-    *   Se as credenciais forem válidas, cria uma sessão com `lucia.createSession()`.
-    *   Define o cookie de sessão no navegador.
+1.  O usuário acessa a página de login (`/auth/login`).
+2.  O formulário (`LoginPage`) chama a Server Action `loginUser`.
+3.  A ação `loginUser` executa no servidor:
+    *   Valida os dados de entrada.
+    *   Verifica o usuário e a senha no banco.
+    *   Se as credenciais forem válidas, cria uma sessão com `lucia.createSession()` e define o cookie de sessão no navegador.
     *   Retorna um objeto de sucesso com o `role` do usuário.
-5.  O frontend recebe a resposta de sucesso e usa o `role` para redirecionar o usuário para o dashboard apropriado (ex: `/admin/dashboard`).
-6.  Em cada requisição subsequente a páginas protegidas, o `layout.tsx` do respectivo painel utiliza a função `validateRequest` de `lucia` para verificar a validade da sessão através do cookie.
+4.  O frontend recebe a resposta e redireciona o usuário para o dashboard apropriado (ex: `/admin/dashboard`).
+5.  Em cada painel (`/admin`, `/gerente`, etc.), o `layout.tsx` principal usa a função `validateRequest` de `lucia` para verificar a sessão. Durante o desenvolvimento, o redirecionamento em caso de falha foi removido para agilizar o trabalho, mas os dados do usuário (nome, email) são carregados e exibidos se a sessão for válida.
+
+---
+
+## 🔄 Comunicação com o Backend
+
+A aplicação utiliza uma abordagem híbrida:
+
+1.  **API REST (Preferencial):** Para a maioria das operações CRUD (Criar, Ler, Atualizar, Deletar), o frontend faz chamadas `fetch` para os endpoints da API REST em `src/app/api/v1/`. Isso é feito dentro de componentes do cliente, geralmente com `useEffect`.
+    *   **Exemplo:** A página de Regiões (`/admin/regioes`) busca e manipula dados exclusivamente através do endpoint `/api/v1/regioes`.
+
+2.  **Server Actions (Para Casos Específicos):** São usadas para funcionalidades onde uma chamada de procedimento remoto (RPC) do cliente para o servidor é mais direta, como no processo de login e logout.
 
 Esta documentação deve ser mantida atualizada conforme novas funcionalidades e estruturas são adicionadas ao projeto.

@@ -7,6 +7,7 @@ Este documento detalha a arquitetura, tecnologias e estrutura do backend da apli
 *   **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/) - Um sistema de gerenciamento de banco de dados relacional robusto e de código aberto.
 *   **ORM:** [Drizzle ORM](https://orm.drizzle.team/) - Um ORM "headless" para TypeScript, que nos permite interagir com o banco de dados de forma segura e com tipagem estática.
 *   **Autenticação e Sessões:** [Lucia Auth](https://lucia-auth.com/) - Uma biblioteca de autenticação agnóstica de framework, utilizada para o gerenciamento de sessões e proteção de rotas.
+*   **API:** [Next.js Route Handlers](https://nextjs.org/docs/app/building-your-application/routing/route-handlers) - Para a criação de endpoints RESTful que servem os dados para o frontend.
 *   **Segurança de Senhas:** [Bcrypt](https://www.npmjs.com/package/bcrypt) - Biblioteca para fazer o hash de senhas, garantindo que as credenciais nunca sejam armazenadas em texto plano.
 *   **Ambiente de Execução:** [Next.js](https://nextjs.org/) (Server-side) e [Node.js](https://nodejs.org/) para a execução de scripts.
 *   **Gerenciamento de Migrações:** [Drizzle Kit](https://orm.drizzle.team/kit/overview) - Ferramenta de linha de comando para gerar e gerenciar as migrações do banco de dados.
@@ -31,6 +32,18 @@ Para garantir a segurança e a capacidade de auditoria, a maioria das tabelas cr
 *   `deletedAt`: Armazena a data e hora em que o registro foi "excluído". Se for `null`, o registro está ativo.
 *   `deletedBy`: Armazena o `id` do usuário que realizou a exclusão.
 *   `deletionReason`: Um campo de texto para registrar o motivo da exclusão.
+
+---
+
+## 🚀 Arquitetura da API
+
+Para garantir um desacoplamento claro entre o frontend e o backend, a aplicação está adotando uma arquitetura de **API RESTful**.
+
+*   **Endpoints:** Os endpoints da API estão localizados no diretório `src/app/api/`. A estrutura de pastas segue o padrão de versionamento, como em `src/app/api/v1/[recurso]`.
+*   **Manipuladores de Rota (Route Handlers):** Cada endpoint é implementado usando os *Route Handlers* do Next.js, com arquivos como `route.ts` que exportam funções assíncronas correspondentes aos métodos HTTP (`GET`, `POST`, `PUT`, `DELETE`).
+*   **Exemplo (Regiões):** A funcionalidade de Regiões foi a primeira a ser migrada para esta arquitetura. As operações de Leitura, Criação, Atualização e Exclusão são todas tratadas pelo endpoint `api/v1/regioes`.
+
+Esta abordagem substitui o uso inicial de Server Actions para a busca e manipulação de dados, proporcionando uma forma mais tradicional e explícita de comunicação de dados.
 
 ---
 

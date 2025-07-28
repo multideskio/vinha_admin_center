@@ -2,6 +2,25 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.4] - 2024-07-31
+
+### Adicionado
+*   **API REST para Regiões:**
+    *   Criação do endpoint `GET /api/v1/regioes` para listar todas as regiões ativas, ordenadas pela data de atualização.
+    *   Criação do endpoint `POST /api/v1/regioes` para adicionar novas regiões.
+    *   Criação dos endpoints dinâmicos `PUT` e `DELETE` em `/api/v1/regioes/[id]` para atualizar e excluir (soft delete) regiões específicas.
+*   **Refatoração do Frontend de Regiões:**
+    *   A página `/admin/regioes` foi totalmente refatorada para consumir a nova API REST, utilizando `fetch` no lado do cliente para todas as operações CRUD.
+    *   As antigas Server Actions (`getRegions`, `saveRegion`, `deleteRegion`) foram removidas em favor da nova arquitetura de API.
+
+### Corrigido
+*   **Falha na Consulta de Regiões:** Resolvido o problema crítico onde a listagem de regiões retornava um array vazio. A causa raiz era uma inconsistência no schema do Drizzle (`church_profiles`) que causava um erro em cascata, impedindo a consulta correta.
+*   **Erro de "Não Autorizado":** Corrigido o erro que impedia a manipulação de regiões (criação, exclusão) ao remover a dependência de um usuário autenticado nas rotas da API durante o desenvolvimento.
+*   **Atualização de `updatedAt`:** A função de atualização de região agora define corretamente o campo `updatedAt` no banco de dados.
+
+### Melhorias
+*   **Ambiente de Desenvolvimento:** Removida temporariamente a validação de sessão (`validateRequest`) de todos os `layout.tsx` dos painéis (`/admin`, `/gerente`, etc.) para agilizar o desenvolvimento e evitar redirecionamentos indesejados. Os dados do usuário agora usam um fallback para evitar quebras na interface.
+
 ## [1.0.3] - 2024-07-31
 
 ### Adicionado
