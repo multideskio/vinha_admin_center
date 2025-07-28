@@ -76,6 +76,15 @@ export default function ContribuicoesPage() {
     name: 'amount',
   });
 
+  const handleCopyPixCode = () => {
+    const pixCode = "copia-e-cola-chave-pix-aqui-12345";
+    navigator.clipboard.writeText(pixCode);
+    toast({
+        title: "Copiado!",
+        description: "Código Pix copiado com sucesso.",
+    });
+  };
+
   // Reset payment details view when payment method or amount changes
   React.useEffect(() => {
     setShowPaymentDetails(false);
@@ -294,10 +303,11 @@ export default function ContribuicoesPage() {
                                     <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
                                 </CardHeader>
                                 <CardContent className='flex flex-col items-center'>
-                                        <Image src="https://placehold.co/256x256.png" width={256} height={256} alt="QR Code Pix" data-ai-hint="qr code" />
-                                        <Skeleton className="h-4 w-20 mt-4" />
-                                        <Input value="copia-e-cola-chave-pix-aqui-12345" readOnly className="mt-4 text-center" />
-                                        <Button variant="outline" className="w-full mt-2">Copiar Chave</Button>
+                                    <Skeleton className="h-[256px] w-[256px]">
+                                        <Image src="https://placehold.co/256x256.png" width={256} height={256} alt="QR Code Pix" data-ai-hint="qr code" className="opacity-20" />
+                                    </Skeleton>
+                                    <Input value="copia-e-cola-chave-pix-aqui-12345" readOnly className="mt-4 text-center" />
+                                    <Button variant="outline" className="w-full mt-2" onClick={handleCopyPixCode}>Copiar Chave</Button>
                                 </CardContent>
                             </>
                         )}
@@ -337,3 +347,4 @@ export default function ContribuicoesPage() {
     </div>
   );
 }
+
