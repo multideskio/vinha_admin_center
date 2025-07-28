@@ -234,7 +234,7 @@ export default function ContribuicoesPage() {
                             <CardTitle>Dados do Cartão</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                            <div>
+                            <div className="flex justify-center">
                                 <Cards
                                     number={cardState.number}
                                     expiry={cardState.expiry}
@@ -307,7 +307,7 @@ export default function ContribuicoesPage() {
                                 <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
                                 <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
                                  <Button onClick={() => {
-                                     form.reset();
+                                     form.reset({ amount: 0, paymentMethod: 'pix' });
                                      setShowPaymentDetails(false);
                                      setPixStatus('idle');
                                  }} className='mt-6'>Fazer Nova Contribuição</Button>
