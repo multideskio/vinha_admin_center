@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Activity, DollarSign, Percent, Users, Church, UserCheck, UserCog, Building, User } from 'lucide-react';
+import { Activity, DollarSign, Percent, Users, Church, UserCheck, UserCog, Building, User, CreditCard, Banknote, QrCode } from 'lucide-react';
 import {
   Area,
   AreaChart,
@@ -31,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   ChartContainer,
   ChartTooltipContent,
+  ChartLegendContent,
 } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -104,17 +105,22 @@ const regionsData = [
 ];
 
 const revenueByRegion = regionsData.map(region => ({
-    region: region.name,
+    name: region.name,
     revenue: region.monthlyRevenue,
     fill: region.color
 }));
 
-
 const churchesByRegion = regionsData.map(region => ({
-    region: region.name,
+    name: region.name,
     count: region.churches,
     fill: region.color
 }));
+
+const paymentMethodsData = [
+    { method: 'Pix', value: 25420.50, fill: '#10b981', icon: QrCode },
+    { method: 'Crédito', value: 15280.00, fill: '#3b82f6', icon: CreditCard },
+    { method: 'Boleto', value: 4531.39, fill: '#f59e0b', icon: Banknote },
+];
 
 
 const recentTransactions = [
@@ -245,6 +251,29 @@ export default function DashboardPage() {
             </ChartContainer>
           </CardContent>
         </Card>
+         <Card>
+            <CardHeader>
+                <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{
+                     value: { label: "Valor" },
+                     pix: { label: "Pix", color: "#10b981"},
+                     credito: { label: "Crédito", color: "#3b82f6"},
+                     boleto: { label: "Boleto", color: "#f59e0b"},
+                }} className="h-[300px] w-full">
+                    <PieChart>
+                        <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
+                        <Legend content={<ChartLegendContent nameKey="method" />} />
+                        <Pie data={paymentMethodsData} dataKey="value" nameKey="method" innerRadius={60}>
+                             {paymentMethodsData.map((entry) => (
+                                <Cell key={entry.method} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
         <Card>
             <CardHeader>
                 <CardTitle>Arrecadação por Região</CardTitle>
@@ -253,7 +282,8 @@ export default function DashboardPage() {
                 <ChartContainer config={{}} className="h-[300px] w-full">
                     <PieChart>
                         <Tooltip content={<ChartTooltipContent hideLabel />} />
-                        <Pie data={revenueByRegion} dataKey="revenue" nameKey="region" innerRadius={60}>
+                        <Legend content={<ChartLegendContent nameKey="name" />} />
+                        <Pie data={revenueByRegion} dataKey="revenue" nameKey="name" innerRadius={60}>
                              {revenueByRegion.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
@@ -270,6 +300,7 @@ export default function DashboardPage() {
                 <ChartContainer config={{}} className="h-[300px] w-full">
                      <PieChart>
                         <Tooltip content={<ChartTooltipContent hideLabel />} />
+                        <Legend content={<ChartLegendContent nameKey="name" />} />
                         <Pie data={churchesByRegion} dataKey="count" nameKey="region" innerRadius={60}>
                             {churchesByRegion.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />

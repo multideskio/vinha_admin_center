@@ -11,6 +11,9 @@ import {
   CalendarIcon,
   Clock,
   Pencil,
+  CreditCard,
+  Banknote,
+  QrCode,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -25,8 +28,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
+import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart';
 
 const churchData = {
   id: 'chu-01',
@@ -58,6 +61,12 @@ const monthlyContributions = [
     { month: 'Abr', total: Math.floor(Math.random() * 2000) + 1000 },
     { month: 'Mai', total: Math.floor(Math.random() * 2000) + 1000 },
     { month: 'Jun', total: Math.floor(Math.random() * 2000) + 1000 },
+];
+
+const paymentMethodsData = [
+    { method: 'Pix', value: 5430.80, fill: '#10b981' },
+    { method: 'Crédito', value: 3250.00, fill: '#3b82f6' },
+    { method: 'Boleto', value: 1120.45, fill: '#f59e0b' },
 ];
 
 const InfoItem = ({
@@ -116,8 +125,27 @@ export default function ChurchDashboardPage() {
                 </ChartContainer>
             </CardContent>
         </Card>
-
         <Card>
+            <CardHeader>
+                <CardTitle>Recebimentos por Método</CardTitle>
+                <CardDescription>Distribuição dos recebimentos por método de pagamento.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{}} className="h-[300px] w-full">
+                    <PieChart>
+                        <Tooltip content={<ChartTooltipContent hideLabel />} />
+                        <Legend content={<ChartLegendContent nameKey="method" />} />
+                        <Pie data={paymentMethodsData} dataKey="value" nameKey="method" innerRadius={60}>
+                            {paymentMethodsData.map((entry) => (
+                                <Cell key={entry.method} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center gap-4">
             <Avatar className="h-20 w-20">
                 <AvatarImage src="https://placehold.co/80x80.png" alt={churchData.nomeFantasia} data-ai-hint="church building" />

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { DollarSign, Users, Church, UserCog, Building, User } from 'lucide-react';
+import { DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -86,6 +86,12 @@ const membersByChurch = churchesData.map(church => ({
     count: church.members,
     fill: church.fill
 }));
+
+const paymentMethodsData = [
+    { method: 'Pix', value: 7850.40, fill: '#10b981', icon: QrCode },
+    { method: 'Crédito', value: 3500.00, fill: '#3b82f6', icon: CreditCard },
+    { method: 'Boleto', value: 1500.00, fill: '#f59e0b', icon: Banknote },
+];
 
 
 const recentTransactions = [
@@ -187,6 +193,29 @@ export default function ManagerDashboardPage() {
 
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+         <Card>
+            <CardHeader>
+                <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{
+                     value: { label: "Valor" },
+                     pix: { label: "Pix", color: "#10b981"},
+                     credito: { label: "Crédito", color: "#3b82f6"},
+                     boleto: { label: "Boleto", color: "#f59e0b"},
+                }} className="h-[300px] w-full">
+                    <PieChart>
+                        <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
+                        <Legend content={<ChartLegendContent nameKey="method" />} />
+                        <Pie data={paymentMethodsData} dataKey="value" nameKey="method" innerRadius={60}>
+                             {paymentMethodsData.map((entry) => (
+                                <Cell key={entry.method} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
         <Card>
             <CardHeader>
                 <CardTitle>Arrecadação por Igreja</CardTitle>
@@ -229,5 +258,4 @@ export default function ManagerDashboardPage() {
     </div>
   );
 }
-
     
