@@ -31,14 +31,14 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
 
     if (!existingUser) {
         console.error(`[AUTH_DEBUG] Usuário com e-mail ${email} não encontrado no banco de dados.`);
-        return { error: 'Credenciais inválidas.' };
+        return { error: 'Credenciais inválidas. Usuário não encontrado.' };
     }
     
     console.log('[AUTH_DEBUG] Usuário encontrado:', { id: existingUser.id, email: existingUser.email, role: existingUser.role });
 
     if (!existingUser.password) {
         console.error(`[AUTH_DEBUG] Usuário ${email} não possui uma senha cadastrada.`);
-        return { error: 'Credenciais inválidas.' };
+        return { error: 'Credenciais inválidas. Senha não cadastrada.' };
     }
     
     const isPasswordValid = await bcrypt.compare(password, existingUser.password);
@@ -46,7 +46,7 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
 
     if (!isPasswordValid) {
         console.error(`[AUTH_DEBUG] Comparação de senha falhou para o usuário ${email}.`);
-        return { error: 'Credenciais inválidas.' };
+        return { error: 'Credenciais inválidas. Senha não confere.' };
     }
     
     console.log(`[AUTH_DEBUG] Senha válida. Criando sessão para o usuário ${email}.`);
@@ -57,9 +57,9 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     console.log(`[AUTH_DEBUG] Sessão criada com sucesso. Redirecionando para o painel de ${existingUser.role}.`);
     return { success: true, role: existingUser.role };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AUTH_DEBUG] Ocorreu um erro inesperado no servidor:', error);
-    return { error: 'Ocorreu um erro ao tentar fazer login.' };
+    return { error: `Erro no servidor: ${error.message}` };
   }
 }
 
