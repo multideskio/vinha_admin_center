@@ -7,6 +7,9 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Banknote, CreditCard, QrCode, Church, DollarSign } from 'lucide-react';
 import Image from 'next/image';
+import Cards, { Focused } from 'react-credit-cards-2';
+import 'react-credit-cards-2/dist/es/styles-compiled.css';
+
 
 import { Button } from '@/components/ui/button';
 import {
@@ -43,10 +46,6 @@ const contributionSchema = z.object({
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto'], {
     required_error: 'Selecione um método de pagamento.',
   }),
-  cardName: z.string().optional(),
-  cardNumber: z.string().optional(),
-  cardExpiry: z.string().optional(),
-  cardCvc: z.string().optional(),
 });
 
 type ContributionFormValues = z.infer<typeof contributionSchema>;
@@ -59,16 +58,20 @@ const churchesData = [
 ];
 
 export default function ContribuicoesPage() {
+    const [cardState, setCardState] = React.useState({
+        number: '',
+        expiry: '',
+        cvc: '',
+        name: '',
+        focus: '' as Focused,
+      });
+
   const form = useForm<ContributionFormValues>({
     resolver: zodResolver(contributionSchema),
     defaultValues: {
         paymentMethod: 'pix',
         amount: 0,
         churchId: '',
-        cardName: '',
-        cardNumber: '',
-        cardExpiry: '',
-        cardCvc: '',
     },
   });
 
@@ -77,8 +80,20 @@ export default function ContribuicoesPage() {
     name: 'paymentMethod',
   });
 
+  const handleInputChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = evt.target;
+    setCardState((prev) => ({ ...prev, [name]: value }));
+  }
+
+  const handleInputFocus = (evt: React.FocusEvent<HTMLInputElement>) => {
+    setCardState((prev) => ({ ...prev, focus: evt.target.name as Focused }));
+  }
+
   function onSubmit(data: ContributionFormValues) {
     console.log(data);
+    if(data.paymentMethod === 'credit_card') {
+        console.log('Card Data:', cardState);
+    }
     // Submit logic
   }
 
@@ -153,17 +168,17 @@ export default function ContribuicoesPage() {
                                     defaultValue={field.value}
                                     className="grid grid-cols-1 gap-4 sm:grid-cols-3"
                                     >
-                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'pix' && "border-primary")}>
+                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'pix' && "border-primary")}>
                                             <RadioGroupItem value="pix" className="sr-only" />
                                             <QrCode className="mb-3 h-6 w-6" />
                                             Pix
                                         </Label>
-                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'credit_card' && "border-primary")}>
+                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'credit_card' && "border-primary")}>
                                             <RadioGroupItem value="credit_card" className="sr-only" />
                                             <CreditCard className="mb-3 h-6 w-6" />
                                             Crédito
                                         </Label>
-                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'boleto' && "border-primary")}>
+                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'boleto' && "border-primary")}>
                                             <RadioGroupItem value="boleto" className="sr-only" />
                                             <Banknote className="mb-3 h-6 w-6" />
                                             Boleto
@@ -182,60 +197,54 @@ export default function ContribuicoesPage() {
                     <CardHeader>
                         <CardTitle>Dados do Cartão</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="cardName"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Nome no Cartão</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Como está escrito no cartão" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="cardNumber"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Número do Cartão</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="0000 0000 0000 0000" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="cardExpiry"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Validade</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="MM/AA" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <Cards
+                                number={cardState.number}
+                                expiry={cardState.expiry}
+                                cvc={cardState.cvc}
+                                name={cardState.name}
+                                focused={cardState.focus}
                             />
-                            <FormField
-                                control={form.control}
-                                name="cardCvc"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>CVC</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="123" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
+                        </div>
+                        <div className="space-y-4">
+                            <Input
+                                type="text"
+                                name="number"
+                                placeholder="Número do Cartão"
+                                value={cardState.number}
+                                onChange={handleInputChange}
+                                onFocus={handleInputFocus}
+                                maxLength={16}
                             />
+                             <Input
+                                type="text"
+                                name="name"
+                                placeholder="Nome no Cartão"
+                                value={cardState.name}
+                                onChange={handleInputChange}
+                                onFocus={handleInputFocus}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    type="text"
+                                    name="expiry"
+                                    placeholder="Validade (MM/AA)"
+                                    value={cardState.expiry}
+                                    onChange={handleInputChange}
+                                    onFocus={handleInputFocus}
+                                    maxLength={4}
+                                />
+                                <Input
+                                    type="text"
+                                    name="cvc"
+                                    placeholder="CVC"
+                                    value={cardState.cvc}
+                                    onChange={handleInputChange}
+                                    onFocus={handleInputFocus}
+                                    maxLength={4}
+                                />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -281,4 +290,3 @@ export default function ContribuicoesPage() {
     </div>
   );
 }
-
