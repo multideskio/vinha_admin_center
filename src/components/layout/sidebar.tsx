@@ -71,7 +71,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="none">
       <SidebarHeader className="flex h-14 items-center justify-between border-b px-4 sm:h-16">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <Logo className="size-7 shrink-0 text-primary" />
