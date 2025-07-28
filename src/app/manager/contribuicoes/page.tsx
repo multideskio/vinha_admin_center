@@ -279,7 +279,7 @@ export default function ContribuicoesPage() {
                                     />
                                 </div>
                                 <Button onClick={handleFinalizePayment} className="w-full" size="lg">
-                                    Pagar R$ {amount.toFixed(2)}
+                                    Pagar R$ {Number(amount).toFixed(2)}
                                 </Button>
                             </div>
                         </CardContent>
@@ -305,8 +305,12 @@ export default function ContribuicoesPage() {
                              <CardContent className="flex flex-col items-center justify-center p-10 text-center">
                                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
                                 <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
-                                <p className="text-muted-foreground">Sua contribuição de R$ {amount.toFixed(2)} foi recebida com sucesso.</p>
-                                 <Button onClick={() => form.reset()} className='mt-6'>Fazer Nova Contribuição</Button>
+                                <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
+                                 <Button onClick={() => {
+                                     form.reset();
+                                     setShowPaymentDetails(false);
+                                     setPixStatus('idle');
+                                 }} className='mt-6'>Fazer Nova Contribuição</Button>
                             </CardContent>
                         )}
                     </Card>
