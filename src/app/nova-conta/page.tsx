@@ -94,9 +94,9 @@ const PastorForm = () => {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                  <CardHeader className="px-0">
-                    <CardTitle>Informações Iniciais</CardTitle>
+                    <CardTitle>Informações Iniciais do Pastor</CardTitle>
                 </CardHeader>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
                     <FormField control={form.control} name="firstName" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Nome</FormLabel>
@@ -111,62 +111,69 @@ const PastorForm = () => {
                             <FormMessage />
                         </FormItem>
                     )} />
-                </div>
-                <FormField control={form.control} name="cpf" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>CPF</FormLabel>
-                        <FormControl>
-                            <Input 
-                                placeholder="000.000.000-00" 
-                                {...field} 
-                                onChange={(e) => field.onChange(formatCPF(e.target.value))}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="birthDate" render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <FormLabel>Data de nascimento</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {field.value ? format(field.value, "dd/MM/yyyy") : <span>dd/mm/aaaa</span>}
-                                    </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > subYears(new Date(), 18) || date < new Date("1900-01-01")} initialFocus />
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="email" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>E-mail</FormLabel>
-                        <FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="supervisorId" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Supervisor</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormField control={form.control} name="cpf" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>CPF</FormLabel>
                             <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Escolha um supervisor..." />
-                                </SelectTrigger>
+                                <Input 
+                                    placeholder="000.000.000-00" 
+                                    {...field} 
+                                    onChange={(e) => field.onChange(formatCPF(e.target.value))}
+                                />
                             </FormControl>
-                            <SelectContent>
-                                {supervisors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )} />
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="birthDate" render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Data de nascimento</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>dd/mm/aaaa</span>}
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar 
+                                        mode="single" 
+                                        selected={field.value} 
+                                        onSelect={field.onChange} 
+                                        disabled={(date) => date > subYears(new Date(), 18) || date < new Date("1900-01-01")} 
+                                        defaultMonth={subYears(new Date(), 18)}
+                                        initialFocus 
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>E-mail</FormLabel>
+                            <FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="supervisorId" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Supervisor</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Escolha um supervisor..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {supervisors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
                 <Button type="submit" className="w-full" size="lg">Próximo</Button>
             </form>
         </Form>
@@ -203,58 +210,60 @@ const ChurchForm = () => {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                  <CardHeader className="px-0">
-                    <CardTitle>Informações Iniciais</CardTitle>
+                    <CardTitle>Informações Iniciais da Igreja</CardTitle>
                 </CardHeader>
-                <FormField control={form.control} name="cnpj" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>CNPJ</FormLabel>
-                        <FormControl>
-                            <Input
-                             placeholder="00.000.000/0000-00" 
-                             {...field}
-                             onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="razaoSocial" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Razão Social</FormLabel>
-                        <FormControl><Input placeholder="Razão social da igreja" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Nome Fantasia</FormLabel>
-                        <FormControl><Input placeholder="Nome da sua igreja" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="email" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>E-mail da Igreja</FormLabel>
-                        <FormControl><Input type="email" placeholder="contato@suaigreja.com" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="supervisorId" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Supervisor</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                 <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+                    <FormField control={form.control} name="cnpj" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>CNPJ</FormLabel>
                             <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Escolha um supervisor..." />
-                                </SelectTrigger>
+                                <Input
+                                placeholder="00.000.000/0000-00" 
+                                {...field}
+                                onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
+                                />
                             </FormControl>
-                            <SelectContent>
-                                {supervisors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )} />
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="razaoSocial" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Razão Social</FormLabel>
+                            <FormControl><Input placeholder="Razão social da igreja" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nome Fantasia</FormLabel>
+                            <FormControl><Input placeholder="Nome da sua igreja" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>E-mail da Igreja</FormLabel>
+                            <FormControl><Input type="email" placeholder="contato@suaigreja.com" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="supervisorId" render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                            <FormLabel>Supervisor</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Escolha um supervisor..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {supervisors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
                 <Button type="submit" className="w-full" size="lg">Próximo</Button>
             </form>
         </Form>
