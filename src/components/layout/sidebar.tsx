@@ -21,7 +21,6 @@ import {
   Church,
   Settings,
   FileText,
-  Building,
   CreditCard,
   Shield,
 } from 'lucide-react';
