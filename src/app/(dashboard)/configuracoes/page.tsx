@@ -13,6 +13,7 @@ import {
   Youtube,
   MessageCircle,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -73,11 +74,19 @@ const smtpSchema = z.object({
     smtpPassword: z.string().min(1, "A senha SMTP é obrigatória."),
     smtpPort: z.coerce.number().min(1, "A porta SMTP é obrigatória."),
     smtpProtocol: z.enum(["TLS", "SSL"]),
-    enableWhatsapp: z.boolean().default(false),
 });
+
+const whatsappSchema = z.object({
+    apiUrl: z.string().url("URL da API inválida."),
+    instance: z.string().min(1, "A instância é obrigatória."),
+    apiKey: z.string().min(1, "A API Key é obrigatória."),
+    enableSupportButton: z.boolean().default(false),
+});
+
 
 type CompanyProfile = z.infer<typeof companyProfileSchema>;
 type SmtpProfile = z.infer<typeof smtpSchema>;
+type WhatsappProfile = z.infer<typeof whatsappSchema>;
 
 const companyData: CompanyProfile = {
   cnpj: '00.000.000/0001-00',
@@ -103,7 +112,13 @@ const smtpData: SmtpProfile = {
     smtpPassword: "•••••",
     smtpPort: 587,
     smtpProtocol: "TLS",
-    enableWhatsapp: true,
+};
+
+const whatsappData: WhatsappProfile = {
+    apiUrl: "https://api.conect.app",
+    instance: "igrsysten@gmail.com",
+    apiKey: "••••••••••••",
+    enableSupportButton: true,
 };
 
 
@@ -119,6 +134,12 @@ export default function ConfiguracoesPage() {
         defaultValues: smtpData
     });
 
+    const whatsappForm = useForm<WhatsappProfile>({
+        resolver: zodResolver(whatsappSchema),
+        defaultValues: whatsappData
+    });
+
+
     const onProfileSubmit = (data: CompanyProfile) => {
         console.log("Profile data:", data);
         // Handle form submission
@@ -128,6 +149,12 @@ export default function ConfiguracoesPage() {
         console.log("SMTP data:", data);
         // Handle SMTP form submission
     };
+
+    const onWhatsappSubmit = (data: WhatsappProfile) => {
+        console.log("WhatsApp data:", data);
+        // Handle WhatsApp form submission
+    };
+
 
   return (
     <div className="flex flex-col gap-4">
@@ -449,26 +476,7 @@ export default function ConfiguracoesPage() {
                                 )}
                             />
                         </div>
-                        <FormField
-                            control={smtpForm.control}
-                            name="enableWhatsapp"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">
-                                            Ativar botão de suporte do WhatsApp
-                                        </FormLabel>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-
+                        
                         <div className="flex gap-2">
                           <Button type="submit">Atualizar SMTP</Button>
                           <Button type="button" variant="secondary">Testar envio de e-mail</Button>
@@ -480,17 +488,85 @@ export default function ConfiguracoesPage() {
                 </Card>
             </TabsContent>
             <TabsContent value="whatsapp">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuração de WhatsApp</CardTitle>
-                <CardDescription>
-                  Integre com a API do WhatsApp para enviar mensagens automáticas.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p>Formulário de configuração do WhatsApp aqui.</p>
-              </CardContent>
-            </Card>
+                <Card>
+                <CardHeader>
+                    <CardTitle>Configuração de WhatsApp</CardTitle>
+                    <CardDescription>
+                    Integre com a API da Evolution para enviar mensagens automáticas.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...whatsappForm}>
+                        <form onSubmit={whatsappForm.handleSubmit(onWhatsappSubmit)} className="space-y-6">
+                            <Alert variant='default' className='bg-yellow-50 border-yellow-200 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300 flex justify-between items-center'>
+                                <div>
+                                    <p>Suporte da API <strong>multidesk.io@gmail.com</strong></p>
+                                </div>
+                                <button type="button">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </Alert>
+                             <FormField
+                                control={whatsappForm.control}
+                                name="apiUrl"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>URL da API</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={whatsappForm.control}
+                                name="instance"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Instância</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={whatsappForm.control}
+                                name="apiKey"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>API KEY</FormLabel>
+                                    <FormControl><Input type="password" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={whatsappForm.control}
+                                name="enableSupportButton"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base">
+                                                Ativar botão de suporte do WhatsApp
+                                            </FormLabel>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="flex gap-2">
+                                <Button type="submit">Atualizar API WhatsApp</Button>
+                                <Button type="button" variant="secondary">Testar envio no WhatsApp</Button>
+                            </div>
+                        </form>
+                    </Form>
+                </CardContent>
+                </Card>
           </TabsContent>
             </Tabs>
         </div>
