@@ -56,7 +56,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         .update(regions)
         .set({
           deletedAt: new Date(),
-          deletedBy: MOCK_USER_ID,
+          // Removida a dependência do MOCK_USER_ID
         })
         .where(eq(regions.id, id))
         .returning();
@@ -72,3 +72,4 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
   }
+
