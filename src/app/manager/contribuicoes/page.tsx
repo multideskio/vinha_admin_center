@@ -5,7 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Banknote, CreditCard, QrCode, DollarSign } from 'lucide-react';
+import { Banknote, CreditCard, QrCode, DollarSign, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import Cards, { Focused } from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const contributionSchema = z.object({
@@ -45,6 +47,7 @@ type ContributionFormValues = z.infer<typeof contributionSchema>;
 
 export default function ContribuicoesPage() {
   const [showPaymentDetails, setShowPaymentDetails] = React.useState(false);
+  const [pixStatus, setPixStatus] = React.useState<'idle' | 'pending' | 'confirmed'>('idle');
   const [cardState, setCardState] = React.useState({
     number: '',
     expiry: '',
@@ -52,6 +55,8 @@ export default function ContribuicoesPage() {
     name: '',
     focus: '' as Focused,
   });
+
+  const { toast } = useToast();
 
   const form = useForm<ContributionFormValues>({
     resolver: zodResolver(contributionSchema),
@@ -74,7 +79,23 @@ export default function ContribuicoesPage() {
   // Reset payment details view when payment method or amount changes
   React.useEffect(() => {
     setShowPaymentDetails(false);
+    setPixStatus('idle');
   }, [paymentMethod, amount]);
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showPaymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
+        timer = setTimeout(() => {
+            setPixStatus('confirmed');
+            toast({
+                title: "Sucesso!",
+                description: "Pagamento via Pix confirmado com sucesso.",
+                variant: 'success' as any,
+            });
+        }, 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [showPaymentDetails, paymentMethod, pixStatus, toast]);
 
 
   const handleInputChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,6 +120,9 @@ export default function ContribuicoesPage() {
   function handleProceedToPayment(data: ContributionFormValues) {
     console.log("Proceeding to payment with:", data);
     setShowPaymentDetails(true);
+    if(data.paymentMethod === 'pix') {
+        setPixStatus('pending');
+    }
   }
 
   function handleFinalizePayment() {
@@ -261,17 +285,30 @@ export default function ContribuicoesPage() {
                         </CardContent>
                     </Card>
                 )}
-                {paymentMethod === 'pix' && (
+                 {paymentMethod === 'pix' && (
                     <Card className="bg-muted/30 flex flex-col items-center p-6">
-                        <CardHeader className="items-center">
-                            <CardTitle>Pague com Pix</CardTitle>
-                            <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                                <Image src="https://placehold.co/256x256.png" width={256} height={256} alt="QR Code Pix" data-ai-hint="qr code" />
-                                <Input value="copia-e-cola-chave-pix-aqui-12345" readOnly className="mt-4 text-center" />
-                                <Button variant="outline" className="w-full mt-2">Copiar Chave</Button>
-                        </CardContent>
+                        {pixStatus === 'pending' && (
+                            <>
+                                <CardHeader className="items-center">
+                                    <CardTitle>Aguardando Pagamento</CardTitle>
+                                    <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
+                                </CardHeader>
+                                <CardContent className='flex flex-col items-center'>
+                                        <Image src="https://placehold.co/256x256.png" width={256} height={256} alt="QR Code Pix" data-ai-hint="qr code" />
+                                        <Skeleton className="h-4 w-20 mt-4" />
+                                        <Input value="copia-e-cola-chave-pix-aqui-12345" readOnly className="mt-4 text-center" />
+                                        <Button variant="outline" className="w-full mt-2">Copiar Chave</Button>
+                                </CardContent>
+                            </>
+                        )}
+                        {pixStatus === 'confirmed' && (
+                             <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+                                <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                                <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
+                                <p className="text-muted-foreground">Sua contribuição de R$ {amount.toFixed(2)} foi recebida com sucesso.</p>
+                                 <Button onClick={() => form.reset()} className='mt-6'>Fazer Nova Contribuição</Button>
+                            </CardContent>
+                        )}
                     </Card>
                 )}
                 {paymentMethod === 'boleto' && (
