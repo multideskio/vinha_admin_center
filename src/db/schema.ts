@@ -52,6 +52,17 @@ export const users = pgTable('users', {
   deletionReason: text('deletion_reason'),
 });
 
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', {
+    withTimezone: true,
+    mode: 'date',
+  }).notNull(),
+});
+
 export const regions = pgTable('regions', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
@@ -212,6 +223,14 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     supervisorProfile: one(supervisorProfiles, { fields: [users.id], references: [supervisorProfiles.userId] }),
     pastorProfile: one(pastorProfiles, { fields: [users.id], references: [pastorProfiles.userId] }),
     churchProfile: one(churchProfiles, { fields: [users.id], references: [churchProfiles.userId] }),
+    sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
 }));
 
 export const regionsRelations = relations(regions, ({ one }) => ({

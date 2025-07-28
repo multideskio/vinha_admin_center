@@ -5,6 +5,9 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,6 +25,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { loginUser } from '@/actions/auth';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'E-mail inválido.' }),
@@ -51,6 +58,10 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [error, setError] = React.useState<string | null>(null);
+  
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -59,9 +70,30 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    console.log(data);
-    // Handle login logic
+  const onSubmit = async (data: LoginFormValues) => {
+    setError(null);
+    try {
+        const result = await loginUser(data);
+        if (result.error) {
+            setError(result.error);
+        } else if (result.success && result.role) {
+            toast({
+                title: "Login bem-sucedido!",
+                description: "Redirecionando para o seu painel.",
+            });
+            const roleToPathMap: { [key: string]: string } = {
+                admin: '/admin',
+                manager: '/gerente',
+                supervisor: '/supervisor',
+                pastor: '/pastor',
+                church_account: '/igreja'
+            }
+            const path = roleToPathMap[result.role] || '/';
+            router.push(path);
+        }
+    } catch (e) {
+        setError("Ocorreu um erro inesperado. Tente novamente.");
+    }
   };
 
   return (
@@ -78,6 +110,14 @@ export default function LoginPage() {
         <CardContent>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                        {error}
+                    </AlertDescription>
+                </Alert>
+            )}
             <FormField
                 control={form.control}
                 name="email"
@@ -116,8 +156,8 @@ export default function LoginPage() {
                 </FormItem>
                 )}
             />
-            <Button type="submit" className="w-full">
-                Login
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Entrando...' : 'Login'}
             </Button>
             </form>
         </Form>
@@ -131,4 +171,3 @@ export default function LoginPage() {
     </Card>
   );
 }
-
