@@ -86,8 +86,8 @@ export function AppSidebar() {
                     tooltip={settingsItem.label}
                 >
                     <Link href={settingsItem.href}>
-                    <settingsItem.icon />
-                    <span>{settingsItem.label}</span>
+                        <settingsItem.icon />
+                        <span>{settingsItem.label}</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
