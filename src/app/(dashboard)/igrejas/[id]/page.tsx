@@ -92,7 +92,7 @@ const churchData: ChurchProfile = {
   city: 'São Paulo',
   neighborhood: 'Sé',
   address: 'Praça da Sé, 100',
-  foundationDate: new Date('1950-01-15T00:00:00Z'),
+  foundationDate: new Date('1950-01-15T00:00:00'),
   titheDay: 10,
   supervisorId: 'sup-01',
   treasurerFirstName: 'José',
@@ -401,13 +401,22 @@ export default function IgrejaProfilePage() {
                       </AlertDescription>
                     </Alert>
 
-                    <div>
-                        <Label>Crie uma senha para a igreja</Label>
-                        <div className="relative mt-1">
-                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input type="password" placeholder="Password" className="pl-9" />
-                        </div>
-                    </div>
+                     <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Crie ou atualize a senha da igreja</FormLabel>
+                           <FormControl>
+                            <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} />
+                            </div>
+                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
 
                     <div className="flex justify-end">
@@ -449,5 +458,3 @@ export default function IgrejaProfilePage() {
     </div>
   );
 }
-
-    

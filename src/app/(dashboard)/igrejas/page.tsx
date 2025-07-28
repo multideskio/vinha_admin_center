@@ -100,7 +100,7 @@ const churchSchema = z.object({
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
   cnpj: z.string().min(1, 'O CNPJ/CPF é obrigatório.'),
   razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
-  nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
+  nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatória.'),
   email: z.string().email({ message: 'E-mail inválido.' }),
   cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
   state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
@@ -351,9 +351,22 @@ const ChurchFormModal = ({
                     </FormItem>
                     )}
                 />
+                 <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>E-mail</FormLabel>
+                        <FormControl>
+                        <Input type="email" placeholder="exemplo@gmail.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
                     name="razaoSocial"
@@ -375,19 +388,6 @@ const ChurchFormModal = ({
                         <FormLabel>Nome fantasia</FormLabel>
                         <FormControl>
                         <Input placeholder="Nome fantasia" {...field} disabled={isFetchingCnpj} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>E-mail</FormLabel>
-                        <FormControl>
-                        <Input type="email" placeholder="exemplo@gmail.com" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -849,5 +849,3 @@ export default function IgrejasPage() {
     </div>
   );
 }
-
-    
