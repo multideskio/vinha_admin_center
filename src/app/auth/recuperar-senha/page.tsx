@@ -63,49 +63,48 @@ export default function RecuperarSenhaPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm border-none shadow-none">
         <CardHeader className="text-center">
-           <div className="flex justify-center items-center mb-4">
-                 <Logo className="h-8 w-8 text-primary" />
+            <div className="flex justify-center items-center mb-4">
+                    <Logo className="h-8 w-8 text-primary" />
             </div>
-          <CardTitle className="text-2xl">Recuperar Senha</CardTitle>
-          <CardDescription>
+        <CardTitle className="text-2xl">Recuperar Senha</CardTitle>
+        <CardDescription>
             Digite seu e-mail para receber um link de recuperação.
-          </CardDescription>
+        </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
+        <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+            <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem>
+                <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
+                    <Input
                         type="email"
                         placeholder="m@example.com"
                         {...field}
-                      />
+                    />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
+                </FormItem>
                 )}
-              />
-              <Button type="submit" className="w-full">
+            />
+            <Button type="submit" className="w-full">
                 Enviar link de recuperação
-              </Button>
+            </Button>
             </form>
-          </Form>
-           <div className="mt-4 text-center text-sm">
-            <Link href="/login" className="underline">
-              Voltar para o login
+        </Form>
+        <div className="mt-4 text-center text-sm">
+            <Link href="/auth/login" className="underline">
+            Voltar para o login
             </Link>
-          </div>
+        </div>
         </CardContent>
-      </Card>
-    </div>
+    </Card>
   );
 }
+

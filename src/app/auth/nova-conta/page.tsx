@@ -274,32 +274,30 @@ const ChurchForm = () => {
 export default function NovaContaPage() {
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-        <Card className="w-full max-w-2xl">
-            <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Qual cadastro iremos fazer hoje?</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Tabs defaultValue="pastor">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="pastor" className="gap-2"><User /> Cadastro de Pastor</TabsTrigger>
-                        <TabsTrigger value="igreja" className="gap-2"><Building /> Cadastro de Igreja</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="pastor">
-                       <PastorForm />
-                    </TabsContent>
-                    <TabsContent value="igreja">
-                       <ChurchForm />
-                    </TabsContent>
-                </Tabs>
-                <div className="mt-6 text-center text-sm">
-                    Já tem uma conta?{' '}
-                    <Link href="/login" className="underline">
-                        Faça o login
-                    </Link>
-                </div>
-            </CardContent>
-        </Card>
-    </div>
+    <Card className="w-full max-w-2xl border-none shadow-none">
+        <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Qual cadastro iremos fazer hoje?</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <Tabs defaultValue="pastor">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pastor" className="gap-2"><User /> Cadastro de Pastor</TabsTrigger>
+                    <TabsTrigger value="igreja" className="gap-2"><Building /> Cadastro de Igreja</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pastor">
+                    <PastorForm />
+                </TabsContent>
+                <TabsContent value="igreja">
+                    <ChurchForm />
+                </TabsContent>
+            </Tabs>
+            <div className="mt-6 text-center text-sm">
+                Já tem uma conta?{' '}
+                <Link href="/auth/login" className="underline">
+                    Faça o login
+                </Link>
+            </div>
+        </CardContent>
+    </Card>
   );
 }

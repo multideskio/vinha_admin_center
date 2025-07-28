@@ -65,71 +65,70 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm border-none shadow-none">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center mb-4">
-                 <Logo className="h-8 w-8 text-primary" />
+                    <Logo className="h-8 w-8 text-primary" />
             </div>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
+        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardDescription>
             Acesse seu painel com seu e-mail e senha.
-          </CardDescription>
+        </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
+        <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+            <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem>
+                <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
+                    <Input
                         type="email"
                         placeholder="m@example.com"
                         {...field}
-                      />
+                    />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
+                </FormItem>
                 )}
-              />
-              <FormField
+            />
+            <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
-                  <FormItem>
+                <FormItem>
                     <div className="flex items-center">
-                      <FormLabel>Senha</FormLabel>
-                      <Link
-                        href="/recuperar-senha"
+                    <FormLabel>Senha</FormLabel>
+                    <Link
+                        href="/auth/recuperar-senha"
                         className="ml-auto inline-block text-sm underline"
-                      >
+                    >
                         Esqueceu sua senha?
-                      </Link>
+                    </Link>
                     </div>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                    <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
+                </FormItem>
                 )}
-              />
-              <Button type="submit" className="w-full">
+            />
+            <Button type="submit" className="w-full">
                 Login
-              </Button>
+            </Button>
             </form>
-          </Form>
-          <div className="mt-4 text-center text-sm">
+        </Form>
+        <div className="mt-4 text-center text-sm">
             Não tem uma conta?{' '}
-            <Link href="/nova-conta" className="underline">
-              Cadastre-se
+            <Link href="/auth/nova-conta" className="underline">
+            Cadastre-se
             </Link>
-          </div>
+        </div>
         </CardContent>
-      </Card>
-    </div>
+    </Card>
   );
 }
+
