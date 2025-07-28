@@ -1,0 +1,104 @@
+
+import { NextResponse } from 'next/server';
+import { db } from '@/db/drizzle';
+import { users, managerProfiles } from '@/db/schema';
+import { eq, and, isNull, desc } from 'drizzle-orm';
+import { z } from 'zod';
+import * as bcrypt from 'bcrypt';
+
+const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
+
+const managerSchema = z.object({
+  firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
+  lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
+  cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
+  email: z.string().email({ message: 'E-mail inválido.' }),
+  cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
+  state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
+  city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
+  neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
+  address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
+  titheDay: z.coerce.number().min(1).max(31),
+  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
+});
+
+
+export async function GET() {
+  try {
+    const result = await db.select({
+        id: users.id,
+        firstName: managerProfiles.firstName,
+        lastName: managerProfiles.lastName,
+        email: users.email,
+        phone: users.phone,
+        status: users.status,
+        cpf: managerProfiles.cpf,
+        cep: managerProfiles.cep,
+        state: managerProfiles.state,
+        city: managerProfiles.city,
+        neighborhood: managerProfiles.neighborhood,
+        address: managerProfiles.address,
+        titheDay: users.titheDay,
+      })
+      .from(users)
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+      .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
+      .orderBy(desc(users.createdAt));
+      
+    return NextResponse.json({ managers: result });
+
+  } catch (error) {
+    console.error("Erro ao buscar gerentes:", error);
+    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+    try {
+      const body = await request.json();
+      const validatedData = managerSchema.parse(body);
+      
+      const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+      const newManager = await db.transaction(async (tx) => {
+        const [newUser] = await tx.insert(users).values({
+            companyId: MOCK_COMPANY_ID,
+            email: validatedData.email,
+            password: hashedPassword,
+            role: 'manager',
+            status: 'active',
+            phone: validatedData.phone,
+            titheDay: validatedData.titheDay,
+        }).returning();
+
+        const [newProfile] = await tx.insert(managerProfiles).values({
+            userId: newUser.id,
+            firstName: validatedData.firstName,
+            lastName: validatedData.lastName,
+            cpf: validatedData.cpf,
+            cep: validatedData.cep,
+            state: validatedData.state,
+            city: validatedData.city,
+            neighborhood: validatedData.neighborhood,
+            address: validatedData.address,
+        }).returning();
+
+        return { ...newUser, ...newProfile };
+      });
+  
+      return NextResponse.json({ success: true, manager: newManager }, { status: 201 });
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
+      }
+      console.error("Erro ao criar gerente:", error);
+      // Tratar erro de e-mail duplicado
+      if (error instanceof Error && 'constraint' in error && (error as any).constraint === 'users_email_unique') {
+        return NextResponse.json({ error: "Este e-mail já está em uso." }, { status: 409 });
+      }
+
+      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    }
+}
