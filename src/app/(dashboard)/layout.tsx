@@ -49,7 +49,7 @@ const menuItems = [
     { href: '/supervisores', label: 'Supervisores', icon: UserCog },
     { href: '/pastores', label: 'Pastores', icon: User },
     { href: '/igrejas', label: 'Igrejas', icon: Church },
-    { href: '/administradores', label: 'Administradores', icon: Shield },
+    { href: '/admin/administradores', label: 'Administradores', icon: Shield },
     { href: '/relatorios', label: 'Relatórios', icon: FileText },
     { href: '/gateways', label: 'Gateways', icon: CreditCard },
   ];
@@ -192,3 +192,5 @@ export default function DashboardLayout({
     </div>
   );
 }
+
+    
