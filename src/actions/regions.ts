@@ -16,7 +16,7 @@ const regionSchema = z.object({
 // IDs mocados para permitir o desenvolvimento sem autenticação real.
 // O ID da empresa corresponde ao que é criado no script de seed.
 const MOCK_COMPANY_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466"; 
-const MOCK_USER_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466"; 
+const MOCK_USER_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466"; // Usado para deletedBy
 
 export async function getRegions() {
   try {
