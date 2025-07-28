@@ -1,3 +1,4 @@
+
 import {
   pgTable,
   text,
@@ -152,8 +153,9 @@ export const churchProfiles = pgTable('church_profiles', {
 // Tabela de Transações
 export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
+  companyId: integer('company_id').references(() => companies.id).notNull(), // Company that receives the money
   contributorId: integer('contributor_id').references(() => users.id).notNull(), // User who made the contribution
-  churchId: integer('church_id').references(() => users.id).notNull(), // Church that received the contribution
+  originChurchId: integer('origin_church_id').references(() => users.id), // Optional: Church from which the contribution originated, for reporting
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   status: transactionStatusEnum('status').notNull(),
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
@@ -185,6 +187,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
     users: many(users),
     regions: many(regions),
     gatewayConfigurations: many(gatewayConfigurations),
+    transactions: many(transactions),
 }));
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -214,8 +217,9 @@ export const churchProfilesRelations = relations(churchProfiles, ({ one }) => ({
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
+    company: one(companies, { fields: [transactions.companyId], references: [companies.id] }),
     contributor: one(users, { fields: [transactions.contributorId], references: [users.id], relationName: 'contributor' }),
-    church: one(users, { fields: [transactions.churchId], references: [users.id], relationName: 'church' }),
+    originChurch: one(users, { fields: [transactions.originChurchId], references: [users.id], relationName: 'origin_church' }),
 }));
 
 export const gatewayConfigurationsRelations = relations(gatewayConfigurations, ({ one }) => ({
