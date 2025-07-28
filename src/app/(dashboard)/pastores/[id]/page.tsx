@@ -81,7 +81,7 @@ const pastorData: PastorProfile = {
   firstName: 'Paulo',
   lastName: 'Ferreira',
   cpf: '037.628.391-23',
-  birthDate: new Date('2007-02-14'),
+  birthDate: new Date('2007-02-14T00:00:00'),
   phone: '5562981154120',
   landline: '(00) 0000-0000',
   email: 'pastor@multidesk.io',
