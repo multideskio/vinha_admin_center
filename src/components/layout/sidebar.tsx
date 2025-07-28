@@ -56,7 +56,6 @@ const menuItems = [
   { href: '/administradores', label: 'Administradores', icon: Shield },
   { href: '/relatorios', label: 'Relatórios', icon: FileText },
   { href: '/gateways', label: 'Gateways', icon: CreditCard },
-  { href: '/configuracoes', label: 'Plataforma', icon: Building },
 ];
 
 const settingsItem = {
