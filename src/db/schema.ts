@@ -1,4 +1,5 @@
 
+
 import {
   pgTable,
   text,
@@ -10,6 +11,7 @@ import {
   decimal,
   pgEnum,
   uuid,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -29,6 +31,9 @@ export const companies = pgTable('companies', {
     logoUrl: text('logo_url'),
     supportEmail: varchar('support_email', { length: 255 }),
     maintenanceMode: boolean('maintenance_mode').default(false).notNull(),
+    deletedAt: timestamp('deleted_at'),
+    deletedBy: uuid('deleted_by').references(() => users.id, { onDelete: 'set null' }),
+    deletionReason: text('deletion_reason'),
 });
 
 export const users = pgTable('users', {
@@ -42,6 +47,9 @@ export const users = pgTable('users', {
   titheDay: integer('tithe_day'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+  deletedBy: uuid('deleted_by').references((): any => users.id, { onDelete: 'set null' }),
+  deletionReason: text('deletion_reason'),
 });
 
 export const regions = pgTable('regions', {
@@ -49,6 +57,9 @@ export const regions = pgTable('regions', {
   companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
   color: varchar('color', { length: 7 }).notNull(),
+  deletedAt: timestamp('deleted_at'),
+  deletedBy: uuid('deleted_by').references(() => users.id, { onDelete: 'set null' }),
+  deletionReason: text('deletion_reason'),
 });
 
 // Tabelas de Perfis
@@ -162,6 +173,9 @@ export const transactions = pgTable('transactions', {
   gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
   refundRequestReason: text('refund_request_reason'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+  deletedBy: uuid('deleted_by').references(() => users.id, { onDelete: 'set null' }),
+  deletionReason: text('deletion_reason'),
 });
 
 // Tabela de Configurações dos Gateways
@@ -190,8 +204,9 @@ export const companiesRelations = relations(companies, ({ many }) => ({
     transactions: many(transactions),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
     company: one(companies, { fields: [users.companyId], references: [companies.id] }),
+    deletedBy: one(users, { fields: [users.deletedBy], references: [users.id] }),
     adminProfile: one(adminProfiles, { fields: [users.id], references: [adminProfiles.userId] }),
     managerProfile: one(managerProfiles, { fields: [users.id], references: [managerProfiles.userId] }),
     supervisorProfile: one(supervisorProfiles, { fields: [users.id], references: [supervisorProfiles.userId] }),
@@ -201,6 +216,7 @@ export const usersRelations = relations(users, ({ one }) => ({
 
 export const regionsRelations = relations(regions, ({ one }) => ({
     company: one(companies, { fields: [regions.companyId], references: [companies.id] }),
+    deletedBy: one(users, { fields: [regions.deletedBy], references: [users.id] })
 }));
 
 export const supervisorProfilesRelations = relations(supervisorProfiles, ({ one }) => ({
@@ -220,6 +236,7 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
     company: one(companies, { fields: [transactions.companyId], references: [companies.id] }),
     contributor: one(users, { fields: [transactions.contributorId], references: [users.id], relationName: 'contributor' }),
     originChurch: one(users, { fields: [transactions.originChurchId], references: [users.id], relationName: 'origin_church' }),
+    deletedBy: one(users, { fields: [transactions.deletedBy], references: [users.id] }),
 }));
 
 export const gatewayConfigurationsRelations = relations(gatewayConfigurations, ({ one }) => ({
