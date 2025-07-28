@@ -10,6 +10,7 @@ import {
   ListFilter,
   MoreVertical,
   Truck,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,22 +47,23 @@ import { Textarea } from '@/components/ui/textarea';
 
 
 const transaction = {
-    id: 'TRN-001',
-    date: '28 de Julho, 2024',
-    amount: 150.00,
-    status: 'Aprovada' as 'Aprovada' | 'Pendente' | 'Recusada',
+    id: 'TRN-004',
+    date: '27 de Julho, 2024',
+    amount: 50.00,
+    status: 'Reembolsada' as 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada',
     contributor: {
-        name: 'João da Silva',
-        email: 'joao.silva@exemplo.com',
+        name: 'Ana Beatriz',
+        email: 'ana.beatriz@exemplo.com',
     },
     church: {
-        name: 'Assembleia de Deus Madureira',
-        address: 'Praça da Sé, 100, São Paulo, SP'
+        name: 'Comunidade da Graça',
+        address: 'Av. Lins de Vasconcelos, 123, São Paulo, SP'
     },
     payment: {
         method: 'Pix',
-        details: 'Chave: joao.silva@exemplo.com'
-    }
+        details: 'Chave: ana.beatriz@exemplo.com'
+    },
+    refundRequestReason: 'Doação duplicada por engano.'
 }
 
 const RefundModal = ({ amount }: { amount: number }) => {
@@ -187,10 +189,14 @@ export default function TransacaoDetalhePage() {
                         <div className='flex items-center justify-between'>
                             <div className="font-medium text-muted-foreground">Status</div>
                             <div>
-                                <Badge variant={transaction.status === 'Aprovada' ? 'default' : transaction.status === 'Pendente' ? 'secondary' : 'destructive'}
-                                    className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
-                                    : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
-                                    : 'bg-red-500/20 text-red-700 border-red-400'}>
+                                <Badge variant={transaction.status === 'Aprovada' ? 'default' 
+                                    : transaction.status === 'Pendente' ? 'secondary' 
+                                    : transaction.status === 'Reembolsada' ? 'outline'
+                                    : 'destructive'}
+                                        className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
+                                        : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
+                                        : transaction.status === 'Reembolsada' ? 'bg-blue-500/20 text-blue-700 border-blue-400'
+                                        : 'bg-red-500/20 text-red-700 border-red-400'}>
                                     {transaction.status}
                                 </Badge>
                             </div>
@@ -198,6 +204,21 @@ export default function TransacaoDetalhePage() {
                       </div>
                     </CardContent>
                   </Card>
+                  {transaction.refundRequestReason && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className='flex items-center gap-2 text-base'>
+                                <MessageSquareWarning className='h-5 w-5' />
+                                Motivo da Solicitação de Reembolso
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">
+                                {transaction.refundRequestReason}
+                            </p>
+                        </CardContent>
+                    </Card>
+                  )}
                   <Card>
                     <CardHeader>
                       <CardTitle>Detalhes do Pagamento</CardTitle>

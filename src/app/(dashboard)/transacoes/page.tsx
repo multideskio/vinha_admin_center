@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Transaction = {
   id: string;
@@ -45,15 +46,16 @@ type Transaction = {
   church: string;
   amount: number;
   method: 'Pix' | 'Cartão de Crédito' | 'Boleto';
-  status: 'Aprovada' | 'Pendente' | 'Recusada';
+  status: 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada';
   date: string;
+  refundRequestReason?: string;
 };
 
 const transactions: Transaction[] = [
     { id: 'TRN-001', contributor: 'João Silva', church: 'Assembleia de Deus Madureira', amount: 150.00, method: 'Pix', status: 'Aprovada', date: '28/07/2024' },
     { id: 'TRN-002', contributor: 'Maria Oliveira', church: 'IURD', amount: 75.50, method: 'Cartão de Crédito', status: 'Aprovada', date: '28/07/2024' },
     { id: 'TRN-003', contributor: 'Carlos Andrade', church: 'Igreja Batista', amount: 200.00, method: 'Boleto', status: 'Pendente', date: '27/07/2024' },
-    { id: 'TRN-004', contributor: 'Ana Beatriz', church: 'Comunidade da Graça', amount: 50.00, method: 'Pix', status: 'Aprovada', date: '27/07/2024' },
+    { id: 'TRN-004', contributor: 'Ana Beatriz', church: 'Comunidade da Graça', amount: 50.00, method: 'Pix', status: 'Reembolsada', date: '27/07/2024', refundRequestReason: 'Doação duplicada por engano.' },
     { id: 'TRN-005', contributor: 'Paulo Ferreira', church: 'Videira', amount: 300.00, method: 'Cartão de Crédito', status: 'Recusada', date: '26/07/2024' },
     { id: 'TRN-006', contributor: 'Jabez Henrique', church: 'Fonte da Vida', amount: 120.00, method: 'Pix', status: 'Aprovada', date: '26/07/2024' },
     { id: 'TRN-007', contributor: 'Lucas Mendes', church: 'Renascer em Cristo', amount: 90.00, method: 'Boleto', status: 'Aprovada', date: '25/07/2024' },
@@ -105,6 +107,7 @@ export default function TransacoesPage() {
                         <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                     <DateRangePicker />
@@ -122,9 +125,8 @@ export default function TransacoesPage() {
                 <TableHead>Contribuinte</TableHead>
                 <TableHead className="hidden lg:table-cell">Igreja</TableHead>
                 <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
-                <TableHead className="hidden sm:table-cell">Método</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Data</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
+                <TableHead className="hidden md:table-cell">Motivo Solicitação</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -136,16 +138,34 @@ export default function TransacoesPage() {
                   <TableCell className="font-medium">{transaction.contributor}</TableCell>
                   <TableCell className="hidden lg:table-cell text-muted-foreground">{transaction.church}</TableCell>
                   <TableCell className="hidden md:table-cell text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{transaction.method}</TableCell>
-                  <TableCell>
-                  <Badge variant={transaction.status === 'Aprovada' ? 'default' : transaction.status === 'Pendente' ? 'secondary' : 'destructive'}
+                  <TableCell className="hidden sm:table-cell">
+                  <Badge variant={transaction.status === 'Aprovada' ? 'default' 
+                      : transaction.status === 'Pendente' ? 'secondary' 
+                      : transaction.status === 'Reembolsada' ? 'outline'
+                      : 'destructive'}
                         className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
                         : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
+                        : transaction.status === 'Reembolsada' ? 'bg-blue-500/20 text-blue-700 border-blue-400'
                         : 'bg-red-500/20 text-red-700 border-red-400'}>
                         {transaction.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">{transaction.date}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {transaction.refundRequestReason ? (
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <span className='truncate max-w-[150px] inline-block'>{transaction.refundRequestReason}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {transaction.refundRequestReason}
+                                </TooltipContent>
+                            </Tooltip>
+                         </TooltipProvider>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
