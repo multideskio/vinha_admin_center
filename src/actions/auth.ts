@@ -62,7 +62,8 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
 
   } catch (error: any) {
     console.error('[AUTH_DEBUG] Ocorreu um erro inesperado no servidor:', error);
-    return { error: `Erro do servidor: ${error.message}` };
+    // Retorna a mensagem de erro bruta para depuração no frontend.
+    return { error: error.message };
   }
 }
 

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
-import { AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -80,35 +80,15 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLogging(true);
-    let currentLogs: LogEntry[] = [];
-    
-    const updateLogs = (newLog: LogEntry) => {
-        currentLogs = [...currentLogs, newLog];
-        setLogs(currentLogs);
-    }
-    
-    const updateLastLogStatus = (status: 'success' | 'error', newMessage?: string) => {
-        const lastLog = currentLogs[currentLogs.length - 1];
-        lastLog.status = status;
-        if (newMessage) {
-            lastLog.message = newMessage;
-        }
-        setLogs([...currentLogs]);
-    }
-
-    setLogs([]);
-
-    await sleep(200);
-    updateLogs({ message: 'Credenciais enviadas...', status: 'pending' });
+    setLogs([]); 
 
     const result = await loginUser(data);
 
     if (result.error) {
+        // Exibe o erro bruto retornado pelo servidor
         setLogs([{ message: result.error, status: 'error' }]); 
     } else if (result.success && result.role) {
-        updateLastLogStatus('success', 'Credenciais validadas!');
-        await sleep(200);
-        updateLogs({ message: 'Login bem-sucedido! Redirecionando...', status: 'success' });
+        setLogs([{ message: 'Login bem-sucedido! Redirecionando...', status: 'success' }]);
 
         toast({
             title: "Login bem-sucedido!",
@@ -197,6 +177,7 @@ export default function LoginPage() {
                             {log.status === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
                             {log.status === 'error' && <XCircle className="h-4 w-4 text-destructive" />}
                             <span className={cn(
+                                'break-words',
                                 log.status === 'error' && 'text-destructive'
                             )}>
                                 {log.message}
