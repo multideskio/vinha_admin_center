@@ -28,6 +28,12 @@ import {
   ArrowRightLeft,
   Handshake,
 } from 'lucide-react';
+import { validateRequest } from '@/lib/auth';
+import { db } from '@/db/drizzle';
+import { pastorProfiles } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { logoutUser } from '@/actions/auth';
+import { redirect } from 'next/navigation';
 
 
 export const metadata: Metadata = {
@@ -67,11 +73,19 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
   );
 
-export default function PastorLayout({
+export default async function PastorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = await validateRequest();
+  if (!user) {
+    return redirect('/auth/login');
+  }
+  const [profile] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, user.id));
+  const userName = profile?.firstName || 'Pastor';
+  const userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <PastorSidebar />
@@ -136,10 +150,10 @@ export default function PastorLayout({
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src="https://placehold.co/32x32.png"
-                    alt="@pastor"
+                    alt={`@${userName}`}
                     data-ai-hint="pastor icon"
                   />
-                  <AvatarFallback>P</AvatarFallback>
+                  <AvatarFallback>{userFallback}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
@@ -148,10 +162,10 @@ export default function PastorLayout({
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                        Bem vindo Pastor!
+                        Bem vindo {userName}!
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        pastor@exemplo.com
+                        {user.email}
                     </p>
                     </div>
                 </DropdownMenuLabel>
@@ -165,10 +179,14 @@ export default function PastorLayout({
                     <span>Ajuda</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair</span>
-                </DropdownMenuItem>
+                 <form action={logoutUser}>
+                    <button type="submit" className='w-full'>
+                        <DropdownMenuItem>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Sair</span>
+                        </DropdownMenuItem>
+                    </button>
+                 </form>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

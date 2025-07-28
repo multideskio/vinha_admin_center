@@ -30,6 +30,12 @@ import {
   ArrowRightLeft,
   Handshake,
 } from 'lucide-react';
+import { validateRequest } from '@/lib/auth';
+import { db } from '@/db/drizzle';
+import { supervisorProfiles } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { logoutUser } from '@/actions/auth';
+import { redirect } from 'next/navigation';
 
 
 export const metadata: Metadata = {
@@ -71,11 +77,19 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
   );
 
-export default function SupervisorLayout({
+export default async function SupervisorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = await validateRequest();
+  if (!user) {
+    return redirect('/auth/login');
+  }
+  const [profile] = await db.select().from(supervisorProfiles).where(eq(supervisorProfiles.userId, user.id));
+  const userName = profile?.firstName || 'Supervisor';
+  const userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <SupervisorSidebar />
@@ -140,10 +154,10 @@ export default function SupervisorLayout({
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src="https://placehold.co/32x32.png"
-                    alt="@jabez"
+                    alt={`@${userName}`}
                     data-ai-hint="user avatar"
                   />
-                  <AvatarFallback>J</AvatarFallback>
+                  <AvatarFallback>{userFallback}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
@@ -152,10 +166,10 @@ export default function SupervisorLayout({
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                        Bem vindo Jabez!
+                        Bem vindo {userName}!
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        jabez.henrique@supervisor.com
+                        {user.email}
                     </p>
                     </div>
                 </DropdownMenuLabel>
@@ -169,10 +183,14 @@ export default function SupervisorLayout({
                     <span>Ajuda</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair</span>
-                </DropdownMenuItem>
+                 <form action={logoutUser}>
+                    <button type="submit" className='w-full'>
+                        <DropdownMenuItem>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Sair</span>
+                        </DropdownMenuItem>
+                    </button>
+                 </form>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

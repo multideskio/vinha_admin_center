@@ -37,6 +37,9 @@ import {
 import { validateRequest } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { logoutUser } from '@/actions/auth';
+import { db } from '@/db/drizzle';
+import { adminProfiles } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 
 export const metadata: Metadata = {
@@ -88,18 +91,15 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  /*
   const { user } = await validateRequest();
 
   if (!user) {
     return redirect('/auth/login');
   }
 
-  if (user.role !== 'admin') {
-    await logoutUser();
-    return redirect('/auth/login');
-  }
-  */
+  const [profile] = await db.select().from(adminProfiles).where(eq(adminProfiles.userId, user.id));
+  const userName = profile?.firstName || 'Admin';
+  const userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -165,10 +165,10 @@ export default async function AdminLayout({
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src="https://placehold.co/32x32.png"
-                    alt="@paulo"
+                    alt={`@${userName}`}
                     data-ai-hint="user avatar"
                   />
-                  <AvatarFallback>P</AvatarFallback>
+                  <AvatarFallback>{userFallback}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
@@ -177,10 +177,10 @@ export default async function AdminLayout({
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                        Bem vindo Paulo!
+                        Bem vindo {userName}!
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        paulo@exemplo.com
+                        {user.email}
                     </p>
                     </div>
                 </DropdownMenuLabel>

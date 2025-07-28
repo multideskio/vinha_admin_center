@@ -29,6 +29,12 @@ import {
   ArrowRightLeft,
   Handshake,
 } from 'lucide-react';
+import { validateRequest } from '@/lib/auth';
+import { db } from '@/db/drizzle';
+import { churchProfiles } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { logoutUser } from '@/actions/auth';
+import { redirect } from 'next/navigation';
 
 
 export const metadata: Metadata = {
@@ -68,11 +74,19 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
   );
 
-export default function ChurchLayout({
+export default async function ChurchLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+    const { user } = await validateRequest();
+    if (!user) {
+        return redirect('/auth/login');
+    }
+    const [profile] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, user.id));
+    const userName = profile?.nomeFantasia || 'Igreja';
+    const userFallback = profile?.nomeFantasia?.substring(0, 2) || 'IG';
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <IgrejaSidebar />
@@ -137,10 +151,10 @@ export default function ChurchLayout({
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src="https://placehold.co/32x32.png"
-                    alt="@igreja"
+                    alt={`@${userName}`}
                     data-ai-hint="church building"
                   />
-                  <AvatarFallback>IM</AvatarFallback>
+                  <AvatarFallback>{userFallback}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
@@ -149,10 +163,10 @@ export default function ChurchLayout({
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                        Igreja Madureira
+                        {userName}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        contato@admadureira.com
+                        {user.email}
                     </p>
                     </div>
                 </DropdownMenuLabel>
@@ -166,10 +180,14 @@ export default function ChurchLayout({
                     <span>Ajuda</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair</span>
-                </DropdownMenuItem>
+                 <form action={logoutUser}>
+                    <button type="submit" className='w-full'>
+                        <DropdownMenuItem>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Sair</span>
+                        </DropdownMenuItem>
+                    </button>
+                 </form>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
