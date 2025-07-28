@@ -12,6 +12,7 @@ import {
   Globe,
   Youtube,
   MessageCircle,
+  AlertCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -36,7 +37,17 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select"
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+
 
 const companyProfileSchema = z.object({
   cnpj: z.string().optional(),
@@ -54,7 +65,19 @@ const companyProfileSchema = z.object({
   website: z.string().url().optional().or(z.literal('')),
 });
 
+const smtpSchema = z.object({
+    senderName: z.string().min(1, "O nome do remetente é obrigatório."),
+    senderEmail: z.string().email("E-mail do remetente inválido."),
+    smtpHost: z.string().min(1, "O host SMTP é obrigatório."),
+    smtpLogin: z.string().min(1, "O login SMTP é obrigatório."),
+    smtpPassword: z.string().min(1, "A senha SMTP é obrigatória."),
+    smtpPort: z.coerce.number().min(1, "A porta SMTP é obrigatória."),
+    smtpProtocol: z.enum(["TLS", "SSL"]),
+    enableWhatsapp: z.boolean().default(false),
+});
+
 type CompanyProfile = z.infer<typeof companyProfileSchema>;
+type SmtpProfile = z.infer<typeof smtpSchema>;
 
 const companyData: CompanyProfile = {
   cnpj: '00.000.000/0001-00',
@@ -72,18 +95,39 @@ const companyData: CompanyProfile = {
   website: 'https://youtube.com',
 };
 
+const smtpData: SmtpProfile = {
+    senderName: "Multidesk.io",
+    senderEmail: "igrsysten@gmail.com",
+    smtpHost: "smtp.gmail.com",
+    smtpLogin: "seu-email@email.com",
+    smtpPassword: "•••••",
+    smtpPort: 587,
+    smtpProtocol: "TLS",
+    enableWhatsapp: true,
+};
+
 
 export default function ConfiguracoesPage() {
 
-    const form = useForm<CompanyProfile>({
+    const profileForm = useForm<CompanyProfile>({
         resolver: zodResolver(companyProfileSchema),
         defaultValues: companyData,
-      });
+    });
 
-      const onSubmit = (data: CompanyProfile) => {
-        console.log(data);
+    const smtpForm = useForm<SmtpProfile>({
+        resolver: zodResolver(smtpSchema),
+        defaultValues: smtpData
+    });
+
+    const onProfileSubmit = (data: CompanyProfile) => {
+        console.log("Profile data:", data);
         // Handle form submission
-      };
+    };
+
+    const onSmtpSubmit = (data: SmtpProfile) => {
+        console.log("SMTP data:", data);
+        // Handle SMTP form submission
+    };
 
   return (
     <div className="flex flex-col gap-4">
@@ -179,11 +223,11 @@ export default function ConfiguracoesPage() {
             <TabsContent value="profile">
                 <Card>
                 <CardContent className="pt-6">
-                    <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Form {...profileForm}>
+                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <FormField
-                                control={form.control}
+                                control={profileForm.control}
                                 name="cnpj"
                                 render={({ field }) => (
                                 <FormItem>
@@ -196,7 +240,7 @@ export default function ConfiguracoesPage() {
                                 )}
                             />
                             <FormField
-                                control={form.control}
+                                control={profileForm.control}
                                 name="establishmentName"
                                 render={({ field }) => (
                                 <FormItem>
@@ -211,7 +255,7 @@ export default function ConfiguracoesPage() {
                         </div>
 
                         <FormField
-                            control={form.control}
+                            control={profileForm.control}
                             name="supportEmail"
                             render={({ field }) => (
                             <FormItem>
@@ -226,7 +270,7 @@ export default function ConfiguracoesPage() {
                         
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                              <FormField
-                                control={form.control}
+                                control={profileForm.control}
                                 name="landline"
                                 render={({ field }) => (
                                 <FormItem>
@@ -239,7 +283,7 @@ export default function ConfiguracoesPage() {
                                 )}
                             />
                              <FormField
-                                control={form.control}
+                                control={profileForm.control}
                                 name="whatsapp"
                                 render={({ field }) => (
                                 <FormItem>
@@ -255,19 +299,19 @@ export default function ConfiguracoesPage() {
 
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <FormField control={form.control} name="cep" render={({ field }) => (
+                            <FormField control={profileForm.control} name="cep" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>CEP</FormLabel>
                                     <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
-                            <FormField control={form.control} name="uf" render={({ field }) => (
+                            <FormField control={profileForm.control} name="uf" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>UF</FormLabel>
                                     <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
-                            <FormField control={form.control} name="city" render={({ field }) => (
+                            <FormField control={profileForm.control} name="city" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cidade</FormLabel>
                                     <FormControl><Input {...field} /></FormControl>
@@ -276,13 +320,13 @@ export default function ConfiguracoesPage() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                            <FormField control={profileForm.control} name="neighborhood" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Bairro</FormLabel>
                                     <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
-                            <FormField control={form.control} name="complement" render={({ field }) => (
+                            <FormField control={profileForm.control} name="complement" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Complemento</FormLabel>
                                     <FormControl><Input {...field} /></FormControl>
@@ -307,7 +351,131 @@ export default function ConfiguracoesPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p>Formulário de configuração de SMTP aqui.</p>
+                    <Form {...smtpForm}>
+                        <form onSubmit={smtpForm.handleSubmit(onSmtpSubmit)} className="space-y-6">
+                        <Alert variant="default" className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+                            <AlertCircle className="h-4 w-4 text-blue-500" />
+                            <AlertTitle>Atenção!</AlertTitle>
+                            <AlertDescription>
+                                Essas informações são necessárias para melhor desempendo do sistema.
+                            </AlertDescription>
+                        </Alert>
+                        <FormField
+                            control={smtpForm.control}
+                            name="senderName"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nome remetente</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={smtpForm.control}
+                            name="senderEmail"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email remetente</FormLabel>
+                                <FormControl><Input type="email" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={smtpForm.control}
+                            name="smtpHost"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>SMTP Host</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={smtpForm.control}
+                            name="smtpLogin"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>SMTP Login</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={smtpForm.control}
+                            name="smtpPassword"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>SMTP Password</FormLabel>
+                                <FormControl><Input type="password" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                            <FormField
+                                control={smtpForm.control}
+                                name="smtpPort"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>SMTP Porta</FormLabel>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={smtpForm.control}
+                                name="smtpProtocol"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Protocolo</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Selecione..." />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="TLS">TLS</SelectItem>
+                                        <SelectItem value="SSL">SSL</SelectItem>
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={smtpForm.control}
+                            name="enableWhatsapp"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">
+                                            Ativar botão de suporte do WhatsApp
+                                        </FormLabel>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="flex gap-2">
+                          <Button type="submit">Atualizar SMTP</Button>
+                          <Button type="button" variant="secondary">Testar envio de e-mail</Button>
+                        </div>
+
+                        </form>
+                    </Form>
                 </CardContent>
                 </Card>
             </TabsContent>
@@ -330,5 +498,3 @@ export default function ConfiguracoesPage() {
     </div>
   );
 }
-
-    
