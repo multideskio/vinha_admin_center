@@ -35,23 +35,25 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Transaction = {
   id: string;
-  contributor: string;
   amount: number;
+  type: 'Dízimo' | 'Oferta';
+  description?: string;
   method: 'Pix' | 'Cartão de Crédito' | 'Boleto';
   status: 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada';
   date: string;
 };
 
 const transactions: Transaction[] = [
-    { id: 'TRN-001', contributor: 'João Silva', amount: 150.00, method: 'Pix', status: 'Aprovada', date: '28/07/2024' },
-    { id: 'TRN-002', contributor: 'Maria Oliveira', amount: 75.50, method: 'Cartão de Crédito', status: 'Aprovada', date: '28/07/2024' },
-    { id: 'TRN-003', contributor: 'Carlos Andrade', amount: 200.00, method: 'Boleto', status: 'Pendente', date: '27/07/2024' },
-    { id: 'TRN-004', contributor: 'Ana Beatriz', amount: 50.00, method: 'Pix', status: 'Aprovada', date: '27/07/2024' },
-    { id: 'TRN-005', contributor: 'Paulo Ferreira', amount: 300.00, method: 'Cartão de Crédito', status: 'Recusada', date: '26/07/2024' },
-    { id: 'TRN-006', contributor: 'Jabez Henrique', amount: 120.00, method: 'Pix', status: 'Aprovada', date: '26/07/2024' },
+    { id: 'TRN-001', amount: 150.00, type: 'Dízimo', method: 'Pix', status: 'Aprovada', date: '28/07/2024' },
+    { id: 'TRN-002', amount: 75.50, type: 'Oferta', description: 'Oferta para o dia das mães', method: 'Cartão de Crédito', status: 'Aprovada', date: '28/07/2024' },
+    { id: 'TRN-003', amount: 200.00, type: 'Dízimo', method: 'Boleto', status: 'Pendente', date: '27/07/2024' },
+    { id: 'TRN-004', amount: 50.00, type: 'Oferta', method: 'Pix', status: 'Aprovada', date: '27/07/2024' },
+    { id: 'TRN-005', amount: 300.00, type: 'Dízimo', method: 'Cartão de Crédito', status: 'Recusada', date: '26/07/2024' },
+    { id: 'TRN-006', amount: 120.00, type: 'Oferta', description: 'Construção do templo', method: 'Pix', status: 'Aprovada', date: '26/07/2024' },
 ];
 
 export default function TransacoesPage() {
@@ -60,14 +62,6 @@ export default function TransacoesPage() {
       <Card>
         <CardContent className="pt-6">
             <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
-                <div className="relative flex-1 sm:flex-initial">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                    type="search"
-                    placeholder="Buscar por contribuinte..."
-                    className="pl-8 w-full sm:w-[250px]"
-                    />
-                </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-1">
@@ -93,7 +87,8 @@ export default function TransacoesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Contribuinte</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="hidden md:table-cell">Descrição</TableHead>
                 <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
@@ -105,7 +100,23 @@ export default function TransacoesPage() {
             <TableBody>
               {transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">{transaction.contributor}</TableCell>
+                  <TableCell className="font-medium">{transaction.type}</TableCell>
+                   <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {transaction.description ? (
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <span className='truncate max-w-[150px] inline-block'>{transaction.description}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {transaction.description}
+                                </TooltipContent>
+                            </Tooltip>
+                         </TooltipProvider>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                   <Badge variant={transaction.status === 'Aprovada' ? 'default' 
@@ -146,3 +157,4 @@ export default function TransacoesPage() {
     </div>
   );
 }
+
