@@ -34,6 +34,8 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const contributionSchema = z.object({
@@ -41,6 +43,10 @@ const contributionSchema = z.object({
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto'], {
     required_error: 'Selecione um método de pagamento.',
   }),
+  contributionType: z.enum(['dizimo', 'oferta'], {
+    required_error: 'Selecione o tipo de contribuição.'
+  }),
+  description: z.string().optional(),
 });
 
 type ContributionFormValues = z.infer<typeof contributionSchema>;
@@ -63,6 +69,7 @@ export default function ContribuicoesPage() {
     defaultValues: {
         paymentMethod: 'pix',
         amount: 0,
+        description: '',
     },
   });
 
@@ -177,7 +184,7 @@ export default function ContribuicoesPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleProceedToPayment)} className="space-y-8">
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <div className="space-y-6">
+                 <div className="space-y-6">
                     <FormField
                         control={form.control}
                         name="amount"
@@ -190,6 +197,43 @@ export default function ContribuicoesPage() {
                                         <Input type="number" placeholder="0,00" className="pl-9" {...field} />
                                     </div>
                                 </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="contributionType"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Tipo de Contribuição</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o tipo" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="dizimo">Dízimo</SelectItem>
+                                    <SelectItem value="oferta">Oferta</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Descrição (Opcional)</FormLabel>
+                            <FormControl>
+                                <Textarea
+                                placeholder="Descreva o propósito da contribuição..."
+                                {...field}
+                                />
+                            </FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
@@ -356,3 +400,5 @@ export default function ContribuicoesPage() {
     </div>
   );
 }
+
+    
