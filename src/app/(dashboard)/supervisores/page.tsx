@@ -689,16 +689,16 @@ export default function SupervisoresPage() {
             return (
                 <Card key={supervisor.id}>
                     <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex flex-wrap gap-4">
                         <Image
-                        src="https://placehold.co/128x128.png"
+                        src="https://placehold.co/96x96.png"
                         alt={`Foto de ${supervisor.firstName}`}
-                        width={128}
-                        height={128}
-                        className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32"
+                        width={96}
+                        height={96}
+                        className="rounded-lg object-cover w-24 h-24"
                         data-ai-hint="male person"
                         />
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-2 min-w-[200px]">
                         <h3 className="text-lg font-bold">
                             #{index + 1} - {supervisor.firstName} {supervisor.lastName}
                         </h3>
