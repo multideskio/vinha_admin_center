@@ -27,9 +27,7 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
 
     const { email, password } = validatedFields.data;
 
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email),
-    });
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email));
 
     if (!existingUser) {
         console.error(`[AUTH_DEBUG] Usuário com e-mail ${email} não encontrado no banco de dados.`);
