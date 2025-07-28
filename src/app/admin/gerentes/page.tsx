@@ -13,6 +13,9 @@ import {
   Mail,
   MapPin,
   Pencil,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -25,9 +28,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -80,9 +80,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const managerSchema = z.object({
-  id: z.string().optional(),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
   cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
@@ -94,70 +95,25 @@ const managerSchema = z.object({
   address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
   titheDay: z.coerce.number().min(1).max(31),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-  status: z.enum(['active', 'inactive']),
 });
 
-type Manager = z.infer<typeof managerSchema>;
-
-const initialManagers: Manager[] = [
-  {
-    id: 'mgr-01',
-    firstName: 'João',
-    lastName: 'Silva',
-    email: 'joao.silva@example.com',
-    phone: '(11) 98765-4321',
-    status: 'active',
-    cpf: '111.222.333-44',
-    cep: '01001-000',
-    state: 'SP',
-    city: 'São Paulo',
-    neighborhood: 'Centro',
-    address: 'Av. Paulista, 1000',
-    titheDay: 10,
-  },
-  {
-    id: 'mgr-02',
-    firstName: 'Maria',
-    lastName: 'Oliveira',
-    email: 'maria.oliveira@example.com',
-    phone: '(21) 91234-5678',
-    status: 'inactive',
-    cpf: '222.333.444-55',
-    cep: '20040-001',
-    state: 'RJ',
-    city: 'Rio de Janeiro',
-    neighborhood: 'Copacabana',
-    address: 'Av. Atlântica, 2000',
-    titheDay: 5,
-  },
-  {
-    id: 'mgr-03',
-    firstName: 'Paulo',
-    lastName: 'Ferreira',
-    email: 'multidesk.io@gmail.com',
-    phone: '(62) 98115-4120',
-    status: 'active',
-    cpf: '037.628.391-23',
-    cep: '75264-230',
-    state: 'GO',
-    city: 'Senador Canedo',
-    neighborhood: 'Terrabela Cerrado I',
-    address: 'Rua RP 15',
-    titheDay: 10,
-  },
-];
+export type Manager = z.infer<typeof managerSchema> & {
+    id: string;
+    status: 'active' | 'inactive';
+}
 
 const GerenteFormModal = ({
   onSave,
   children,
 }: {
-  onSave: (data: Manager) => void;
+  onSave: () => void;
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<Manager>({
+  const form = useForm<z.infer<typeof managerSchema>>({
     resolver: zodResolver(managerSchema),
     defaultValues: {
       firstName: '',
@@ -171,32 +127,42 @@ const GerenteFormModal = ({
       address: '',
       titheDay: 1,
       phone: '',
-      status: 'active',
     },
   });
 
   React.useEffect(() => {
     if (isOpen) {
-      form.reset({
-        firstName: '',
-        lastName: '',
-        cpf: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        titheDay: 1,
-        phone: '',
-        status: 'active',
-      });
+      form.reset();
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Manager) => {
-    onSave(data);
-    setIsOpen(false);
+  const handleSave = async (data: z.infer<typeof managerSchema>) => {
+    try {
+        const response = await fetch('/api/v1/gerentes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if(!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Falha ao cadastrar gerente.');
+        }
+
+        toast({
+            title: 'Sucesso!',
+            description: 'Gerente cadastrado com sucesso.',
+            variant: 'success'
+        });
+        onSave();
+        setIsOpen(false);
+    } catch (error: any) {
+        toast({
+            title: 'Erro',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   };
 
   const formatCPF = (value: string) => {
@@ -467,22 +433,219 @@ const GerenteFormModal = ({
 };
 
 export default function GerentesPage() {
-  const [managers, setManagers] = React.useState<Manager[]>(initialManagers);
+  const [managers, setManagers] = React.useState<Manager[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = viewMode === 'table' ? 10 : 9;
 
-  const handleSave = (data: Manager) => {
-    // Create new manager
-    const newManager: Manager = {
-      ...data,
-      id: `mgr-${Date.now()}`,
-      status: 'active',
-    };
-    setManagers([...managers, newManager]);
+  const { toast } = useToast();
+
+  const fetchManagers = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/v1/gerentes');
+        if(!response.ok) throw new Error("Failed to fetch managers");
+        const data = await response.json();
+        setManagers(data.managers);
+    } catch (error) {
+        toast({ title: "Erro", description: "Não foi possível carregar os gerentes.", variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchManagers();
+  }, [fetchManagers]);
+
+  const handleDelete = async (managerId: string) => {
+    try {
+        const response = await fetch(`/api/v1/gerentes/${managerId}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Failed to delete manager');
+        toast({ title: "Sucesso!", description: 'Gerente excluído com sucesso.', variant: 'success' });
+        fetchManagers();
+    } catch(error) {
+        toast({ title: "Erro", description: 'Não foi possível excluir o gerente.', variant: 'destructive'});
+    }
   };
 
-  const handleDelete = (managerId: string) => {
-    setManagers(managers.filter((m) => m.id !== managerId));
+  const filteredManagers = managers.filter(manager => 
+    `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredManagers.length / itemsPerPage);
+  const paginatedManagers = filteredManagers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const TableView = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Celular</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead><span className="sr-only">Ações</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                ))
+            ) : paginatedManagers.length > 0 ? (
+              paginatedManagers.map((manager) => (
+                <TableRow key={manager.id}>
+                  <TableCell className="font-medium">{`${manager.firstName} ${manager.lastName}`}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{manager.email}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{manager.phone}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Badge variant={manager.status === 'active' ? 'success' : 'destructive'}>
+                      {manager.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/gerentes/${manager.id}`}>Editar</Link>
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                              Excluir
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                              <AlertDialogDescription>Essa ação não pode ser desfeita. Isso excluirá permanentemente o gerente.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(manager.id!)}>Continuar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center">Nenhum gerente encontrado.</TableCell>
+                </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <PaginationControls />
+      </CardContent>
+    </Card>
+  );
+
+  const CardView = () => (
+    <>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                    <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+                ))
+            ) : paginatedManagers.length > 0 ? (
+                paginatedManagers.map((manager, index) => (
+                    <Card key={manager.id}>
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <Image
+                                src="https://placehold.co/128x128.png"
+                                alt={`Foto de ${manager.firstName}`}
+                                width={128}
+                                height={128}
+                                className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32"
+                                data-ai-hint="handshake business"
+                            />
+                        <div className="flex-1 space-y-2">
+                            <h3 className="text-lg font-bold">
+                            #{index + 1} - {manager.firstName} {manager.lastName}
+                            </h3>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{manager.cpf}</span></p>
+                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{manager.phone}</span></p>
+                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{manager.email}</span></p>
+                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{manager.city} - {manager.state}</span></p>
+                            </div>
+                        </div>
+                        </div>
+                        <div className="flex justify-end mt-4">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={`/admin/gerentes/${manager.id}`}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
+                            </Link>
+                        </Button>
+                        </div>
+                    </CardContent>
+                    </Card>
+                ))
+            ) : (
+                <div className="col-span-full text-center">Nenhum gerente encontrado.</div>
+            )}
+        </div>
+        <PaginationControls />
+    </>
+  );
+
+  const PaginationControls = () => (
+    <div className="flex items-center justify-end space-x-2 py-4">
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1 || isLoading}
+        >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+        </Button>
+        <span className='text-sm text-muted-foreground'>
+            Página {currentPage} de {totalPages}
+        </span>
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages || isLoading}
+        >
+            Próximo
+            <ChevronRight className="h-4 w-4" />
+        </Button>
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -492,19 +655,23 @@ export default function GerentesPage() {
             Gerentes
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {managers.length} de {managers.length} resultados
+            Exibindo {filteredManagers.length} de {managers.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
+            <div className='relative'>
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+                <Input 
+                    placeholder="Buscar por nome..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                />
+            </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 w-8"
-                >
+                <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('table')} className="h-8 w-8">
                   <List className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -512,12 +679,7 @@ export default function GerentesPage() {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('card')}
-                  className="h-8 w-8"
-                >
+                <Button variant={viewMode === 'card' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('card')} className="h-8 w-8">
                   <Grid3x3 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -525,7 +687,7 @@ export default function GerentesPage() {
             </Tooltip>
           </TooltipProvider>
 
-          <GerenteFormModal onSave={handleSave}>
+          <GerenteFormModal onSave={fetchManagers}>
             <Button size="sm" className="gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -536,130 +698,8 @@ export default function GerentesPage() {
         </div>
       </div>
 
-      {viewMode === 'table' ? (
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Celular</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {managers.map((manager) => (
-                  <TableRow key={manager.id}>
-                    <TableCell className="font-medium">{`${manager.firstName} ${manager.lastName}`}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {manager.email}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {manager.phone}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge
-                        variant={
-                          manager.status === 'active' ? 'default' : 'secondary'
-                        }
-                        className={
-                          manager.status === 'active'
-                            ? 'bg-green-500/20 text-green-700 border-green-400'
-                            : 'bg-red-500/20 text-red-700 border-red-400'
-                        }
-                      >
-                        {manager.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/gerentes/${manager.id}`}>Editar</Link>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                                Excluir
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Você tem certeza?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o gerente.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(manager.id!)}
-                                >
-                                  Continuar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {managers.map((manager, index) => (
-            <Card key={manager.id}>
-              <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <Image
-                      src="https://placehold.co/128x128.png"
-                      alt={`Foto de ${manager.firstName}`}
-                      width={128}
-                      height={128}
-                      className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32"
-                      data-ai-hint="handshake business"
-                    />
-                  <div className="flex-1 space-y-2">
-                    <h3 className="text-lg font-bold">
-                      #{index + 1} - {manager.firstName} {manager.lastName}
-                    </h3>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                        <p className='flex items-center gap-2'><FileText size={14} /> <span>{manager.cpf}</span></p>
-                        <p className='flex items-center gap-2'><Phone size={14} /> <span>{manager.phone}</span></p>
-                        <p className='flex items-center gap-2'><Mail size={14} /> <span>{manager.email}</span></p>
-                        <p className='flex items-center gap-2'><MapPin size={14} /> <span>{manager.city} - {manager.state}</span></p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end mt-4">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/gerentes/${manager.id}`}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Editar
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   );
 }
+

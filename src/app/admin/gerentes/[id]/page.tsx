@@ -13,9 +13,10 @@ import {
   AlertTriangle,
   Info,
   Lock,
+  Loader2,
 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,57 +40,107 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const managerProfileSchema = z.object({
-  firstName: z.string().min(1, 'O nome é obrigatório.'),
-  lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
-  cpf: z.string(),
-  phone: z.string(),
-  landline: z.string().optional(),
-  email: z.string().email('E-mail inválido.'),
-  cep: z.string(),
-  state: z.string(),
-  city: z.string(),
-  neighborhood: z.string(),
-  address: z.string(),
-  titheDay: z.coerce.number(),
-  password: z.string().optional(),
-  facebook: z.string().url().optional().or(z.literal('')),
-  instagram: z.string().url().optional().or(z.literal('')),
-  website: z.string().url().optional().or(z.literal('')),
-});
+    firstName: z.string().min(1, 'O nome é obrigatório.'),
+    lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
+    cpf: z.string().optional(),
+    phone: z.string().min(1, 'O celular é obrigatório.'),
+    landline: z.string().optional(),
+    email: z.string().email('E-mail inválido.'),
+    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
+    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
+    city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
+    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
+    address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
+    titheDay: z.coerce.number().min(1).max(31),
+    newPassword: z.string().optional(),
+    facebook: z.string().url().optional().or(z.literal('')),
+    instagram: z.string().url().optional().or(z.literal('')),
+    website: z.string().url().optional().or(z.literal('')),
+  });
 
-type ManagerProfile = z.infer<typeof managerProfileSchema>;
-
-// Mock data for a single manager
-const managerData: ManagerProfile = {
-  firstName: 'Paulo',
-  lastName: 'Ferreira',
-  cpf: '037.628.391-23',
-  phone: '(62) 98115-4120',
-  landline: '(00) 0000-0000',
-  email: 'multidesk.io@gmail.com',
-  cep: '75264-230',
-  state: 'GO',
-  city: 'Senador Canedo',
-  neighborhood: 'Terrabela Cerrado I',
-  address: 'Rua RP 15',
-  titheDay: 10,
-  facebook: 'https://facebook.com.br',
-  instagram: 'https://instagram.com',
-  website: 'https://website.com',
+type ManagerProfile = z.infer<typeof managerProfileSchema> & {
+    id: string;
+    status: string;
 };
 
 export default function GerenteProfilePage() {
-  const form = useForm<ManagerProfile>({
-    resolver: zodResolver(managerProfileSchema),
-    defaultValues: managerData,
-  });
+    const [manager, setManager] = React.useState<ManagerProfile | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const params = useParams();
+    const router = useRouter();
+    const { id } = params;
+    const { toast } = useToast();
 
-  const onSubmit = (data: ManagerProfile) => {
-    console.log(data);
-    // Handle form submission
+    const form = useForm<z.infer<typeof managerProfileSchema>>({
+        resolver: zodResolver(managerProfileSchema),
+    });
+
+    React.useEffect(() => {
+        const fetchManager = async () => {
+        if (!id) return;
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/v1/gerentes/${id}`);
+            if (!response.ok) throw new Error('Failed to fetch manager data');
+            const data = await response.json();
+            setManager(data);
+            form.reset(data);
+        } catch (error) {
+            toast({ title: 'Erro', description: 'Não foi possível carregar os dados do gerente.', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+        };
+
+        fetchManager();
+    }, [id, form, toast]);
+
+    const onSubmit = async (data: z.infer<typeof managerProfileSchema>) => {
+        try {
+            const response = await fetch(`/api/v1/gerentes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) throw new Error('Failed to update manager.');
+            toast({ title: 'Sucesso', description: 'Gerente atualizado com sucesso.', variant: 'success' });
+        } catch (error) {
+            toast({ title: 'Erro', description: 'Não foi possível atualizar o gerente.', variant: 'destructive'});
+        }
   };
+
+  const handleDelete = async () => {
+    try {
+        const response = await fetch(`/api/v1/gerentes/${id}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Failed to delete manager');
+        toast({ title: "Sucesso!", description: 'Gerente excluído com sucesso.', variant: 'success' });
+        router.push('/admin/gerentes');
+    } catch(error) {
+        toast({ title: "Erro", description: 'Não foi possível excluir o gerente.', variant: 'destructive'});
+    }
+  }
+  
+  if (isLoading) {
+    return (
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+             <div className="lg:col-span-1">
+                <Card><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+             </div>
+             <div className="lg:col-span-2">
+                <Card><CardContent className="pt-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+             </div>
+        </div>
+    )
+  }
+
+  if (!manager) {
+    return <p>Gerente não encontrado.</p>;
+  }
+
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -99,8 +150,8 @@ export default function GerenteProfilePage() {
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                <AvatarImage src="https://placehold.co/96x96.png" alt="Paulo" data-ai-hint="male person" />
-                <AvatarFallback>PF</AvatarFallback>
+                <AvatarImage src="https://placehold.co/96x96.png" alt={manager.firstName} data-ai-hint="male person" />
+                <AvatarFallback>{manager.firstName?.[0]}{manager.lastName?.[0]}</AvatarFallback>
               </Avatar>
               <Button
                 variant="outline"
@@ -112,7 +163,7 @@ export default function GerenteProfilePage() {
               </Button>
             </div>
             <h2 className="mt-4 text-xl font-semibold">
-              {managerData.firstName} {managerData.lastName}
+              {manager.firstName} {manager.lastName}
             </h2>
             <p className="text-muted-foreground">Gerente</p>
           </CardContent>
@@ -123,21 +174,21 @@ export default function GerenteProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={managerData.facebook}
+                  defaultValue={manager.facebook || ''}
                   placeholder="https://facebook.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={managerData.instagram}
+                  defaultValue={manager.instagram || ''}
                   placeholder="https://instagram.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={managerData.website}
+                  defaultValue={manager.website || ''}
                   placeholder="https://website.com/..."
                 />
               </div>
@@ -292,24 +343,28 @@ export default function GerenteProfilePage() {
                       </AlertDescription>
                     </Alert>
 
-                     <Alert variant="default" className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
-                        <Info className="h-4 w-4 text-blue-500" />
-                        <AlertDescription className="text-blue-700 dark:text-blue-300">
-                            <strong>Informação</strong> - Escolha uma senha adequada para o usuário
-                        </AlertDescription>
-                    </Alert>
-
-                    <div>
-                        <Label>Atualize a senha do gerente</Label>
-                        <div className="relative mt-1">
-                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input type="password" placeholder="Password" className="pl-9" />
-                        </div>
-                    </div>
-
+                    <FormField
+                      control={form.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Label>Atualize a senha do gerente</Label>
+                           <FormControl>
+                            <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} />
+                            </div>
+                           </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <div className="flex justify-end">
-                      <Button type="submit">Alterar cadastro</Button>
+                      <Button type="submit" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                        Alterar cadastro
+                      </Button>
                     </div>
                   </form>
                 </Form>
@@ -338,7 +393,7 @@ export default function GerenteProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive">Excluir permanentemente</Button>
+                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -347,3 +402,4 @@ export default function GerenteProfilePage() {
     </div>
   );
 }
+
