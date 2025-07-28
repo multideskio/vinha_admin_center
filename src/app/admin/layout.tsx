@@ -88,6 +88,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  /*
   const { user } = await validateRequest();
 
   if (!user) {
@@ -98,6 +99,7 @@ export default async function AdminLayout({
     await logoutUser();
     return redirect('/auth/login');
   }
+  */
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
