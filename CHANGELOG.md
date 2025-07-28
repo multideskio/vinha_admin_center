@@ -2,6 +2,31 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.3] - 2024-07-31
+
+### Adicionado
+
+*   **Sistema de Autenticação Completo:**
+    *   Implementação do `lucia-auth` para gerenciamento de sessões seguras baseadas em cookies.
+    *   Adição da tabela `sessions` ao esquema do banco de dados para armazenar sessões de usuários.
+    *   Criação das Server Actions `loginUser` e `logoutUser` para lidar com o fluxo de autenticação no backend.
+*   **Integração do Login:**
+    *   A página de login (`/auth/login`) agora se comunica com a ação `loginUser` para autenticar os usuários.
+    *   Implementação de um painel de logs na tela de login para exibir o feedback do processo de autenticação, incluindo erros detalhados do backend para facilitar a depuração.
+*   **Redirecionamento Pós-Login:**
+    *   Após o login bem-sucedido, os usuários são automaticamente redirecionados para o dashboard correspondente ao seu perfil (`/admin`, `/gerente`, etc.).
+*   **Exibição de Dados Dinâmicos:**
+    *   O cabeçalho de todos os painéis agora busca e exibe dinamicamente o nome e o e-mail do usuário autenticado.
+*   **Backend para Regiões:**
+    *   Criação das Server Actions (`getRegions`, `saveRegion`, `deleteRegion`) para gerenciar as regiões no banco de dados.
+    *   A página `/admin/regioes` foi totalmente conectada ao backend, permitindo a criação, edição e exclusão de regiões em tempo real.
+
+### Corrigido
+
+*   Corrigido um problema crítico no script de `seed` onde a senha padrão não era carregada corretamente, resultando em hashes de senha inválidos.
+*   Resolvido o problema de a sessão do usuário não persistir entre as navegações, ajustando a lógica de validação de sessão no `lucia.ts`.
+
+
 ## [1.0.2] - 2024-07-30
 
 ### Adicionado

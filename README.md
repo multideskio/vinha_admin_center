@@ -5,11 +5,11 @@ Este é o painel de administração para o sistema Vinha Ministérios.
 
 ## Visão Geral do Projeto
 
-O Vinha Admin Center é uma aplicação completa construída com Next.js e TypeScript, projetada para gerenciar todos os aspectos do sistema de ministérios, incluindo usuários, igrejas, transações e configurações. A interface é construída com **ShadCN/UI** para componentes modernos e responsivos e **Tailwind CSS** para estilização.
+O Vinha Admin Center é uma aplicação completa construída com Next.js e TypeScript, projetada para gerenciar todos os aspectos do sistema de ministérios, incluindo usuários, igrejas, transações e configurações. A interface é construída com **ShadCN/UI** para componentes modernos e responsivos e **Tailwind CSS** para estilização. O backend utiliza **PostgreSQL** com **Drizzle ORM**, e a autenticação é gerenciada de forma segura com **Lucia Auth**.
 
 ## Estrutura de Perfis de Usuário
 
-O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel e permissões:
+O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel e permissões, garantindo que cada usuário tenha acesso apenas às ferramentas e dados relevantes para sua função:
 
 -   **Administrador:** Acesso total a todas as funcionalidades do sistema, incluindo gerenciamento de todos os outros usuários, configurações globais e relatórios.
 -   **Gerente:** Visualiza e gerencia uma rede específica de supervisores, pastores e igrejas.
@@ -19,6 +19,7 @@ O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel 
 
 ## Funcionalidades Principais
 
+-   **Autenticação Segura:** Sistema de login robusto com gerenciamento de sessões e hashing de senhas.
 -   **Dashboards Interativos:** Cada nível de usuário possui um dashboard customizado com KPIs, gráficos e dados relevantes para suas responsabilidades.
 -   **Gerenciamento de Usuários:** CRUD completo para todos os níveis de usuários (Gerentes, Supervisores, Pastores, etc.).
 -   **Gestão Financeira:** Acompanhamento de transações, contribuições (dízimos e ofertas) e relatórios financeiros.

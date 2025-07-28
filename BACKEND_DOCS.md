@@ -6,6 +6,7 @@ Este documento detalha a arquitetura, tecnologias e estrutura do backend da apli
 
 *   **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/) - Um sistema de gerenciamento de banco de dados relacional robusto e de código aberto.
 *   **ORM:** [Drizzle ORM](https://orm.drizzle.team/) - Um ORM "headless" para TypeScript, que nos permite interagir com o banco de dados de forma segura e com tipagem estática.
+*   **Autenticação e Sessões:** [Lucia Auth](https://lucia-auth.com/) - Uma biblioteca de autenticação agnóstica de framework, utilizada para o gerenciamento de sessões e proteção de rotas.
 *   **Segurança de Senhas:** [Bcrypt](https://www.npmjs.com/package/bcrypt) - Biblioteca para fazer o hash de senhas, garantindo que as credenciais nunca sejam armazenadas em texto plano.
 *   **Ambiente de Execução:** [Next.js](https://nextjs.org/) (Server-side) e [Node.js](https://nodejs.org/) para a execução de scripts.
 *   **Gerenciamento de Migrações:** [Drizzle Kit](https://orm.drizzle.team/kit/overview) - Ferramenta de linha de comando para gerar e gerenciar as migrações do banco de dados.
@@ -21,6 +22,9 @@ A tabela `companies` é a "mãe" de toda a estrutura. Ela armazena as configura�
 
 ### Tabela Central: `users`
 A tabela `users` é o pilar da autenticação e identificação. Ela contém as informações essenciais de login (`email`, `password` em hash) e o `role` (perfil) de cada pessoa ou entidade no sistema. Perfis específicos (como administrador, pastor, igreja) são armazenados em tabelas separadas e se relacionam com a tabela `users` através de uma chave estrangeira (`userId`).
+
+### Tabela de Sessões: `sessions`
+Para gerenciar o estado de login dos usuários, a tabela `sessions` armazena as sessões ativas. Ela é gerenciada pelo Lucia Auth e contém o ID da sessão, a referência ao `userId` e a data de expiração.
 
 ### Exclusão Lógica (Soft Delete)
 Para garantir a segurança e a capacidade de auditoria, a maioria das tabelas críticas não apaga os registros permanentemente. Em vez disso, utilizamos o método de *soft delete*. As seguintes colunas estão presentes nessas tabelas:
