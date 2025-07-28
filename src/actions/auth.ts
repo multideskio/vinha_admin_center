@@ -21,16 +21,18 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     const validatedFields = loginSchema.safeParse(values);
 
     if (!validatedFields.success) {
+        const errorMessage = validatedFields.error.flatten().fieldErrors.email?.[0] || validatedFields.error.flatten().fieldErrors.password?.[0] || 'Campos inválidos.';
         console.error('[AUTH_DEBUG] Erro de validação dos campos:', validatedFields.error.flatten());
-        return { error: 'Campos inválidos.' };
+        return { error: errorMessage };
     }
 
     const { email, password } = validatedFields.data;
-
-    const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+    console.log(`[AUTH_DEBUG] Buscando usuário: ${email}`);
+    
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
 
     if (!existingUser) {
-        console.error(`[AUTH_DEBUG] Usuário com e-mail ${email} não encontrado no banco de dados.`);
+        console.error(`[AUTH_DEBUG] Usuário com e-mail ${email} não encontrado.`);
         return { error: 'Credenciais inválidas. Usuário não encontrado.' };
     }
     
@@ -38,20 +40,19 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
 
     if (!existingUser.password) {
         console.error(`[AUTH_DEBUG] Usuário ${email} não possui uma senha cadastrada.`);
-        return { error: 'Credenciais inválidas. Senha não cadastrada.' };
+        return { error: 'Credenciais inválidas. Senha não cadastrada para este usuário.' };
     }
     
-    // Garantindo que a senha seja uma string antes da comparação
+    console.log('[AUTH_DEBUG] Verificando senha...');
     const storedPassword = String(existingUser.password);
     const isPasswordValid = await bcrypt.compare(password, storedPassword);
-    console.log(`[AUTH_DEBUG] A senha fornecida é válida? ${isPasswordValid}`);
-
+    
     if (!isPasswordValid) {
         console.error(`[AUTH_DEBUG] Comparação de senha falhou para o usuário ${email}.`);
-        return { error: 'Credenciais inválidas. Senha não confere.' };
+        return { error: 'Credenciais inválidas. A senha não confere.' };
     }
     
-    console.log(`[AUTH_DEBUG] Senha válida. Criando sessão para o usuário ${email}.`);
+    console.log(`[AUTH_DEBUG] Senha válida. Criando sessão para o usuário ${existingUser.id}.`);
     const session = await lucia.createSession(existingUser.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
     cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
@@ -61,7 +62,7 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
 
   } catch (error: any) {
     console.error('[AUTH_DEBUG] Ocorreu um erro inesperado no servidor:', error);
-    return { error: `Erro no servidor: ${error.message}` };
+    return { error: `Erro do servidor: ${error.message}` };
   }
 }
 
