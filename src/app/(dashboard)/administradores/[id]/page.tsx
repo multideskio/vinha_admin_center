@@ -318,14 +318,22 @@ export default function AdminProfilePage() {
                       </AlertDescription>
                     </Alert>
                     
-                    <div>
-                        <Label>Atualize a senha do administrador</Label>
-                        <div className="relative mt-1">
-                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input type="password" placeholder="Nova Senha" className="pl-9" />
-                        </div>
-                    </div>
-
+                    <FormField
+                      control={form.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Atualize a senha do administrador</FormLabel>
+                          <FormControl>
+                            <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <div className="flex justify-end">
                       <Button type="submit">Alterar cadastro</Button>
@@ -353,4 +361,3 @@ export default function AdminProfilePage() {
     </div>
   );
 }
-

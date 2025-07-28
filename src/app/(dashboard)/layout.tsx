@@ -63,7 +63,7 @@ export default function DashboardLayout({
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                   <Button variant="ghost" className="flex items-center gap-2">
+                   <Button variant="ghost" className="relative flex items-center gap-2 p-1.5 h-auto">
                     <Avatar className="h-8 w-8">
                       <AvatarImage
                         src="https://placehold.co/32x32.png"
