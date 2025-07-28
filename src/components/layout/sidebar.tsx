@@ -23,6 +23,7 @@ import {
   FileText,
   CreditCard,
   Shield,
+  ArrowRightLeft,
 } from 'lucide-react';
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
@@ -47,6 +48,7 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/transacoes', label: 'Transações', icon: ArrowRightLeft },
   { href: '/regioes', label: 'Regiões', icon: Map },
   { href: '/gerentes', label: 'Gerentes', icon: UserCheck },
   { href: '/supervisores', label: 'Supervisores', icon: UserCog },
