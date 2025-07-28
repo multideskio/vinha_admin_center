@@ -2,6 +2,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
+import * as bcrypt from 'bcrypt';
 import * as schema from './schema';
 import {
   users,
@@ -18,6 +19,10 @@ dotenv.config({ path: '.env.local' });
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set in the environment variables");
+}
+
+if (!process.env.DEFAULT_PASSWORD) {
+    throw new Error("DEFAULT_PASSWORD is not set in the environment variables");
 }
 
 const pool = new Pool({
@@ -58,15 +63,15 @@ async function main() {
   ]).returning();
   const centroOeste = seededRegions.find(r => r.name === 'Centro-Oeste')!;
 
-  // Senha padrão para todos: 'password123' (deve ser hasheada em um app real)
-  const defaultPassword = 'password123';
+  // Hash da senha padrão
+  const hashedPassword = await bcrypt.hash(process.env.DEFAULT_PASSWORD!, 10);
 
   // 1. Admin
   console.log('Seeding admin...');
   const [adminUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'admin@vinha.com',
-    password: defaultPassword,
+    password: hashedPassword,
     role: 'admin',
     status: 'active',
   }).returning();
@@ -83,7 +88,7 @@ async function main() {
   const [managerUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'gerente@vinha.com',
-    password: defaultPassword,
+    password: hashedPassword,
     role: 'manager',
     status: 'active',
     titheDay: 10,
@@ -100,7 +105,7 @@ async function main() {
   const [supervisorUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'supervisor@vinha.com',
-    password: defaultPassword,
+    password: hashedPassword,
     role: 'supervisor',
     status: 'active',
     titheDay: 8,
@@ -119,7 +124,7 @@ async function main() {
   const [pastorUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'pastor@vinha.com',
-    password: defaultPassword,
+    password: hashedPassword,
     role: 'pastor',
     status: 'active',
     titheDay: 15,
@@ -137,7 +142,7 @@ async function main() {
   const [churchUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'igreja@vinha.com',
-    password: defaultPassword,
+    password: hashedPassword,
     role: 'church_account',
     status: 'active',
     titheDay: 5,
