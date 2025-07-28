@@ -1,5 +1,36 @@
-# Firebase Studio
 
-This is a NextJS starter in Firebase Studio.
+# Vinha Admin Center
 
-To get started, take a look at src/app/page.tsx.
+Este é o painel de administração para o sistema Vinha Ministérios.
+
+## Visão Geral do Projeto
+
+O Vinha Admin Center é uma aplicação completa construída com Next.js e TypeScript, projetada para gerenciar todos os aspectos do sistema de ministérios, incluindo usuários, igrejas, transações e configurações. A interface é construída com **ShadCN/UI** para componentes modernos e responsivos e **Tailwind CSS** para estilização.
+
+## Estrutura de Perfis de Usuário
+
+O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel e permissões:
+
+-   **Administrador:** Acesso total a todas as funcionalidades do sistema, incluindo gerenciamento de todos os outros usuários, configurações globais e relatórios.
+-   **Gerente:** Visualiza e gerencia uma rede específica de supervisores, pastores e igrejas.
+-   **Supervisor:** Supervisiona um grupo de pastores e igrejas dentro de uma região.
+-   **Pastor:** Gerencia seu próprio perfil, contribuições e pode estar associado a uma ou mais igrejas.
+-   **Igreja:** Gerencia suas próprias informações, finanças e membros.
+
+## Funcionalidades Principais
+
+-   **Dashboards Interativos:** Cada nível de usuário possui um dashboard customizado com KPIs, gráficos e dados relevantes para suas responsabilidades.
+-   **Gerenciamento de Usuários:** CRUD completo para todos os níveis de usuários (Gerentes, Supervisores, Pastores, etc.).
+-   **Gestão Financeira:** Acompanhamento de transações, contribuições (dízimos e ofertas) e relatórios financeiros.
+-   **Configurações de Gateway:** Integração com gateways de pagamento como Cielo e Bradesco.
+-   **Layout Responsivo:** A aplicação é totalmente otimizada para uso em dispositivos móveis e desktops.
+
+## Primeiros Passos
+
+Para iniciar o projeto em ambiente de desenvolvimento, execute o seguinte comando:
+
+```bash
+npm run dev
+```
+
+Isso iniciará o servidor de desenvolvimento do Next.js, geralmente na porta `http://localhost:3000`.

@@ -80,7 +80,7 @@ export default function SupervisorLayout({
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <SupervisorSidebar />
       <div className="flex flex-col">
-      <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
+      <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
            <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -95,7 +95,7 @@ export default function SupervisorLayout({
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
-                  href="#"
+                  href="/supervisor/dashboard"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Logo className="h-6 w-6 text-primary" />
@@ -121,14 +121,14 @@ export default function SupervisorLayout({
               </nav>
             </SheetContent>
           </Sheet>
-          <div className="w-full flex-1">
+          <div className="flex-1">
             <form>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Procurar..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-auto"
                 />
               </div>
             </form>

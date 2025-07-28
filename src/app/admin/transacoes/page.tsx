@@ -77,36 +77,38 @@ export default function TransacoesPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
-            <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
-                <div className="relative flex-1 sm:flex-initial">
+            <div className="flex flex-col sm:flex-row items-center gap-2 pb-4">
+                <div className="relative flex-1 w-full sm:w-auto">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                     type="search"
                     placeholder="Buscar por contribuinte..."
-                    className="pl-8 w-full sm:w-[250px]"
+                    className="pl-8 w-full"
                     />
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1">
-                        <ListFilter className="h-3.5 w-3.5" />
-                        <span className="sr-only sm:not-sr-only">Filtro</span>
+                <div className='flex gap-2 w-full sm:w-auto'>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1 flex-1">
+                            <ListFilter className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only">Filtro</span>
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button size="sm" variant="outline" className="gap-1 flex-1">
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only">Exportar</span>
                     </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                <DateRangePicker />
-                <Button size="sm" variant="outline" className="gap-1">
-                    <Download className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only">Exportar</span>
-                </Button>
+                </div>
+                 <DateRangePicker />
             </div>
           <Table>
             <TableHeader>
