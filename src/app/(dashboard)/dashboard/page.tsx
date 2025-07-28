@@ -97,21 +97,27 @@ const newMembers = [
     { month: 'Jun', count: 180 },
 ]
 
-const revenueByRegion = [
-    { region: 'Sul', revenue: 12500, fill: 'var(--color-chart-1)' },
-    { region: 'Sudeste', revenue: 25000, fill: 'var(--color-chart-2)' },
-    { region: 'Centro-Oeste', revenue: 8900.50, fill: 'var(--color-chart-3)' },
-    { region: 'Norte', revenue: 5500, fill: 'var(--color-chart-4)' },
-    { region: 'Nordeste', revenue: 18750.75, fill: 'var(--color-chart-5)' },
-]
+const regionsData = [
+  { id: 'reg-01', name: 'Sul', color: '#3b82f6', monthlyRevenue: 12500.00, churches: 15 },
+  { id: 'reg-02', name: 'Sudeste', color: '#16a34a', monthlyRevenue: 25000.00, churches: 35 },
+  { id: 'reg-03', name: 'Centro-Oeste', color: '#f97316', monthlyRevenue: 8900.50, churches: 10 },
+  { id: 'reg-04', name: 'Norte', color: '#ef4444', monthlyRevenue: 5500.00, churches: 8 },
+  { id: 'reg-05', name: 'Nordeste', color: '#8b5cf6', monthlyRevenue: 18750.75, churches: 21 },
+];
 
-const churchesByRegion = [
-    { region: 'Sul', count: 15, fill: 'var(--color-chart-1)' },
-    { region: 'Sudeste', count: 35, fill: 'var(--color-chart-2)' },
-    { region: 'Centro-Oeste', count: 10, fill: 'var(--color-chart-3)' },
-    { region: 'Norte', count: 8, fill: 'var(--color-chart-4)' },
-    { region: 'Nordeste', count: 21, fill: 'var(--color-chart-5)' },
-]
+const revenueByRegion = regionsData.map(region => ({
+    region: region.name,
+    revenue: region.monthlyRevenue,
+    fill: region.color
+}));
+
+
+const churchesByRegion = regionsData.map(region => ({
+    region: region.name,
+    count: region.churches,
+    fill: region.color
+}));
+
 
 const recentTransactions = [
     { id: 'TRN-001', name: 'João Silva', amount: 150.00, date: '28/07/2024', status: 'Aprovada' },
