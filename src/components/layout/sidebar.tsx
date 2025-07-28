@@ -49,7 +49,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="icon" className="group/sidebar min-w-[250px] border-r border-sidebar-border text-sidebar-foreground data-[collapsed=true]:min-w-0">
+    <Sidebar collapsible="icon" className="group/sidebar min-w-[250px] border-r border-sidebar-border text-sidebar-foreground data-[collapsed=true]:min-w-[var(--sidebar-width-icon)]">
       <SidebarHeader className="flex h-16 items-center justify-between px-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <Logo className="size-7 shrink-0 text-primary" />

@@ -30,15 +30,10 @@ export default function DashboardLayout({
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-          <div className='flex items-center gap-4'>
-            <SidebarTrigger className="md:hidden">
-                <Menu />
-            </SidebarTrigger>
-            <div className="hidden md:block">
-              <h2 className="text-lg font-semibold">Vinha Ministérios</h2>
-            </div>
-          </div>
-
+          <SidebarTrigger className="md:hidden">
+            <Menu />
+          </SidebarTrigger>
+          
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
             <form className="ml-auto flex-1 sm:flex-initial">
               <div className="relative">
