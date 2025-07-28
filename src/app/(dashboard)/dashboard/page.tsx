@@ -15,12 +15,15 @@ import {
   Pie,
   PieChart,
   Cell,
+  Legend,
 } from 'recharts';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   ChartContainer,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 
@@ -75,13 +78,23 @@ const kpiData = [
   },
 ];
 
-const monthlyRevenue = [
-  { month: 'Jan', revenue: 4000 },
-  { month: 'Fev', revenue: 3000 },
-  { month: 'Mar', revenue: 5000 },
-  { month: 'Abr', revenue: 4500 },
-  { month: 'Mai', revenue: 6000 },
-  { month: 'Jun', revenue: 7000 },
+const monthlyRevenueComparison = [
+    { day: '01', currentMonth: 1200, lastMonth: 1100 },
+    { day: '03', currentMonth: 1500, lastMonth: 1300 },
+    { day: '05', currentMonth: 1800, lastMonth: 1600 },
+    { day: '07', currentMonth: 2200, lastMonth: 1900 },
+    { day: '09', currentMonth: 2500, lastMonth: 2200 },
+    { day: '11', currentMonth: 2300, lastMonth: 2100 },
+    { day: '13', currentMonth: 3000, lastMonth: 2700 },
+    { day: '15', currentMonth: 3400, lastMonth: 3100 },
+    { day: '17', currentMonth: 3700, lastMonth: 3300 },
+    { day: '19', currentMonth: 4000, lastMonth: 3600 },
+    { day: '21', currentMonth: 4200, lastMonth: 3800 },
+    { day: '23', currentMonth: 4500, lastMonth: 4100 },
+    { day: '25', currentMonth: 4800, lastMonth: 4300 },
+    { day: '27', currentMonth: 5100, lastMonth: 4600 },
+    { day: '29', currentMonth: 5500, lastMonth: 4900 },
+    { day: '31', currentMonth: 6000, lastMonth: 5300 },
 ];
 
 const newMembers = [
@@ -109,6 +122,21 @@ const churchesByRegion = [
     { region: 'Nordeste', count: 21, fill: 'var(--color-chart-5)' },
 ]
 
+const chartConfig = {
+    revenue: {
+      label: "Receita",
+    },
+    currentMonth: {
+      label: "Mês Atual",
+      color: "hsl(var(--chart-2))",
+    },
+    lastMonth: {
+      label: "Mês Passado",
+      color: "hsl(var(--chart-1))",
+    },
+  }
+
+
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
@@ -133,24 +161,56 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+      
+       <Card>
+        <CardHeader>
+          <CardTitle>Arrecadação Comparativa</CardTitle>
+          <CardDescription>Mês atual vs. Mês passado</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[350px] w-full">
+            <AreaChart
+              data={monthlyRevenueComparison}
+              margin={{
+                left: 12,
+                right: 12,
+              }}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="day"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => `Dia ${value}`}
+              />
+              <Tooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dot" />}
+              />
+              <Area
+                dataKey="lastMonth"
+                type="natural"
+                fill="var(--color-lastMonth)"
+                fillOpacity={0.4}
+                stroke="var(--color-lastMonth)"
+                stackId="a"
+              />
+              <Area
+                dataKey="currentMonth"
+                type="natural"
+                fill="var(--color-currentMonth)"
+                fillOpacity={0.4}
+                stroke="var(--color-currentMonth)"
+                stackId="a"
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Arrecadação Mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={{}} className="h-[300px] w-full">
-              <AreaChart data={monthlyRevenue} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `R$${value/1000}k`} />
-                <Tooltip content={<ChartTooltipContent indicator="dot" />} />
-                <Area type="monotone" dataKey="revenue" fill="hsl(var(--primary) / 0.2)" stroke="hsl(var(--primary))" />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Novos Membros por Mês</CardTitle>
