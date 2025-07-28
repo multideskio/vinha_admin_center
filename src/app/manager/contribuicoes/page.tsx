@@ -85,6 +85,15 @@ export default function ContribuicoesPage() {
     });
   };
 
+  const handleCopyBoletoCode = () => {
+    const boletoCode = "00190500954014481606906809350314337370000000123";
+    navigator.clipboard.writeText(boletoCode);
+    toast({
+        title: "Copiado!",
+        description: "Código do boleto copiado com sucesso.",
+    });
+  };
+
   // Reset payment details view when payment method or amount changes
   React.useEffect(() => {
     setShowPaymentDetails(false);
@@ -243,7 +252,7 @@ export default function ContribuicoesPage() {
                             <CardTitle>Dados do Cartão</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                            <div className="flex justify-center">
+                            <div className="flex justify-center md:order-2">
                                 <Cards
                                     number={cardState.number}
                                     expiry={cardState.expiry}
@@ -252,7 +261,7 @@ export default function ContribuicoesPage() {
                                     focused={cardState.focus}
                                 />
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-4 md:order-1">
                                 <Input
                                     type="text"
                                     name="number"
@@ -334,7 +343,7 @@ export default function ContribuicoesPage() {
                         <CardContent className="w-full">
                                 <Input value="00190500954014481606906809350314337370000000123" readOnly className="mt-4 text-center" />
                                 <div className='flex gap-2 mt-2'>
-                                    <Button variant="secondary" className="w-full mt-2">Copiar Código</Button>
+                                    <Button variant="secondary" className="w-full mt-2" onClick={handleCopyBoletoCode}>Copiar Código</Button>
                                     <Button className="w-full mt-2">Baixar Boleto</Button>
                                 </div>
                         </CardContent>
