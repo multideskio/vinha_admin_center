@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,6 +6,7 @@ import { MoreHorizontal, PlusCircle, AlertTriangle } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,6 +80,8 @@ type Manager = z.infer<typeof managerSchema>;
 const initialManagers: Manager[] = [
     { id: 'mgr-01', firstName: 'João', lastName: 'Silva', email: 'joao.silva@example.com', phone: '(11) 98765-4321', status: 'active', cpf: '111.222.333-44', cep: '01001-000', state: 'SP', city: 'São Paulo', neighborhood: 'Centro', address: 'Av. Paulista, 1000', titheDay: 10 },
     { id: 'mgr-02', firstName: 'Maria', lastName: 'Oliveira', email: 'maria.oliveira@example.com', phone: '(21) 91234-5678', status: 'inactive', cpf: '222.333.444-55', cep: '20040-001', state: 'RJ', city: 'Rio de Janeiro', neighborhood: 'Copacabana', address: 'Av. Atlântica, 2000', titheDay: 5 },
+    { id: 'mgr-03', firstName: 'Paulo', lastName: 'Ferreira', email: 'multidesk.io@gmail.com', phone: '(62) 98115-4120', status: 'active', cpf: '037.628.391-23', cep: '75264-230', state: 'GO', city: 'Senador Canedo', neighborhood: 'Terrabela Cerrado I', address: 'Rua RP 15', titheDay: 10 },
+
 ];
 
 const GerenteFormModal = ({
@@ -305,19 +309,13 @@ export default function GerentesPage() {
     const [selectedManager, setSelectedManager] = React.useState<Manager | null>(null);
 
     const handleSave = (data: Manager) => {
-        if (selectedManager && data.id) {
-          // Update
-          setManagers(managers.map(m => m.id === data.id ? data : m));
-        } else {
-          // Create
-          const newManager: Manager = {
-            ...data,
-            id: `mgr-${Date.now()}`,
-            status: 'active'
-          };
-          setManagers([...managers, newManager]);
-        }
-        setSelectedManager(null);
+        // Create new manager
+        const newManager: Manager = {
+        ...data,
+        id: `mgr-${Date.now()}`,
+        status: 'active'
+        };
+        setManagers([...managers, newManager]);
       };
 
       const handleDelete = (managerId: string) => {
@@ -385,14 +383,9 @@ export default function GerentesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <GerenteFormModal manager={manager} onSave={handleSave}>
-                            <button
-                                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full"
-                                onClick={() => setSelectedManager(manager)}
-                            >
-                                Editar
-                            </button>
-                        </GerenteFormModal>
+                        <DropdownMenuItem asChild>
+                           <Link href={`/gerentes/${manager.id}`}>Editar</Link>
+                        </DropdownMenuItem>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <button className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
