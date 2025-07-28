@@ -23,6 +23,7 @@ import {
   FileText,
   Building,
   CreditCard,
+  Shield,
 } from 'lucide-react';
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
@@ -52,6 +53,7 @@ const menuItems = [
   { href: '/supervisores', label: 'Supervisores', icon: UserCog },
   { href: '/pastores', label: 'Pastores', icon: User },
   { href: '/igrejas', label: 'Igrejas', icon: Church },
+  { href: '/administradores', label: 'Administradores', icon: Shield },
   { href: '/relatorios', label: 'Relatórios', icon: FileText },
   { href: '/gateways', label: 'Gateways', icon: CreditCard },
   { href: '/configuracoes', label: 'Plataforma', icon: Building },
