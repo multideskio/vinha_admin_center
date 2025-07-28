@@ -53,7 +53,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { getRegions, saveRegion, deleteRegion } from '@/actions/regions';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -72,7 +71,6 @@ export type Region = z.infer<typeof regionSchema> & {
     companyId?: string | null;
     deletedAt?: Date | null;
     deletedBy?: string | null;
-    deletionReason?: string | null;
     createdAt?: Date;
     updatedAt?: Date | null;
 };
@@ -108,14 +106,22 @@ const RegionFormModal = ({
   }, [isOpen, region, form]);
 
   const handleSave = async (data: z.infer<typeof regionSchema>) => {
-    const response = await saveRegion(data);
-    if (response?.error) {
-      toast({
-        title: 'Erro ao salvar região',
-        description: response.error,
-        variant: 'destructive',
+    const method = data.id ? 'PUT' : 'POST';
+    const url = data.id ? `/api/v1/regioes/${data.id}` : '/api/v1/regioes';
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
-    } else {
+
+      if (!response.ok) {
+        throw new Error('Falha ao salvar a região.');
+      }
+
       toast({
         title: 'Sucesso!',
         description: `Região ${data.id ? 'atualizada' : 'criada'} com sucesso.`,
@@ -123,6 +129,12 @@ const RegionFormModal = ({
       });
       onSave();
       setIsOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao salvar região',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -189,12 +201,16 @@ export default function RegioesPage() {
   const fetchRegions = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedRegions = await getRegions();
-      setRegions(fetchedRegions as Region[]);
-    } catch (error) {
+      const response = await fetch('/api/v1/regioes');
+      if (!response.ok) {
+        throw new Error('Falha ao buscar as regiões');
+      }
+      const data = await response.json();
+      setRegions(data.regions);
+    } catch (error: any) {
        toast({
         title: 'Erro ao buscar regiões',
-        description: 'Não foi possível carregar a lista de regiões.',
+        description: error.message,
         variant: 'destructive',
       });
     } finally {
@@ -207,20 +223,25 @@ export default function RegioesPage() {
   }, [fetchRegions]);
 
   const handleDelete = async (id: string) => {
-    const response = await deleteRegion(id);
-    if (response.error) {
+    try {
+      const response = await fetch(`/api/v1/regioes/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Falha ao excluir a região');
+      }
+      toast({
+        title: 'Sucesso!',
+        description: 'Região excluída com sucesso.',
+        variant: 'success',
+      });
+      fetchRegions();
+    } catch (error: any) {
       toast({
         title: 'Erro ao excluir região',
-        description: response.error,
+        description: error.message,
         variant: 'destructive',
       });
-    } else {
-        toast({
-            title: 'Sucesso!',
-            description: 'Região excluída com sucesso.',
-            variant: 'success',
-        });
-      fetchRegions();
     }
   };
 
