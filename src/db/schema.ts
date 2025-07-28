@@ -170,7 +170,7 @@ export const churchProfiles = pgTable('church_profiles', {
     address: varchar('address', { length: 255 }),
     treasurerFirstName: varchar('treasurer_first_name', { length: 100 }),
     treasurerLastName: varchar('treasurer_last_name', { length: 100 }),
-    treasurerCpf: varchar('cpf', { length: 14 }),
+    treasurerCpf: varchar('treasurer_cpf', { length: 14 }),
     facebook: varchar('facebook', { length: 255 }),
     instagram: varchar('instagram', { length: 255 }),
     website: varchar('website', { length: 255 }),
