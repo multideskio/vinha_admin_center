@@ -30,10 +30,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-  } from '@/components/ui/pagination'
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogClose,
+  } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 
 
@@ -56,6 +63,53 @@ const transaction = {
     }
 }
 
+const RefundModal = ({ amount }: { amount: number }) => {
+    const [refundAmount, setRefundAmount] = React.useState(amount.toFixed(2));
+
+    const handleRefund = () => {
+        console.log(`Reembolsando: ${refundAmount}`);
+        // Lógica de reembolso aqui
+    }
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={transaction.status !== 'Aprovada'}>
+                    Reembolso
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Reembolsar Transação</DialogTitle>
+                    <DialogDescription>
+                        Você pode reembolsar o valor total ou parcial da transação.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="amount" className="text-right">
+                            Valor (R$)
+                        </Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            value={refundAmount}
+                            onChange={(e) => setRefundAmount(e.target.value)}
+                            className="col-span-3"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button onClick={handleRefund}>Confirmar Reembolso</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export default function TransacaoDetalhePage() {
     return (
@@ -75,9 +129,7 @@ export default function TransacaoDetalhePage() {
                   {transaction.status}
                 </Badge>
                 <div className="hidden items-center gap-2 md:ml-auto md:flex">
-                  <Button variant="outline" size="sm" disabled={transaction.status !== 'Aprovada'}>
-                    Reembolso
-                  </Button>
+                  <RefundModal amount={transaction.amount} />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="h-8 w-8">
