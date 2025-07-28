@@ -50,6 +50,7 @@ import {
   } from "@/components/ui/alert-dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 type Region = {
   id: string;
@@ -171,14 +172,17 @@ export default function RegioesPage() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
                 Regiões
             </h1>
-            <RegionFormModal onSave={handleSave}>
-                <Button size="sm" className="gap-1">
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Nova Região
-                    </span>
-                </Button>
-            </RegionFormModal>
+            <div className='flex items-center gap-2'>
+                <DateRangePicker />
+                <RegionFormModal onSave={handleSave}>
+                    <Button size="sm" className="gap-1">
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Nova Região
+                        </span>
+                    </Button>
+                </RegionFormModal>
+            </div>
         </div>
       <Card>
         <CardHeader>
