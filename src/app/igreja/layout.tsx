@@ -1,4 +1,5 @@
 
+
 import type { Metadata } from 'next';
 import { IgrejaSidebar } from '@/components/layout/igreja-sidebar';
 import {
@@ -107,6 +108,13 @@ export default function ChurchLayout({
                         {item.label}
                     </Link>
                 ))}
+                 <Link
+                    href={settingsItem.href}
+                    className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                    <settingsItem.icon className="h-5 w-5" />
+                    {settingsItem.label}
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>
