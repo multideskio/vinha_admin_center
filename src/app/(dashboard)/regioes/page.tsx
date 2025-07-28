@@ -1,7 +1,9 @@
+
 'use client';
 
 import * as React from 'react';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,24 +70,22 @@ const initialRegions: Region[] = [
 ];
 
 const RegionFormModal = ({
-    region,
     onSave,
     children,
   }: {
-    region?: Region | null;
     onSave: (name: string, color: string) => void;
     children: React.ReactNode;
   }) => {
-    const [name, setName] = React.useState(region?.name || '');
-    const [color, setColor] = React.useState(region?.color || '#000000');
+    const [name, setName] = React.useState('');
+    const [color, setColor] = React.useState('#000000');
     const [isOpen, setIsOpen] = React.useState(false);
 
     React.useEffect(() => {
         if (isOpen) {
-            setName(region?.name || '');
-            setColor(region?.color || '#000000');
+            setName('');
+            setColor('#000000');
         }
-    }, [isOpen, region])
+    }, [isOpen])
 
     const handleSave = () => {
       onSave(name, color);
@@ -97,9 +97,9 @@ const RegionFormModal = ({
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{region ? 'Editar Região' : 'Nova Região'}</DialogTitle>
+            <DialogTitle>Nova Região</DialogTitle>
             <DialogDescription>
-              {region ? 'Atualize os dados da região.' : 'Preencha os dados da nova região.'}
+              Preencha os dados da nova região.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -141,25 +141,17 @@ const RegionFormModal = ({
 
 export default function RegioesPage() {
     const [regions, setRegions] = React.useState<Region[]>(initialRegions);
-    const [selectedRegion, setSelectedRegion] = React.useState<Region | null>(null);
 
 
     const handleSave = (name: string, color: string) => {
-        if (selectedRegion) {
-          // Update
-          setRegions(regions.map(r => r.id === selectedRegion.id ? { ...r, name, color } : r));
-        } else {
-          // Create
-          const newRegion: Region = {
+        const newRegion: Region = {
             id: `reg-${Date.now()}`,
             name,
             color,
             monthlyRevenue: 0, // Initial revenue for a new region
-          };
-          setRegions([...regions, newRegion]);
-        }
-        setSelectedRegion(null);
-      };
+        };
+        setRegions([...regions, newRegion]);
+    };
 
       const handleDelete = (regionId: string) => {
         setRegions(regions.filter(r => r.id !== regionId));
@@ -229,14 +221,9 @@ export default function RegioesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <RegionFormModal region={region} onSave={handleSave}>
-                            <button
-                                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full"
-                                onClick={() => setSelectedRegion(region)}
-                            >
-                                Editar
-                            </button>
-                        </RegionFormModal>
+                        <DropdownMenuItem asChild>
+                           <Link href={`/regioes/${region.id}`}>Editar</Link>
+                        </DropdownMenuItem>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <button className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">

@@ -61,6 +61,7 @@ const companyProfileSchema = z.object({
   city: z.string().optional(),
   neighborhood: z.string().optional(),
   complement: z.string().optional(),
+  address: z.string().optional(),
   facebook: z.string().url().optional().or(z.literal('')),
   instagram: z.string().url().optional().or(z.literal('')),
   website: z.string().url().optional().or(z.literal('')),
@@ -99,6 +100,7 @@ const companyData: CompanyProfile = {
   city: 'Cidade',
   neighborhood: 'Bairro...',
   complement: 'Quadra, Lote, Número',
+  address: 'Endereço',
   facebook: 'https://facebook.com',
   instagram: 'https://instagram.com',
   website: 'https://youtube.com',
@@ -123,6 +125,9 @@ const whatsappData: WhatsappProfile = {
 
 
 export default function ConfiguracoesPage() {
+    const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+    const [isFetchingCnpj, setIsFetchingCnpj] = React.useState(false);
+
 
     const profileForm = useForm<CompanyProfile>({
         resolver: zodResolver(companyProfileSchema),
@@ -153,6 +158,64 @@ export default function ConfiguracoesPage() {
     const onWhatsappSubmit = (data: WhatsappProfile) => {
         console.log("WhatsApp data:", data);
         // Handle WhatsApp form submission
+    };
+
+    const formatCNPJ = (value: string) => {
+      return value
+        .replace(/\D/g, '')
+        .replace(/(\d{2})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2')
+        .slice(0, 18);
+    };
+
+    const formatCEP = (value: string) => {
+        return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+    };
+
+    const handleCnpjBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+        const cnpj = e.target.value.replace(/\D/g, '');
+        if (cnpj.length !== 14) return;
+
+        setIsFetchingCnpj(true);
+        try {
+        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+        if(response.ok) {
+            const data = await response.json();
+            profileForm.setValue('establishmentName', data.razao_social);
+            profileForm.setValue('cep', formatCEP(data.cep));
+            profileForm.setValue('uf', data.uf);
+            profileForm.setValue('city', data.municipio);
+            profileForm.setValue('neighborhood', data.bairro);
+            profileForm.setValue('address', `${data.logradouro}, ${data.numero}`);
+        }
+        } catch (error) {
+        console.error('Erro ao buscar CNPJ:', error);
+        } finally {
+        setIsFetchingCnpj(false);
+        }
+    };
+
+    const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+        const cep = e.target.value.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+
+        setIsFetchingCep(true);
+        try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+            profileForm.setValue('address', data.logradouro);
+            profileForm.setValue('neighborhood', data.bairro);
+            profileForm.setValue('city', data.localidade);
+            profileForm.setValue('uf', data.uf);
+        }
+        } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+        } finally {
+        setIsFetchingCep(false);
+        }
     };
 
 
@@ -260,7 +323,11 @@ export default function ConfiguracoesPage() {
                                 <FormItem>
                                     <FormLabel>CNPJ</FormLabel>
                                     <FormControl>
-                                    <Input {...field} />
+                                    <Input {...field}
+                                     onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
+                                     onBlur={handleCnpjBlur}
+                                     disabled={isFetchingCnpj}
+                                    />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -273,7 +340,7 @@ export default function ConfiguracoesPage() {
                                 <FormItem>
                                     <FormLabel>Nome do estabelecimento</FormLabel>
                                     <FormControl>
-                                    <Input {...field} />
+                                    <Input {...field} disabled={isFetchingCnpj} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -329,19 +396,23 @@ export default function ConfiguracoesPage() {
                             <FormField control={profileForm.control} name="cep" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>CEP</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} 
+                                        onChange={(e) => field.onChange(formatCEP(e.target.value))}
+                                        onBlur={handleCepBlur}
+                                        disabled={isFetchingCnpj || isFetchingCep}
+                                    /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={profileForm.control} name="uf" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>UF</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} disabled={isFetchingCnpj || isFetchingCep} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={profileForm.control} name="city" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cidade</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} disabled={isFetchingCnpj || isFetchingCep} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -350,19 +421,27 @@ export default function ConfiguracoesPage() {
                             <FormField control={profileForm.control} name="neighborhood" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Bairro</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} disabled={isFetchingCnpj || isFetchingCep} /></FormControl>
                                 </FormItem>
                             )} />
-                            <FormField control={profileForm.control} name="complement" render={({ field }) => (
+                            <FormField control={profileForm.control} name="address" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Complemento</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormLabel>Endereço</FormLabel>
+                                    <FormControl><Input {...field} disabled={isFetchingCnpj || isFetchingCep} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
+                        <FormField control={profileForm.control} name="complement" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Complemento</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                            </FormItem>
+                        )} />
 
                         <div className="flex">
-                          <Button type="submit">Atualizar perfil</Button>
+                          <Button type="submit" disabled={isFetchingCnpj || isFetchingCep}>
+                            {isFetchingCnpj || isFetchingCep ? 'Buscando dados...' : 'Atualizar perfil'}
+                          </Button>
                         </div>
                     </form>
                     </Form>
@@ -574,3 +653,6 @@ export default function ConfiguracoesPage() {
     </div>
   );
 }
+
+
+    
