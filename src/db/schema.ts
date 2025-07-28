@@ -40,7 +40,7 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
   email: varchar('email', { length: 255 }).unique().notNull(),
-  password: varchar('password', { length: 255 }).notNull(),
+  password: text('password').notNull(),
   role: userRoleEnum('role').notNull(),
   status: userStatusEnum('status').default('active').notNull(),
   phone: varchar('phone', { length: 20 }),
