@@ -2,24 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-} from '@/components/ui/sidebar';
-import {
-  LayoutDashboard,
-  Map,
-  UserCheck,
-  UserCog,
-  User,
-  Church,
-  Settings,
-} from 'lucide-react';
+import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
+import { LayoutDashboard, Map, UserCheck, UserCog, User, Church, Settings } from 'lucide-react';
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -31,7 +15,6 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
         <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
     </svg>
 );
-
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -48,7 +31,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="none" className="group/sidebar min-w-[250px] border-r border-sidebar-border text-sidebar-foreground">
+    <Sidebar collapsible="none" className="group/sidebar w-[250px] border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <SidebarHeader className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <Logo className="size-7 shrink-0 text-primary" />
