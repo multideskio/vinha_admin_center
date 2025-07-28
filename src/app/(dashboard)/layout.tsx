@@ -5,7 +5,6 @@ import {
   User,
   LifeBuoy,
   LogOut,
-  Moon,
   ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import Image from 'next/image';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export const metadata: Metadata = {
   title: 'Vinha Admin Center',
@@ -49,18 +49,7 @@ export default function DashboardLayout({
                   />
                 </div>
               </form>
-              <Button variant="ghost" size="icon">
-                <Image
-                  src="https://placehold.co/24x24.png"
-                  alt="Brazil Flag"
-                  width={24}
-                  height={24}
-                  data-ai-hint="brazil flag"
-                />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Moon className="h-5 w-5" />
-              </Button>
+              <ThemeToggle />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                    <Button variant="ghost" className="relative flex items-center gap-2 p-1.5 h-auto">
