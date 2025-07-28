@@ -10,7 +10,8 @@ import {
   supervisorProfiles,
   pastorProfiles,
   churchProfiles,
-  regions
+  regions,
+  companies
 } from './schema';
 
 dotenv.config({ path: '.env.local' });
@@ -36,15 +37,24 @@ async function main() {
   await db.delete(managerProfiles);
   await db.delete(regions);
   await db.delete(users);
+  await db.delete(companies);
+
+  // Criar Empresa
+  console.log('Seeding company...');
+  const [company] = await db.insert(companies).values({
+    name: 'Vinha Ministérios',
+    supportEmail: 'suporte@vinha.com'
+  }).returning();
+
 
   // Criar Regiões
   console.log('Seeding regions...');
   const seededRegions = await db.insert(regions).values([
-    { name: 'Sul', color: '#3b82f6' },
-    { name: 'Sudeste', color: '#16a34a' },
-    { name: 'Centro-Oeste', color: '#f97316' },
-    { name: 'Norte', color: '#ef4444' },
-    { name: 'Nordeste', color: '#8b5cf6' },
+    { name: 'Sul', color: '#3b82f6', companyId: company.id },
+    { name: 'Sudeste', color: '#16a34a', companyId: company.id },
+    { name: 'Centro-Oeste', color: '#f97316', companyId: company.id },
+    { name: 'Norte', color: '#ef4444', companyId: company.id },
+    { name: 'Nordeste', color: '#8b5cf6', companyId: company.id },
   ]).returning();
   const centroOeste = seededRegions.find(r => r.name === 'Centro-Oeste')!;
 
@@ -54,6 +64,7 @@ async function main() {
   // 1. Admin
   console.log('Seeding admin...');
   const [adminUser] = await db.insert(users).values({
+    companyId: company.id,
     email: 'admin@vinha.com',
     password: defaultPassword,
     role: 'admin',
@@ -70,6 +81,7 @@ async function main() {
   // 2. Gerente
   console.log('Seeding manager...');
   const [managerUser] = await db.insert(users).values({
+    companyId: company.id,
     email: 'gerente@vinha.com',
     password: defaultPassword,
     role: 'manager',
@@ -86,6 +98,7 @@ async function main() {
   // 3. Supervisor
   console.log('Seeding supervisor...');
   const [supervisorUser] = await db.insert(users).values({
+    companyId: company.id,
     email: 'supervisor@vinha.com',
     password: defaultPassword,
     role: 'supervisor',
@@ -104,6 +117,7 @@ async function main() {
   // 4. Pastor
   console.log('Seeding pastor...');
   const [pastorUser] = await db.insert(users).values({
+    companyId: company.id,
     email: 'pastor@vinha.com',
     password: defaultPassword,
     role: 'pastor',
@@ -121,6 +135,7 @@ async function main() {
   // 5. Igreja
   console.log('Seeding church...');
   const [churchUser] = await db.insert(users).values({
+    companyId: company.id,
     email: 'igreja@vinha.com',
     password: defaultPassword,
     role: 'church_account',

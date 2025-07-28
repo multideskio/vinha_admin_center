@@ -22,8 +22,17 @@ export const paymentMethodEnum = pgEnum('payment_method', ['pix', 'credit_card',
 
 // Tabelas Principais
 
+export const companies = pgTable('companies', {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    logoUrl: text('logo_url'),
+    supportEmail: varchar('support_email', { length: 255 }),
+    maintenanceMode: boolean('maintenance_mode').default(false).notNull(),
+});
+
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
+  companyId: integer('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
   email: varchar('email', { length: 255 }).unique().notNull(),
   password: text('password').notNull(),
   role: userRoleEnum('role').notNull(),
@@ -36,6 +45,7 @@ export const users = pgTable('users', {
 
 export const regions = pgTable('regions', {
   id: serial('id').primaryKey(),
+  companyId: integer('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
   color: varchar('color', { length: 7 }).notNull(), // Hex color
 });
@@ -155,7 +165,8 @@ export const transactions = pgTable('transactions', {
 // Tabela de Configurações dos Gateways
 export const gatewayConfigurations = pgTable('gateway_configurations', {
     id: serial('id').primaryKey(),
-    gatewayName: varchar('gateway_name', { length: 50 }).unique().notNull(), // 'cielo' or 'bradesco'
+    companyId: integer('company_id').references(() => companies.id).notNull(),
+    gatewayName: varchar('gateway_name', { length: 50 }).notNull(), // 'cielo' or 'bradesco'
     isActive: boolean('is_active').default(false).notNull(),
     environment: varchar('environment', { length: 20 }).default('development').notNull(), // 'production' or 'development'
     prodClientId: text('prod_client_id'),
@@ -170,12 +181,23 @@ export const gatewayConfigurations = pgTable('gateway_configurations', {
 
 // Relações
 
+export const companiesRelations = relations(companies, ({ many }) => ({
+    users: many(users),
+    regions: many(regions),
+    gatewayConfigurations: many(gatewayConfigurations),
+}));
+
 export const usersRelations = relations(users, ({ one }) => ({
+    company: one(companies, { fields: [users.companyId], references: [companies.id] }),
     adminProfile: one(adminProfiles, { fields: [users.id], references: [adminProfiles.userId] }),
     managerProfile: one(managerProfiles, { fields: [users.id], references: [managerProfiles.userId] }),
     supervisorProfile: one(supervisorProfiles, { fields: [users.id], references: [supervisorProfiles.userId] }),
     pastorProfile: one(pastorProfiles, { fields: [users.id], references: [pastorProfiles.userId] }),
     churchProfile: one(churchProfiles, { fields: [users.id], references: [churchProfiles.userId] }),
+}));
+
+export const regionsRelations = relations(regions, ({ one }) => ({
+    company: one(companies, { fields: [regions.companyId], references: [companies.id] }),
 }));
 
 export const supervisorProfilesRelations = relations(supervisorProfiles, ({ one }) => ({
@@ -194,4 +216,8 @@ export const churchProfilesRelations = relations(churchProfiles, ({ one }) => ({
 export const transactionsRelations = relations(transactions, ({ one }) => ({
     contributor: one(users, { fields: [transactions.contributorId], references: [users.id], relationName: 'contributor' }),
     church: one(users, { fields: [transactions.churchId], references: [users.id], relationName: 'church' }),
+}));
+
+export const gatewayConfigurationsRelations = relations(gatewayConfigurations, ({ one }) => ({
+    company: one(companies, { fields: [gatewayConfigurations.companyId], references: [companies.id] }),
 }));
