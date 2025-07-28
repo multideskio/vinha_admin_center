@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
+import { AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,8 +28,7 @@ import {
 } from '@/components/ui/form';
 import { loginUser } from '@/actions/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'E-mail inválido.' }),
@@ -57,11 +57,19 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
   );
 
+type LogEntry = {
+    message: string;
+    status: 'pending' | 'success' | 'error';
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [error, setError] = React.useState<string | null>(null);
-  
+  const [logs, setLogs] = React.useState<LogEntry[]>([]);
+  const [isLogging, setIsLogging] = React.useState(false);
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -71,29 +79,59 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setError(null);
-    try {
-        const result = await loginUser(data);
-        if (result.error) {
-            setError(result.error);
-        } else if (result.success && result.role) {
-            toast({
-                title: "Login bem-sucedido!",
-                description: "Redirecionando para o seu painel.",
-            });
-            const roleToPathMap: { [key: string]: string } = {
-                admin: '/admin',
-                gerente: '/gerente',
-                supervisor: '/supervisor',
-                pastor: '/pastor',
-                church_account: '/igreja'
-            }
-            const path = roleToPathMap[result.role] || '/';
-            router.push(path);
-        }
-    } catch (e) {
-        setError("Ocorreu um erro inesperado. Tente novamente.");
+    setIsLogging(true);
+    const newLogs: LogEntry[] = [];
+    
+    const addLog = (log: LogEntry) => {
+        newLogs.push(log);
+        setLogs([...newLogs]);
     }
+    
+    const updateLastLog = (status: 'success' | 'error', newMessage?: string) => {
+        const lastLog = newLogs[newLogs.length - 1];
+        lastLog.status = status;
+        if(newMessage) lastLog.message = newMessage;
+        setLogs([...newLogs]);
+    }
+
+    setLogs([]); // Clear previous logs
+    
+    await sleep(500);
+    addLog({ message: 'Credenciais enviadas...', status: 'pending' });
+    updateLastLog('success', 'Credenciais enviadas');
+
+    await sleep(500);
+    addLog({ message: 'Verificando no banco de dados...', status: 'pending' });
+    
+    const result = await loginUser(data);
+
+    if (result.error) {
+        await sleep(500);
+        updateLastLog('error', 'Falha ao verificar usuário.');
+        await sleep(500);
+        addLog({ message: result.error, status: 'error' });
+    } else if (result.success && result.role) {
+        await sleep(500);
+        updateLastLog('success', 'Usuário encontrado e validado!');
+        await sleep(500);
+        addLog({ message: 'Login bem-sucedido! Redirecionando...', status: 'success' });
+
+        toast({
+            title: "Login bem-sucedido!",
+            description: "Redirecionando para o seu painel.",
+        });
+
+        const roleToPathMap: { [key: string]: string } = {
+            admin: '/admin',
+            manager: '/gerente',
+            supervisor: '/supervisor',
+            pastor: '/pastor',
+            church_account: '/igreja'
+        }
+        const path = roleToPathMap[result.role] || '/';
+        router.push(path);
+    }
+    setIsLogging(false);
   };
 
   return (
@@ -110,14 +148,6 @@ export default function LoginPage() {
         <CardContent>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-                <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                        {error}
-                    </AlertDescription>
-                </Alert>
-            )}
             <FormField
                 control={form.control}
                 name="email"
@@ -156,11 +186,32 @@ export default function LoginPage() {
                 </FormItem>
                 )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Entrando...' : 'Login'}
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || isLogging}>
+                {isLogging ? 'Verificando...' : 'Login'}
             </Button>
             </form>
         </Form>
+        {logs.length > 0 && (
+            <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle className="text-base">Logs de Autenticação</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm font-mono">
+                    {logs.map((log, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            {log.status === 'pending' && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                            {log.status === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                            {log.status === 'error' && <XCircle className="h-4 w-4 text-destructive" />}
+                            <span className={cn(
+                                log.status === 'error' && 'text-destructive'
+                            )}>
+                                {log.message}
+                            </span>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        )}
         <div className="mt-4 text-center text-sm">
             Não tem uma conta?{' '}
             <Link href="/auth/nova-conta" className="underline">
