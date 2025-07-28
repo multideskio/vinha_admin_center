@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { validateRequest } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { logoutUser } from '@/actions/auth';
 
 
 export const metadata: Metadata = {
@@ -94,6 +95,7 @@ export default async function AdminLayout({
   }
 
   if (user.role !== 'admin') {
+    await logoutUser();
     return redirect('/auth/login');
   }
 
@@ -190,10 +192,14 @@ export default async function AdminLayout({
                     <span>Ajuda</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair</span>
-                </DropdownMenuItem>
+                 <form action={logoutUser}>
+                    <button type="submit" className='w-full'>
+                        <DropdownMenuItem>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Sair</span>
+                        </DropdownMenuItem>
+                    </button>
+                 </form>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
