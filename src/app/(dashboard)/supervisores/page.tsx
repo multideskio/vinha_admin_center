@@ -144,6 +144,23 @@ const initialSupervisors: Supervisor[] = [
     managerId: 'mgr-02',
     regionId: 'reg-02',
   },
+  {
+    id: 'sup-03',
+    firstName: 'Jabez',
+    lastName: 'Henrique',
+    email: 'jabez@multidesk.io',
+    phone: '(62) 98115-4120',
+    status: 'active',
+    cpf: '037.628.391-23',
+    cep: '75264-230',
+    state: 'GO',
+    city: 'Senador Canedo',
+    neighborhood: 'Terrabela Cerrado I',
+    address: 'Rua RP 15',
+    titheDay: 8,
+    managerId: 'mgr-03',
+    regionId: 'reg-03',
+  },
 ];
 
 // Mock data, should come from API
@@ -643,8 +660,7 @@ export default function SupervisoresPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
-                            {/* TODO: Create supervisor profile page */}
-                            <Link href={`/supervisores`}>Editar</Link>
+                            <Link href={`/supervisores/${supervisor.id}`}>Editar</Link>
                           </DropdownMenuItem>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -689,7 +705,7 @@ export default function SupervisoresPage() {
             return (
                 <Card key={supervisor.id}>
                     <CardContent className="pt-6">
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                         <Image
                         src="https://placehold.co/96x96.png"
                         alt={`Foto de ${supervisor.firstName}`}
@@ -714,8 +730,7 @@ export default function SupervisoresPage() {
                     </div>
                     <div className="flex justify-end mt-4">
                         <Button variant="outline" size="sm" asChild>
-                         {/* TODO: Create supervisor profile page */}
-                        <Link href={`/supervisores`}>
+                        <Link href={`/supervisores/${supervisor.id}`}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Editar
                         </Link>
