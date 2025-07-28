@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { db } from '@/db/drizzle';
 import { users } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { lucia, validateRequest } from '@/lib/auth';
 import { cookies } from 'next/headers';
@@ -20,8 +20,8 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     const validatedFields = loginSchema.safeParse(values);
 
     if (!validatedFields.success) {
-        const errorMessage = validatedFields.error.flatten().fieldErrors.email?.[0] || validatedFields.error.flatten().fieldErrors.password?.[0] || 'Campos inválidos.';
-        return { error: errorMessage };
+      const errorMessage = validatedFields.error.flatten().fieldErrors.email?.[0] || validatedFields.error.flatten().fieldErrors.password?.[0] || 'Campos inválidos.';
+      throw new Error(errorMessage);
     }
 
     const { email, password } = validatedFields.data;
@@ -29,18 +29,18 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     const [existingUser] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${email.toLowerCase()}`);
 
     if (!existingUser) {
-        return { error: 'Credenciais inválidas. Usuário não encontrado.' };
+      throw new Error(`Usuário não encontrado com o e-mail: ${email}`);
     }
     
     if (!existingUser.password) {
-        return { error: 'Credenciais inválidas. Senha não cadastrada para este usuário.' };
+      throw new Error(`Usuário ${email} encontrado, mas não possui uma senha cadastrada.`);
     }
     
     const storedPassword = String(existingUser.password);
     const isPasswordValid = await bcrypt.compare(password, storedPassword);
     
     if (!isPasswordValid) {
-        return { error: 'Credenciais inválidas. A senha não confere.' };
+      throw new Error('A senha fornecida está incorreta.');
     }
     
     const session = await lucia.createSession(existingUser.id, {});
@@ -50,6 +50,7 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     return { success: true, role: existingUser.role };
 
   } catch (error: any) {
+    // Retorna a mensagem de erro exata para depuração no frontend.
     return { error: error.message };
   }
 }
