@@ -78,7 +78,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLogging(true);
-    setLogs([]); 
+    setLogs([{ message: 'Enviando credenciais...', status: 'pending' }]);
 
     const result = await loginUser(data);
 

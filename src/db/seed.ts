@@ -49,8 +49,7 @@ async function main() {
   const [company] = await db.insert(companies).values({
     name: 'Vinha Ministérios',
     supportEmail: 'suporte@vinha.com'
-  }).returning();
-
+  }).returning() as any[];  
 
   // Criar Regiões
   console.log('Seeding regions...');
@@ -63,18 +62,21 @@ async function main() {
   ]).returning();
   const centroOeste = seededRegions.find(r => r.name === 'Centro-Oeste')!;
 
-  // Hash da senha padrão
-  const hashedPassword = await bcrypt.hash(process.env.DEFAULT_PASSWORD!, 10);
+  const password = process.env.DEFAULT_PASSWORD!;
+
+  if (!process.env.DEFAULT_PASSWORD) {
+    throw new Error("DEFAULT_PASSWORD is not set");
+  }
 
   // 1. Admin
   console.log('Seeding admin...');
   const [adminUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'admin@vinha.com',
-    password: hashedPassword,
+    password: await bcrypt.hash(password, 10),
     role: 'admin',
     status: 'active',
-  }).returning();
+  }).returning() as any[];
   await db.insert(adminProfiles).values({
     userId: adminUser.id,
     firstName: 'Admin',
@@ -88,11 +90,11 @@ async function main() {
   const [managerUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'gerente@vinha.com',
-    password: hashedPassword,
+    password: await bcrypt.hash(password, 10),
     role: 'manager',
     status: 'active',
     titheDay: 10,
-  }).returning();
+  }).returning() as any[];
   await db.insert(managerProfiles).values({
     userId: managerUser.id,
     firstName: 'Paulo',
@@ -105,11 +107,11 @@ async function main() {
   const [supervisorUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'supervisor@vinha.com',
-    password: hashedPassword,
+    password: await bcrypt.hash(password, 10),
     role: 'supervisor',
     status: 'active',
     titheDay: 8,
-  }).returning();
+  }).returning() as any[];
   await db.insert(supervisorProfiles).values({
     userId: supervisorUser.id,
     managerId: managerUser.id,
@@ -124,11 +126,11 @@ async function main() {
   const [pastorUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'pastor@vinha.com',
-    password: hashedPassword,
+    password: await bcrypt.hash(password, 10),
     role: 'pastor',
     status: 'active',
     titheDay: 15,
-  }).returning();
+  }).returning() as any[];
   await db.insert(pastorProfiles).values({
     userId: pastorUser.id,
     supervisorId: supervisorUser.id,
@@ -142,11 +144,11 @@ async function main() {
   const [churchUser] = await db.insert(users).values({
     companyId: company.id,
     email: 'igreja@vinha.com',
-    password: hashedPassword,
+    password: await bcrypt.hash(password, 10),
     role: 'church_account',
     status: 'active',
     titheDay: 5,
-  }).returning();
+  }).returning() as any[];
   await db.insert(churchProfiles).values({
       userId: churchUser.id,
       supervisorId: supervisorUser.id,
