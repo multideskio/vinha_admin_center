@@ -1,5 +1,4 @@
 
-
 import type { Metadata } from 'next';
 import { AppSidebar } from '@/components/layout/sidebar';
 import {
@@ -193,7 +192,3 @@ export default function AdminLayout({
     </div>
   );
 }
-
-    
-
-    

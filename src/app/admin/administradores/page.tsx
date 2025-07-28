@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -650,7 +649,3 @@ export default function AdministradoresPage() {
     </div>
   );
 }
-
-    
-
-    
