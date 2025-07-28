@@ -15,9 +15,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -60,55 +57,39 @@ const transactions: Transaction[] = [
 export default function TransacoesPage() {
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Minhas Transações
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Gerencie todas as suas contribuições.
-        </p>
-      </div>
-
       <Card>
-        <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className='flex-1'>
-                    <CardTitle>Histórico de Transações</CardTitle>
+        <CardContent className="pt-6">
+            <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
+                <div className="relative flex-1 sm:flex-initial">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                    type="search"
+                    placeholder="Buscar por igreja..."
+                    className="pl-8 w-full sm:w-[250px]"
+                    />
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative flex-1 sm:flex-initial">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                        type="search"
-                        placeholder="Buscar por igreja..."
-                        className="pl-8 w-full sm:w-[250px]"
-                        />
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1">
-                            <ListFilter className="h-3.5 w-3.5" />
-                            <span className="sr-only sm:not-sr-only">Filtro</span>
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <DateRangePicker />
-                    <Button size="sm" variant="outline" className="gap-1">
-                        <Download className="h-3.5 w-3.5" />
-                        <span className="sr-only sm:not-sr-only">Exportar</span>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1">
+                        <ListFilter className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only">Filtro</span>
                     </Button>
-                </div>
-          </div>
-        </CardHeader>
-        <CardContent>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <DateRangePicker />
+                <Button size="sm" variant="outline" className="gap-1">
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only">Exportar</span>
+                </Button>
+            </div>
           <Table>
             <TableHeader>
               <TableRow>
