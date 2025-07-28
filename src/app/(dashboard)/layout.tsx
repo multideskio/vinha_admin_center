@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/sidebar';
-import { Menu, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -30,10 +30,6 @@ export default function DashboardLayout({
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-          <SidebarTrigger className="md:hidden">
-            <Menu />
-          </SidebarTrigger>
-          
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
             <form className="ml-auto flex-1 sm:flex-initial">
               <div className="relative">

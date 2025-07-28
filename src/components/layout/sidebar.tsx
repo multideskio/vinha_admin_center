@@ -10,7 +10,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -49,15 +48,14 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="icon" className="group/sidebar min-w-[250px] border-r border-sidebar-border text-sidebar-foreground data-[collapsed=true]:min-w-[var(--sidebar-width-icon)]">
-      <SidebarHeader className="flex h-16 items-center justify-between px-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
+    <Sidebar collapsible="none" className="group/sidebar min-w-[250px] border-r border-sidebar-border text-sidebar-foreground">
+      <SidebarHeader className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <Logo className="size-7 shrink-0 text-primary" />
-          <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
+          <span className="text-lg font-semibold">
             Vinha Ministérios
           </span>
         </Link>
-        <SidebarTrigger className="hidden md:flex" />
       </SidebarHeader>
       <SidebarContent className="flex-1 overflow-y-auto p-2">
         <SidebarMenu>
@@ -66,7 +64,6 @@ export function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
-                tooltip={item.label}
               >
                 <Link href={item.href}>
                   <item.icon />
@@ -83,7 +80,6 @@ export function AppSidebar() {
                 <SidebarMenuButton
                     asChild
                     isActive={pathname === settingsItem.href}
-                    tooltip={settingsItem.label}
                 >
                     <Link href={settingsItem.href}>
                         <settingsItem.icon />
