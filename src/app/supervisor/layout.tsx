@@ -1,4 +1,5 @@
 
+
 import type { Metadata } from 'next';
 import { SupervisorSidebar } from '@/components/layout/supervisor-sidebar';
 import {
@@ -83,13 +84,18 @@ export default async function SupervisorLayout({
   children: React.ReactNode;
 }) {
   const { user } = await validateRequest();
-  if (!user) {
-    return redirect('/auth/login');
-  }
-  const [profile] = await db.select().from(supervisorProfiles).where(eq(supervisorProfiles.userId, user.id));
-  const userName = profile?.firstName || 'Supervisor';
-  const userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
 
+  let userName = 'Supervisor';
+  let userFallback = 'SU';
+  let userEmail = 'supervisor@vinha.com';
+  
+  if (user) {
+    const [profile] = await db.select().from(supervisorProfiles).where(eq(supervisorProfiles.userId, user.id));
+    userName = profile?.firstName || 'Supervisor';
+    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
+    userEmail = user.email;
+  }
+  
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <SupervisorSidebar />
@@ -169,7 +175,7 @@ export default async function SupervisorLayout({
                         Bem vindo {userName}!
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                        {userEmail}
                     </p>
                     </div>
                 </DropdownMenuLabel>

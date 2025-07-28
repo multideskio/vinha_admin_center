@@ -80,12 +80,17 @@ export default async function ChurchLayout({
   children: React.ReactNode;
 }) {
     const { user } = await validateRequest();
-    if (!user) {
-        return redirect('/auth/login');
+
+    let userName = 'Igreja';
+    let userFallback = 'IG';
+    let userEmail = 'igreja@vinha.com';
+    
+    if (user) {
+        const [profile] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, user.id));
+        userName = profile?.nomeFantasia || 'Igreja';
+        userFallback = profile?.nomeFantasia?.substring(0, 2) || 'IG';
+        userEmail = user.email;
     }
-    const [profile] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, user.id));
-    const userName = profile?.nomeFantasia || 'Igreja';
-    const userFallback = profile?.nomeFantasia?.substring(0, 2) || 'IG';
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -166,7 +171,7 @@ export default async function ChurchLayout({
                         {userName}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                        {userEmail}
                     </p>
                     </div>
                 </DropdownMenuLabel>

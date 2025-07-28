@@ -1,4 +1,5 @@
 
+
 import type { Metadata } from 'next';
 import { PastorSidebar } from '@/components/layout/pastor-sidebar';
 import {
@@ -79,13 +80,18 @@ export default async function PastorLayout({
   children: React.ReactNode;
 }) {
   const { user } = await validateRequest();
-  if (!user) {
-    return redirect('/auth/login');
-  }
-  const [profile] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, user.id));
-  const userName = profile?.firstName || 'Pastor';
-  const userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
 
+  let userName = 'Pastor';
+  let userFallback = 'PA';
+  let userEmail = 'pastor@vinha.com';
+  
+  if (user) {
+    const [profile] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, user.id));
+    userName = profile?.firstName || 'Pastor';
+    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
+    userEmail = user.email;
+  }
+  
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <PastorSidebar />
@@ -165,7 +171,7 @@ export default async function PastorLayout({
                         Bem vindo {userName}!
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                        {userEmail}
                     </p>
                     </div>
                 </DropdownMenuLabel>

@@ -38,7 +38,7 @@ import { validateRequest } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { logoutUser } from '@/actions/auth';
 import { db } from '@/db/drizzle';
-import { adminProfiles } from '@/db/schema';
+import { adminProfiles, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 
@@ -93,14 +93,17 @@ export default async function AdminLayout({
 }) {
   const { user } = await validateRequest();
 
-  if (!user) {
-    return redirect('/auth/login');
+  let userName = 'Admin';
+  let userFallback = 'AD';
+  let userEmail = 'admin@vinha.com';
+
+  if (user) {
+    const [profile] = await db.select().from(adminProfiles).where(eq(adminProfiles.userId, user.id));
+    userName = profile?.firstName || 'Admin';
+    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
+    userEmail = user.email;
   }
-
-  const [profile] = await db.select().from(adminProfiles).where(eq(adminProfiles.userId, user.id));
-  const userName = profile?.firstName || 'Admin';
-  const userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
-
+  
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <AppSidebar />
@@ -180,7 +183,7 @@ export default async function AdminLayout({
                         Bem vindo {userName}!
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                        {userEmail}
                     </p>
                     </div>
                 </DropdownMenuLabel>

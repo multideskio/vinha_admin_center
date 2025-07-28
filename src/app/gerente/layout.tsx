@@ -86,12 +86,17 @@ export default async function ManagerLayout({
   children: React.ReactNode;
 }) {
   const { user } = await validateRequest();
-  if (!user) {
-    return redirect('/auth/login');
+
+  let userName = 'Gerente';
+  let userFallback = 'GE';
+  let userEmail = 'gerente@vinha.com';
+  
+  if (user) {
+    const [profile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, user.id));
+    userName = profile?.firstName || 'Gerente';
+    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
+    userEmail = user.email;
   }
-  const [profile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, user.id));
-  const userName = profile?.firstName || 'Gerente';
-  const userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -172,7 +177,7 @@ export default async function ManagerLayout({
                         Bem vindo {userName}!
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                        {userEmail}
                     </p>
                     </div>
                 </DropdownMenuLabel>
@@ -204,4 +209,3 @@ export default async function ManagerLayout({
     </div>
   );
 }
-    
