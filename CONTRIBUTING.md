@@ -40,6 +40,13 @@ A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 
 ## 💻 Diretrizes de Desenvolvimento
 
+### Tecnologias do Backend
+
+*   **Banco de Dados:** Utilizaremos **PostgreSQL** como nosso sistema de gerenciamento de banco de dados.
+*   **ORM:** O ORM (Object-Relational Mapping) escolhido é o **Drizzle ORM** para interagir com o banco de dados de forma segura e eficiente.
+*   **Gateways de Pagamento:** As integrações de pagamento serão feitas diretamente com as APIs da **Cielo** e do **Bradesco**.
+*   **Autenticação:** O sistema de login e gerenciamento de usuários será customizado, utilizando uma tabela no banco de dados para armazenar as credenciais. Não serão utilizadas soluções de autenticação de terceiros como Firebase Auth.
+
 ### Estilo de Código e Linting
 
 *   **Padrão de Código:** Siga as configurações de linting e formatação já estabelecidas no projeto (`ESLint`, `Prettier`).
