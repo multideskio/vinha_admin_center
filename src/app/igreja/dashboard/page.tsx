@@ -25,6 +25,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 const churchData = {
   id: 'chu-01',
@@ -48,6 +50,15 @@ const churchData = {
   instagram: 'https://instagram.com',
   website: 'https://admadureira.com',
 };
+
+const monthlyContributions = [
+    { month: 'Jan', total: Math.floor(Math.random() * 2000) + 1000 },
+    { month: 'Fev', total: Math.floor(Math.random() * 2000) + 1000 },
+    { month: 'Mar', total: Math.floor(Math.random() * 2000) + 1000 },
+    { month: 'Abr', total: Math.floor(Math.random() * 2000) + 1000 },
+    { month: 'Mai', total: Math.floor(Math.random() * 2000) + 1000 },
+    { month: 'Jun', total: Math.floor(Math.random() * 2000) + 1000 },
+];
 
 const InfoItem = ({
   icon: Icon,
@@ -87,60 +98,80 @@ export default function ChurchDashboardPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-4">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src="https://placehold.co/80x80.png" alt={churchData.nomeFantasia} data-ai-hint="church building" />
-            <AvatarFallback>IDM</AvatarFallback>
-          </Avatar>
-          <div>
-            <CardTitle className="text-2xl">{churchData.nomeFantasia}</CardTitle>
-            <CardDescription>{churchData.razaoSocial}</CardDescription>
-          </div>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <InfoItem
-            icon={Building2}
-            label="CNPJ"
-            value={churchData.cnpj}
-          />
-          <InfoItem icon={Mail} label="E-mail" value={churchData.email} />
-          <InfoItem icon={Phone} label="Telefone" value={churchData.phone} />
-          <InfoItem
-            icon={MapPin}
-            label="Endereço"
-            value={`${churchData.address}, ${churchData.neighborhood}, ${churchData.city} - ${churchData.state}`}
-          />
-          <InfoItem
-            icon={CalendarIcon}
-            label="Data de Fundação"
-            value={format(churchData.foundationDate, 'dd/MM/yyyy')}
-          />
-           <InfoItem
-            icon={Clock}
-            label="Dia para dízimo"
-            value={String(churchData.titheDay)}
-          />
+      <div className="grid gap-8 lg:grid-cols-2">
+         <Card>
+            <CardHeader>
+                <CardTitle>Arrecadação Mensal</CardTitle>
+                <CardDescription>Suas contribuições totais (dízimos e ofertas) nos últimos 6 meses.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{}} className="h-[300px] w-full">
+                    <BarChart data={monthlyContributions} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `R$${value/1000}k`} />
+                        <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
 
-          <div className="md:col-span-2 lg:col-span-3">
-            <Separator className="my-4" />
-            <h3 className='text-lg font-semibold mb-4'>Informações do Tesoureiro</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoItem
-                    icon={User}
-                    label="Nome do Tesoureiro"
-                    value={`${churchData.treasurerFirstName} ${churchData.treasurerLastName}`}
-                />
-                 <InfoItem
-                    icon={User}
-                    label="CPF do Tesoureiro"
-                    value={churchData.treasurerCpf}
-                />
+        <Card>
+            <CardHeader className="flex flex-row items-center gap-4">
+            <Avatar className="h-20 w-20">
+                <AvatarImage src="https://placehold.co/80x80.png" alt={churchData.nomeFantasia} data-ai-hint="church building" />
+                <AvatarFallback>IDM</AvatarFallback>
+            </Avatar>
+            <div>
+                <CardTitle className="text-2xl">{churchData.nomeFantasia}</CardTitle>
+                <CardDescription>{churchData.razaoSocial}</CardDescription>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <Separator />
+            <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InfoItem
+                icon={Building2}
+                label="CNPJ"
+                value={churchData.cnpj}
+            />
+            <InfoItem icon={Mail} label="E-mail" value={churchData.email} />
+            <InfoItem icon={Phone} label="Telefone" value={churchData.phone} />
+            <InfoItem
+                icon={MapPin}
+                label="Endereço"
+                value={`${churchData.address}, ${churchData.neighborhood}, ${churchData.city} - ${churchData.state}`}
+            />
+            <InfoItem
+                icon={CalendarIcon}
+                label="Data de Fundação"
+                value={format(churchData.foundationDate, 'dd/MM/yyyy')}
+            />
+            <InfoItem
+                icon={Clock}
+                label="Dia para dízimo"
+                value={String(churchData.titheDay)}
+            />
+
+            <div className="col-span-1 md:col-span-2">
+                <Separator className="my-4" />
+                <h3 className='text-lg font-semibold mb-4'>Informações do Tesoureiro</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InfoItem
+                        icon={User}
+                        label="Nome do Tesoureiro"
+                        value={`${churchData.treasurerFirstName} ${churchData.treasurerLastName}`}
+                    />
+                    <InfoItem
+                        icon={User}
+                        label="CPF do Tesoureiro"
+                        value={churchData.treasurerCpf}
+                    />
+                </div>
+            </div>
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

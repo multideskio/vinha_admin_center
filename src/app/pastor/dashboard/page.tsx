@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 const pastorData = {
   firstName: 'Paulo',
@@ -46,6 +48,15 @@ const pastorData = {
   website: 'https://website.com.br',
   supervisorId: 'sup-03',
 };
+
+const monthlyContributions = [
+    { month: 'Jan', total: Math.floor(Math.random() * 500) + 200 },
+    { month: 'Fev', total: Math.floor(Math.random() * 500) + 200 },
+    { month: 'Mar', total: Math.floor(Math.random() * 500) + 200 },
+    { month: 'Abr', total: Math.floor(Math.random() * 500) + 200 },
+    { month: 'Mai', total: Math.floor(Math.random() * 500) + 200 },
+    { month: 'Jun', total: Math.floor(Math.random() * 500) + 200 },
+];
 
 const InfoItem = ({
   icon: Icon,
@@ -85,45 +96,66 @@ export default function PastorDashboardPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-4">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src="https://placehold.co/80x80.png" alt={pastorData.firstName} data-ai-hint="male pastor" />
-            <AvatarFallback>
-              {pastorData.firstName.charAt(0)}
-              {pastorData.lastName.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <CardTitle className="text-2xl">
-              {pastorData.firstName} {pastorData.lastName}
-            </CardTitle>
-            <CardDescription>Pastor</CardDescription>
-          </div>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <InfoItem icon={User} label="CPF" value={pastorData.cpf} />
-          <InfoItem
-            icon={CalendarIcon}
-            label="Data de Nascimento"
-            value={format(pastorData.birthDate, 'dd/MM/yyyy')}
-          />
-          <InfoItem icon={Mail} label="E-mail" value={pastorData.email} />
-          <InfoItem icon={Phone} label="Celular" value={pastorData.phone} />
-          <InfoItem icon={Phone} label="Telefone Fixo" value={pastorData.landline} />
-           <InfoItem
-            icon={Clock}
-            label="Dia para dízimo"
-            value={String(pastorData.titheDay)}
-          />
-          <InfoItem
-            icon={Home}
-            label="Endereço"
-            value={`${pastorData.street}, ${pastorData.number || 'S/N'}, ${pastorData.neighborhood}, ${pastorData.city} - ${pastorData.state}`}
-          />
-        </CardContent>
-      </Card>
+        <div className="grid gap-8 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Suas Contribuições Mensais</CardTitle>
+                    <CardDescription>Seus dízimos e ofertas dos últimos 6 meses.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={{}} className="h-[300px] w-full">
+                        <BarChart data={monthlyContributions} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                            <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `R$${value}`} />
+                            <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-4">
+                <Avatar className="h-20 w-20">
+                    <AvatarImage src="https://placehold.co/80x80.png" alt={pastorData.firstName} data-ai-hint="male pastor" />
+                    <AvatarFallback>
+                    {pastorData.firstName.charAt(0)}
+                    {pastorData.lastName.charAt(0)}
+                    </AvatarFallback>
+                </Avatar>
+                <div>
+                    <CardTitle className="text-2xl">
+                    {pastorData.firstName} {pastorData.lastName}
+                    </CardTitle>
+                    <CardDescription>Pastor</CardDescription>
+                </div>
+                </CardHeader>
+                <Separator />
+                <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InfoItem icon={User} label="CPF" value={pastorData.cpf} />
+                    <InfoItem
+                        icon={CalendarIcon}
+                        label="Data de Nascimento"
+                        value={format(pastorData.birthDate, 'dd/MM/yyyy')}
+                    />
+                    <InfoItem icon={Mail} label="E-mail" value={pastorData.email} />
+                    <InfoItem icon={Phone} label="Celular" value={pastorData.phone} />
+                    <InfoItem icon={Phone} label="Telefone Fixo" value={pastorData.landline} />
+                    <InfoItem
+                        icon={Clock}
+                        label="Dia para dízimo"
+                        value={String(pastorData.titheDay)}
+                    />
+                     <div className="md:col-span-2">
+                        <InfoItem
+                            icon={Home}
+                            label="Endereço"
+                            value={`${pastorData.street}, ${pastorData.number || 'S/N'}, ${pastorData.neighborhood}, ${pastorData.city} - ${pastorData.state}`}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     </div>
   );
 }
