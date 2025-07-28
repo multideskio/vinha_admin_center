@@ -78,7 +78,7 @@ export function AppSidebar() {
           <span className="text-lg font-semibold">Vinha Ministérios</span>
         </Link>
          <div className="md:hidden">
-            <SidebarTrigger asChild><Button variant="ghost" size="icon" /></SidebarTrigger>
+            <SidebarTrigger />
         </div>
       </SidebarHeader>
       <SidebarContent className="flex-1 overflow-y-auto p-2">
