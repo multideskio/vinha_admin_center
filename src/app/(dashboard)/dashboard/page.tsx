@@ -1,6 +1,7 @@
+
 'use client';
 
-import { Activity, DollarSign, Percent, Users } from 'lucide-react';
+import { Activity, DollarSign, Percent, Users, Church, UserCheck, UserCog, Building, User } from 'lucide-react';
 import {
   Area,
   AreaChart,
@@ -44,6 +45,30 @@ const kpiData = [
     value: '76%',
     change: '-1.2% em relação à semana passada',
     icon: Percent,
+  },
+  {
+    title: 'Total de Igrejas',
+    value: '89',
+    change: '+2 este mês',
+    icon: Building,
+  },
+  {
+    title: 'Total de Pastores',
+    value: '112',
+    change: '+5 este mês',
+    icon: User,
+  },
+  {
+    title: 'Supervisores Ativos',
+    value: '23',
+    change: 'Nenhuma alteração',
+    icon: UserCog,
+  },
+  {
+    title: 'Gerentes na Plataforma',
+    value: '7',
+    change: '+1 este ano',
+    icon: UserCheck,
   },
 ];
 
