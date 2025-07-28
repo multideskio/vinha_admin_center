@@ -41,7 +41,9 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
         return { error: 'Credenciais inválidas. Senha não cadastrada.' };
     }
     
-    const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+    // Garantindo que a senha seja uma string antes da comparação
+    const storedPassword = String(existingUser.password);
+    const isPasswordValid = await bcrypt.compare(password, storedPassword);
     console.log(`[AUTH_DEBUG] A senha fornecida é válida? ${isPasswordValid}`);
 
     if (!isPasswordValid) {
