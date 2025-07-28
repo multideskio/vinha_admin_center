@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
 import { AppSidebar } from '@/components/layout/sidebar';
-import { Search } from 'lucide-react';
+import {
+  Search,
+  User,
+  LifeBuoy,
+  LogOut,
+  Moon,
+  ChevronDown,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,7 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarProvider } from '@/components/ui/sidebar';
-
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Vinha Admin Center',
@@ -42,30 +49,64 @@ export default function DashboardLayout({
                   />
                 </div>
               </form>
+              <Button variant="ghost" size="icon">
+                <Image
+                  src="https://placehold.co/24x24.png"
+                  alt="Brazil Flag"
+                  width={24}
+                  height={24}
+                  data-ai-hint="brazil flag"
+                />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Moon className="h-5 w-5" />
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" size="icon" className="rounded-full">
-                    <Avatar>
-                      <AvatarImage src="https://placehold.co/40x40.png" alt="@vinha" data-ai-hint="male user" />
-                      <AvatarFallback>VM</AvatarFallback>
+                   <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src="https://placehold.co/32x32.png"
+                        alt="@paulo"
+                        data-ai-hint="user avatar"
+                      />
+                      <AvatarFallback>P</AvatarFallback>
                     </Avatar>
-                    <span className="sr-only">Toggle user menu</span>
+                    <div className="hidden flex-col items-start md:flex">
+                      <span className="text-sm font-medium">Paulo</span>
+                      <span className="text-xs text-muted-foreground">
+                        Verificado
+                      </span>
+                    </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        Bem vindo Paulo!
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Configurações</DropdownMenuItem>
-                  <DropdownMenuItem>Suporte</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <LifeBuoy className="mr-2 h-4 w-4" />
+                    <span>Ajuda</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Sair</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
-            {children}
-          </main>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
       </div>
     </SidebarProvider>
