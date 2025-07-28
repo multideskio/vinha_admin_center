@@ -90,6 +90,8 @@ const GerenteFormModal = ({
     children: React.ReactNode;
   }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+
     const form = useForm<Manager>({
         resolver: zodResolver(managerSchema),
         defaultValues: manager || {
@@ -132,6 +134,51 @@ const GerenteFormModal = ({
       setIsOpen(false);
     };
 
+    const formatCPF = (value: string) => {
+        return value
+          .replace(/\D/g, '')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+          .slice(0, 14);
+      };
+
+      const formatCEP = (value: string) => {
+        return value
+          .replace(/\D/g, '')
+          .replace(/(\d{5})(\d)/, '$1-$2')
+          .slice(0, 9);
+      };
+
+      const formatPhone = (value: string) => {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '($1) $2')
+            .replace(/(\d{5})(\d)/, '$1-$2')
+            .slice(0, 15);
+      }
+
+      const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+        const cep = e.target.value.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+
+        setIsFetchingCep(true);
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const data = await response.json();
+            if (!data.erro) {
+                form.setValue('address', data.logradouro);
+                form.setValue('neighborhood', data.bairro);
+                form.setValue('city', data.localidade);
+                form.setValue('state', data.uf);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar CEP:", error)
+        } finally {
+            setIsFetchingCep(false);
+        }
+      }
+
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
@@ -141,9 +188,9 @@ const GerenteFormModal = ({
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
-                <Alert variant="default" className="bg-blue-50 border-blue-200">
+                <Alert variant="default" className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
                     <AlertTriangle className="h-4 w-4 text-blue-500" />
-                    <AlertDescription className="text-blue-700">
+                    <AlertDescription className="text-blue-700 dark:text-blue-300">
                         A senha padrão é <strong>123456</strong> até o usuário cadastrar uma nova senha.
                         Você também pode alterar a senha no menu de perfil da pessoa cadastrada.
                     </AlertDescription>
@@ -166,42 +213,42 @@ const GerenteFormModal = ({
                      <FormField control={form.control} name="cpf" render={({ field }) => (
                         <FormItem>
                             <FormLabel>CPF</FormLabel>
-                            <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                            <FormControl><Input placeholder="000.000.000-00" {...field} onChange={(e) => field.onChange(formatCPF(e.target.value))} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                     <FormField control={form.control} name="email" render={({ field }) => (
                         <FormItem>
                             <FormLabel>E-mail</FormLabel>
-                            <FormControl><Input placeholder="exemplo@gmail.com" {...field} /></FormControl>
+                            <FormControl><Input type="email" placeholder="exemplo@gmail.com" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                     <FormField control={form.control} name="cep" render={({ field }) => (
                         <FormItem>
                             <FormLabel>CEP</FormLabel>
-                            <FormControl><Input placeholder="00000-000" {...field} /></FormControl>
+                            <FormControl><Input placeholder="00000-000" {...field} onChange={(e) => field.onChange(formatCEP(e.target.value))} onBlur={handleCepBlur} disabled={isFetchingCep} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                     <FormField control={form.control} name="state" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Estado</FormLabel>
-                            <FormControl><Input placeholder="UF" {...field} /></FormControl>
+                            <FormControl><Input placeholder="UF" {...field} disabled={isFetchingCep} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                     <FormField control={form.control} name="city" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Cidade</FormLabel>
-                            <FormControl><Input placeholder="Nome da cidade" {...field} /></FormControl>
+                            <FormControl><Input placeholder="Nome da cidade" {...field} disabled={isFetchingCep} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                      <FormField control={form.control} name="neighborhood" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Bairro</FormLabel>
-                            <FormControl><Input placeholder="Nome do bairro" {...field} /></FormControl>
+                            <FormControl><Input placeholder="Nome do bairro" {...field} disabled={isFetchingCep} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -209,7 +256,7 @@ const GerenteFormModal = ({
                  <FormField control={form.control} name="address" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Endereço</FormLabel>
-                        <FormControl><Input placeholder="O restante do endereço" {...field} /></FormControl>
+                        <FormControl><Input placeholder="O restante do endereço" {...field} disabled={isFetchingCep} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -227,10 +274,10 @@ const GerenteFormModal = ({
                             <FormLabel>Celular *</FormLabel>
                             <FormControl>
                                 <div className="flex items-center">
-                                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 text-gray-500 text-sm">
+                                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
                                         🇧🇷 +55
                                     </span>
-                                    <Input placeholder="(00) 0 0000-0000" {...field} className="rounded-l-none" />
+                                    <Input placeholder="(00) 00000-0000" {...field} className="rounded-l-none" onChange={(e) => field.onChange(formatPhone(e.target.value))}/>
                                 </div>
                             </FormControl>
                             <FormMessage />
@@ -241,7 +288,9 @@ const GerenteFormModal = ({
                     <DialogClose asChild>
                         <Button variant="outline">Cancelar</Button>
                     </DialogClose>
-                    <Button type="submit">Salvar</Button>
+                    <Button type="submit" disabled={isFetchingCep}>
+                        {isFetchingCep ? 'Buscando CEP...' : 'Salvar'}
+                    </Button>
                 </DialogFooter>
             </form>
           </Form>
