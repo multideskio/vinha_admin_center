@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -20,6 +21,7 @@ import {
   Church,
   Settings,
   FileText,
+  Building,
 } from 'lucide-react';
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
@@ -50,6 +52,7 @@ const menuItems = [
   { href: '/pastores', label: 'Pastores', icon: User },
   { href: '/igrejas', label: 'Igrejas', icon: Church },
   { href: '/relatorios', label: 'Relatórios', icon: FileText },
+  { href: '/configuracoes', label: 'Plataforma', icon: Building },
 ];
 
 const settingsItem = {
@@ -110,3 +113,5 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
+    
