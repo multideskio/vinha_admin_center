@@ -34,6 +34,8 @@ import {
   Shield,
   ArrowRightLeft,
 } from 'lucide-react';
+import { validateRequest } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
 
 export const metadata: Metadata = {
@@ -80,11 +82,21 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
   );
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = await validateRequest();
+
+  if (!user) {
+    return redirect('/auth/login');
+  }
+
+  if (user.role !== 'admin') {
+    return redirect('/auth/login');
+  }
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <AppSidebar />
