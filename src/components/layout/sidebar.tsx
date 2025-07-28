@@ -22,6 +22,7 @@ import {
   Settings,
   FileText,
   Building,
+  CreditCard,
 } from 'lucide-react';
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
@@ -52,6 +53,7 @@ const menuItems = [
   { href: '/pastores', label: 'Pastores', icon: User },
   { href: '/igrejas', label: 'Igrejas', icon: Church },
   { href: '/relatorios', label: 'Relatórios', icon: FileText },
+  { href: '/gateways', label: 'Gateways', icon: CreditCard },
   { href: '/configuracoes', label: 'Plataforma', icon: Building },
 ];
 
@@ -113,5 +115,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
-    
