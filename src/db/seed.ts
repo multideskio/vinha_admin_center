@@ -58,7 +58,7 @@ async function main() {
   ]).returning();
   const centroOeste = seededRegions.find(r => r.name === 'Centro-Oeste')!;
 
-  // Senha padrão para todos: '123456' (deve ser hasheada em um app real)
+  // Senha padrão para todos: 'password123' (deve ser hasheada em um app real)
   const defaultPassword = 'password123';
 
   // 1. Admin

@@ -4,14 +4,14 @@ import {
   text,
   varchar,
   timestamp,
-  serial,
   integer,
   boolean,
   date,
   decimal,
   pgEnum,
+  uuid,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // Enums
 
@@ -24,7 +24,7 @@ export const paymentMethodEnum = pgEnum('payment_method', ['pix', 'credit_card',
 // Tabelas Principais
 
 export const companies = pgTable('companies', {
-    id: serial('id').primaryKey(),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     name: varchar('name', { length: 255 }).notNull(),
     logoUrl: text('logo_url'),
     supportEmail: varchar('support_email', { length: 255 }),
@@ -32,8 +32,8 @@ export const companies = pgTable('companies', {
 });
 
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  companyId: integer('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
   email: varchar('email', { length: 255 }).unique().notNull(),
   password: text('password').notNull(),
   role: userRoleEnum('role').notNull(),
@@ -45,17 +45,17 @@ export const users = pgTable('users', {
 });
 
 export const regions = pgTable('regions', {
-  id: serial('id').primaryKey(),
-  companyId: integer('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
-  color: varchar('color', { length: 7 }).notNull(), // Hex color
+  color: varchar('color', { length: 7 }).notNull(),
 });
 
 // Tabelas de Perfis
 
 export const adminProfiles = pgTable('admin_profiles', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
   cpf: varchar('cpf', { length: 14 }).unique().notNull(),
@@ -71,8 +71,8 @@ export const adminProfiles = pgTable('admin_profiles', {
 });
 
 export const managerProfiles = pgTable('manager_profiles', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     firstName: varchar('first_name', { length: 100 }).notNull(),
     lastName: varchar('last_name', { length: 100 }).notNull(),
     cpf: varchar('cpf', { length: 14 }).unique().notNull(),
@@ -88,10 +88,10 @@ export const managerProfiles = pgTable('manager_profiles', {
 });
 
 export const supervisorProfiles = pgTable('supervisor_profiles', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    managerId: integer('manager_id').references(() => users.id), // References a user with 'manager' role
-    regionId: integer('region_id').references(() => regions.id),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    managerId: uuid('manager_id').references(() => users.id),
+    regionId: uuid('region_id').references(() => regions.id),
     firstName: varchar('first_name', { length: 100 }).notNull(),
     lastName: varchar('last_name', { length: 100 }).notNull(),
     cpf: varchar('cpf', { length: 14 }).unique().notNull(),
@@ -109,9 +109,9 @@ export const supervisorProfiles = pgTable('supervisor_profiles', {
 });
 
 export const pastorProfiles = pgTable('pastor_profiles', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    supervisorId: integer('supervisor_id').references(() => users.id), // References a user with 'supervisor' role
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    supervisorId: uuid('supervisor_id').references(() => users.id),
     firstName: varchar('first_name', { length: 100 }).notNull(),
     lastName: varchar('last_name', { length: 100 }).notNull(),
     cpf: varchar('cpf', { length: 14 }).unique().notNull(),
@@ -130,9 +130,9 @@ export const pastorProfiles = pgTable('pastor_profiles', {
 });
 
 export const churchProfiles = pgTable('church_profiles', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    supervisorId: integer('supervisor_id').references(() => users.id), // References a user with 'supervisor' role
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    supervisorId: uuid('supervisor_id').references(() => users.id),
     cnpj: varchar('cnpj', { length: 18 }).unique().notNull(),
     razaoSocial: varchar('razao_social', { length: 255 }).notNull(),
     nomeFantasia: varchar('nome_fantasia', { length: 255 }).notNull(),
@@ -152,10 +152,10 @@ export const churchProfiles = pgTable('church_profiles', {
 
 // Tabela de Transações
 export const transactions = pgTable('transactions', {
-  id: serial('id').primaryKey(),
-  companyId: integer('company_id').references(() => companies.id).notNull(), // Company that receives the money
-  contributorId: integer('contributor_id').references(() => users.id).notNull(), // User who made the contribution
-  originChurchId: integer('origin_church_id').references(() => users.id), // Optional: Church from which the contribution originated, for reporting
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  companyId: uuid('company_id').references(() => companies.id).notNull(),
+  contributorId: uuid('contributor_id').references(() => users.id).notNull(),
+  originChurchId: uuid('origin_church_id').references(() => users.id),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   status: transactionStatusEnum('status').notNull(),
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
@@ -166,18 +166,18 @@ export const transactions = pgTable('transactions', {
 
 // Tabela de Configurações dos Gateways
 export const gatewayConfigurations = pgTable('gateway_configurations', {
-    id: serial('id').primaryKey(),
-    companyId: integer('company_id').references(() => companies.id).notNull(),
-    gatewayName: varchar('gateway_name', { length: 50 }).notNull(), // 'cielo' or 'bradesco'
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    gatewayName: varchar('gateway_name', { length: 50 }).notNull(),
     isActive: boolean('is_active').default(false).notNull(),
-    environment: varchar('environment', { length: 20 }).default('development').notNull(), // 'production' or 'development'
+    environment: varchar('environment', { length: 20 }).default('development').notNull(),
     prodClientId: text('prod_client_id'),
     prodClientSecret: text('prod_client_secret'),
     devClientId: text('dev_client_id'),
     devClientSecret: text('dev_client_secret'),
-    certificate: text('certificate'), // Store file path or content
+    certificate: text('certificate'),
     certificatePassword: text('certificate_password'),
-    acceptedPaymentMethods: text('accepted_payment_methods'), // Store as JSON string or comma-separated
+    acceptedPaymentMethods: text('accepted_payment_methods'),
 });
 
 
