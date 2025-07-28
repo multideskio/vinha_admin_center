@@ -20,37 +20,44 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     const validatedFields = loginSchema.safeParse(values);
 
     if (!validatedFields.success) {
-      const errorMessage = validatedFields.error.flatten().fieldErrors.email?.[0] || validatedFields.error.flatten().fieldErrors.password?.[0] || 'Campos inválidos.';
-      throw new Error(errorMessage);
+      throw new Error('E-mail ou senha inválidos.');
     }
 
     const { email, password } = validatedFields.data;
     
-    const [existingUser] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${email.toLowerCase()}`);
+    // 1. Encontrar o usuário pelo e-mail (insensível a maiúsculas/minúsculas)
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(sql`LOWER(${users.email}) = ${email.toLowerCase()}`);
 
     if (!existingUser) {
-      throw new Error(`Usuário não encontrado com o e-mail: ${email}`);
+      // Mensagem genérica para não revelar se o usuário existe
+      throw new Error('Credenciais inválidas.');
     }
     
     if (!existingUser.password) {
-      throw new Error(`Usuário ${email} encontrado, mas não possui uma senha cadastrada.`);
+      throw new Error('Este usuário não tem uma senha cadastrada.');
     }
     
-    const storedPassword = String(existingUser.password);
-    const isPasswordValid = await bcrypt.compare(password, storedPassword);
+    // 2. Comparar a senha fornecida com o hash armazenado
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
     
     if (!isPasswordValid) {
-      throw new Error('A senha fornecida está incorreta.');
+      throw new Error('Credenciais inválidas.');
     }
     
+    // 3. Criar a sessão do usuário
     const session = await lucia.createSession(existingUser.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
-    (await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+    cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 
     return { success: true, role: existingUser.role };
 
   } catch (error: any) {
-    // Retorna a mensagem de erro exata para depuração no frontend.
     return { error: error.message };
   }
 }
@@ -64,6 +71,6 @@ export async function logoutUser() {
     await lucia.invalidateSession(session.id);
 
     const sessionCookie = lucia.createBlankSessionCookie();
-    (await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+    cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
     return redirect("/auth/login");
 }
