@@ -1,12 +1,12 @@
+
 'use server';
 
 import { z } from 'zod';
 import { db } from '@/db/drizzle';
-import { regions } from '@/db/schema';
+import { regions, users } from '@/db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { validateRequest } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { UTApi } from 'uploadthing/server';
 
 const regionSchema = z.object({
   id: z.string().uuid().optional(),
@@ -14,27 +14,15 @@ const regionSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: 'Cor inválida.' }),
 });
 
-// Mock da companyId por enquanto
-const MOCK_COMPANY_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d467";
+const MOCK_COMPANY_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466";
+const MOCK_USER_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466";
 
 export async function getRegions() {
-  const { user } = await validateRequest();
-
-  if (!user) {
-    throw new Error('Não autorizado');
-  }
-
-  const companyId = (await db.query.users.findFirst({ where: eq(users.id, user.id) }))?.companyId;
-
-  if(!companyId){
-    throw new Error('Empresa não encontrada');
-  }
-
   try {
     const companyRegions = await db
       .select()
       .from(regions)
-      .where(and(eq(regions.companyId, companyId), isNull(regions.deletedAt)))
+      .where(and(eq(regions.companyId, MOCK_COMPANY_ID), isNull(regions.deletedAt)))
       .orderBy(desc(regions.name));
 
     return companyRegions;
@@ -45,17 +33,6 @@ export async function getRegions() {
 }
 
 export async function saveRegion(values: z.infer<typeof regionSchema>) {
-  const { user } = await validateRequest();
-  if (!user) {
-    throw new Error('Não autorizado');
-  }
-
-  const companyId = (await db.query.users.findFirst({ where: eq(users.id, user.id) }))?.companyId;
-
-  if(!companyId){
-    throw new Error('Empresa não encontrada');
-  }
-
   const validatedFields = regionSchema.safeParse(values);
   if (!validatedFields.success) {
     return { error: 'Campos inválidos.' };
@@ -69,13 +46,13 @@ export async function saveRegion(values: z.infer<typeof regionSchema>) {
       await db
         .update(regions)
         .set({ name, color, updatedAt: new Date() })
-        .where(and(eq(regions.id, id), eq(regions.companyId, companyId)));
+        .where(and(eq(regions.id, id), eq(regions.companyId, MOCK_COMPANY_ID)));
     } else {
       // Create
       await db.insert(regions).values({
         name,
         color,
-        companyId: companyId,
+        companyId: MOCK_COMPANY_ID,
       });
     }
     revalidatePath('/admin/regioes');
@@ -87,22 +64,11 @@ export async function saveRegion(values: z.infer<typeof regionSchema>) {
 }
 
 export async function deleteRegion(id: string) {
-  const { user } = await validateRequest();
-  if (!user) {
-    throw new Error('Não autorizado');
-  }
-
-  const companyId = (await db.query.users.findFirst({ where: eq(users.id, user.id) }))?.companyId;
-
-  if(!companyId){
-    throw new Error('Empresa não encontrada');
-  }
-  
   try {
     await db
       .update(regions)
-      .set({ deletedAt: new Date(), deletedBy: user.id })
-      .where(and(eq(regions.id, id), eq(regions.companyId, companyId)));
+      .set({ deletedAt: new Date(), deletedBy: MOCK_USER_ID })
+      .where(and(eq(regions.id, id), eq(regions.companyId, MOCK_COMPANY_ID)));
 
     revalidatePath('/admin/regioes');
     return { success: true };
