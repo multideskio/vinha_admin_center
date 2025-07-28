@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "db:rollback": "drizzle-kit drop && drizzle-kit push"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
