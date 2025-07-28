@@ -2,6 +2,25 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.2] - 2024-07-30
+
+### Adicionado
+
+*   **Configuração do Banco de Dados:**
+    *   Configuração da conexão com o banco de dados PostgreSQL através de variáveis de ambiente seguras (`.env.local`).
+    *   Criação dos arquivos `.env.example` e `.env.backup` para seguir as boas práticas de desenvolvimento.
+*   **Estrutura de Dados com Drizzle ORM:**
+    *   Definição do esquema completo do banco de dados em `src/db/schema.ts`.
+    *   Criação da tabela `companies` para centralizar as configurações do sistema.
+    *   Implementação de chaves primárias `UUID` em todas as tabelas para maior segurança.
+    *   Adição de funcionalidade de "soft delete" (`deletedAt`, `deletedBy`, `deletionReason`) em tabelas críticas para permitir a recuperação de dados e auditoria.
+*   **Scripts de Banco de Dados:**
+    *   Adição dos comandos `npm run db:generate` e `npm run db:push` para gerenciamento de migrações.
+    *   Criação do comando `npm run db:seed` para popular o banco de dados com dados de exemplo para todos os perfis de usuário.
+    *   Adição do comando de conveniência `npm run db:rollback` para resetar o banco de dados durante o desenvolvimento.
+*   **Segurança:**
+    *   Implementação de hashing de senhas com `bcrypt` no script de seed para garantir o armazenamento seguro das credenciais.
+
 ## [1.0.1] - 2024-07-30
 
 ### Adicionado

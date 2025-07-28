@@ -12,7 +12,7 @@ Este documento estabelece as diretrizes, regras e boas práticas a serem seguida
 
 ---
 
-## 🔑 Gerenciamento de Variáveis de Ambiente
+## 🔑 Gerenciamento de Variáveis de Ambiente e Credenciais
 
 A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 
@@ -21,17 +21,17 @@ A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 2.  **Mantenha o Backup Sincronizado:** Sempre que criar ou alterar uma variável no `.env`, adicione a mesma variável (com um valor de exemplo ou vazio) ao arquivo `.env.backup`. Isso garante que a estrutura de configuração seja preservada.
 
 3.  **Atualize o Exemplo:** Para cada variável adicionada ao `.env`, adicione sua definição (sem a chave secreta) ao arquivo `.env.example`. Isso ajuda outros desenvolvedores a configurarem seus ambientes locais.
-    *   **Exemplo:** Se adicionou `CIELO_API_KEY="secret-key"`, adicione `CIELO_API_KEY=` ao `.env.example`.
+    *   **Exemplo:** Se adicionou `DATABASE_URL="postgres://..."`, adicione `DATABASE_URL=` ao `.env.example`.
 
-4.  **NUNCA CODIFIQUE CREDENCIAIS:** Jamais coloque chaves de API, senhas ou qualquer informação sensível diretamente no código-fonte. O código será hospedado no GitHub e expor credenciais é uma falha de segurança grave. Utilize sempre as variáveis de ambiente.
+4.  **NUNCA CODIFIQUE CREDENCIAIS:** Jamais coloque chaves de API, senhas ou qualquer informação sensível diretamente no código-fonte. O código será hospedado no GitHub e expor credenciais é uma falha de segurança grave. Utilize sempre as variáveis de ambiente, carregadas via `dotenv`.
 
 ---
 
 ## 📚 Documentação e Versionamento
 
-5.  **Atualize a Documentação:** Após implementar uma nova funcionalidade ou fazer uma alteração significativa, descreva o que foi feito de forma clara. Crie ou atualize os arquivos de documentação relevantes, separando as notas do frontend e do backend, se necessário.
+5.  **Atualize a Documentação:** Após implementar uma nova funcionalidade ou fazer uma alteração significativa, descreva o que foi feito de forma clara. Crie ou atualize os arquivos de documentação relevantes, como o `CHANGELOG.md`.
 
-6.  **Gerencie o CHANGELOG:** Mantenha um arquivo `CHANGELOG.md` (a ser criado) para registrar todas as mudanças importantes.
+6.  **Gerencie o CHANGELOG:** Mantenha um arquivo `CHANGELOG.md` para registrar todas as mudanças importantes.
     *   **Versionamento:** Siga o versionamento semântico (Ex: `1.2.3`).
     *   **Aumento de Versão:** Mude a versão do sistema sempre que houver mudanças significativas.
     *   **Restrição:** **NUNCA** avance para a versão `2.0.0` sem o consentimento explícito do proprietário do projeto.
@@ -46,6 +46,14 @@ A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 *   **ORM:** O ORM (Object-Relational Mapping) escolhido é o **Drizzle ORM** para interagir com o banco de dados de forma segura e eficiente.
 *   **Gateways de Pagamento:** As integrações de pagamento serão feitas diretamente com as APIs da **Cielo** e do **Bradesco**.
 *   **Autenticação:** O sistema de login e gerenciamento de usuários será customizado, utilizando uma tabela no banco de dados para armazenar as credenciais. Não serão utilizadas soluções de autenticação de terceiros como Firebase Auth.
+
+### Gerenciamento do Banco de Dados com Drizzle
+
+*   **Schema:** Todas as tabelas e relações são definidas em `src/db/schema.ts`. Este é o arquivo "fonte da verdade" para a estrutura do banco.
+*   **Gerar Migração:** Para criar um novo arquivo de migração baseado nas alterações do schema, use: `npm run db:generate`.
+*   **Aplicar Migração (Desenvolvimento):** Para aplicar as alterações diretamente no banco de desenvolvimento (sem criar arquivo de migração), use: `npm run db:push`.
+*   **Popular o Banco (Seed):** Para preencher o banco com dados iniciais, execute: `npm run db:seed`.
+*   **Resetar o Banco (Rollback):** Para apagar todas as tabelas e recriá-las a partir do schema (útil em desenvolvimento), use: `npm run db:rollback`. **Atenção: Este comando é destrutivo.**
 
 ### Estilo de Código e Linting
 
