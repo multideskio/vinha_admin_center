@@ -75,8 +75,8 @@ export default function TransacaoDetalhePage() {
                   {transaction.status}
                 </Badge>
                 <div className="hidden items-center gap-2 md:ml-auto md:flex">
-                  <Button variant="outline" size="sm">
-                    Estornar
+                  <Button variant="outline" size="sm" disabled={transaction.status !== 'Aprovada'}>
+                    Reembolso
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
