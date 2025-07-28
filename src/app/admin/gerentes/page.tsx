@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -13,23 +14,19 @@ import {
   Mail,
   MapPin,
   Pencil,
-  User,
-  Map,
-  Calendar as CalendarIcon,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format } from 'date-fns';
-
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -79,26 +76,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
 
-
-const pastorSchema = z.object({
+const managerSchema = z.object({
   id: z.string().optional(),
-  supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
   cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
@@ -108,71 +93,73 @@ const pastorSchema = z.object({
   city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
   neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
   address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}),
   titheDay: z.coerce.number().min(1).max(31),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
   status: z.enum(['active', 'inactive']),
 });
 
-type Pastor = z.infer<typeof pastorSchema>;
+type Manager = z.infer<typeof managerSchema>;
 
-const initialPastors: Pastor[] = [
-    {
-        id: 'pas-01',
-        firstName: 'Lucas',
-        lastName: 'Mendes',
-        email: 'lucas.mendes@example.com',
-        phone: '(11) 98765-3333',
-        status: 'active',
-        cpf: '777.888.999-00',
-        cep: '01001-000',
-        state: 'SP',
-        city: 'São Paulo',
-        neighborhood: 'Centro',
-        address: 'Av. Paulista, 3000',
-        birthDate: new Date('1985-05-20'),
-        titheDay: 20,
-        supervisorId: 'sup-01',
-      },
-      {
-        id: 'pas-02',
-        firstName: 'Fernanda',
-        lastName: 'Costa',
-        email: 'fernanda.costa@example.com',
-        phone: '(21) 91234-4444',
-        status: 'inactive',
-        cpf: '888.999.000-11',
-        cep: '20040-001',
-        state: 'RJ',
-        city: 'Rio de Janeiro',
-        neighborhood: 'Copacabana',
-        address: 'Av. Atlântica, 4000',
-        birthDate: new Date('1990-11-12'),
-        titheDay: 1,
-        supervisorId: 'sup-02',
-      },
+const initialManagers: Manager[] = [
+  {
+    id: 'mgr-01',
+    firstName: 'João',
+    lastName: 'Silva',
+    email: 'joao.silva@example.com',
+    phone: '(11) 98765-4321',
+    status: 'active',
+    cpf: '111.222.333-44',
+    cep: '01001-000',
+    state: 'SP',
+    city: 'São Paulo',
+    neighborhood: 'Centro',
+    address: 'Av. Paulista, 1000',
+    titheDay: 10,
+  },
+  {
+    id: 'mgr-02',
+    firstName: 'Maria',
+    lastName: 'Oliveira',
+    email: 'maria.oliveira@example.com',
+    phone: '(21) 91234-5678',
+    status: 'inactive',
+    cpf: '222.333.444-55',
+    cep: '20040-001',
+    state: 'RJ',
+    city: 'Rio de Janeiro',
+    neighborhood: 'Copacabana',
+    address: 'Av. Atlântica, 2000',
+    titheDay: 5,
+  },
+  {
+    id: 'mgr-03',
+    firstName: 'Paulo',
+    lastName: 'Ferreira',
+    email: 'multidesk.io@gmail.com',
+    phone: '(62) 98115-4120',
+    status: 'active',
+    cpf: '037.628.391-23',
+    cep: '75264-230',
+    state: 'GO',
+    city: 'Senador Canedo',
+    neighborhood: 'Terrabela Cerrado I',
+    address: 'Rua RP 15',
+    titheDay: 10,
+  },
 ];
 
-// Mock data, should come from API
-const supervisors = [
-    { id: 'sup-01', name: 'Carlos Andrade' },
-    { id: 'sup-02', name: 'Ana Beatriz' },
-    { id: 'sup-03', name: 'Jabez Henrique' },
-];
-
-
-const PastorFormModal = ({
+const GerenteFormModal = ({
   onSave,
   children,
 }: {
-  onSave: (data: Pastor) => void;
+  onSave: (data: Manager) => void;
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
 
-  const form = useForm<Pastor>({
-    resolver: zodResolver(pastorSchema),
+  const form = useForm<Manager>({
+    resolver: zodResolver(managerSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -208,7 +195,7 @@ const PastorFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Pastor) => {
+  const handleSave = (data: Manager) => {
     onSave(data);
     setIsOpen(false);
   };
@@ -260,10 +247,10 @@ const PastorFormModal = ({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Cadastro de pastores</DialogTitle>
+          <DialogTitle>Cadastro de gerente</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6 p-2">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
             <Alert
               variant="default"
               className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
@@ -271,33 +258,10 @@ const PastorFormModal = ({
               <AlertTriangle className="h-4 w-4 text-blue-500" />
               <AlertDescription className="text-blue-700 dark:text-blue-300">
                 A senha padrão é <strong>123456</strong> até o usuário cadastrar
-                uma nova senha.
+                uma nova senha. Você também pode alterar a senha no menu de
+                perfil da pessoa cadastrada.
               </AlertDescription>
             </Alert>
-            
-            <FormField
-                control={form.control}
-                name="supervisorId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selecione um supervisor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um supervisor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {supervisors.map(supervisor => (
-                            <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -444,48 +408,7 @@ const PastorFormModal = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-                control={form.control}
-                name="birthDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de nascimento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>dd/mm/aaaa</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="titheDay"
@@ -534,7 +457,7 @@ const PastorFormModal = ({
                 <Button variant="outline">Cancelar</Button>
               </DialogClose>
               <Button type="submit" disabled={isFetchingCep}>
-                {isFetchingCep ? 'Buscando CEP...' : 'Cadastrar'}
+                {isFetchingCep ? 'Buscando CEP...' : 'Salvar'}
               </Button>
             </DialogFooter>
           </form>
@@ -544,22 +467,22 @@ const PastorFormModal = ({
   );
 };
 
-export default function PastoresPage() {
-  const [pastores, setPastores] = React.useState<Pastor[]>(initialPastors);
+export default function GerentesPage() {
+  const [managers, setManagers] = React.useState<Manager[]>(initialManagers);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
 
-  const handleSave = (data: Pastor) => {
-    // Create new pastor
-    const newPastor: Pastor = {
+  const handleSave = (data: Manager) => {
+    // Create new manager
+    const newManager: Manager = {
       ...data,
-      id: `pas-${Date.now()}`,
+      id: `mgr-${Date.now()}`,
       status: 'active',
     };
-    setPastores([...pastores, newPastor]);
+    setManagers([...managers, newManager]);
   };
 
-  const handleDelete = (pastorId: string) => {
-    setPastores(pastores.filter((s) => s.id !== pastorId));
+  const handleDelete = (managerId: string) => {
+    setManagers(managers.filter((m) => m.id !== managerId));
   };
 
   return (
@@ -567,10 +490,10 @@ export default function PastoresPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Pastores
+            Gerentes
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {pastores.length} de {pastores.length} resultados
+            Exibindo {managers.length} de {managers.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -603,14 +526,14 @@ export default function PastoresPage() {
             </Tooltip>
           </TooltipProvider>
 
-          <PastorFormModal onSave={handleSave}>
+          <GerenteFormModal onSave={handleSave}>
             <Button size="sm" className="gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Novo Pastor
+                Novo Gerente
               </span>
             </Button>
-          </PastorFormModal>
+          </GerenteFormModal>
         </div>
       </div>
 
@@ -630,27 +553,27 @@ export default function PastoresPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pastores.map((pastor) => (
-                  <TableRow key={pastor.id}>
-                    <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
+                {managers.map((manager) => (
+                  <TableRow key={manager.id}>
+                    <TableCell className="font-medium">{`${manager.firstName} ${manager.lastName}`}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.email}
+                      {manager.email}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.phone}
+                      {manager.phone}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge
                         variant={
-                          pastor.status === 'active' ? 'default' : 'secondary'
+                          manager.status === 'active' ? 'default' : 'secondary'
                         }
                         className={
-                          pastor.status === 'active'
+                          manager.status === 'active'
                             ? 'bg-green-500/20 text-green-700 border-green-400'
                             : 'bg-red-500/20 text-red-700 border-red-400'
                         }
                       >
-                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                        {manager.status === 'active' ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -664,7 +587,7 @@ export default function PastoresPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
-                            <Link href={`/gerente/pastores/${pastor.id}`}>Editar</Link>
+                            <Link href={`/admin/gerentes/${manager.id}`}>Editar</Link>
                           </DropdownMenuItem>
                           <AlertDialog>
                             <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
@@ -677,13 +600,13 @@ export default function PastoresPage() {
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o pastor.
+                                  permanentemente o gerente.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDelete(pastor.id!)}
+                                  onClick={() => handleDelete(manager.id!)}
                                 >
                                   Continuar
                                 </AlertDialogAction>
@@ -701,47 +624,45 @@ export default function PastoresPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pastores.map((pastor, index) => {
-            const supervisor = supervisors.find(s => s.id === pastor.supervisorId);
-            return (
-                <Card key={pastor.id}>
-                    <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                        <Image
-                        src="https://placehold.co/96x96.png"
-                        alt={`Foto de ${pastor.firstName}`}
-                        width={96}
-                        height={96}
-                        className="rounded-lg object-cover w-24 h-24"
-                        data-ai-hint="male person"
-                        />
-                        <div className="flex-1 space-y-2 min-w-[200px]">
-                        <h3 className="text-lg font-bold">
-                            #{index + 1} - {pastor.firstName} {pastor.lastName}
-                        </h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                            <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {supervisor?.name || 'N/A'}</span></p>
-                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
-                        </div>
-                        </div>
+          {managers.map((manager, index) => (
+            <Card key={manager.id}>
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <Image
+                      src="https://placehold.co/128x128.png"
+                      alt={`Foto de ${manager.firstName}`}
+                      width={128}
+                      height={128}
+                      className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32"
+                      data-ai-hint="handshake business"
+                    />
+                  <div className="flex-1 space-y-2">
+                    <h3 className="text-lg font-bold">
+                      #{index + 1} - {manager.firstName} {manager.lastName}
+                    </h3>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                        <p className='flex items-center gap-2'><FileText size={14} /> <span>{manager.cpf}</span></p>
+                        <p className='flex items-center gap-2'><Phone size={14} /> <span>{manager.phone}</span></p>
+                        <p className='flex items-center gap-2'><Mail size={14} /> <span>{manager.email}</span></p>
+                        <p className='flex items-center gap-2'><MapPin size={14} /> <span>{manager.city} - {manager.state}</span></p>
                     </div>
-                    <div className="flex justify-end mt-4">
-                        <Button variant="outline" size="sm" asChild>
-                        <Link href={`/gerente/pastores/${pastor.id}`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Editar
-                        </Link>
-                        </Button>
-                    </div>
-                    </CardContent>
-                </Card>
-            )
-            })}
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/admin/gerentes/${manager.id}`}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Editar
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
   );
 }
+
+    

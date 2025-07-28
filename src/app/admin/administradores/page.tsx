@@ -1,11 +1,11 @@
 
+
 'use client';
 
 import * as React from 'react';
 import {
   MoreHorizontal,
   PlusCircle,
-  AlertTriangle,
   List,
   Grid3x3,
   FileText,
@@ -13,25 +13,19 @@ import {
   Mail,
   MapPin,
   Pencil,
-  User,
-  Map,
-  Calendar as CalendarIcon,
+  Shield,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format } from 'date-fns';
-
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -55,7 +49,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -69,7 +63,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Form,
   FormControl,
@@ -79,26 +72,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 
-
-const pastorSchema = z.object({
+const adminSchema = z.object({
   id: z.string().optional(),
-  supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
   cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
@@ -108,71 +91,63 @@ const pastorSchema = z.object({
   city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
   neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
   address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}),
-  titheDay: z.coerce.number().min(1).max(31),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
+  password: z.string().min(6, { message: 'A senha deve ter no mínimo 6 caracteres.' }),
+  role: z.enum(['admin', 'superadmin'], {
+    required_error: 'Selecione uma permissão.',
+  }),
   status: z.enum(['active', 'inactive']),
 });
 
-type Pastor = z.infer<typeof pastorSchema>;
+type Admin = z.infer<typeof adminSchema>;
 
-const initialPastors: Pastor[] = [
-    {
-        id: 'pas-01',
-        firstName: 'Lucas',
-        lastName: 'Mendes',
-        email: 'lucas.mendes@example.com',
-        phone: '(11) 98765-3333',
-        status: 'active',
-        cpf: '777.888.999-00',
-        cep: '01001-000',
-        state: 'SP',
-        city: 'São Paulo',
-        neighborhood: 'Centro',
-        address: 'Av. Paulista, 3000',
-        birthDate: new Date('1985-05-20'),
-        titheDay: 20,
-        supervisorId: 'sup-01',
-      },
-      {
-        id: 'pas-02',
-        firstName: 'Fernanda',
-        lastName: 'Costa',
-        email: 'fernanda.costa@example.com',
-        phone: '(21) 91234-4444',
-        status: 'inactive',
-        cpf: '888.999.000-11',
-        cep: '20040-001',
-        state: 'RJ',
-        city: 'Rio de Janeiro',
-        neighborhood: 'Copacabana',
-        address: 'Av. Atlântica, 4000',
-        birthDate: new Date('1990-11-12'),
-        titheDay: 1,
-        supervisorId: 'sup-02',
-      },
+const initialAdmins: Admin[] = [
+  {
+    id: 'adm-01',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    phone: '(11) 99999-1111',
+    status: 'active',
+    cpf: '111.111.111-11',
+    cep: '01001-000',
+    state: 'SP',
+    city: 'São Paulo',
+    neighborhood: 'Centro',
+    address: 'Av. Ipiranga, 200',
+    role: 'superadmin',
+    password: 'password123',
+  },
+  {
+    id: 'adm-02',
+    firstName: 'Limited',
+    lastName: 'Admin',
+    email: 'limited.admin@example.com',
+    phone: '(21) 98888-2222',
+    status: 'active',
+    cpf: '222.222.222-22',
+    cep: '20040-001',
+    state: 'RJ',
+    city: 'Rio de Janeiro',
+    neighborhood: 'Centro',
+    address: 'Av. Rio Branco, 156',
+    role: 'admin',
+    password: 'password123',
+  },
 ];
 
-// Mock data, should come from API
-const supervisors = [
-    { id: 'sup-01', name: 'Carlos Andrade' },
-    { id: 'sup-02', name: 'Ana Beatriz' },
-    { id: 'sup-03', name: 'Jabez Henrique' },
-];
-
-
-const PastorFormModal = ({
+const AdminFormModal = ({
   onSave,
   children,
 }: {
-  onSave: (data: Pastor) => void;
+  onSave: (data: Admin) => void;
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
 
-  const form = useForm<Pastor>({
-    resolver: zodResolver(pastorSchema),
+  const form = useForm<Admin>({
+    resolver: zodResolver(adminSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -183,32 +158,20 @@ const PastorFormModal = ({
       city: '',
       neighborhood: '',
       address: '',
-      titheDay: 1,
       phone: '',
+      password: '',
+      role: 'admin',
       status: 'active',
     },
   });
 
   React.useEffect(() => {
     if (isOpen) {
-      form.reset({
-        firstName: '',
-        lastName: '',
-        cpf: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        titheDay: 1,
-        phone: '',
-        status: 'active',
-      });
+      form.reset();
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Pastor) => {
+  const handleSave = (data: Admin) => {
     onSave(data);
     setIsOpen(false);
   };
@@ -258,46 +221,12 @@ const PastorFormModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Cadastro de pastores</DialogTitle>
+          <DialogTitle>Cadastro de administrador</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6 p-2">
-            <Alert
-              variant="default"
-              className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
-            >
-              <AlertTriangle className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-blue-700 dark:text-blue-300">
-                A senha padrão é <strong>123456</strong> até o usuário cadastrar
-                uma nova senha.
-              </AlertDescription>
-            </Alert>
-            
-            <FormField
-                control={form.control}
-                name="supervisorId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selecione um supervisor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um supervisor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {supervisors.map(supervisor => (
-                            <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-1 overflow-y-auto max-h-[80vh]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -349,16 +278,15 @@ const PastorFormModal = ({
                   <FormItem>
                     <FormLabel>E-mail</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="exemplo@gmail.com"
-                        {...field}
-                      />
+                      <Input type="email" placeholder="exemplo@gmail.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="cep"
@@ -398,113 +326,44 @@ const PastorFormModal = ({
                   <FormItem>
                     <FormLabel>Cidade</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Nome da cidade"
-                        {...field}
-                        disabled={isFetchingCep}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="neighborhood"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bairro</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Nome do bairro"
-                        {...field}
-                        disabled={isFetchingCep}
-                      />
+                      <Input placeholder="Nome da cidade" {...field} disabled={isFetchingCep} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="O restante do endereço"
-                      {...field}
-                      disabled={isFetchingCep}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-                control={form.control}
-                name="birthDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de nascimento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="neighborhood"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Bairro</FormLabel>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>dd/mm/aaaa</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                        <Input placeholder="Nome do bairro" {...field} disabled={isFetchingCep} />
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="titheDay"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Dia do dízimo</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="31"
-                        placeholder="1 a 31"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Endereço</FormLabel>
+                        <FormControl>
+                        <Input placeholder="O restante do endereço" {...field} disabled={isFetchingCep} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="phone"
@@ -528,10 +387,60 @@ const PastorFormModal = ({
                   </FormItem>
                 )}
               />
+               <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="123456" {...field} />
+                    </FormControl>
+                     <FormMessage />
+                     <p className="text-xs text-muted-foreground">A senha poderá ser alterada posteriormente.</p>
+                  </FormItem>
+                )}
+              />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Defina a permissão do usuário</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="admin" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Administrador <span className="text-muted-foreground">(Não altera configurações nem cadastra usuários admin)</span>
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="superadmin" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Super administrador <span className="text-muted-foreground">(Permissão total)</span>
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline">Cancelar</Button>
+                <Button variant="outline">Fechar</Button>
               </DialogClose>
               <Button type="submit" disabled={isFetchingCep}>
                 {isFetchingCep ? 'Buscando CEP...' : 'Cadastrar'}
@@ -544,22 +453,21 @@ const PastorFormModal = ({
   );
 };
 
-export default function PastoresPage() {
-  const [pastores, setPastores] = React.useState<Pastor[]>(initialPastors);
+export default function AdministradoresPage() {
+  const [admins, setAdmins] = React.useState<Admin[]>(initialAdmins);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
 
-  const handleSave = (data: Pastor) => {
-    // Create new pastor
-    const newPastor: Pastor = {
+  const handleSave = (data: Admin) => {
+    const newAdmin: Admin = {
       ...data,
-      id: `pas-${Date.now()}`,
+      id: `adm-${Date.now()}`,
       status: 'active',
     };
-    setPastores([...pastores, newPastor]);
+    setAdmins([...admins, newAdmin]);
   };
 
-  const handleDelete = (pastorId: string) => {
-    setPastores(pastores.filter((s) => s.id !== pastorId));
+  const handleDelete = (adminId: string) => {
+    setAdmins(admins.filter((a) => a.id !== adminId));
   };
 
   return (
@@ -567,10 +475,10 @@ export default function PastoresPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Pastores
+            Administradores
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {pastores.length} de {pastores.length} resultados
+            Exibindo {admins.length} de {admins.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -603,14 +511,14 @@ export default function PastoresPage() {
             </Tooltip>
           </TooltipProvider>
 
-          <PastorFormModal onSave={handleSave}>
+          <AdminFormModal onSave={handleSave}>
             <Button size="sm" className="gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Novo Pastor
+                Novo Administrador
               </span>
             </Button>
-          </PastorFormModal>
+          </AdminFormModal>
         </div>
       </div>
 
@@ -622,7 +530,7 @@ export default function PastoresPage() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Celular</TableHead>
+                  <TableHead className="hidden md:table-cell">Permissão</TableHead>
                   <TableHead className="hidden sm:table-cell">Status</TableHead>
                   <TableHead>
                     <span className="sr-only">Ações</span>
@@ -630,27 +538,27 @@ export default function PastoresPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pastores.map((pastor) => (
-                  <TableRow key={pastor.id}>
-                    <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
+                {admins.map((admin) => (
+                  <TableRow key={admin.id}>
+                    <TableCell className="font-medium">{`${admin.firstName} ${admin.lastName}`}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.email}
+                      {admin.email}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.phone}
+                     <TableCell className="hidden md:table-cell text-muted-foreground">
+                      <Badge variant="outline">{admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}</Badge>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge
                         variant={
-                          pastor.status === 'active' ? 'default' : 'secondary'
+                          admin.status === 'active' ? 'default' : 'secondary'
                         }
                         className={
-                          pastor.status === 'active'
+                          admin.status === 'active'
                             ? 'bg-green-500/20 text-green-700 border-green-400'
                             : 'bg-red-500/20 text-red-700 border-red-400'
                         }
                       >
-                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                        {admin.status === 'active' ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -664,7 +572,7 @@ export default function PastoresPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
-                            <Link href={`/gerente/pastores/${pastor.id}`}>Editar</Link>
+                            <Link href={`/admin/administradores/${admin.id}`}>Editar</Link>
                           </DropdownMenuItem>
                           <AlertDialog>
                             <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
@@ -677,13 +585,13 @@ export default function PastoresPage() {
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o pastor.
+                                  permanentemente o administrador.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDelete(pastor.id!)}
+                                  onClick={() => handleDelete(admin.id!)}
                                 >
                                   Continuar
                                 </AlertDialogAction>
@@ -701,47 +609,48 @@ export default function PastoresPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pastores.map((pastor, index) => {
-            const supervisor = supervisors.find(s => s.id === pastor.supervisorId);
-            return (
-                <Card key={pastor.id}>
-                    <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                        <Image
-                        src="https://placehold.co/96x96.png"
-                        alt={`Foto de ${pastor.firstName}`}
-                        width={96}
-                        height={96}
-                        className="rounded-lg object-cover w-24 h-24"
-                        data-ai-hint="male person"
-                        />
-                        <div className="flex-1 space-y-2 min-w-[200px]">
-                        <h3 className="text-lg font-bold">
-                            #{index + 1} - {pastor.firstName} {pastor.lastName}
-                        </h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                            <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {supervisor?.name || 'N/A'}</span></p>
-                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
-                        </div>
-                        </div>
+          {admins.map((admin, index) => (
+            <Card key={admin.id}>
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                  <Image
+                    src="https://placehold.co/96x96.png"
+                    alt={`Foto de ${admin.firstName}`}
+                    width={96}
+                    height={96}
+                    className="rounded-lg object-cover w-24 h-24"
+                    data-ai-hint="person shield"
+                  />
+                  <div className="flex-1 space-y-2 min-w-[200px]">
+                    <h3 className="text-lg font-bold">
+                      #{index + 1} - {admin.firstName} {admin.lastName}
+                    </h3>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                        <p className='flex items-center gap-2'><Shield size={14} /> <span>{admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}</span></p>
+                        <p className='flex items-center gap-2'><FileText size={14} /> <span>{admin.cpf}</span></p>
+                        <p className='flex items-center gap-2'><Phone size={14} /> <span>{admin.phone}</span></p>
+                        <p className='flex items-center gap-2'><Mail size={14} /> <span>{admin.email}</span></p>
+                        <p className='flex items-center gap-2'><MapPin size={14} /> <span>{admin.city} - {admin.state}</span></p>
                     </div>
-                    <div className="flex justify-end mt-4">
-                        <Button variant="outline" size="sm" asChild>
-                        <Link href={`/gerente/pastores/${pastor.id}`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Editar
-                        </Link>
-                        </Button>
-                    </div>
-                    </CardContent>
-                </Card>
-            )
-            })}
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/admin/administradores/${admin.id}`}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Editar
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
   );
 }
+
+    
+
+    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -39,20 +40,20 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/transacoes', label: 'Transações', icon: ArrowRightLeft },
-  { href: '/regioes', label: 'Regiões', icon: Map },
-  { href: '/superadmin/gerentes', label: 'Gerentes', icon: UserCheck },
-  { href: '/supervisores', label: 'Supervisores', icon: UserCog },
-  { href: '/pastores', label: 'Pastores', icon: User },
-  { href: '/igrejas', label: 'Igrejas', icon: Church },
+  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/transacoes', label: 'Transações', icon: ArrowRightLeft },
+  { href: '/admin/regioes', label: 'Regiões', icon: Map },
+  { href: '/admin/gerentes', label: 'Gerentes', icon: UserCheck },
+  { href: '/admin/supervisores', label: 'Supervisores', icon: UserCog },
+  { href: '/admin/pastores', label: 'Pastores', icon: User },
+  { href: '/admin/igrejas', label: 'Igrejas', icon: Church },
   { href: '/admin/administradores', label: 'Administradores', icon: Shield },
-  { href: '/relatorios', label: 'Relatórios', icon: FileText },
-  { href: '/gateways', label: 'Gateways', icon: CreditCard },
+  { href: '/admin/relatorios', label: 'Relatórios', icon: FileText },
+  { href: '/admin/gateways', label: 'Gateways', icon: CreditCard },
 ];
 
 const settingsItem = {
-  href: '/configuracoes',
+  href: '/admin/configuracoes',
   label: 'Configurações',
   icon: Settings,
 };
@@ -64,7 +65,7 @@ export function AppSidebar() {
     <div className="hidden border-r bg-muted/40 md:block sticky top-0 h-screen">
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+          <Link href="/admin/dashboard" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6 text-primary" />
             <span className="">Vinha Ministérios</span>
           </Link>
@@ -77,7 +78,7 @@ export function AppSidebar() {
                 href={item.href}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))) &&
+                  (pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href))) &&
                     'bg-muted text-primary'
                 )}
               >
@@ -105,5 +106,7 @@ export function AppSidebar() {
     </div>
   );
 }
+
+    
 
     

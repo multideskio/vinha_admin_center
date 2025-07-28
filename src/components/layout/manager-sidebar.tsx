@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -35,16 +36,16 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 const menuItems = [
-    { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/manager/supervisores', label: 'Supervisores', icon: UserCog },
-    { href: '/manager/pastores', label: 'Pastores', icon: User },
-    { href: '/manager/igrejas', label: 'Igrejas', icon: Church },
-    { href: '/manager/transacoes', label: 'Transações', icon: ArrowRightLeft },
-    { href: '/manager/contribuicoes', label: 'Contribuições', icon: Handshake },
+    { href: '/gerente/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/gerente/supervisores', label: 'Supervisores', icon: UserCog },
+    { href: '/gerente/pastores', label: 'Pastores', icon: User },
+    { href: '/gerente/igrejas', label: 'Igrejas', icon: Church },
+    { href: '/gerente/transacoes', label: 'Transações', icon: ArrowRightLeft },
+    { href: '/gerente/contribuicoes', label: 'Contribuições', icon: Handshake },
 ];
 
 const settingsItem = {
-  href: '/manager/perfil',
+  href: '/gerente/perfil',
   label: 'Meu Perfil',
   icon: Settings,
 };
@@ -56,7 +57,7 @@ export function ManagerSidebar() {
     <div className="hidden border-r bg-muted/40 md:block sticky top-0 h-screen">
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/manager/dashboard" className="flex items-center gap-2 font-semibold">
+          <Link href="/gerente/dashboard" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6 text-primary" />
             <span className="">Vinha Ministérios</span>
           </Link>
@@ -69,7 +70,7 @@ export function ManagerSidebar() {
                 href={item.href}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))) &&
+                  (pathname === item.href || (item.href !== '/gerente/dashboard' && pathname.startsWith(item.href))) &&
                     'bg-muted text-primary'
                 )}
               >
@@ -97,3 +98,5 @@ export function ManagerSidebar() {
     </div>
   );
 }
+
+    

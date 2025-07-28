@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -15,15 +16,12 @@ import {
   Pencil,
   User,
   Map,
-  Calendar as CalendarIcon,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format } from 'date-fns';
-
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -91,14 +89,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
 
-
-const pastorSchema = z.object({
+const supervisorSchema = z.object({
   id: z.string().optional(),
-  supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
+  managerId: z.string({ required_error: 'Selecione um gerente.' }),
+  regionId: z.string({ required_error: 'Selecione uma região.' }),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
   cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
@@ -108,71 +103,94 @@ const pastorSchema = z.object({
   city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
   neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
   address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}),
   titheDay: z.coerce.number().min(1).max(31),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
   status: z.enum(['active', 'inactive']),
 });
 
-type Pastor = z.infer<typeof pastorSchema>;
+type Supervisor = z.infer<typeof supervisorSchema>;
 
-const initialPastors: Pastor[] = [
-    {
-        id: 'pas-01',
-        firstName: 'Lucas',
-        lastName: 'Mendes',
-        email: 'lucas.mendes@example.com',
-        phone: '(11) 98765-3333',
-        status: 'active',
-        cpf: '777.888.999-00',
-        cep: '01001-000',
-        state: 'SP',
-        city: 'São Paulo',
-        neighborhood: 'Centro',
-        address: 'Av. Paulista, 3000',
-        birthDate: new Date('1985-05-20'),
-        titheDay: 20,
-        supervisorId: 'sup-01',
-      },
-      {
-        id: 'pas-02',
-        firstName: 'Fernanda',
-        lastName: 'Costa',
-        email: 'fernanda.costa@example.com',
-        phone: '(21) 91234-4444',
-        status: 'inactive',
-        cpf: '888.999.000-11',
-        cep: '20040-001',
-        state: 'RJ',
-        city: 'Rio de Janeiro',
-        neighborhood: 'Copacabana',
-        address: 'Av. Atlântica, 4000',
-        birthDate: new Date('1990-11-12'),
-        titheDay: 1,
-        supervisorId: 'sup-02',
-      },
+const initialSupervisors: Supervisor[] = [
+  {
+    id: 'sup-01',
+    firstName: 'Carlos',
+    lastName: 'Andrade',
+    email: 'carlos.andrade@example.com',
+    phone: '(11) 98765-1111',
+    status: 'active',
+    cpf: '444.555.666-77',
+    cep: '01001-000',
+    state: 'SP',
+    city: 'São Paulo',
+    neighborhood: 'Centro',
+    address: 'Av. Paulista, 2000',
+    titheDay: 15,
+    managerId: 'mgr-01',
+    regionId: 'reg-02',
+  },
+  {
+    id: 'sup-02',
+    firstName: 'Ana',
+    lastName: 'Beatriz',
+    email: 'ana.beatriz@example.com',
+    phone: '(21) 91234-2222',
+    status: 'inactive',
+    cpf: '555.666.777-88',
+    cep: '20040-001',
+    state: 'RJ',
+    city: 'Rio de Janeiro',
+    neighborhood: 'Copacabana',
+    address: 'Av. Atlântica, 3000',
+    titheDay: 10,
+    managerId: 'mgr-02',
+    regionId: 'reg-02',
+  },
+  {
+    id: 'sup-03',
+    firstName: 'Jabez',
+    lastName: 'Henrique',
+    email: 'jabez@multidesk.io',
+    phone: '(62) 98115-4120',
+    status: 'active',
+    cpf: '037.628.391-23',
+    cep: '75264-230',
+    state: 'GO',
+    city: 'Senador Canedo',
+    neighborhood: 'Terrabela Cerrado I',
+    address: 'Rua RP 15',
+    titheDay: 8,
+    managerId: 'mgr-03',
+    regionId: 'reg-03',
+  },
 ];
 
 // Mock data, should come from API
-const supervisors = [
-    { id: 'sup-01', name: 'Carlos Andrade' },
-    { id: 'sup-02', name: 'Ana Beatriz' },
-    { id: 'sup-03', name: 'Jabez Henrique' },
+const managers = [
+    { id: 'mgr-01', name: 'João Silva' },
+    { id: 'mgr-02', name: 'Maria Oliveira' },
+    { id: 'mgr-03', name: 'Paulo Ferreira' },
 ];
 
+const regions = [
+    { id: 'reg-01', name: 'Sul' },
+    { id: 'reg-02', name: 'Sudeste' },
+    { id: 'reg-03', name: 'Centro-Oeste' },
+    { id: 'reg-04', name: 'Norte' },
+    { id: 'reg-05', name: 'Nordeste' },
+];
 
-const PastorFormModal = ({
+const SupervisorFormModal = ({
   onSave,
   children,
 }: {
-  onSave: (data: Pastor) => void;
+  onSave: (data: Supervisor) => void;
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
 
-  const form = useForm<Pastor>({
-    resolver: zodResolver(pastorSchema),
+  const form = useForm<Supervisor>({
+    resolver: zodResolver(supervisorSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -208,7 +226,7 @@ const PastorFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Pastor) => {
+  const handleSave = (data: Supervisor) => {
     onSave(data);
     setIsOpen(false);
   };
@@ -260,7 +278,7 @@ const PastorFormModal = ({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Cadastro de pastores</DialogTitle>
+          <DialogTitle>Cadastro de supervisor</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6 p-2">
@@ -274,22 +292,22 @@ const PastorFormModal = ({
                 uma nova senha.
               </AlertDescription>
             </Alert>
-            
-            <FormField
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
-                name="supervisorId"
+                name="managerId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Selecione um supervisor</FormLabel>
+                    <FormLabel>Selecione um gerente</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione um supervisor" />
+                          <SelectValue placeholder="Selecione um gerente" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {supervisors.map(supervisor => (
-                            <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.name}</SelectItem>
+                        {managers.map(manager => (
+                            <SelectItem key={manager.id} value={manager.id}>{manager.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -297,8 +315,28 @@ const PastorFormModal = ({
                   </FormItem>
                 )}
               />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="regionId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Selecione uma região</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma região" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {regions.map(region => (
+                            <SelectItem key={region.id} value={region.id}>{region.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="firstName"
@@ -444,48 +482,7 @@ const PastorFormModal = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-                control={form.control}
-                name="birthDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de nascimento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>dd/mm/aaaa</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="titheDay"
@@ -544,22 +541,22 @@ const PastorFormModal = ({
   );
 };
 
-export default function PastoresPage() {
-  const [pastores, setPastores] = React.useState<Pastor[]>(initialPastors);
+export default function SupervisoresPage() {
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>(initialSupervisors);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
 
-  const handleSave = (data: Pastor) => {
-    // Create new pastor
-    const newPastor: Pastor = {
+  const handleSave = (data: Supervisor) => {
+    // Create new supervisor
+    const newSupervisor: Supervisor = {
       ...data,
-      id: `pas-${Date.now()}`,
+      id: `sup-${Date.now()}`,
       status: 'active',
     };
-    setPastores([...pastores, newPastor]);
+    setSupervisors([...supervisors, newSupervisor]);
   };
 
-  const handleDelete = (pastorId: string) => {
-    setPastores(pastores.filter((s) => s.id !== pastorId));
+  const handleDelete = (supervisorId: string) => {
+    setSupervisors(supervisors.filter((s) => s.id !== supervisorId));
   };
 
   return (
@@ -567,10 +564,10 @@ export default function PastoresPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Pastores
+            Supervisores
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {pastores.length} de {pastores.length} resultados
+            Exibindo {supervisors.length} de {supervisors.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -603,14 +600,14 @@ export default function PastoresPage() {
             </Tooltip>
           </TooltipProvider>
 
-          <PastorFormModal onSave={handleSave}>
+          <SupervisorFormModal onSave={handleSave}>
             <Button size="sm" className="gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Novo Pastor
+                Novo Supervisor
               </span>
             </Button>
-          </PastorFormModal>
+          </SupervisorFormModal>
         </div>
       </div>
 
@@ -630,27 +627,27 @@ export default function PastoresPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pastores.map((pastor) => (
-                  <TableRow key={pastor.id}>
-                    <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
+                {supervisors.map((supervisor) => (
+                  <TableRow key={supervisor.id}>
+                    <TableCell className="font-medium">{`${supervisor.firstName} ${supervisor.lastName}`}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.email}
+                      {supervisor.email}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.phone}
+                      {supervisor.phone}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge
                         variant={
-                          pastor.status === 'active' ? 'default' : 'secondary'
+                          supervisor.status === 'active' ? 'default' : 'secondary'
                         }
                         className={
-                          pastor.status === 'active'
+                          supervisor.status === 'active'
                             ? 'bg-green-500/20 text-green-700 border-green-400'
                             : 'bg-red-500/20 text-red-700 border-red-400'
                         }
                       >
-                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                        {supervisor.status === 'active' ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -664,7 +661,7 @@ export default function PastoresPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
-                            <Link href={`/gerente/pastores/${pastor.id}`}>Editar</Link>
+                            <Link href={`/gerente/supervisores/${supervisor.id}`}>Editar</Link>
                           </DropdownMenuItem>
                           <AlertDialog>
                             <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
@@ -677,13 +674,13 @@ export default function PastoresPage() {
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o pastor.
+                                  permanentemente o supervisor.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDelete(pastor.id!)}
+                                  onClick={() => handleDelete(supervisor.id!)}
                                 >
                                   Continuar
                                 </AlertDialogAction>
@@ -701,15 +698,16 @@ export default function PastoresPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pastores.map((pastor, index) => {
-            const supervisor = supervisors.find(s => s.id === pastor.supervisorId);
+          {supervisors.map((supervisor, index) => {
+            const manager = managers.find(m => m.id === supervisor.managerId);
+            const region = regions.find(r => r.id === supervisor.regionId);
             return (
-                <Card key={pastor.id}>
+                <Card key={supervisor.id}>
                     <CardContent className="pt-6">
                     <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                         <Image
                         src="https://placehold.co/96x96.png"
-                        alt={`Foto de ${pastor.firstName}`}
+                        alt={`Foto de ${supervisor.firstName}`}
                         width={96}
                         height={96}
                         className="rounded-lg object-cover w-24 h-24"
@@ -717,20 +715,21 @@ export default function PastoresPage() {
                         />
                         <div className="flex-1 space-y-2 min-w-[200px]">
                         <h3 className="text-lg font-bold">
-                            #{index + 1} - {pastor.firstName} {pastor.lastName}
+                            #{index + 1} - {supervisor.firstName} {supervisor.lastName}
                         </h3>
                         <div className="space-y-1 text-sm text-muted-foreground">
-                            <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {supervisor?.name || 'N/A'}</span></p>
-                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
+                            <p className='flex items-center gap-2'><User size={14} /> <span>Gerente: {manager?.name || 'N/A'}</span></p>
+                            <p className='flex items-center gap-2'><Map size={14} /> <span>Região: {region?.name || 'N/A'}</span></p>
+                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{supervisor.cpf}</span></p>
+                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{supervisor.phone}</span></p>
+                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{supervisor.email}</span></p>
+                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{supervisor.city} - {supervisor.state}</span></p>
                         </div>
                         </div>
                     </div>
                     <div className="flex justify-end mt-4">
                         <Button variant="outline" size="sm" asChild>
-                        <Link href={`/gerente/pastores/${pastor.id}`}>
+                        <Link href={`/gerente/supervisores/${supervisor.id}`}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Editar
                         </Link>
@@ -745,3 +744,5 @@ export default function PastoresPage() {
     </div>
   );
 }
+
+    
