@@ -9,6 +9,7 @@ import {
   Church,
   Settings,
   ArrowRightLeft,
+  Handshake,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +38,7 @@ const menuItems = [
     { href: '/supervisor/pastores', label: 'Pastores', icon: User },
     { href: '/supervisor/igrejas', label: 'Igrejas', icon: Church },
     { href: '/supervisor/transacoes', label: 'Transações', icon: ArrowRightLeft },
+    { href: '/supervisor/contribuicoes', label: 'Contribuições', icon: Handshake },
 ];
 
 const settingsItem = {
