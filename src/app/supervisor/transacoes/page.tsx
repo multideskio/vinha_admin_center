@@ -81,9 +81,6 @@ export default function TransacoesPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className='flex-1'>
                     <CardTitle>Histórico de Transações</CardTitle>
-                    <CardDescription>
-                    Visualize e filtre o histórico completo de transações.
-                    </CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="relative flex-1 sm:flex-initial">
