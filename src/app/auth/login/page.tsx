@@ -80,41 +80,37 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLogging(true);
-    const newLogs: LogEntry[] = [];
+    let currentLogs: LogEntry[] = [];
     
-    const addLog = (log: LogEntry) => {
-        newLogs.push(log);
-        setLogs([...newLogs]);
+    const updateLogs = (newLog: LogEntry) => {
+        currentLogs = [...currentLogs, newLog];
+        setLogs(currentLogs);
     }
     
-    const updateLastLog = (status: 'success' | 'error', newMessage?: string) => {
-        const lastLog = newLogs[newLogs.length - 1];
+    const updateLastLogStatus = (status: 'success' | 'error', newMessage?: string) => {
+        const lastLog = currentLogs[currentLogs.length - 1];
         lastLog.status = status;
-        if(newMessage) lastLog.message = newMessage;
-        setLogs([...newLogs]);
+        if (newMessage) {
+            lastLog.message = newMessage;
+        }
+        setLogs([...currentLogs]);
     }
 
-    setLogs([]); // Clear previous logs
-    
-    await sleep(500);
-    addLog({ message: 'Credenciais enviadas...', status: 'pending' });
-    updateLastLog('success', 'Credenciais enviadas');
+    setLogs([]);
 
-    await sleep(500);
-    addLog({ message: 'Verificando no banco de dados...', status: 'pending' });
-    
+    await sleep(200);
+    updateLogs({ message: 'Credenciais enviadas...', status: 'pending' });
+
     const result = await loginUser(data);
 
     if (result.error) {
-        await sleep(500);
-        updateLastLog('error', 'Falha ao verificar usuário.');
-        await sleep(500);
-        addLog({ message: result.error, status: 'error' });
+        updateLastLogStatus('error', 'Falha na autenticação.');
+        await sleep(200);
+        updateLogs({ message: result.error, status: 'error' }); // Exibe o erro real do servidor
     } else if (result.success && result.role) {
-        await sleep(500);
-        updateLastLog('success', 'Usuário encontrado e validado!');
-        await sleep(500);
-        addLog({ message: 'Login bem-sucedido! Redirecionando...', status: 'success' });
+        updateLastLogStatus('success', 'Credenciais validadas!');
+        await sleep(200);
+        updateLogs({ message: 'Login bem-sucedido! Redirecionando...', status: 'success' });
 
         toast({
             title: "Login bem-sucedido!",
