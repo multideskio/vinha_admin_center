@@ -15,6 +15,9 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -64,6 +67,14 @@ const transactions: Transaction[] = [
 export default function TransacoesPage() {
   return (
     <div className="flex flex-col gap-8">
+       <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Transações
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Gerencie todas as transações financeiras da plataforma.
+        </p>
+      </div>
       <Card>
         <CardContent className="pt-6">
             <div className="flex flex-wrap items-center justify-end gap-2 pb-4">

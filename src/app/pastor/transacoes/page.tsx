@@ -59,6 +59,14 @@ const transactions: Transaction[] = [
 export default function TransacoesPage() {
   return (
     <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Minhas Contribuições
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Visualize seu histórico de dízimos e ofertas.
+        </p>
+      </div>
       <Card>
         <CardContent className="pt-6">
             <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
