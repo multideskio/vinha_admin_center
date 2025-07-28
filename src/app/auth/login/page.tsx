@@ -104,9 +104,7 @@ export default function LoginPage() {
     const result = await loginUser(data);
 
     if (result.error) {
-        updateLastLogStatus('error', 'Falha na autenticação.');
-        await sleep(200);
-        updateLogs({ message: result.error, status: 'error' }); // Exibe o erro real do servidor
+        setLogs([{ message: result.error, status: 'error' }]); 
     } else if (result.success && result.role) {
         updateLastLogStatus('success', 'Credenciais validadas!');
         await sleep(200);
