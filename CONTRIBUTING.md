@@ -75,3 +75,26 @@ A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 ### Testes
 
 *   **Prioridade:** Embora não implementado ainda, a criação de testes unitários e de integração é uma prioridade futura para garantir a estabilidade do sistema. Novas funcionalidades complexas devem, idealmente, vir acompanhadas de testes.
+
+---
+
+## 🛠️ Troubleshooting e Soluções Comuns
+
+Esta seção documenta problemas recorrentes enfrentados durante o desenvolvimento e as soluções aplicadas para acelerar a resolução de futuros incidentes.
+
+1.  **Problema: Erro de "Credenciais Inválidas" mesmo com a senha correta.**
+    *   **Causa Raiz:** O script de seed (`npm run db:seed`) não estava carregando a variável de ambiente `DEFAULT_PASSWORD` do arquivo `.env.local` antes de realizar o hash da senha. Isso resultava em um hash inválido sendo salvo no banco de dados. Além disso, havia uma inconsistência de tipo na coluna `password` do schema.
+    *   **Solução Aplicada:**
+        *   **No `src/db/seed.ts`:** Garantimos que `dotenv.config({ path: '.env.local' });` seja a primeira linha a ser executada.
+        *   **No `src/db/schema.ts`:** Padronizamos a coluna `password` para o tipo `text` para acomodar hashes de qualquer tamanho.
+        *   **No `src/actions/auth.ts`:** Adicionamos uma conversão explícita `String(existingUser.password)` antes de passar o hash para o `bcrypt.compare`, garantindo a consistência do tipo.
+
+2.  **Problema: A sessão do usuário não persistia após o login.**
+    *   **Causa Raiz:** A função `validateRequest` em `src/lib/auth.ts` estava envolvida pela função `cache` do React/Next.js. O cache agressivo estava servindo uma resposta "não autenticada" antiga, mesmo após o login bem-sucedido.
+    *   **Solução Aplicada:** Removemos o `cache()` da função `validateRequest` em `src/lib/auth.ts`, forçando a revalidação da sessão a cada nova requisição e garantindo que o estado de login seja sempre o mais recente.
+
+3.  **Problema: Impossibilidade de visualizar erros do backend no frontend.**
+    *   **Causa Raiz:** A `Server Action` de login (`loginUser`) retornava mensagens de erro genéricas, que escondiam a causa real de falhas no banco de dados (ex: erros do Drizzle).
+    *   **Solução Aplicada:**
+        *   **No `src/actions/auth.ts`:** A função foi refatorada para retornar a mensagem de erro exata capturada no bloco `catch (error: any)`.
+        *   **No `src/app/auth/login/page.tsx`:** Implementamos um painel de logs que exibe a mensagem de erro bruta retornada pelo backend, permitindo uma depuração visual direta e eficiente.
