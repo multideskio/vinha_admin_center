@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar as CalendarIcon, Building, User } from 'lucide-react';
 import { format, subYears } from 'date-fns';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -291,6 +292,12 @@ export default function NovaContaPage() {
                        <ChurchForm />
                     </TabsContent>
                 </Tabs>
+                <div className="mt-6 text-center text-sm">
+                    Já tem uma conta?{' '}
+                    <Link href="/login" className="underline">
+                        Faça o login
+                    </Link>
+                </div>
             </CardContent>
         </Card>
     </div>
