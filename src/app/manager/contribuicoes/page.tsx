@@ -64,6 +64,11 @@ export default function ContribuicoesPage() {
     defaultValues: {
         paymentMethod: 'pix',
         amount: 0,
+        churchId: '',
+        cardName: '',
+        cardNumber: '',
+        cardExpiry: '',
+        cardCvc: '',
     },
   });
 
