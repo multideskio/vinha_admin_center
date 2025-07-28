@@ -42,6 +42,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const transaction = {
@@ -65,9 +66,11 @@ const transaction = {
 
 const RefundModal = ({ amount }: { amount: number }) => {
     const [refundAmount, setRefundAmount] = React.useState(amount.toFixed(2));
+    const [reason, setReason] = React.useState('');
+
 
     const handleRefund = () => {
-        console.log(`Reembolsando: ${refundAmount}`);
+        console.log(`Reembolsando: ${refundAmount}. Motivo: ${reason}`);
         // Lógica de reembolso aqui
     }
 
@@ -96,6 +99,18 @@ const RefundModal = ({ amount }: { amount: number }) => {
                             value={refundAmount}
                             onChange={(e) => setRefundAmount(e.target.value)}
                             className="col-span-3"
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="reason" className="text-right pt-2">
+                            Motivo
+                        </Label>
+                        <Textarea
+                            id="reason"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            className="col-span-3"
+                            placeholder="Digite o motivo do reembolso..."
                         />
                     </div>
                 </div>
