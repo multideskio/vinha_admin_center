@@ -12,6 +12,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Pie,
+  PieChart,
+  Cell,
 } from 'recharts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -90,6 +93,22 @@ const newMembers = [
     { month: 'Jun', count: 180 },
 ]
 
+const revenueByRegion = [
+    { region: 'Sul', revenue: 12500, fill: 'var(--color-chart-1)' },
+    { region: 'Sudeste', revenue: 25000, fill: 'var(--color-chart-2)' },
+    { region: 'Centro-Oeste', revenue: 8900.50, fill: 'var(--color-chart-3)' },
+    { region: 'Norte', revenue: 5500, fill: 'var(--color-chart-4)' },
+    { region: 'Nordeste', revenue: 18750.75, fill: 'var(--color-chart-5)' },
+]
+
+const churchesByRegion = [
+    { region: 'Sul', count: 15, fill: 'var(--color-chart-1)' },
+    { region: 'Sudeste', count: 35, fill: 'var(--color-chart-2)' },
+    { region: 'Centro-Oeste', count: 10, fill: 'var(--color-chart-3)' },
+    { region: 'Norte', count: 8, fill: 'var(--color-chart-4)' },
+    { region: 'Nordeste', count: 21, fill: 'var(--color-chart-5)' },
+]
+
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
@@ -147,6 +166,40 @@ export default function DashboardPage() {
               </BarChart>
             </ChartContainer>
           </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Arrecadação por Região</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{}} className="h-[300px] w-full">
+                    <PieChart>
+                        <Tooltip content={<ChartTooltipContent hideLabel />} />
+                        <Pie data={revenueByRegion} dataKey="revenue" nameKey="region" innerRadius={60}>
+                             {revenueByRegion.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Igrejas por Região</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={{}} className="h-[300px] w-full">
+                     <PieChart>
+                        <Tooltip content={<ChartTooltipContent hideLabel />} />
+                        <Pie data={churchesByRegion} dataKey="count" nameKey="region" innerRadius={60}>
+                            {churchesByRegion.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ChartContainer>
+            </CardContent>
         </Card>
       </div>
     </div>
