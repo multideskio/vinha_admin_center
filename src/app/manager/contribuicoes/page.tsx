@@ -5,7 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Banknote, CreditCard, QrCode, Church, DollarSign } from 'lucide-react';
+import { Banknote, CreditCard, QrCode, DollarSign } from 'lucide-react';
 import Image from 'next/image';
 import Cards, { Focused } from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
@@ -23,13 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Form,
   FormControl,
   FormField,
@@ -41,7 +34,6 @@ import { cn } from '@/lib/utils';
 
 
 const contributionSchema = z.object({
-  churchId: z.string({ required_error: 'Selecione uma igreja.' }),
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto'], {
     required_error: 'Selecione um método de pagamento.',
@@ -49,13 +41,6 @@ const contributionSchema = z.object({
 });
 
 type ContributionFormValues = z.infer<typeof contributionSchema>;
-
-const churchesData = [
-    { id: 'chu-01', name: 'Assembleia de Deus Madureira' },
-    { id: 'chu-02', name: 'Comunidade da Graça' },
-    { id: 'chu-03', name: 'Videira' },
-    { id: 'chu-04', name: 'Fonte da Vida' },
-];
 
 export default function ContribuicoesPage() {
     const [cardState, setCardState] = React.useState({
@@ -71,7 +56,6 @@ export default function ContribuicoesPage() {
     defaultValues: {
         paymentMethod: 'pix',
         amount: 0,
-        churchId: '',
     },
   });
 
@@ -104,7 +88,7 @@ export default function ContribuicoesPage() {
             Nova Contribuição
         </h1>
         <p className="text-sm text-muted-foreground">
-            Realize uma nova doação para uma das igrejas da sua rede.
+            Realize uma nova doação.
         </p>
       </div>
       <Card>
@@ -113,31 +97,6 @@ export default function ContribuicoesPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 <div className="space-y-6">
-                    <FormField
-                    control={form.control}
-                    name="churchId"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Igreja</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <Church className="mr-2 h-4 w-4 text-muted-foreground" />
-                                <SelectValue placeholder="Selecione a igreja" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {churchesData.map((church) => (
-                                <SelectItem key={church.id} value={church.id}>
-                                {church.name}
-                                </SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
                     <FormField
                         control={form.control}
                         name="amount"
