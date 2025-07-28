@@ -16,11 +16,13 @@ const loginSchema = z.object({
 });
 
 export async function loginUser(values: z.infer<typeof loginSchema>) {
+  console.log(`[AUTH_DEBUG] Iniciando tentativa de login para: ${values.email}`);
   try {
     const validatedFields = loginSchema.safeParse(values);
 
     if (!validatedFields.success) {
-      return { error: 'Campos inválidos.' };
+        console.error('[AUTH_DEBUG] Erro de validação dos campos:', validatedFields.error.flatten());
+        return { error: 'Campos inválidos.' };
     }
 
     const { email, password } = validatedFields.data;
@@ -29,24 +31,36 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
       where: eq(users.email, email),
     });
 
-    if (!existingUser || !existingUser.password) {
-      return { error: 'Credenciais inválidas.' };
-    }
-    
-    const isPasswordValid = await bcrypt.compare(password, existingUser.password);
-
-    if (!isPasswordValid) {
+    if (!existingUser) {
+        console.error(`[AUTH_DEBUG] Usuário com e-mail ${email} não encontrado no banco de dados.`);
         return { error: 'Credenciais inválidas.' };
     }
     
+    console.log('[AUTH_DEBUG] Usuário encontrado:', { id: existingUser.id, email: existingUser.email, role: existingUser.role });
+
+    if (!existingUser.password) {
+        console.error(`[AUTH_DEBUG] Usuário ${email} não possui uma senha cadastrada.`);
+        return { error: 'Credenciais inválidas.' };
+    }
+    
+    const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+    console.log(`[AUTH_DEBUG] A senha fornecida é válida? ${isPasswordValid}`);
+
+    if (!isPasswordValid) {
+        console.error(`[AUTH_DEBUG] Comparação de senha falhou para o usuário ${email}.`);
+        return { error: 'Credenciais inválidas.' };
+    }
+    
+    console.log(`[AUTH_DEBUG] Senha válida. Criando sessão para o usuário ${email}.`);
     const session = await lucia.createSession(existingUser.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
     cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 
+    console.log(`[AUTH_DEBUG] Sessão criada com sucesso. Redirecionando para o painel de ${existingUser.role}.`);
     return { success: true, role: existingUser.role };
 
   } catch (error) {
-    console.error(error);
+    console.error('[AUTH_DEBUG] Ocorreu um erro inesperado no servidor:', error);
     return { error: 'Ocorreu um erro ao tentar fazer login.' };
   }
 }
