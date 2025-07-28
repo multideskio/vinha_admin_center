@@ -1,9 +1,8 @@
 
-
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { regions } from '@/db/schema';
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
 const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
@@ -18,7 +17,8 @@ export async function GET() {
     const allRegions = await db
       .select()
       .from(regions)
-      .where(and(eq(regions.companyId, MOCK_COMPANY_ID), isNull(regions.deletedAt)));
+      .where(and(eq(regions.companyId, MOCK_COMPANY_ID), isNull(regions.deletedAt)))
+      .orderBy(desc(regions.updatedAt));
       
     return NextResponse.json({ regions: allRegions });
 
