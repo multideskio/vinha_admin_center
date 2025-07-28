@@ -15,6 +15,13 @@
       "when": 1753732049964,
       "tag": "0001_puzzling_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1753732803588,
+      "tag": "0002_military_jasper_sitwell",
+      "breakpoints": true
     }
   ]
 }
