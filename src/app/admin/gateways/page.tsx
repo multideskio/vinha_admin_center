@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,22 +32,18 @@ import {
 
 const gateways = [
   {
-    id: 'gtw-01',
-    name: 'Stripe',
+    id: 'gtw-cielo',
+    name: 'Cielo',
     status: 'active',
-    type: 'Cartão de Crédito, Pix',
+    type: 'Pix, Cartão de Crédito, Boleto',
+    href: '/admin/gateways/cielo',
   },
   {
-    id: 'gtw-02',
-    name: 'PagSeguro',
-    status: 'inactive',
-    type: 'Cartão de Crédito, Boleto',
-  },
-    {
-    id: 'gtw-03',
-    name: 'Mercado Pago',
+    id: 'gtw-bradesco',
+    name: 'Bradesco',
     status: 'active',
-    type: 'Todos',
+    type: 'Pix, Boleto, Crédito',
+    href: '/admin/gateways/bradesco',
   },
 ];
 
@@ -62,12 +59,24 @@ export default function GatewaysPage() {
             Gerencie os gateways para processamento de transações.
           </p>
         </div>
-        <Button size="sm" className="gap-1">
-          <PlusCircle className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-            Novo Gateway
-          </span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" className="gap-1">
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                Novo Gateway
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Selecione um Gateway</DropdownMenuLabel>
+            {gateways.map((gateway) => (
+              <DropdownMenuItem key={gateway.id} asChild>
+                <Link href={gateway.href}>{gateway.name}</Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Card>
@@ -105,7 +114,9 @@ export default function GatewaysPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href={gateway.href}>Configurar</Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Desativar</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
