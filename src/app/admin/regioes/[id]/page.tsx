@@ -33,13 +33,15 @@ import {
 const regionSchema = z.object({
   name: z.string().min(1, 'O nome da região é obrigatório.'),
   managerId: z.string({ required_error: 'Selecione um gerente.' }),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor inválida.'),
 });
 
 type RegionForm = z.infer<typeof regionSchema>;
 
 const regionData: RegionForm = {
     name: 'Sudeste',
-    managerId: 'mgr-02'
+    managerId: 'mgr-02',
+    color: '#16a34a'
 };
 
 const managers = [
@@ -69,19 +71,34 @@ export default function RegionEditPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome da Região</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Nome da Região</FormLabel>
+                    <FormControl>
+                        <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Cor da Região</FormLabel>
+                    <FormControl>
+                        <Input type="color" {...field} className='h-10' />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="managerId"

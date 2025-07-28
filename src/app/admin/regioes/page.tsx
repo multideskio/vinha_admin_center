@@ -62,6 +62,7 @@ const regionSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'O nome da região é obrigatório.'),
   managerId: z.string({ required_error: 'Selecione um gerente.' }),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: 'Cor inválida.'}),
 });
 
 type Region = z.infer<typeof regionSchema>;
@@ -73,6 +74,7 @@ const initialRegions: (Region & { manager: string; churches: number })[] = [
     manager: 'João Silva',
     churches: 15,
     managerId: 'mgr-01',
+    color: '#3b82f6',
   },
   {
     id: 'reg-02',
@@ -80,6 +82,7 @@ const initialRegions: (Region & { manager: string; churches: number })[] = [
     manager: 'Maria Oliveira',
     churches: 35,
     managerId: 'mgr-02',
+    color: '#16a34a',
   },
   {
     id: 'reg-03',
@@ -87,6 +90,7 @@ const initialRegions: (Region & { manager: string; churches: number })[] = [
     manager: 'Paulo Ferreira',
     churches: 10,
     managerId: 'mgr-03',
+    color: '#f97316',
   },
 ];
 
@@ -100,7 +104,7 @@ const RegionFormModal = ({ onSave, children }: { onSave: (data: Region) => void;
     const [isOpen, setIsOpen] = React.useState(false);
     const form = useForm<Region>({
       resolver: zodResolver(regionSchema),
-      defaultValues: { name: '', managerId: undefined },
+      defaultValues: { name: '', managerId: undefined, color: '#000000' },
     });
   
     const handleSave = (data: Region) => {
@@ -151,6 +155,19 @@ const RegionFormModal = ({ onSave, children }: { onSave: (data: Region) => void;
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cor da Região</FormLabel>
+                      <FormControl>
+                        <Input type='color' {...field} className='h-10' />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -207,9 +224,9 @@ export default function RegioesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Cor</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Gerente Responsável</TableHead>
-                <TableHead>Qtd. Igrejas</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -218,12 +235,12 @@ export default function RegioesPage() {
             <TableBody>
               {regions.map((region) => (
                 <TableRow key={region.id}>
+                  <TableCell>
+                    <div className='h-6 w-6 rounded-full border' style={{ backgroundColor: region.color }}></div>
+                  </TableCell>
                   <TableCell className="font-medium">{region.name}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {region.manager}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{region.churches}</Badge>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
