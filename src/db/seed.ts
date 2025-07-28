@@ -1,0 +1,147 @@
+
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import * as dotenv from 'dotenv';
+import * as schema from './schema';
+import {
+  users,
+  adminProfiles,
+  managerProfiles,
+  supervisorProfiles,
+  pastorProfiles,
+  churchProfiles,
+  regions
+} from './schema';
+
+dotenv.config({ path: '.env.local' });
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set in the environment variables");
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const db = drizzle(pool, { schema });
+
+async function main() {
+  console.log('Seeding database...');
+
+  // Limpa as tabelas na ordem correta para evitar erros de chave estrangeira
+  await db.delete(adminProfiles);
+  await db.delete(pastorProfiles);
+  await db.delete(churchProfiles);
+  await db.delete(supervisorProfiles);
+  await db.delete(managerProfiles);
+  await db.delete(regions);
+  await db.delete(users);
+
+  // Criar Regiões
+  console.log('Seeding regions...');
+  const seededRegions = await db.insert(regions).values([
+    { name: 'Sul', color: '#3b82f6' },
+    { name: 'Sudeste', color: '#16a34a' },
+    { name: 'Centro-Oeste', color: '#f97316' },
+    { name: 'Norte', color: '#ef4444' },
+    { name: 'Nordeste', color: '#8b5cf6' },
+  ]).returning();
+  const centroOeste = seededRegions.find(r => r.name === 'Centro-Oeste')!;
+
+  // Senha padrão para todos: '123456' (deve ser hasheada em um app real)
+  const defaultPassword = 'password123';
+
+  // 1. Admin
+  console.log('Seeding admin...');
+  const [adminUser] = await db.insert(users).values({
+    email: 'admin@vinha.com',
+    password: defaultPassword,
+    role: 'admin',
+    status: 'active',
+  }).returning();
+  await db.insert(adminProfiles).values({
+    userId: adminUser.id,
+    firstName: 'Admin',
+    lastName: 'Vinha',
+    cpf: '111.111.111-11',
+    permission: 'superadmin',
+  });
+
+  // 2. Gerente
+  console.log('Seeding manager...');
+  const [managerUser] = await db.insert(users).values({
+    email: 'gerente@vinha.com',
+    password: defaultPassword,
+    role: 'manager',
+    status: 'active',
+    titheDay: 10,
+  }).returning();
+  await db.insert(managerProfiles).values({
+    userId: managerUser.id,
+    firstName: 'Paulo',
+    lastName: 'Ferreira',
+    cpf: '222.222.222-22',
+  });
+
+  // 3. Supervisor
+  console.log('Seeding supervisor...');
+  const [supervisorUser] = await db.insert(users).values({
+    email: 'supervisor@vinha.com',
+    password: defaultPassword,
+    role: 'supervisor',
+    status: 'active',
+    titheDay: 8,
+  }).returning();
+  await db.insert(supervisorProfiles).values({
+    userId: supervisorUser.id,
+    managerId: managerUser.id,
+    regionId: centroOeste.id,
+    firstName: 'Jabez',
+    lastName: 'Henrique',
+    cpf: '333.333.333-33',
+  });
+  
+  // 4. Pastor
+  console.log('Seeding pastor...');
+  const [pastorUser] = await db.insert(users).values({
+    email: 'pastor@vinha.com',
+    password: defaultPassword,
+    role: 'pastor',
+    status: 'active',
+    titheDay: 15,
+  }).returning();
+  await db.insert(pastorProfiles).values({
+    userId: pastorUser.id,
+    supervisorId: supervisorUser.id,
+    firstName: 'João',
+    lastName: 'Silva',
+    cpf: '444.444.444-44',
+  });
+
+  // 5. Igreja
+  console.log('Seeding church...');
+  const [churchUser] = await db.insert(users).values({
+    email: 'igreja@vinha.com',
+    password: defaultPassword,
+    role: 'church_account',
+    status: 'active',
+    titheDay: 5,
+  }).returning();
+  await db.insert(churchProfiles).values({
+      userId: churchUser.id,
+      supervisorId: supervisorUser.id,
+      cnpj: '12.345.678/0001-99',
+      razaoSocial: 'Igreja Exemplo da Vinha',
+      nomeFantasia: 'Vinha Exemplo',
+      treasurerFirstName: 'Maria',
+      treasurerLastName: 'Finanças'
+  });
+
+  console.log('Database seeding complete.');
+  await pool.end();
+}
+
+main().catch((err) => {
+  console.error('Error during seeding:', err);
+  process.exit(1);
+});
