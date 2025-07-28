@@ -43,7 +43,7 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     // 2. Comparar a senha fornecida com o hash armazenado
     const isPasswordValid = await bcrypt.compare(
       password,
-      existingUser.password
+      String(existingUser.password)
     );
     
     if (!isPasswordValid) {

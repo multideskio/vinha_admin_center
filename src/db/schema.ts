@@ -248,7 +248,7 @@ export const managerProfilesRelations = relations(managerProfiles, ({ one, many 
 
 export const supervisorProfilesRelations = relations(supervisorProfiles, ({ one, many }) => ({
     user: one(users, { fields: [supervisorProfiles.userId], references: [users.id] }),
-    manager: one(managerProfiles, { fields: [supervisorProfiles.managerId], references: [managerProfiles.userId] }),
+    manager: one(users, { fields: [supervisorProfiles.managerId], references: [users.id] }),
     region: one(regions, { fields: [supervisorProfiles.regionId], references: [regions.id] }),
     pastors: many(pastorProfiles),
     churches: many(churchProfiles),
@@ -256,12 +256,12 @@ export const supervisorProfilesRelations = relations(supervisorProfiles, ({ one,
 
 export const pastorProfilesRelations = relations(pastorProfiles, ({ one }) => ({
     user: one(users, { fields: [pastorProfiles.userId], references: [users.id] }),
-    supervisor: one(supervisorProfiles, { fields: [pastorProfiles.supervisorId], references: [supervisorProfiles.userId] }),
+    supervisor: one(users, { fields: [pastorProfiles.supervisorId], references: [users.id] }),
 }));
 
 export const churchProfilesRelations = relations(churchProfiles, ({ one }) => ({
     user: one(users, { fields: [churchProfiles.userId], references: [users.id] }),
-    supervisor: one(supervisorProfiles, { fields: [churchProfiles.supervisorId], references: [supervisorProfiles.userId] }),
+    supervisor: one(users, { fields: [churchProfiles.supervisorId], references: [users.id] }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
