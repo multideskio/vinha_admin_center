@@ -3,9 +3,8 @@
 
 import { z } from 'zod';
 import { db } from '@/db/drizzle';
-import { regions, users } from '@/db/schema';
+import { regions } from '@/db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
-import { validateRequest } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 const regionSchema = z.object({
@@ -14,8 +13,10 @@ const regionSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: 'Cor inválida.' }),
 });
 
-const MOCK_COMPANY_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466";
-const MOCK_USER_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466";
+// IDs mocados para permitir o desenvolvimento sem autenticação real.
+// O ID da empresa corresponde ao que é criado no script de seed.
+const MOCK_COMPANY_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466"; 
+const MOCK_USER_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466"; 
 
 export async function getRegions() {
   try {
