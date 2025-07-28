@@ -169,7 +169,7 @@ export default function ContribuicoesPage() {
             Nova Contribuição
         </h1>
         <p className="text-sm text-muted-foreground">
-            Realize uma nova doação.
+            Realize uma nova contribuição.
         </p>
       </div>
       <Card>

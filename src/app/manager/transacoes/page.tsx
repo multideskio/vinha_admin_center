@@ -55,7 +55,7 @@ const transactions: Transaction[] = [
     { id: 'TRN-001', contributor: 'João Silva', church: 'Assembleia de Deus Madureira', amount: 150.00, method: 'Pix', status: 'Aprovada', date: '28/07/2024' },
     { id: 'TRN-002', contributor: 'Maria Oliveira', church: 'IURD', amount: 75.50, method: 'Cartão de Crédito', status: 'Aprovada', date: '28/07/2024' },
     { id: 'TRN-003', contributor: 'Carlos Andrade', church: 'Igreja Batista', amount: 200.00, method: 'Boleto', status: 'Pendente', date: '27/07/2024' },
-    { id: 'TRN-004', contributor: 'Ana Beatriz', church: 'Comunidade da Graça', amount: 50.00, method: 'Pix', status: 'Reembolsada', date: '27/07/2024', refundRequestReason: 'Doação duplicada por engano.' },
+    { id: 'TRN-004', contributor: 'Ana Beatriz', church: 'Comunidade da Graça', amount: 50.00, method: 'Pix', status: 'Reembolsada', date: '27/07/2024', refundRequestReason: 'Contribuição duplicada por engano.' },
     { id: 'TRN-005', contributor: 'Paulo Ferreira', church: 'Videira', amount: 300.00, method: 'Cartão de Crédito', status: 'Recusada', date: '26/07/2024' },
     { id: 'TRN-006', contributor: 'Jabez Henrique', church: 'Fonte da Vida', amount: 120.00, method: 'Pix', status: 'Aprovada', date: '26/07/2024' },
     { id: 'TRN-007', contributor: 'Lucas Mendes', church: 'Renascer em Cristo', amount: 90.00, method: 'Boleto', status: 'Aprovada', date: '25/07/2024' },
@@ -192,5 +192,3 @@ export default function TransacoesPage() {
     </div>
   );
 }
-
-    

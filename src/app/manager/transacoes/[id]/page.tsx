@@ -63,7 +63,7 @@ const transaction = {
         method: 'Pix',
         details: 'Chave: ana.beatriz@exemplo.com'
     },
-    refundRequestReason: 'Doação duplicada por engano.'
+    refundRequestReason: 'Contribuição duplicada por engano.'
 }
 
 const RefundModal = ({ amount }: { amount: number }) => {
@@ -268,5 +268,3 @@ export default function TransacaoDetalhePage() {
         </div>
     )
 }
-
-    
