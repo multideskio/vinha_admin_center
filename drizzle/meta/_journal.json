@@ -1,4 +1,3 @@
-
 {
   "version": "5",
   "dialect": "pg",
@@ -29,6 +28,20 @@
       "version": "7",
       "when": 1753736533036,
       "tag": "0003_late_iron_fist",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1753745899168,
+      "tag": "0004_smooth_union_jack",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1753745989020,
+      "tag": "0005_crazy_brood",
       "breakpoints": true
     }
   ]

@@ -33,9 +33,6 @@ export const companies = pgTable('companies', {
     maintenanceMode: boolean('maintenance_mode').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow(),
-    deletedAt: timestamp('deleted_at'),
-    deletedBy: uuid('deleted_by').references(() => users.id, { onDelete: 'set null' }),
-    deletionReason: text('deletion_reason'),
 });
 
 export const users = pgTable('users', {

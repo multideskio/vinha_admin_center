@@ -1,12 +1,12 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { regions } from '@/db/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
-const MOCK_USER_ID = "c33e9e6a-5694-49e4-9e8a-83849f87d466";
 
 const regionSchema = z.object({
   name: z.string().min(1),
@@ -19,8 +19,9 @@ export async function GET() {
       .select()
       .from(regions)
       .where(and(eq(regions.companyId, MOCK_COMPANY_ID), isNull(regions.deletedAt)));
-
+      
     return NextResponse.json({ regions: allRegions });
+
   } catch (error) {
     console.error("Erro ao buscar regiões:", error);
     return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
