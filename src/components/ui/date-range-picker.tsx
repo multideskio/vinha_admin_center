@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { format } from "date-fns"
+import { addDays, format, subYears } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
 
@@ -18,8 +18,8 @@ export function DateRangePicker({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) {
   const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2024, 0, 20),
-    to: new Date(),
+    from: new Date(),
+    to: addDays(new Date(), 7),
   })
 
   return (
@@ -57,6 +57,7 @@ export function DateRangePicker({
             selected={date}
             onSelect={setDate}
             numberOfMonths={2}
+            disabled={{ before: subYears(new Date(), 1), after: new Date() }}
           />
         </PopoverContent>
       </Popover>
