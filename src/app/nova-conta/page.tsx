@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar as CalendarIcon, Building, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subYears } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -138,7 +138,7 @@ const PastorForm = () => {
                                 </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > subYears(new Date(), 18) || date < new Date("1900-01-01")} initialFocus />
                             </PopoverContent>
                         </Popover>
                         <FormMessage />
