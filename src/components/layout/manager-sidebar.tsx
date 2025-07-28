@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -50,7 +49,7 @@ const settingsItem = {
   icon: Settings,
 };
 
-export function ManagerSidebar() {
+export function GerenteSidebar() {
   const pathname = usePathname();
 
   return (

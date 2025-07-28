@@ -1,7 +1,7 @@
 
 
 import type { Metadata } from 'next';
-import { ManagerSidebar } from '@/components/layout/manager-sidebar';
+import { GerenteSidebar } from '@/components/layout/gerente-sidebar';
 import {
   Search,
   User,
@@ -35,7 +35,7 @@ import {
 
 
 export const metadata: Metadata = {
-  title: 'Vinha Manager Center',
+  title: 'Vinha Gerente Center',
   description: 'Painel de Gerente para Vinha Ministérios',
 };
 
@@ -81,7 +81,7 @@ export default function ManagerLayout({
 }) {
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <ManagerSidebar />
+      <GerenteSidebar />
       <div className="flex flex-col">
       <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
            <Sheet>

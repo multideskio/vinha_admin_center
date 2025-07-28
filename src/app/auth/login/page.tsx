@@ -83,7 +83,7 @@ export default function LoginPage() {
             });
             const roleToPathMap: { [key: string]: string } = {
                 admin: '/admin',
-                manager: '/gerente',
+                gerente: '/gerente',
                 supervisor: '/supervisor',
                 pastor: '/pastor',
                 church_account: '/igreja'
