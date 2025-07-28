@@ -40,7 +40,7 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }).notNull(),
   email: varchar('email', { length: 255 }).unique().notNull(),
-  password: varchar('password', { length: 255 }).notNull(),
+  password: text('password').notNull(),
   role: userRoleEnum('role').notNull(),
   status: userStatusEnum('status').default('active').notNull(),
   phone: varchar('phone', { length: 20 }),
@@ -217,7 +217,6 @@ export const companiesRelations = relations(companies, ({ many }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
     company: one(companies, { fields: [users.companyId], references: [companies.id] }),
-    deletedBy: one(users, { fields: [users.deletedBy], references: [users.id] }),
     adminProfile: one(adminProfiles, { fields: [users.id], references: [adminProfiles.userId] }),
     managerProfile: one(managerProfiles, { fields: [users.id], references: [managerProfiles.userId] }),
     supervisorProfile: one(supervisorProfiles, { fields: [users.id], references: [supervisorProfiles.userId] }),
@@ -233,29 +232,42 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   }),
 }));
 
-export const regionsRelations = relations(regions, ({ one }) => ({
+export const regionsRelations = relations(regions, ({ one, many }) => ({
     company: one(companies, { fields: [regions.companyId], references: [companies.id] }),
-    deletedBy: one(users, { fields: [regions.deletedBy], references: [users.id] })
+    supervisors: many(supervisorProfiles),
 }));
 
-export const supervisorProfilesRelations = relations(supervisorProfiles, ({ one }) => ({
-    manager: one(users, { fields: [supervisorProfiles.managerId], references: [users.id], relationName: 'manager' }),
+export const adminProfilesRelations = relations(adminProfiles, ({ one }) => ({
+    user: one(users, { fields: [adminProfiles.userId], references: [users.id] }),
+}));
+
+export const managerProfilesRelations = relations(managerProfiles, ({ one, many }) => ({
+    user: one(users, { fields: [managerProfiles.userId], references: [users.id] }),
+    supervisors: many(supervisorProfiles),
+}));
+
+export const supervisorProfilesRelations = relations(supervisorProfiles, ({ one, many }) => ({
+    user: one(users, { fields: [supervisorProfiles.userId], references: [users.id] }),
+    manager: one(managerProfiles, { fields: [supervisorProfiles.managerId], references: [managerProfiles.userId] }),
     region: one(regions, { fields: [supervisorProfiles.regionId], references: [regions.id] }),
+    pastors: many(pastorProfiles),
+    churches: many(churchProfiles),
 }));
 
 export const pastorProfilesRelations = relations(pastorProfiles, ({ one }) => ({
-    supervisor: one(users, { fields: [pastorProfiles.supervisorId], references: [users.id], relationName: 'supervisor' }),
+    user: one(users, { fields: [pastorProfiles.userId], references: [users.id] }),
+    supervisor: one(supervisorProfiles, { fields: [pastorProfiles.supervisorId], references: [supervisorProfiles.userId] }),
 }));
 
 export const churchProfilesRelations = relations(churchProfiles, ({ one }) => ({
-    supervisor: one(users, { fields: [churchProfiles.supervisorId], references: [users.id], relationName: 'church_supervisor' }),
+    user: one(users, { fields: [churchProfiles.userId], references: [users.id] }),
+    supervisor: one(supervisorProfiles, { fields: [churchProfiles.supervisorId], references: [supervisorProfiles.userId] }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
     company: one(companies, { fields: [transactions.companyId], references: [companies.id] }),
-    contributor: one(users, { fields: [transactions.contributorId], references: [users.id], relationName: 'contributor' }),
-    originChurch: one(users, { fields: [transactions.originChurchId], references: [users.id], relationName: 'origin_church' }),
-    deletedBy: one(users, { fields: [transactions.deletedBy], references: [users.id] }),
+    contributor: one(users, { fields: [transactions.contributorId], references: [users.id] }),
+    originChurch: one(users, { fields: [transactions.originChurchId], references: [users.id] }),
 }));
 
 export const gatewayConfigurationsRelations = relations(gatewayConfigurations, ({ one }) => ({
