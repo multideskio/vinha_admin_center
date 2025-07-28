@@ -62,8 +62,6 @@ type LogEntry = {
     status: 'pending' | 'success' | 'error';
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -85,7 +83,6 @@ export default function LoginPage() {
     const result = await loginUser(data);
 
     if (result.error) {
-        // Exibe o erro bruto retornado pelo servidor
         setLogs([{ message: result.error, status: 'error' }]); 
     } else if (result.success && result.role) {
         setLogs([{ message: 'Login bem-sucedido! Redirecionando...', status: 'success' }]);
