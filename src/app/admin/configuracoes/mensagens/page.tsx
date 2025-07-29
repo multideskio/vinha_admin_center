@@ -181,21 +181,21 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                                 </FormControl>
                                 <FormDescription>
                                     Clique em uma variável para adicioná-la ao texto:
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {availableTags.map(tag => (
-                                            <Button
-                                                key={tag}
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-auto px-2 py-0.5 text-xs"
-                                                onClick={() => handleTagClick(tag)}
-                                            >
-                                                {tag}
-                                            </Button>
-                                        ))}
-                                    </div>
                                 </FormDescription>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {availableTags.map(tag => (
+                                        <Button
+                                            key={tag}
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-auto px-2 py-0.5 text-xs"
+                                            onClick={() => handleTagClick(tag)}
+                                        >
+                                            {tag}
+                                        </Button>
+                                    ))}
+                                </div>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -305,4 +305,3 @@ export default function MessagesSettingsPage() {
     </div>
   );
 }
-
