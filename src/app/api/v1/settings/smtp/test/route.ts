@@ -10,7 +10,6 @@ const testEmailSchema = z.object({
         port: z.number(),
         user: z.string(),
         password: z.string(),
-        secure: z.boolean(),
     }),
 });
 
@@ -24,12 +23,11 @@ export async function POST(request: Request) {
         const transporter = nodemailer.createTransport({
             host: config.host,
             port: config.port,
-            secure: config.secure, 
             auth: {
               user: config.user,
               pass: config.password,
             },
-          });
+        });
 
         await transporter.sendMail({
             from: `"Vinha Admin Teste" <${config.user}>`, 
@@ -46,6 +44,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
         }
         console.error("Erro ao enviar e-mail de teste:", error);
+        // Retornar a mensagem de erro específica para o frontend
         return NextResponse.json({ error: error.message || "Erro interno do servidor." }, { status: 500 });
     }
 }

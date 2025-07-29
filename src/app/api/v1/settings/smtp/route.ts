@@ -8,11 +8,10 @@ import { z } from 'zod';
 const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
 
 const smtpSettingsSchema = z.object({
-  host: z.string().min(1),
-  port: z.coerce.number().min(1),
-  user: z.string().min(1),
-  password: z.string().min(1),
-  secure: z.boolean().default(false),
+  host: z.string().min(1, 'Servidor SMTP é obrigatório.'),
+  port: z.coerce.number().min(1, 'Porta é obrigatória.'),
+  user: z.string().min(1, 'Usuário SMTP é obrigatório.'),
+  password: z.string().min(1, 'Senha SMTP é obrigatória.'),
 });
 
 export async function GET() {
@@ -29,7 +28,6 @@ export async function GET() {
                 port: config.smtpPort,
                 user: config.smtpUser,
                 password: config.smtpPass,
-                secure: config.smtpSecure,
             }
         });
 
@@ -52,7 +50,6 @@ export async function PUT(request: Request) {
             smtpPort: validatedData.port,
             smtpUser: validatedData.user,
             smtpPass: validatedData.password,
-            smtpSecure: validatedData.secure,
         };
 
         if(existingConfig) {
