@@ -44,7 +44,6 @@ export async function POST(request: Request) {
         const validatedData = transactionSchema.parse(body);
         const credentials = await getCieloCredentials();
         
-        // Gerar um ID de pedido único para o nosso sistema
         const merchantOrderId = `vinha-${Date.now()}`;
 
         let cieloPayload: any = {
@@ -63,13 +62,10 @@ export async function POST(request: Request) {
                 cieloPayload.Payment.Type = 'Pix';
                 break;
             case 'credit_card':
-                // Para cartão de crédito, o frontend precisaria enviar os dados do cartão
-                // Aqui estamos apenas montando a estrutura básica
                 cieloPayload.Payment.Type = 'CreditCard';
                 cieloPayload.Payment.Installments = 1;
                 cieloPayload.Payment.CreditCard = {
-                    // Dados do cartão viriam do frontend
-                    "CardNumber": "1234123412341231", // Cartão de teste
+                    "CardNumber": "1234123412341231", 
                     "Holder": "Comprador Teste",
                     "ExpirationDate": "12/2030",
                     "SecurityCode": "123",
@@ -79,7 +75,6 @@ export async function POST(request: Request) {
             case 'boleto':
                 cieloPayload.Payment.Type = 'Boleto';
                 cieloPayload.Payment.Provider = 'Bradesco2';
-                // Dados adicionais para boleto
                 cieloPayload.Customer.Identity = '12345678901';
                 cieloPayload.Customer.IdentityType = 'CPF';
                 cieloPayload.Customer.Address = {
@@ -110,12 +105,11 @@ export async function POST(request: Request) {
             throw new Error(cieloData[0]?.Message || 'Falha ao processar pagamento na Cielo.');
         }
 
-        // Salvar a transação no nosso banco
         await db.insert(transactionsTable).values({
             companyId: MOCK_COMPANY_ID,
             contributorId: user.id,
             amount: String(validatedData.amount),
-            status: 'pending', // Status inicial
+            status: 'pending', 
             paymentMethod: validatedData.paymentMethod,
             gatewayTransactionId: cieloData.Payment?.PaymentId,
         });
@@ -133,6 +127,6 @@ export async function POST(request: Request) {
 
 
 export async function GET(request: Request) {
+    // Adicionar lógica para listar transações do banco de dados local
     return NextResponse.json({ message: "Endpoint para listar transações" }, { status: 200 });
 }
-

@@ -109,15 +109,22 @@ export default function ContribuicoesPage() {
   React.useEffect(() => {
     let timer: NodeJS.Timeout;
     if (paymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
-        // Simula a verificação do pagamento via PIX
-        timer = setTimeout(() => {
-            setPixStatus('confirmed');
-            toast({
-                title: "Sucesso!",
-                description: "Pagamento via Pix confirmado com sucesso.",
-                variant: 'success',
-            });
-        }, 8000); // Aumenta o tempo para dar a impressão de verificação
+        timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/v1/transacoes/${paymentDetails.PaymentId}`);
+                const data = await res.json();
+                if(data.transaction?.Payment?.Status === 2){
+                    setPixStatus('confirmed');
+                    toast({
+                        title: "Sucesso!",
+                        description: "Pagamento via Pix confirmado com sucesso.",
+                        variant: 'success',
+                    });
+                }
+            } catch (error) {
+                console.error("Falha ao verificar status do Pix");
+            }
+        }, 8000); 
     }
     return () => clearTimeout(timer);
   }, [paymentDetails, paymentMethod, pixStatus, toast]);

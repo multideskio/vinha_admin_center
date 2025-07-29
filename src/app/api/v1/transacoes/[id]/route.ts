@@ -48,8 +48,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
         const cieloData = await response.json();
         
-        // Aqui você pode opcionalmente atualizar seu banco de dados com o status mais recente
-        // ...
+        // Opcional: Atualizar o banco de dados com o status mais recente da Cielo
+        await db.update(transactionsTable)
+          .set({ status: cieloData.Payment?.Status === 2 ? 'approved' : cieloData.Payment?.Status === 10 ? 'refused' : 'pending' }) // Mapear status da Cielo para o seu
+          .where(eq(transactionsTable.gatewayTransactionId, paymentId));
 
         return NextResponse.json({ success: true, transaction: cieloData });
 
