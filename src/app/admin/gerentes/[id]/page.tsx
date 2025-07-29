@@ -112,8 +112,21 @@ export default function GerenteProfilePage() {
           const response = await fetch(`/api/v1/gerentes/${id}`);
           if (!response.ok) throw new Error('Failed to fetch manager data');
           const data = await response.json();
-          setManager(data);
-          form.reset(data);
+          const sanitizedData = {
+              ...data,
+              landline: data.landline || '',
+              cep: data.cep || '',
+              state: data.state || '',
+              city: data.city || '',
+              neighborhood: data.neighborhood || '',
+              address: data.address || '',
+              titheDay: data.titheDay || 1,
+              facebook: data.facebook || '',
+              instagram: data.instagram || '',
+              website: data.website || '',
+          };
+          setManager(sanitizedData);
+          form.reset(sanitizedData);
       } catch (error) {
           toast({ title: 'Erro', description: 'Não foi possível carregar os dados do gerente.', variant: 'destructive' });
       } finally {
@@ -187,8 +200,6 @@ export default function GerenteProfilePage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreviewImage(reader.result as string);
-                // Here you would typically upload the file to a server
-                // and then update the manager's avatarUrl.
                 toast({
                     title: 'Preview da Imagem',
                     description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
@@ -332,7 +343,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>CPF</FormLabel>
                                 <FormControl>
-                                <Input {...field} disabled />
+                                <Input {...field} value={field.value ?? ''} disabled />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -386,19 +397,19 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="cep" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>CEP</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="state" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Estado/UF</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="city" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cidade</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -407,19 +418,19 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="neighborhood" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Bairro</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="address" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Complemento</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="titheDay" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Dia do dízimo</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
