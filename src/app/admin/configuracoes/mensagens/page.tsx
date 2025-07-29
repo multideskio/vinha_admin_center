@@ -179,7 +179,7 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                                         {...field}
                                     />
                                 </FormControl>
-                                <FormDescription>
+                                 <FormDescription>
                                     Clique em uma variável para adicioná-la ao texto:
                                 </FormDescription>
                                 <div className="flex flex-wrap gap-1 mt-2">
