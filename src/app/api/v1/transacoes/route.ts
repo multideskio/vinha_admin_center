@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { validateRequest } from '@/lib/auth';
 
 const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+// Mock User ID for development, corresponding to 'gerente@vinha.com' from seed
+const MOCK_USER_ID = 'e7a5c32c-15a5-4482-9a60-281b24385348'; 
 
 const transactionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
@@ -34,10 +36,12 @@ async function getCieloCredentials() {
 
 
 export async function POST(request: Request) {
-    const { user } = await validateRequest();
-    if (!user) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    // const { user } = await validateRequest();
+    // if (!user) {
+    //     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    // }
+
+    const user = { id: MOCK_USER_ID, email: 'gerente@vinha.com' }; // Mock user for development
 
     try {
         const body = await request.json();
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
                 cieloPayload.Payment.Type = 'CreditCard';
                 cieloPayload.Payment.Installments = 1;
                 cieloPayload.Payment.CreditCard = {
-                    "CardNumber": "1234123412341231", 
+                    "CardNumber": "4551870000000181", 
                     "Holder": "Comprador Teste",
                     "ExpirationDate": "12/2030",
                     "SecurityCode": "123",
