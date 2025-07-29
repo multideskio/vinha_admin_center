@@ -2,10 +2,13 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, Globe, RefreshCw, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { PlusCircle, Globe, RefreshCw, Trash2, Pencil, Loader2, ToggleLeft, ToggleRight, CheckCircle, XCircle } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,18 +44,20 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 
 const webhookSchema = z.object({
     id: z.string().uuid().optional(),
     url: z.string().url({ message: "Por favor, insira uma URL válida." }),
-    secret: z.string().min(1, "O segredo é obrigatório."),
+    secret: z.string().min(1, "O segredo é obrigatório.").optional(),
     events: z.array(z.string()).refine((value) => value.some((item) => item), {
       message: "Você deve selecionar pelo menos um evento.",
     }),
+    isActive: z.boolean().default(true),
 });
 
-type Webhook = z.infer<typeof webhookSchema>;
+type Webhook = z.infer<typeof webhookSchema> & { createdAt?: string };
 
 const availableEvents = [
     { id: 'transacao.criada', label: 'Transação Criada' },
@@ -67,12 +72,12 @@ const WebhookFormModal = ({ onSave, children, webhook }: { onSave: () => void; c
     const { toast } = useToast();
     const form = useForm<Webhook>({
         resolver: zodResolver(webhookSchema),
-        defaultValues: webhook ? { ...webhook, events: webhook.events || [] } : { url: '', secret: '', events: [] },
+        defaultValues: webhook ? { ...webhook } : { url: '', secret: '', events: [], isActive: true },
     });
 
     React.useEffect(() => {
         if (isOpen) {
-            form.reset(webhook ? { ...webhook, events: webhook.events || [] } : { url: '', secret: '', events: [] });
+            form.reset(webhook ? { ...webhook } : { url: '', secret: '', events: [], isActive: true });
         }
     }, [isOpen, webhook, form]);
 
@@ -124,7 +129,7 @@ const WebhookFormModal = ({ onSave, children, webhook }: { onSave: () => void; c
                                 <FormLabel>Segredo do Webhook</FormLabel>
                                 <FormControl>
                                     <div className='flex gap-2'>
-                                        <Input placeholder="whsec_..." {...field} />
+                                        <Input placeholder="whsec_..." {...field} value={field.value ?? ''} />
                                         <Button type="button" variant="outline" onClick={generateSecret}><RefreshCw className='h-4 w-4' /></Button>
                                     </div>
                                 </FormControl>
@@ -184,7 +189,7 @@ export default function WebhooksPage() {
             const response = await fetch('/api/v1/webhooks');
             if(!response.ok) throw new Error('Falha ao buscar webhooks.');
             const data = await response.json();
-            setWebhooks(data.webhooks.map((wh: any) => ({ ...wh, events: wh.events?.split(',') || [] })));
+            setWebhooks(data.webhooks);
         } catch (error: any) {
             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
         } finally {
@@ -195,6 +200,21 @@ export default function WebhooksPage() {
     React.useEffect(() => {
         fetchWebhooks();
     }, [fetchWebhooks]);
+
+    const handleToggleActive = async (webhook: Webhook) => {
+        try {
+            const response = await fetch(`/api/v1/webhooks/${webhook.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: !webhook.isActive })
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar o status do webhook.');
+            toast({ title: 'Sucesso!', description: 'Status do webhook atualizado.', variant: 'success' });
+            fetchWebhooks();
+        } catch(error: any) {
+             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        }
+    }
 
     const handleDelete = async (id?: string) => {
         if (!id) return;
@@ -232,6 +252,7 @@ export default function WebhooksPage() {
               <TableRow>
                 <TableHead>Endpoint</TableHead>
                 <TableHead>Eventos</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -241,21 +262,27 @@ export default function WebhooksPage() {
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-5 w-1/2" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-2/3" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-16" /></TableCell>
                     </TableRow>
                   ))
               ) : webhooks.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                         Nenhum webhook configurado.
                     </TableCell>
                 </TableRow>
               ) : webhooks.map((webhook) => (
                 <TableRow key={webhook.id}>
                     <TableCell className='font-medium'>
-                        <div className='flex items-center gap-2'>
-                           <Globe className='h-4 w-4 text-muted-foreground' />
-                           <span>{webhook.url}</span> 
+                        <div className='flex flex-col'>
+                           <div className='flex items-center gap-2'>
+                                <Globe className='h-4 w-4 text-muted-foreground' />
+                                <span>{webhook.url}</span>
+                            </div>
+                           <span className='text-xs text-muted-foreground pl-6'>
+                                Criado {formatDistanceToNow(new Date(webhook.createdAt!), { addSuffix: true, locale: ptBR })}
+                           </span>
                         </div>
                     </TableCell>
                     <TableCell>
@@ -265,11 +292,20 @@ export default function WebhooksPage() {
                             ))}
                         </div>
                     </TableCell>
+                     <TableCell>
+                        <Badge variant={webhook.isActive ? 'success' : 'secondary'}>
+                            {webhook.isActive ? <CheckCircle className='h-4 w-4 mr-1' /> : <XCircle className='h-4 w-4 mr-1' />}
+                            {webhook.isActive ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                    </TableCell>
                     <TableCell>
-                        <WebhookFormModal webhook={webhook} onSave={fetchWebhooks}>
-                            <Button variant="ghost" size="icon"><Pencil className='h-4 w-4' /></Button>
-                        </WebhookFormModal>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(webhook.id)}><Trash2 className='h-4 w-4' /></Button>
+                        <div className='flex items-center gap-2'>
+                            <Switch checked={webhook.isActive} onCheckedChange={() => handleToggleActive(webhook)} />
+                            <WebhookFormModal webhook={webhook} onSave={fetchWebhooks}>
+                                <Button variant="ghost" size="icon"><Pencil className='h-4 w-4' /></Button>
+                            </WebhookFormModal>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(webhook.id!)}><Trash2 className='h-4 w-4' /></Button>
+                        </div>
                     </TableCell>
                 </TableRow>
               ))}

@@ -245,6 +245,17 @@ export const notificationRules = pgTable('notification_rules', {
     updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+export const webhooks = pgTable('webhooks', {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    url: text('url').notNull(),
+    secret: text('secret').notNull(),
+    events: text('events').array().notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 
 // Relações
 
@@ -254,6 +265,7 @@ export const companiesRelations = relations(companies, ({ many, one }) => ({
     gatewayConfigurations: many(gatewayConfigurations),
     transactions: many(transactions),
     notificationRules: many(notificationRules),
+    webhooks: many(webhooks),
     otherSettings: one(otherSettings, { fields: [companies.id], references: [otherSettings.companyId] }),
 }));
 
@@ -319,6 +331,10 @@ export const gatewayConfigurationsRelations = relations(gatewayConfigurations, (
 
 export const notificationRulesRelations = relations(notificationRules, ({ one }) => ({
     company: one(companies, { fields: [notificationRules.companyId], references: [companies.id] }),
+}));
+
+export const webhooksRelations = relations(webhooks, ({ one }) => ({
+    company: one(companies, { fields: [webhooks.companyId], references: [companies.id] }),
 }));
 
 export const otherSettingsRelations = relations(otherSettings, ({ one }) => ({

@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { notificationRules } from '@/db/schema';
+import { webhooks } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -10,31 +10,18 @@ const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
 const webhookSchema = z.object({
     url: z.string().url(),
     secret: z.string().min(1),
-    events: z.array(z.string()),
+    events: z.array(z.string()).min(1, 'Selecione ao menos um evento.'),
 });
 
 export async function GET() {
   try {
-    const webhooks = await db
-      .select({
-          id: notificationRules.id,
-          url: notificationRules.messageTemplate, // Reutilizando campo
-          secret: notificationRules.name, // Reutilizando campo
-          events: notificationRules.eventTrigger, // Reutilizando campo
-      })
-      .from(notificationRules)
-      .where(eq(notificationRules.companyId, MOCK_COMPANY_ID))
-      .orderBy(desc(notificationRules.createdAt));
+    const allWebhooks = await db
+      .select()
+      .from(webhooks)
+      .where(eq(webhooks.companyId, MOCK_COMPANY_ID))
+      .orderBy(desc(webhooks.createdAt));
       
-    // Este é um workaround. Idealmente, teríamos uma tabela separada para webhooks.
-    // Por enquanto, adaptamos a tabela de regras de notificação.
-    const formattedWebhooks = webhooks.map(wh => ({
-        ...wh,
-        // O campo 'events' é na verdade um único evento. Vamos formatar para parecer um array.
-        events: wh.events ? [wh.events] : []
-    }));
-
-    return NextResponse.json({ webhooks: formattedWebhooks });
+    return NextResponse.json({ webhooks: allWebhooks });
 
   } catch (error) {
     console.error("Erro ao buscar webhooks:", error);
@@ -47,23 +34,15 @@ export async function POST(request: Request) {
       const body = await request.json();
       const validatedData = webhookSchema.parse(body);
       
-      // Criando uma "regra" para cada evento selecionado
-      const newWebhooks = await db.transaction(async (tx) => {
-        const results = [];
-        for (const event of validatedData.events) {
-            const [newWebhook] = await tx.insert(notificationRules).values({
-                companyId: MOCK_COMPANY_ID,
-                name: validatedData.secret, // Reutilizando campo
-                eventTrigger: event as any, // Reutilizando campo
-                messageTemplate: validatedData.url, // Reutilizando campo
-                isActive: true, // Webhooks são sempre ativos por padrão
-            }).returning();
-            results.push(newWebhook);
-        }
-        return results;
-      });
+      const [newWebhook] = await db.insert(webhooks).values({
+        companyId: MOCK_COMPANY_ID,
+        url: validatedData.url,
+        secret: validatedData.secret,
+        events: validatedData.events,
+        isActive: true,
+      }).returning();
   
-      return NextResponse.json({ success: true, webhooks: newWebhooks }, { status: 201 });
+      return NextResponse.json({ success: true, webhook: newWebhook }, { status: 201 });
 
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -1,14 +1,15 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { notificationRules } from '@/db/schema';
+import { webhooks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const webhookSchema = z.object({
-    url: z.string().url(),
-    secret: z.string().min(1),
-    events: z.array(z.string()),
+    url: z.string().url().optional(),
+    secret: z.string().min(1).optional(),
+    events: z.array(z.string()).min(1).optional(),
+    isActive: z.boolean().optional(),
 });
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
@@ -17,19 +18,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const body = await request.json();
         const validatedData = webhookSchema.parse(body);
 
-        // Como um ID pode representar múltiplas regras (uma por evento),
-        // a lógica de atualização é mais complexa.
-        // Por simplicidade aqui, vamos assumir que o ID se refere a uma única regra
-        // e que apenas URL e segredo podem ser atualizados. A gestão de eventos
-        // seria mais complexa (delete/insert).
-
-        const [updatedWebhook] = await db.update(notificationRules)
-            .set({
-                name: validatedData.secret, // Reutilizando campo
-                messageTemplate: validatedData.url, // Reutilizando campo
-                updatedAt: new Date(),
-            })
-            .where(eq(notificationRules.id, id))
+        const [updatedWebhook] = await db.update(webhooks)
+            .set({ ...validatedData, updatedAt: new Date() })
+            .where(eq(webhooks.id, id))
             .returning();
         
         if (!updatedWebhook) {
@@ -49,8 +40,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
     const { id } = params;
     try {
-        const [deletedWebhook] = await db.delete(notificationRules)
-            .where(eq(notificationRules.id, id))
+        const [deletedWebhook] = await db.delete(webhooks)
+            .where(eq(webhooks.id, id))
             .returning();
         
         if (!deletedWebhook) {

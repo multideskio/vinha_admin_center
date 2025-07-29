@@ -1,0 +1,2 @@
+ALTER TABLE "notification_rules" ADD COLUMN "send_via_email" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "notification_rules" ADD COLUMN "send_via_whatsapp" boolean DEFAULT false NOT NULL;
