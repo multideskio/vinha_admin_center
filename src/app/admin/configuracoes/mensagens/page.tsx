@@ -72,7 +72,7 @@ const availableTags = ['{nome}', '{valor}', '{data_vencimento}', '{link_pagament
 
 const NotificationFormModal = ({ rule, onSave, children }: { rule?: NotificationRule, onSave: (data: NotificationRule) => void; children: React.ReactNode }) => {
     const [isOpen, setIsOpen] = React.useState(false);
-    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    
     const form = useForm<NotificationRule>({
         resolver: zodResolver(notificationRuleSchema),
         defaultValues: rule || {
@@ -106,22 +106,8 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
     }
 
     const handleTagClick = (tag: string) => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const newText = text.substring(0, start) + tag + text.substring(end);
-        
-        form.setValue('messageTemplate', newText, { shouldValidate: true });
-
-        const newCursorPosition = start + tag.length;
-        
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(newCursorPosition, newCursorPosition);
-        }, 0);
+        const currentMessage = form.getValues('messageTemplate') || '';
+        form.setValue('messageTemplate', currentMessage + tag, { shouldValidate: true });
     }
 
     return (
@@ -174,7 +160,6 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                               <FormLabel>Modelo da Mensagem</FormLabel>
                               <FormControl>
                                 <Textarea
-                                  ref={textareaRef}
                                   placeholder="Olá {nome}, sua fatura de R${valor} vence em {dias} dias."
                                   rows={5}
                                   {...field}
@@ -183,7 +168,7 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                               <FormDescription>
                                 Clique em uma variável para adicioná-la ao texto:
                               </FormDescription>
-                              <div className="flex flex-wrap gap-1 mt-2">
+                                <div className="flex flex-wrap gap-1 pt-1">
                                 {availableTags.map((tag) => (
                                   <Button
                                     key={tag}
@@ -307,4 +292,5 @@ export default function MessagesSettingsPage() {
     </div>
   );
 }
+
 
