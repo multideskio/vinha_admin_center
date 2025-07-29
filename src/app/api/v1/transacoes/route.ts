@@ -8,7 +8,7 @@ import { validateRequest } from '@/lib/auth';
 
 const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
 // Mock User ID for development, corresponding to 'gerente@vinha.com' from seed
-const MOCK_USER_ID = 'e7a5c32c-15a5-4482-9a60-281b24385348'; 
+const MOCK_USER_ID = 'e7bba1dd-71f2-400f-98e1-bde37817843e'; 
 
 const transactionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
