@@ -147,9 +147,9 @@ export default function GerenteProfilePage() {
                 body: JSON.stringify(data),
             });
             if (!response.ok) throw new Error('Failed to update manager.');
-            const updatedManager = await response.json();
+            const updatedData = await response.json();
             toast({ title: 'Sucesso', description: 'Gerente atualizado com sucesso.', variant: 'success' });
-            setManager((prev) => prev ? { ...prev, ...updatedManager.manager } : null);
+            setManager((prev) => prev ? { ...prev, ...updatedData.manager } : null);
         } catch (error) {
             toast({ title: 'Erro', description: 'Não foi possível atualizar o gerente.', variant: 'destructive'});
         }
@@ -178,13 +178,13 @@ export default function GerenteProfilePage() {
                 throw new Error(`Falha ao atualizar ${fieldName}.`);
             }
     
-            const updatedManager = await response.json();
+            const updatedData = await response.json();
             toast({
                 title: 'Sucesso!',
                 description: `Link do ${fieldName} atualizado.`,
                 variant: 'success',
             });
-            setManager((prev) => prev ? { ...prev, ...updatedManager.manager } : null);
+            setManager((prev) => prev ? { ...prev, ...updatedData.manager } : null);
 
         } catch (error: any) {
             toast({
@@ -503,4 +503,3 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
-
