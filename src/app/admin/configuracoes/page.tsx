@@ -8,6 +8,7 @@ import {
   MessageSquareQuote,
   ChevronRight,
   Webhook,
+  Cloud,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -46,6 +47,12 @@ const settingsLinks = [
     title: 'Webhooks',
     description: 'Envie eventos do sistema para outros serviços.',
   },
+  {
+    href: '/admin/configuracoes/s3',
+    icon: Cloud,
+    title: 'Armazenamento (S3)',
+    description: 'Configure o local para armazenamento de arquivos (ex: S3, MinIO).',
+  }
 ];
 
 export default function SettingsPage() {
