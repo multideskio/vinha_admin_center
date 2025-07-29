@@ -60,11 +60,11 @@ const webhookSchema = z.object({
 type Webhook = z.infer<typeof webhookSchema> & { createdAt?: string };
 
 const availableEvents = [
-    { id: 'transacao.criada', label: 'Transação Criada' },
-    { id: 'transacao.aprovada', label: 'Transação Aprovada' },
-    { id: 'transacao.recusada', label: 'Transação Recusada' },
-    { id: 'usuario.criado', label: 'Usuário Criado' },
-    { id: 'usuario.atualizado', label: 'Usuário Atualizado' },
+    { id: 'transacao_criada', label: 'Transação Criada' },
+    { id: 'transacao_aprovada', label: 'Transação Aprovada' },
+    { id: 'transacao_recusada', label: 'Transação Recusada' },
+    { id: 'usuario_criado', label: 'Usuário Criado' },
+    { id: 'usuario_atualizado', label: 'Usuário Atualizado' },
 ]
 
 const WebhookFormModal = ({ onSave, children, webhook }: { onSave: () => void; children: React.ReactNode, webhook?: Webhook }) => {
@@ -316,3 +316,4 @@ export default function WebhooksPage() {
     </div>
   );
 }
+

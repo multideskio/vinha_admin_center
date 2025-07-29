@@ -28,6 +28,14 @@ export const notificationEventTriggerEnum = pgEnum('notification_event_trigger',
     'payment_overdue'
 ]);
 
+export const webhookEventEnum = pgEnum('webhook_event', [
+    'transacao_criada',
+    'transacao_recusada',
+    'usuario_atualizado',
+    'transacao_aprovada',
+    'usuario_criado'
+]);
+
 
 // Tabelas Principais
 
@@ -250,7 +258,7 @@ export const webhooks = pgTable('webhooks', {
     companyId: uuid('company_id').references(() => companies.id).notNull(),
     url: text('url').notNull(),
     secret: text('secret').notNull(),
-    events: text('events').array().notNull(),
+    events: webhookEventEnum('events').array().notNull(),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow(),

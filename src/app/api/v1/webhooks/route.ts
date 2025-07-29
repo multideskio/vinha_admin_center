@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { webhooks } from '@/db/schema';
+import { webhooks, webhookEventEnum } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -10,7 +10,7 @@ const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
 const webhookSchema = z.object({
     url: z.string().url(),
     secret: z.string().min(1),
-    events: z.array(z.string()).min(1, 'Selecione ao menos um evento.'),
+    events: z.array(z.enum(webhookEventEnum.enumValues)).min(1, 'Selecione ao menos um evento.'),
 });
 
 export async function GET() {
@@ -21,7 +21,12 @@ export async function GET() {
       .where(eq(webhooks.companyId, MOCK_COMPANY_ID))
       .orderBy(desc(webhooks.createdAt));
       
-    return NextResponse.json({ webhooks: allWebhooks });
+    const formattedWebhooks = allWebhooks.map(wh => ({
+      ...wh,
+      events: Array.isArray(wh.events) ? wh.events.map(e => e.replace('.', '_')) : [],
+    }));
+
+    return NextResponse.json({ webhooks: formattedWebhooks });
 
   } catch (error) {
     console.error("Erro ao buscar webhooks:", error);
