@@ -71,6 +71,13 @@
       "when": 1753768287926,
       "tag": "0009_condemned_sage",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1753801883377,
+      "tag": "0010_previous_guardian",
+      "breakpoints": true
     }
   ]
 }

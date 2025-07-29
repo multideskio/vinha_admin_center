@@ -17,31 +17,35 @@ export async function POST(request: Request) {
         const validatedData = testMessageSchema.parse(body);
 
         const { phone, message, config } = validatedData;
-
-        // Aqui iria a lógica para enviar a mensagem usando a API do WhatsApp
-        // Exemplo (genérico):
-        /*
+        
+        // Lógica para enviar a mensagem usando a API do WhatsApp (Evolution API)
         const response = await fetch(config.apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${config.apiKey}`
+                'apikey': config.apiKey,
             },
             body: JSON.stringify({
-                to: phone,
-                text: message,
+                number: phone,
+                options: {
+                    delay: 1200,
+                    presence: "composing"
+                },
+                textMessage: {
+                    text: message,
+                },
             }),
         });
 
         if (!response.ok) {
-            throw new Error('Falha ao enviar mensagem pela API do WhatsApp.');
+            const errorBody = await response.json();
+            console.error("Erro da Evolution API:", errorBody);
+            throw new Error(errorBody.message || 'Falha ao enviar mensagem pela API do WhatsApp.');
         }
-        */
 
-        // Como não temos uma API real, vamos simular o sucesso.
-        console.log(`Simulando envio para ${phone}: "${message}"`);
+        const responseData = await response.json();
         
-        return NextResponse.json({ success: true, message: 'Simulação de envio bem-sucedida.' });
+        return NextResponse.json({ success: true, data: responseData });
 
     } catch (error: any) {
         if (error instanceof z.ZodError) {
