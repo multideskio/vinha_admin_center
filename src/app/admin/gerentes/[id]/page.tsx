@@ -112,6 +112,7 @@ export default function GerenteProfilePage() {
           const response = await fetch(`/api/v1/gerentes/${id}`);
           if (!response.ok) throw new Error('Failed to fetch manager data');
           const data = await response.json();
+          
           const sanitizedData = {
               ...data,
               cpf: data.cpf ?? '',
@@ -126,6 +127,7 @@ export default function GerenteProfilePage() {
               instagram: data.instagram ?? '',
               website: data.website ?? '',
           };
+
           setManager(sanitizedData);
           form.reset(sanitizedData);
       } catch (error) {
@@ -503,3 +505,4 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
+
