@@ -219,7 +219,7 @@ export default function ContribuicoesPage() {
             throw new Error(result.error || 'Falha ao processar o pagamento com cartão.');
         }
         toast({ title: "Sucesso!", description: "Pagamento com cartão aprovado.", variant: "success"});
-        form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
+        form.reset({ amount: 0, paymentMethod: 'pix', contributionType: 'dizimo', description: '' });
         setCardState({ number: '', expiry: '', cvc: '', name: '', focus: '' });
         setShowPaymentDetails(false);
         setPaymentDetails(null);
@@ -360,7 +360,6 @@ export default function ContribuicoesPage() {
               </div>
 
              <Separator />
-             {/* Hide button if details are shown for non-card payments */}
               {!showPaymentDetails && (
                  <div className="flex justify-end">
                     <Button type="submit" size="lg" disabled={isProcessing}>
@@ -372,7 +371,7 @@ export default function ContribuicoesPage() {
             </form>
           </Form>
 
-          {showPaymentDetails && paymentDetails && (
+          {showPaymentDetails && (
             <>
                 {paymentMethod === 'credit_card' && (
                     <Card className="bg-muted/30">
@@ -432,7 +431,7 @@ export default function ContribuicoesPage() {
                         </CardContent>
                     </Card>
                 )}
-                 {paymentMethod === 'pix' && pixStatus === 'pending' && (
+                 {paymentMethod === 'pix' && paymentDetails && pixStatus === 'pending' && (
                     <Card className="bg-muted/30 flex flex-col items-center p-6">
                         <CardHeader className="items-center">
                             <CardTitle>Aguardando Pagamento</CardTitle>
@@ -455,14 +454,14 @@ export default function ContribuicoesPage() {
                         <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
                         <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
                          <Button onClick={() => {
-                             form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
+                             form.reset({ amount: 0, paymentMethod: 'pix', contributionType: 'dizimo', description: '' });
                              setShowPaymentDetails(false);
                              setPaymentDetails(null);
                              setPixStatus('idle');
                          }} className='mt-6'>Fazer Nova Contribuição</Button>
                     </CardContent>
                 )}
-                {paymentMethod === 'boleto' && (
+                {paymentMethod === 'boleto' && paymentDetails && (
                     <Card className="bg-muted/30 flex flex-col items-center p-6">
                         <CardHeader className="items-center text-center">
                             <CardTitle>Boleto Gerado</CardTitle>
