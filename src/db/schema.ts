@@ -22,6 +22,13 @@ export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'pend
 export const permissionLevelEnum = pgEnum('permission_level', ['admin', 'superadmin']);
 export const transactionStatusEnum = pgEnum('transaction_status', ['approved', 'pending', 'refused', 'refunded']);
 export const paymentMethodEnum = pgEnum('payment_method', ['pix', 'credit_card', 'boleto']);
+export const notificationEventTriggerEnum = pgEnum('notification_event_trigger', [
+    'user_registered', 
+    'payment_received', 
+    'payment_due_reminder', 
+    'payment_overdue'
+]);
+
 
 // Tabelas Principais
 
@@ -190,7 +197,7 @@ export const transactions = pgTable('transactions', {
   deletionReason: text('deletion_reason'),
 });
 
-// Tabela de Configurações dos Gateways
+// Tabela de Configurações e Automações
 export const gatewayConfigurations = pgTable('gateway_configurations', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     companyId: uuid('company_id').references(() => companies.id).notNull(),
@@ -206,6 +213,18 @@ export const gatewayConfigurations = pgTable('gateway_configurations', {
     acceptedPaymentMethods: text('accepted_payment_methods'),
 });
 
+export const notificationRules = pgTable('notification_rules', {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    eventTrigger: notificationEventTriggerEnum('event_trigger').notNull(),
+    daysOffset: integer('days_offset').default(0).notNull(),
+    messageTemplate: text('message_template').notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 
 // Relações
 
@@ -214,6 +233,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
     regions: many(regions),
     gatewayConfigurations: many(gatewayConfigurations),
     transactions: many(transactions),
+    notificationRules: many(notificationRules),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -274,4 +294,8 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
 
 export const gatewayConfigurationsRelations = relations(gatewayConfigurations, ({ one }) => ({
     company: one(companies, { fields: [gatewayConfigurations.companyId], references: [companies.id] }),
+}));
+
+export const notificationRulesRelations = relations(notificationRules, ({ one }) => ({
+    company: one(companies, { fields: [notificationRules.companyId], references: [companies.id] }),
 }));
