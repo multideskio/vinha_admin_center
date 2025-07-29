@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -39,7 +39,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { PasswordStrength } from '@/components/ui/password-strength';
 
 const managerProfileSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -54,7 +53,7 @@ const managerProfileSchema = z.object({
   neighborhood: z.string(),
   address: z.string(),
   titheDay: z.coerce.number(),
-  newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
+  newPassword: z.string().optional().or(z.literal('')),
   facebook: z.string().url().optional().or(z.literal('')),
   instagram: z.string().url().optional().or(z.literal('')),
   website: z.string().url().optional().or(z.literal('')),
@@ -85,11 +84,6 @@ export default function GerenteProfilePage() {
   const form = useForm<ManagerProfile>({
     resolver: zodResolver(managerProfileSchema),
     defaultValues: managerData,
-  });
-
-  const newPassword = useWatch({
-    control: form.control,
-    name: "newPassword",
   });
 
   const onSubmit = (data: ManagerProfile) => {
@@ -316,7 +310,6 @@ export default function GerenteProfilePage() {
                             </div>
                            </FormControl>
                           <FormMessage />
-                          <PasswordStrength password={newPassword} />
                         </FormItem>
                       )}
                     />

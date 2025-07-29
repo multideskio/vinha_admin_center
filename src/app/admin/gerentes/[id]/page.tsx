@@ -42,7 +42,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PasswordStrength } from '@/components/ui/password-strength';
 
 type ManagerProfile = {
     firstName: string;
@@ -94,11 +93,6 @@ export default function GerenteProfilePage() {
             instagram: '',
             website: '',
         },
-    });
-    
-    const newPassword = useWatch({
-        control: form.control,
-        name: "newPassword",
     });
 
     const fetchManager = React.useCallback(async () => {
@@ -429,7 +423,7 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="titheDay" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Dia do dízimo</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value ?? 1} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -454,7 +448,6 @@ export default function GerenteProfilePage() {
                                 </div>
                             </FormControl>
                             <FormMessage />
-                            <PasswordStrength password={newPassword} />
                             </FormItem>
                         )}
                         />
@@ -501,5 +494,3 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
-
-    

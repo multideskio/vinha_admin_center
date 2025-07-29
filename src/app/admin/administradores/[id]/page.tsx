@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -46,7 +46,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { PasswordStrength } from '@/components/ui/password-strength';
 
 const adminProfileSchema = z.object({
     id: z.string().optional(),
@@ -60,7 +59,7 @@ const adminProfileSchema = z.object({
     neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
     address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
     phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-    newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
+    newPassword: z.string().optional().or(z.literal('')),
     role: z.enum(['admin', 'superadmin'], {
       required_error: 'Selecione uma permissão.',
     }),
@@ -95,11 +94,6 @@ export default function AdminProfilePage() {
   const form = useForm<AdminProfile>({
     resolver: zodResolver(adminProfileSchema),
     defaultValues: adminData,
-  });
-
-  const newPassword = useWatch({
-    control: form.control,
-    name: "newPassword",
   });
 
   const onSubmit = (data: AdminProfile) => {
@@ -336,7 +330,6 @@ export default function AdminProfilePage() {
                             </div>
                           </FormControl>
                           <FormMessage />
-                          <PasswordStrength password={newPassword} />
                         </FormItem>
                       )}
                     />

@@ -21,7 +21,7 @@ const managerUpdateSchema = z.object({
     facebook: z.string().url().or(z.literal('')).nullable().optional(),
     instagram: z.string().url().or(z.literal('')).nullable().optional(),
     website: z.string().url().or(z.literal('')).nullable().optional(),
-    newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
   
 
@@ -149,5 +149,3 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
-
-    
