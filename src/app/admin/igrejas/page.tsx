@@ -830,12 +830,12 @@ export default function IgrejasPage() {
           <p className="text-sm text-muted-foreground">Exibindo {filteredChurches.length} de {churches.length} resultados</p>
         </div>
         <div className="flex items-center gap-2">
-            <div className='relative'>
-                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
-                <Input placeholder="Buscar por nome fantasia..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
-            </div>
-            <DateRangePicker />
             <TooltipProvider>
+                <div className='relative'>
+                    <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+                    <Input placeholder="Buscar por nome fantasia..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                </div>
+                <DateRangePicker />
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('table')} className="h-8 w-8"><List className="h-4 w-4" /></Button>
@@ -848,10 +848,10 @@ export default function IgrejasPage() {
                     </TooltipTrigger>
                     <TooltipContent>Visualizar em cards</TooltipContent>
                 </Tooltip>
+                <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
+                    <Button size="sm" className="gap-1"><PlusCircle className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Igreja</span></Button>
+                </ChurchFormModal>
             </TooltipProvider>
-            <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
-                <Button size="sm" className="gap-1"><PlusCircle className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Igreja</span></Button>
-            </ChurchFormModal>
         </div>
       </div>
       {viewMode === 'table' ? <TableView /> : <CardView />}
