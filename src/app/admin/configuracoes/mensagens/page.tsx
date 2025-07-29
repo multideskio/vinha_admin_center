@@ -14,7 +14,7 @@ export default function MessagesSettingsPage() {
                 <CardHeader>
                     <CardTitle>Mensagens Automáticas</CardTitle>
                     <CardDescription>
-                        Personalize as mensagens automáticas enviadas aos usuários. Use <code className='bg-muted text-muted-foreground px-1 py-0.5 rounded'>{'{{nome}}'}</code> para inserir o nome do usuário.
+                        Personalize as mensagens. Use variáveis como <code className='bg-muted text-muted-foreground px-1 py-0.5 rounded'>{'{{nome}}'}</code>, <code className='bg-muted text-muted-foreground px-1 py-0.5 rounded'>{'{{valor}}'}</code> ou <code className='bg-muted text-muted-foreground px-1 py-0.5 rounded'>{'{{pedido}}'}</code> para inserir dados dinâmicos.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
