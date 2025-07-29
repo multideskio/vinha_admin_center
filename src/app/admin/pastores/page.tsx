@@ -14,8 +14,10 @@ import {
   MapPin,
   Pencil,
   User,
-  Map,
   Calendar as CalendarIcon,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -30,8 +32,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -94,10 +94,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const pastorSchema = z.object({
-  id: z.string().optional(),
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
@@ -108,70 +109,38 @@ const pastorSchema = z.object({
   city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
   neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
   address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}),
-  titheDay: z.coerce.number().min(1).max(31),
+  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}).nullable(),
+  titheDay: z.coerce.number().min(1).max(31).nullable(),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-  status: z.enum(['active', 'inactive']),
 });
 
-type Pastor = z.infer<typeof pastorSchema>;
+type Pastor = z.infer<typeof pastorSchema> & {
+    id: string;
+    status: 'active' | 'inactive';
+    supervisorName?: string;
+}
 
-const initialPastors: Pastor[] = [
-    {
-        id: 'pas-01',
-        firstName: 'Lucas',
-        lastName: 'Mendes',
-        email: 'lucas.mendes@example.com',
-        phone: '(11) 98765-3333',
-        status: 'active',
-        cpf: '777.888.999-00',
-        cep: '01001-000',
-        state: 'SP',
-        city: 'São Paulo',
-        neighborhood: 'Centro',
-        address: 'Av. Paulista, 3000',
-        birthDate: new Date('1985-05-20'),
-        titheDay: 20,
-        supervisorId: 'sup-01',
-      },
-      {
-        id: 'pas-02',
-        firstName: 'Fernanda',
-        lastName: 'Costa',
-        email: 'fernanda.costa@example.com',
-        phone: '(21) 91234-4444',
-        status: 'inactive',
-        cpf: '888.999.000-11',
-        cep: '20040-001',
-        state: 'RJ',
-        city: 'Rio de Janeiro',
-        neighborhood: 'Copacabana',
-        address: 'Av. Atlântica, 4000',
-        birthDate: new Date('1990-11-12'),
-        titheDay: 1,
-        supervisorId: 'sup-02',
-      },
-];
-
-// Mock data, should come from API
-const supervisors = [
-    { id: 'sup-01', name: 'Carlos Andrade' },
-    { id: 'sup-02', name: 'Ana Beatriz' },
-    { id: 'sup-03', name: 'Jabez Henrique' },
-];
+type Supervisor = {
+    id: string;
+    firstName: string;
+    lastName: string;
+}
 
 
 const PastorFormModal = ({
   onSave,
+  supervisors,
   children,
 }: {
-  onSave: (data: Pastor) => void;
+  onSave: () => void;
+  supervisors: Supervisor[];
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<Pastor>({
+  const form = useForm<z.infer<typeof pastorSchema>>({
     resolver: zodResolver(pastorSchema),
     defaultValues: {
       firstName: '',
@@ -185,32 +154,42 @@ const PastorFormModal = ({
       address: '',
       titheDay: 1,
       phone: '',
-      status: 'active',
     },
   });
 
   React.useEffect(() => {
     if (isOpen) {
-      form.reset({
-        firstName: '',
-        lastName: '',
-        cpf: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        titheDay: 1,
-        phone: '',
-        status: 'active',
-      });
+      form.reset();
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Pastor) => {
-    onSave(data);
-    setIsOpen(false);
+  const handleSave = async (data: z.infer<typeof pastorSchema>) => {
+    try {
+        const response = await fetch('/api/v1/pastores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if(!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Falha ao cadastrar pastor.');
+        }
+
+        toast({
+            title: 'Sucesso!',
+            description: 'Pastor cadastrado com sucesso.',
+            variant: 'success'
+        });
+        onSave();
+        setIsOpen(false);
+    } catch (error: any) {
+        toast({
+            title: 'Erro',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   };
 
   const formatCPF = (value: string) => {
@@ -289,7 +268,7 @@ const PastorFormModal = ({
                       </FormControl>
                       <SelectContent>
                         {supervisors.map(supervisor => (
-                            <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.name}</SelectItem>
+                            <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.firstName} {supervisor.lastName}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -455,14 +434,14 @@ const PastorFormModal = ({
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant={"outline"}
+                            variant={'outline'}
                             className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
                             )}
                           >
                             {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
+                              format(field.value, 'dd/MM/yyyy')
                             ) : (
                               <span>dd/mm/aaaa</span>
                             )}
@@ -476,7 +455,7 @@ const PastorFormModal = ({
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
+                            date > new Date() || date < new Date('1900-01-01')
                           }
                           initialFocus
                         />
@@ -499,6 +478,7 @@ const PastorFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -545,203 +525,242 @@ const PastorFormModal = ({
 };
 
 export default function PastoresPage() {
-  const [pastores, setPastores] = React.useState<Pastor[]>(initialPastors);
+  const [pastores, setPastores] = React.useState<Pastor[]>([]);
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = viewMode === 'table' ? 10 : 9;
+  const { toast } = useToast();
 
-  const handleSave = (data: Pastor) => {
-    // Create new pastor
-    const newPastor: Pastor = {
-      ...data,
-      id: `pas-${Date.now()}`,
-      status: 'active',
-    };
-    setPastores([...pastores, newPastor]);
+  const fetchData = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const [pastoresRes, supervisorsRes] = await Promise.all([
+            fetch('/api/v1/pastores'),
+            fetch('/api/v1/supervisores?minimal=true'),
+        ]);
+
+        if (!pastoresRes.ok) throw new Error('Falha ao carregar pastores.');
+        if (!supervisorsRes.ok) throw new Error('Falha ao carregar supervisores.');
+        
+        const pastoresData = await pastoresRes.json();
+        const supervisorsData = await supervisorsRes.json();
+
+        setPastores(pastoresData.pastors);
+        setSupervisors(supervisorsData.supervisors);
+    } catch (error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleDelete = async (pastorId: string) => {
+    try {
+        const response = await fetch(`/api/v1/pastores/${pastorId}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Falha ao excluir o pastor.');
+        toast({ title: "Sucesso!", description: 'Pastor excluído com sucesso.', variant: 'success' });
+        fetchData();
+    } catch(error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive'});
+    }
   };
 
-  const handleDelete = (pastorId: string) => {
-    setPastores(pastores.filter((s) => s.id !== pastorId));
+  const filteredPastors = pastores.filter(pastor => 
+    `${pastor.firstName} ${pastor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredPastors.length / itemsPerPage);
+  const paginatedPastors = filteredPastors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+  
+  const TableView = () => (
+    <Card>
+        <CardContent className="pt-6">
+        <Table>
+            <TableHeader>
+            <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead className="hidden md:table-cell">Celular</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
+                <TableHead><span className="sr-only">Ações</span></TableHead>
+            </TableRow>
+            </TableHeader>
+            <TableBody>
+            {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                ))
+            ) : paginatedPastors.length > 0 ? (
+                paginatedPastors.map((pastor) => (
+                <TableRow key={pastor.id}>
+                    <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.email}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.phone}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                    <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
+                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                    </TableCell>
+                    <TableCell>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                            <Link href={`/admin/pastores/${pastor.id}`}>Editar</Link>
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                                Excluir
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>Essa ação não pode ser desfeita. Isso excluirá permanentemente o pastor.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(pastor.id!)}>Continuar</AlertDialogAction>
+                            </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    </TableCell>
+                </TableRow>
+                ))
+            ) : (
+                <TableRow><TableCell colSpan={5} className="text-center">Nenhum pastor encontrado.</TableCell></TableRow>
+            )}
+            </TableBody>
+        </Table>
+        <PaginationControls />
+        </CardContent>
+    </Card>
+  );
+
+  const CardView = () => (
+    <>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+            ))
+        ) : paginatedPastors.length > 0 ? (
+            paginatedPastors.map((pastor, index) => {
+                const supervisor = supervisors.find(s => s.id === pastor.supervisorId);
+                return (
+                    <Card key={pastor.id}>
+                        <CardContent className="pt-6">
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                            <Image
+                            src="https://placehold.co/96x96.png"
+                            alt={`Foto de ${pastor.firstName}`}
+                            width={96}
+                            height={96}
+                            className="rounded-lg object-cover w-24 h-24"
+                            data-ai-hint="male person"
+                            />
+                            <div className="flex-1 space-y-2 min-w-[200px]">
+                            <h3 className="text-lg font-bold">
+                                #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
+                            </h3>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                                <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {supervisor?.firstName} {supervisor?.lastName}</span></p>
+                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
+                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
+                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
+                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
+                            </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <Button variant="outline" size="sm" asChild>
+                            <Link href={`/admin/pastores/${pastor.id}`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Editar
+                            </Link>
+                            </Button>
+                        </div>
+                        </CardContent>
+                    </Card>
+                )
+            })
+        ) : (
+            <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
+        )}
+        </div>
+        <PaginationControls />
+    </>
+  );
+  
+  const PaginationControls = () => (
+    <div className="flex items-center justify-end space-x-2 py-4">
+        <Button variant="outline" size="sm" onClick={handlePreviousPage} disabled={currentPage === 1 || isLoading}><ChevronLeft className="h-4 w-4" /> Anterior</Button>
+        <span className='text-sm text-muted-foreground'>Página {currentPage} de {totalPages}</span>
+        <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || isLoading}>Próximo <ChevronRight className="h-4 w-4" /></Button>
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Pastores
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Exibindo {pastores.length} de {pastores.length} resultados
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Pastores</h1>
+          <p className="text-sm text-muted-foreground">Exibindo {filteredPastors.length} de {pastores.length} resultados</p>
         </div>
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 w-8"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em tabela</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('card')}
-                  className="h-8 w-8"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em cards</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <div className='relative'>
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+                <Input placeholder="Buscar por nome..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+            </div>
+            <TooltipProvider>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('table')} className="h-8 w-8"><List className="h-4 w-4" /></Button>
+                </TooltipTrigger>
+                <TooltipContent>Visualizar em tabela</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant={viewMode === 'card' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('card')} className="h-8 w-8"><Grid3x3 className="h-4 w-4" /></Button>
+                </TooltipTrigger>
+                <TooltipContent>Visualizar em cards</TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
 
-          <PastorFormModal onSave={handleSave}>
-            <Button size="sm" className="gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Novo Pastor
-              </span>
-            </Button>
-          </PastorFormModal>
+            <PastorFormModal onSave={fetchData} supervisors={supervisors}>
+                <Button size="sm" className="gap-1"><PlusCircle className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Novo Pastor</span></Button>
+            </PastorFormModal>
         </div>
       </div>
-
-      {viewMode === 'table' ? (
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Celular</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pastores.map((pastor) => (
-                  <TableRow key={pastor.id}>
-                    <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.email}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {pastor.phone}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge
-                        variant={
-                          pastor.status === 'active' ? 'default' : 'secondary'
-                        }
-                        className={
-                          pastor.status === 'active'
-                            ? 'bg-green-500/20 text-green-700 border-green-400'
-                            : 'bg-red-500/20 text-red-700 border-red-400'
-                        }
-                      >
-                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/pastores/${pastor.id}`}>Editar</Link>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                                Excluir
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Você tem certeza?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o pastor.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(pastor.id!)}
-                                >
-                                  Continuar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pastores.map((pastor, index) => {
-            const supervisor = supervisors.find(s => s.id === pastor.supervisorId);
-            return (
-                <Card key={pastor.id}>
-                    <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                        <Image
-                        src="https://placehold.co/96x96.png"
-                        alt={`Foto de ${pastor.firstName}`}
-                        width={96}
-                        height={96}
-                        className="rounded-lg object-cover w-24 h-24"
-                        data-ai-hint="male person"
-                        />
-                        <div className="flex-1 space-y-2 min-w-[200px]">
-                        <h3 className="text-lg font-bold">
-                            #{index + 1} - {pastor.firstName} {pastor.lastName}
-                        </h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                            <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {supervisor?.name || 'N/A'}</span></p>
-                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
-                        </div>
-                        </div>
-                    </div>
-                    <div className="flex justify-end mt-4">
-                        <Button variant="outline" size="sm" asChild>
-                        <Link href={`/admin/pastores/${pastor.id}`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Editar
-                        </Link>
-                        </Button>
-                    </div>
-                    </CardContent>
-                </Card>
-            )
-            })}
-        </div>
-      )}
+      {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   );
 }

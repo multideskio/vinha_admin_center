@@ -14,6 +14,9 @@ import {
   Pencil,
   User,
   Calendar as CalendarIcon,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -88,14 +91,14 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const churchSchema = z.object({
-  id: z.string().optional(),
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
   cnpj: z.string().min(1, 'O CNPJ/CPF é obrigatório.'),
   razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
-  nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatória.'),
+  nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
   email: z.string().email({ message: 'E-mail inválido.' }),
   cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
   state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
@@ -105,77 +108,40 @@ const churchSchema = z.object({
   foundationDate: z.date({
     required_error: 'A data de fundação é obrigatória.',
   }),
-  titheDay: z.coerce.number().min(1).max(31),
+  titheDay: z.coerce.number().min(1).max(31).nullable(),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-  treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.'),
-  treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.'),
-  treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.'),
-  status: z.enum(['active', 'inactive']),
+  treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable(),
+  treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable(),
+  treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable(),
 });
 
-type Church = z.infer<typeof churchSchema>;
+type Church = z.infer<typeof churchSchema> & {
+    id: string;
+    status: 'active' | 'inactive';
+    supervisorName?: string;
+}
 
-const initialChurches: Church[] = [
-  {
-    id: 'chu-01',
-    razaoSocial: 'IGREJA EVANGELICA ASSEMBLEIA DE DEUS',
-    nomeFantasia: 'Assembleia de Deus Madureira',
-    email: 'contato@admadureira.com',
-    phone: '(11) 98888-7777',
-    status: 'active',
-    cnpj: '55.343.456/0001-21',
-    cep: '01002-000',
-    state: 'SP',
-    city: 'São Paulo',
-    neighborhood: 'Sé',
-    address: 'Praça da Sé, 100',
-    foundationDate: new Date('1950-01-15T00:00:00'),
-    titheDay: 10,
-    supervisorId: 'sup-01',
-    treasurerFirstName: 'José',
-    treasurerLastName: 'Contas',
-    treasurerCpf: '123.456.789-00',
-  },
-  {
-    id: 'chu-02',
-    razaoSocial: 'IGREJA UNIVERSAL DO REINO DE DEUS',
-    nomeFantasia: 'IURD',
-    email: 'faleconosco@universal.org',
-    phone: '(21) 97777-8888',
-    status: 'active',
-    cnpj: '29.744.757/0001-97',
-    cep: '20221-901',
-    state: 'RJ',
-    city: 'Rio de Janeiro',
-    neighborhood: 'Del Castilho',
-    address: 'Av. Dom Hélder Câmara, 4242',
-    foundationDate: new Date('1977-07-09T00:00:00'),
-    titheDay: 5,
-    supervisorId: 'sup-02',
-    treasurerFirstName: 'Maria',
-    treasurerLastName: 'Finanças',
-    treasurerCpf: '098.765.432-11',
-  },
-];
-
-const supervisors = [
-  { id: 'sup-01', name: 'Carlos Andrade' },
-  { id: 'sup-02', name: 'Ana Beatriz' },
-  { id: 'sup-03', name: 'Jabez Henrique' },
-];
+type Supervisor = {
+    id: string;
+    firstName: string;
+    lastName: string;
+}
 
 const ChurchFormModal = ({
   onSave,
+  supervisors,
   children,
 }: {
-  onSave: (data: Church) => void;
+  onSave: () => void;
+  supervisors: Supervisor[];
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
   const [isFetchingCnpj, setIsFetchingCnpj] = React.useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<Church>({
+  const form = useForm<z.infer<typeof churchSchema>>({
     resolver: zodResolver(churchSchema),
     defaultValues: {
       razaoSocial: '',
@@ -192,7 +158,6 @@ const ChurchFormModal = ({
       treasurerFirstName: '',
       treasurerLastName: '',
       treasurerCpf: '',
-      status: 'active',
     },
   });
 
@@ -202,11 +167,35 @@ const ChurchFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Church) => {
-    onSave(data);
-    setIsOpen(false);
-  };
+  const handleSave = async (data: z.infer<typeof churchSchema>) => {
+    try {
+        const response = await fetch('/api/v1/igrejas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
 
+        if(!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Falha ao cadastrar igreja.');
+        }
+
+        toast({
+            title: 'Sucesso!',
+            description: 'Igreja cadastrada com sucesso.',
+            variant: 'success'
+        });
+        onSave();
+        setIsOpen(false);
+    } catch (error: any) {
+        toast({
+            title: 'Erro',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
+  };
+  
   const formatCPF = (value: string) => {
     return value
       .replace(/\D/g, '')
@@ -316,7 +305,7 @@ const ChurchFormModal = ({
                     <SelectContent>
                       {supervisors.map((supervisor) => (
                         <SelectItem key={supervisor.id} value={supervisor.id}>
-                          {supervisor.name}
+                          {supervisor.firstName} {supervisor.lastName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -534,6 +523,7 @@ const ChurchFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -573,7 +563,7 @@ const ChurchFormModal = ({
                     <FormItem>
                         <FormLabel>Nome Tesoureiro</FormLabel>
                         <FormControl>
-                        <Input placeholder="Nome" {...field} />
+                        <Input placeholder="Nome" {...field} value={field.value ?? ''}/>
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -586,7 +576,7 @@ const ChurchFormModal = ({
                     <FormItem>
                         <FormLabel>Sobrenome Tesoureiro</FormLabel>
                         <FormControl>
-                        <Input placeholder="Sobrenome" {...field} />
+                        <Input placeholder="Sobrenome" {...field} value={field.value ?? ''}/>
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -602,6 +592,7 @@ const ChurchFormModal = ({
                         <Input
                             placeholder="000.000.000-00"
                             {...field}
+                            value={field.value ?? ''}
                             onChange={(e) => field.onChange(formatCPF(e.target.value))}
                         />
                         </FormControl>
@@ -627,218 +618,242 @@ const ChurchFormModal = ({
 };
 
 export default function IgrejasPage() {
-  const [churches, setChurches] = React.useState<Church[]>(initialChurches);
+  const [churches, setChurches] = React.useState<Church[]>([]);
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = viewMode === 'table' ? 10 : 9;
+  const { toast } = useToast();
 
-  const handleSave = (data: Church) => {
-    // Create new church
-    const newChurch: Church = {
-      ...data,
-      id: `chu-${Date.now()}`,
-      status: 'active',
-    };
-    setChurches([...churches, newChurch]);
+  const fetchData = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const [churchesRes, supervisorsRes] = await Promise.all([
+            fetch('/api/v1/igrejas'),
+            fetch('/api/v1/supervisores?minimal=true'),
+        ]);
+
+        if (!churchesRes.ok) throw new Error('Falha ao carregar igrejas.');
+        if (!supervisorsRes.ok) throw new Error('Falha ao carregar supervisores.');
+
+        const churchesData = await churchesRes.json();
+        const supervisorsData = await supervisorsRes.json();
+
+        setChurches(churchesData.churches);
+        setSupervisors(supervisorsData.supervisors);
+    } catch (error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleDelete = async (churchId: string) => {
+    try {
+        const response = await fetch(`/api/v1/igrejas/${churchId}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Falha ao excluir a igreja.');
+        toast({ title: "Sucesso!", description: 'Igreja excluída com sucesso.', variant: 'success' });
+        fetchData();
+    } catch(error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive'});
+    }
   };
 
-  const handleDelete = (churchId: string) => {
-    setChurches(churches.filter((c) => c.id !== churchId));
+  const filteredChurches = churches.filter(church => 
+    church.nomeFantasia.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredChurches.length / itemsPerPage);
+  const paginatedChurches = filteredChurches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+  
+  const TableView = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome Fantasia</TableHead>
+              <TableHead className="hidden md:table-cell">CNPJ</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead><span className="sr-only">Ações</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                ))
+            ) : paginatedChurches.length > 0 ? (
+              paginatedChurches.map((church) => (
+                <TableRow key={church.id}>
+                  <TableCell className="font-medium">{church.nomeFantasia}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{church.cnpj}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{church.email}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Badge variant={church.status === 'active' ? 'success' : 'destructive'}>
+                      {church.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/igrejas/${church.id}`}>Editar</Link>
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                              Excluir
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                              <AlertDialogDescription>Essa ação não pode ser desfeita. Isso excluirá permanentemente a igreja.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(church.id!)}>Continuar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+                <TableRow><TableCell colSpan={5} className="text-center">Nenhuma igreja encontrada.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <PaginationControls />
+      </CardContent>
+    </Card>
+  );
+
+  const CardView = () => (
+    <>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+            ))
+        ) : paginatedChurches.length > 0 ? (
+            paginatedChurches.map((church, index) => {
+              const supervisor = supervisors.find((s) => s.id === church.supervisorId);
+              return (
+                <Card key={church.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                      <Image
+                        src="https://placehold.co/96x96.png"
+                        alt={`Foto da ${church.nomeFantasia}`}
+                        width={96}
+                        height={96}
+                        className="rounded-lg object-cover w-24 h-24"
+                        data-ai-hint="church building"
+                      />
+                      <div className="flex-1 space-y-2 min-w-[200px]">
+                        <h3 className="text-lg font-bold">
+                          #{((currentPage - 1) * itemsPerPage) + index + 1} - {church.nomeFantasia}
+                        </h3>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <p className="flex items-center gap-2"><User size={14} /> <span>Supervisor: {supervisor?.firstName} {supervisor?.lastName}</span></p>
+                          <p className="flex items-center gap-2"><FileText size={14} /> <span>{church.cnpj}</span></p>
+                          <p className="flex items-center gap-2"><Phone size={14} /> <span>{church.phone}</span></p>
+                          <p className="flex items-center gap-2"><Mail size={14} /> <span>{church.email}</span></p>
+                          <p className="flex items-center gap-2"><MapPin size={14} /> <span>{church.city} - {church.state}</span></p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-4">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/admin/igrejas/${church.id}`}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Editar
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+        ) : (
+            <div className="col-span-full text-center">Nenhuma igreja encontrada.</div>
+        )}
+      </div>
+      <PaginationControls />
+    </>
+  );
+  
+  const PaginationControls = () => (
+    <div className="flex items-center justify-end space-x-2 py-4">
+        <Button variant="outline" size="sm" onClick={handlePreviousPage} disabled={currentPage === 1 || isLoading}><ChevronLeft className="h-4 w-4" /> Anterior</Button>
+        <span className='text-sm text-muted-foreground'>Página {currentPage} de {totalPages}</span>
+        <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || isLoading}>Próximo <ChevronRight className="h-4 w-4" /></Button>
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Igrejas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Exibindo {churches.length} de {churches.length} resultados
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Igrejas</h1>
+          <p className="text-sm text-muted-foreground">Exibindo {filteredChurches.length} de {churches.length} resultados</p>
         </div>
         <div className="flex items-center gap-2">
+            <div className='relative'>
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+                <Input placeholder="Buscar por nome fantasia..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+            </div>
             <DateRangePicker />
             <TooltipProvider>
                 <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                    variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                    size="icon"
-                    onClick={() => setViewMode('table')}
-                    className="h-8 w-8"
-                    >
-                    <List className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>Visualizar em tabela</TooltipContent>
+                    <TooltipTrigger asChild>
+                        <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('table')} className="h-8 w-8"><List className="h-4 w-4" /></Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Visualizar em tabela</TooltipContent>
                 </Tooltip>
                 <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                    variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                    size="icon"
-                    onClick={() => setViewMode('card')}
-                    className="h-8 w-8"
-                    >
-                    <Grid3x3 className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>Visualizar em cards</TooltipContent>
+                    <TooltipTrigger asChild>
+                        <Button variant={viewMode === 'card' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('card')} className="h-8 w-8"><Grid3x3 className="h-4 w-4" /></Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Visualizar em cards</TooltipContent>
                 </Tooltip>
             </TooltipProvider>
-
-            <ChurchFormModal onSave={handleSave}>
-                <Button size="sm" className="gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Nova Igreja
-                </span>
-                </Button>
+            <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
+                <Button size="sm" className="gap-1"><PlusCircle className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Igreja</span></Button>
             </ChurchFormModal>
         </div>
       </div>
-
-      {viewMode === 'table' ? (
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome Fantasia</TableHead>
-                  <TableHead className="hidden md:table-cell">CNPJ</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {churches.map((church) => (
-                  <TableRow key={church.id}>
-                    <TableCell className="font-medium">{church.nomeFantasia}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {church.cnpj}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {church.email}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge
-                        variant={
-                          church.status === 'active' ? 'default' : 'secondary'
-                        }
-                        className={
-                          church.status === 'active'
-                            ? 'bg-green-500/20 text-green-700 border-green-400'
-                            : 'bg-red-500/20 text-red-700 border-red-400'
-                        }
-                      >
-                        {church.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/igrejas/${church.id}`}>Editar</Link>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                                Excluir
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Você tem certeza?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente a igreja.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(church.id!)}
-                                >
-                                  Continuar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {churches.map((church, index) => {
-            const supervisor = supervisors.find((s) => s.id === church.supervisorId);
-            return (
-              <Card key={church.id}>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                    <Image
-                      src="https://placehold.co/96x96.png"
-                      alt={`Foto da ${church.nomeFantasia}`}
-                      width={96}
-                      height={96}
-                      className="rounded-lg object-cover w-24 h-24"
-                      data-ai-hint="church building"
-                    />
-                    <div className="flex-1 space-y-2 min-w-[200px]">
-                      <h3 className="text-lg font-bold">
-                        #{index + 1} - {church.nomeFantasia}
-                      </h3>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        <p className="flex items-center gap-2">
-                          <User size={14} />{' '}
-                          <span>Supervisor: {supervisor?.name || 'N/A'}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <FileText size={14} /> <span>{church.cnpj}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Phone size={14} /> <span>{church.phone}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Mail size={14} /> <span>{church.email}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <MapPin size={14} />{' '}
-                          <span>
-                            {church.city} - {church.state}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end mt-4">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/admin/igrejas/${church.id}`}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Editar
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   );
 }

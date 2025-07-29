@@ -1,6 +1,7 @@
+
 import { redirect } from 'next/navigation';
 
-export default function ManagerPage() {
-  redirect('/manager/dashboard');
+export default function GerentePage() {
+  redirect('/gerente/dashboard');
   return null;
 }
