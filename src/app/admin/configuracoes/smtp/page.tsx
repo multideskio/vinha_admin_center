@@ -36,7 +36,13 @@ export default function SmtpSettingsPage() {
 
     const form = useForm<SmtpSettingsValues>({
         resolver: zodResolver(smtpSettingsSchema),
-        defaultValues: { secure: false },
+        defaultValues: { 
+            host: '',
+            port: 587,
+            user: '',
+            password: '',
+            secure: false 
+        },
     });
 
     React.useEffect(() => {

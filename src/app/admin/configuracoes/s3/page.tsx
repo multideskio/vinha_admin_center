@@ -34,6 +34,11 @@ export default function S3SettingsPage() {
     const form = useForm<S3SettingsValues>({
         resolver: zodResolver(s3SettingsSchema),
         defaultValues: {
+            endpoint: '',
+            bucket: '',
+            region: '',
+            accessKeyId: '',
+            secretAccessKey: '',
             forcePathStyle: false,
         },
     });

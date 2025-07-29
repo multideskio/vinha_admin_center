@@ -60,6 +60,11 @@ export default function BradescoGatewayPage() {
         defaultValues: {
             isActive: false,
             environment: 'development',
+            prodClientId: '',
+            prodClientSecret: '',
+            devClientId: '',
+            devClientSecret: '',
+            certificatePassword: '',
         },
     });
 
@@ -69,7 +74,14 @@ export default function BradescoGatewayPage() {
             const response = await fetch('/api/v1/gateways/bradesco');
             if (!response.ok) throw new Error('Falha ao carregar configurações.');
             const data = await response.json();
-            form.reset(data.config);
+            form.reset({
+                ...data.config,
+                prodClientId: data.config.prodClientId ?? '',
+                prodClientSecret: data.config.prodClientSecret ?? '',
+                devClientId: data.config.devClientId ?? '',
+                devClientSecret: data.config.devClientSecret ?? '',
+                certificatePassword: data.config.certificatePassword ?? '',
+            });
         } catch (error: any) {
             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
         } finally {
@@ -165,7 +177,7 @@ export default function BradescoGatewayPage() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Ambiente</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selecione o ambiente" />

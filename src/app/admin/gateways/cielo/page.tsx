@@ -70,6 +70,10 @@ export default function CieloGatewayPage() {
             isActive: false,
             environment: 'development',
             acceptedPaymentMethods: [],
+            prodClientId: '',
+            prodClientSecret: '',
+            devClientId: '',
+            devClientSecret: '',
         },
     });
 
@@ -81,6 +85,10 @@ export default function CieloGatewayPage() {
             const data = await response.json();
             form.reset({
                 ...data.config,
+                prodClientId: data.config.prodClientId ?? '',
+                prodClientSecret: data.config.prodClientSecret ?? '',
+                devClientId: data.config.devClientId ?? '',
+                devClientSecret: data.config.devClientSecret ?? '',
                 acceptedPaymentMethods: data.config.acceptedPaymentMethods ? data.config.acceptedPaymentMethods.split(',') : [],
             });
         } catch (error: any) {

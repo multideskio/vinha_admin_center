@@ -64,6 +64,13 @@
       "when": 1753767099860,
       "tag": "0008_cynical_shen",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1753768287926,
+      "tag": "0009_condemned_sage",
+      "breakpoints": true
     }
   ]
 }
