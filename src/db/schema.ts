@@ -224,6 +224,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     pastorProfile: one(pastorProfiles, { fields: [users.id], references: [pastorProfiles.userId] }),
     churchProfile: one(churchProfiles, { fields: [users.id], references: [churchProfiles.userId] }),
     sessions: many(sessions),
+    transactions: many(transactions, { relationName: 'contributor' })
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({

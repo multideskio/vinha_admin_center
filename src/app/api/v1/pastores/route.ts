@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, pastorProfiles, supervisorProfiles } from '@/db/schema';
-import { eq, and, isNull, desc } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         phone: users.phone,
         status: users.status,
         cpf: pastorProfiles.cpf,
-        supervisorName: supervisorProfiles.firstName,
+        supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
       })
       .from(users)
       .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))

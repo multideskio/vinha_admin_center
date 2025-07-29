@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema';
-import { eq, and, isNull, desc } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         phone: users.phone,
         status: users.status,
         cpf: supervisorProfiles.cpf,
-        managerName: managerProfiles.firstName,
+        managerName: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
         regionName: regions.name,
       })
       .from(users)
