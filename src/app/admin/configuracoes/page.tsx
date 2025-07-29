@@ -26,12 +26,6 @@ const settingsLinks = [
     description: 'Nome da aplicação, modo de manutenção e logo.',
   },
   {
-    href: '/admin/gateways',
-    icon: CreditCard,
-    title: 'Gateways de Pagamento',
-    description: 'Configure as integrações com Cielo e Bradesco.',
-  },
-  {
     href: '/admin/configuracoes/smtp',
     icon: Mail,
     title: 'SMTP',
