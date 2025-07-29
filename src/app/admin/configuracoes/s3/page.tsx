@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const s3SettingsSchema = z.object({
   endpoint: z.string().min(1, 'Endpoint é obrigatório.'),
@@ -30,6 +31,7 @@ export default function S3SettingsPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
+    const [isTesting, setIsTesting] = React.useState(false);
 
     const form = useForm<S3SettingsValues>({
         resolver: zodResolver(s3SettingsSchema),
@@ -68,6 +70,25 @@ export default function S3SettingsPage() {
         };
         fetchConfig();
     }, [form, toast]);
+
+    const handleTestConnection = async () => {
+        setIsTesting(true);
+        try {
+            const currentConfig = form.getValues();
+            const response = await fetch('/api/v1/settings/s3/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentConfig),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Falha ao testar conexão S3.');
+            toast({ title: 'Sucesso!', description: 'Conexão com o S3 estabelecida com sucesso.', variant: 'success' });
+        } catch (error: any) {
+            toast({ title: 'Erro na Conexão', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsTesting(false);
+        }
+    };
 
     const onSubmit = async (data: S3SettingsValues) => {
         setIsSaving(true);
@@ -147,10 +168,15 @@ export default function S3SettingsPage() {
                                     </Label>
                                 </FormItem>
                             )} />
-                            <div className='flex justify-end'>
+                            <Separator />
+                            <div className='flex justify-end gap-2'>
+                                <Button type="button" variant="outline" onClick={handleTestConnection} disabled={isTesting}>
+                                    {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Testar Conexão
+                                </Button>
                                 <Button type="submit" disabled={isSaving}>
                                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Salvar Configurações de S3
+                                    Salvar Configurações
                                 </Button>
                             </div>
                         </CardContent>
