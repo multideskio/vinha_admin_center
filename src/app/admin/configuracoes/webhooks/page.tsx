@@ -287,7 +287,7 @@ export default function WebhooksPage() {
                     </TableCell>
                     <TableCell>
                         <div className='flex flex-wrap gap-1'>
-                            {webhook.events.map(event => (
+                            {webhook.events?.map(event => (
                                 <Badge key={event} variant="secondary">{availableEvents.find(e => e.id === event)?.label || event}</Badge>
                             ))}
                         </div>

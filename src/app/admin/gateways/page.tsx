@@ -140,7 +140,11 @@ export default function GatewaysPage() {
                 {gateways.map((gateway) => (
                     <TableRow key={gateway.id}>
                     <TableCell className="font-medium">{gateway.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{gateway.acceptedPaymentMethods?.split(',').join(', ')}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                        <div className="flex flex-wrap gap-1">
+                        {(gateway.acceptedPaymentMethods || '').split(',').map(method => method.trim() && <Badge key={method} variant="secondary">{method}</Badge>)}
+                        </div>
+                    </TableCell>
                     <TableCell>
                         <Badge
                         variant={gateway.isActive ? 'success' : 'secondary'}
