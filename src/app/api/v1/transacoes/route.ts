@@ -1,14 +1,12 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { gatewayConfigurations, transactions as transactionsTable, users } from '@/db/schema';
+import { gatewayConfigurations, transactions as transactionsTable, users, type TransactionStatus } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { validateRequest } from '@/lib/auth';
 
 const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
-// Mock User ID for development, corresponding to 'gerente@vinha.com' from seed
-const MOCK_USER_ID = 'e7bba1dd-71f2-400f-98e1-bde37817843e'; 
+const MOCK_USER_ID = 'e7bba1dd-71f2-400f-98e1-bde37817843e';
 
 const transactionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
@@ -40,9 +38,24 @@ async function getCieloCredentials() {
     };
 }
 
+function mapCieloStatusToDbStatus(cieloStatus: number): TransactionStatus {
+    switch (cieloStatus) {
+        case 2: // PaymentConfirmed
+            return 'approved';
+        case 1: // Authorized
+        case 12: // Pending
+            return 'pending';
+        case 3: // Denied
+        case 10: // Voided
+        case 11: // Refunded
+        case 13: // Aborted
+        default:
+            return 'refused';
+    }
+}
 
 export async function POST(request: Request) {
-    const user = { id: MOCK_USER_ID, email: 'gerente@vinha.com' }; // Mock user for development
+    const user = { id: MOCK_USER_ID, email: 'gerente@vinha.com' }; 
 
     try {
         const body = await request.json();
@@ -54,11 +67,11 @@ export async function POST(request: Request) {
         let cieloPayload: any = {
             MerchantOrderId: merchantOrderId,
             Customer: {
-                Name: user.email // Usando e-mail como nome de exemplo
+                Name: user.email 
             },
             Payment: {
                 Type: '',
-                Amount: validatedData.amount * 100, // Cielo usa centavos
+                Amount: validatedData.amount * 100, 
             }
         };
 
@@ -71,11 +84,12 @@ export async function POST(request: Request) {
                     throw new Error("Dados do cartão de crédito são obrigatórios.");
                 }
                 cieloPayload.Payment.Type = 'CreditCard';
+                cieloPayload.Payment.Capture = true; // Capturar automaticamente
                 cieloPayload.Payment.Installments = 1;
                 cieloPayload.Payment.CreditCard = {
-                    CardNumber: validatedData.card.number, 
+                    CardNumber: validatedData.card.number.replace(/\s/g, ''), 
                     Holder: validatedData.card.holder,
-                    ExpirationDate: validatedData.card.expirationDate,
+                    ExpirationDate: validatedData.card.expirationDate, // MM/YYYY
                     SecurityCode: validatedData.card.securityCode,
                     Brand: validatedData.card.brand
                 }
@@ -113,11 +127,13 @@ export async function POST(request: Request) {
             throw new Error(cieloData[0]?.Message || 'Falha ao processar pagamento na Cielo.');
         }
 
+        const dbStatus = mapCieloStatusToDbStatus(cieloData.Payment?.Status);
+
         await db.insert(transactionsTable).values({
             companyId: MOCK_COMPANY_ID,
             contributorId: user.id,
             amount: String(validatedData.amount),
-            status: 'pending', 
+            status: dbStatus,
             paymentMethod: validatedData.paymentMethod,
             gatewayTransactionId: cieloData.Payment?.PaymentId,
         });
