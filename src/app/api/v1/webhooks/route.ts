@@ -21,12 +21,7 @@ export async function GET() {
       .where(eq(webhooks.companyId, MOCK_COMPANY_ID))
       .orderBy(desc(webhooks.createdAt));
       
-    const formattedWebhooks = allWebhooks.map(wh => ({
-      ...wh,
-      events: Array.isArray(wh.events) ? wh.events.map(e => e.replace('.', '_')) : [],
-    }));
-
-    return NextResponse.json({ webhooks: formattedWebhooks });
+    return NextResponse.json({ webhooks: allWebhooks });
 
   } catch (error) {
     console.error("Erro ao buscar webhooks:", error);
@@ -57,3 +52,5 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
+
+    

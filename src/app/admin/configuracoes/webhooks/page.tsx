@@ -96,7 +96,10 @@ const WebhookFormModal = ({ onSave, children, webhook }: { onSave: () => void; c
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            if (!response.ok) throw new Error(`Falha ao ${webhook ? 'atualizar' : 'criar'} webhook.`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Falha ao ${webhook ? 'atualizar' : 'criar'} webhook.`);
+            }
             toast({ title: 'Sucesso!', description: `Webhook ${webhook ? 'atualizado' : 'criado'} com sucesso.`, variant: 'success'});
             onSave();
             setIsOpen(false);
@@ -317,3 +320,4 @@ export default function WebhooksPage() {
   );
 }
 
+    
