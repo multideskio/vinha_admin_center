@@ -7,6 +7,7 @@ import {
   Smartphone,
   MessageSquareQuote,
   ChevronRight,
+  Webhook,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,6 +39,12 @@ const settingsLinks = [
     icon: MessageSquareQuote,
     title: 'Mensagens Automáticas',
     description: 'Personalize os templates de comunicação.',
+  },
+  {
+    href: '/admin/configuracoes/webhooks',
+    icon: Webhook,
+    title: 'Webhooks',
+    description: 'Envie eventos do sistema para outros serviços.',
   },
 ];
 
