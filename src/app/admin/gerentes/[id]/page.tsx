@@ -48,7 +48,7 @@ const managerProfileSchema = z.object({
     lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
     cpf: z.string().optional(),
     phone: z.string().min(1, 'O celular é obrigatório.'),
-    landline: z.string().optional().nullable(),
+    landline: z.string().nullable().optional(),
     email: z.string().email('E-mail inválido.'),
     cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }).nullable(),
     state: z.string().length(2, { message: 'UF deve ter 2 letras.' }).nullable(),
@@ -110,13 +110,13 @@ export default function GerenteProfilePage() {
             });
             if (!response.ok) throw new Error('Failed to update manager.');
             toast({ title: 'Sucesso', description: 'Gerente atualizado com sucesso.', variant: 'success' });
-            fetchManager();
+            setManager((prev) => prev ? { ...prev, ...data } : null);
         } catch (error) {
             toast({ title: 'Erro', description: 'Não foi possível atualizar o gerente.', variant: 'destructive'});
         }
     };
     
-    const handleSocialLinkBlur = async (fieldName: 'facebook' | 'instagram' | 'website', value: string) => {
+    const handleSocialLinkBlur = async (fieldName: 'facebook' | 'instagram' | 'website', value: string | null) => {
         try {
             if (value && !z.string().url().safeParse(value).success) {
                 toast({
@@ -126,11 +126,13 @@ export default function GerenteProfilePage() {
                 });
                 return;
             }
+            
+            const payload = { [fieldName]: value };
     
             const response = await fetch(`/api/v1/gerentes/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ [fieldName]: value }),
+                body: JSON.stringify(payload),
             });
     
             if (!response.ok) {
@@ -142,7 +144,8 @@ export default function GerenteProfilePage() {
                 description: `Link do ${fieldName} atualizado.`,
                 variant: 'success',
             });
-            fetchManager();
+            setManager((prev) => prev ? { ...prev, ...payload } : null);
+
         } catch (error: any) {
             toast({
                 title: 'Erro',
@@ -158,6 +161,8 @@ export default function GerenteProfilePage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreviewImage(reader.result as string);
+                // Here you would typically upload the file to a server
+                // and then update the manager's avatarUrl.
                 toast({
                     title: 'Preview da Imagem',
                     description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
