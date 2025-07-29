@@ -116,10 +116,8 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
         
         form.setValue('messageTemplate', newText, { shouldValidate: true });
 
-        // Move cursor to after the inserted tag
         const newCursorPosition = start + tag.length;
         
-        // Use timeout to make sure the state is updated before setting cursor
         setTimeout(() => {
             textarea.focus();
             textarea.setSelectionRange(newCursorPosition, newCursorPosition);
@@ -168,37 +166,41 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                             )} />
                         </div>
                         
-                        <FormField control={form.control} name="messageTemplate" render={({ field }) => (
+                        <FormField
+                          control={form.control}
+                          name="messageTemplate"
+                          render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Modelo da Mensagem</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        ref={textareaRef}
-                                        placeholder="Olá {nome}, sua fatura de R${valor} vence em {dias} dias."
-                                        rows={5}
-                                        {...field}
-                                    />
-                                </FormControl>
-                                 <FormDescription>
-                                    Clique em uma variável para adicioná-la ao texto:
-                                </FormDescription>
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                    {availableTags.map(tag => (
-                                        <Button
-                                            key={tag}
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-auto px-2 py-0.5 text-xs"
-                                            onClick={() => handleTagClick(tag)}
-                                        >
-                                            {tag}
-                                        </Button>
-                                    ))}
-                                </div>
-                                <FormMessage />
+                              <FormLabel>Modelo da Mensagem</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  ref={textareaRef}
+                                  placeholder="Olá {nome}, sua fatura de R${valor} vence em {dias} dias."
+                                  rows={5}
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Clique em uma variável para adicioná-la ao texto:
+                              </FormDescription>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {availableTags.map((tag) => (
+                                  <Button
+                                    key={tag}
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-auto px-2 py-0.5 text-xs"
+                                    onClick={() => handleTagClick(tag)}
+                                  >
+                                    {tag}
+                                  </Button>
+                                ))}
+                              </div>
+                              <FormMessage />
                             </FormItem>
-                        )} />
+                          )}
+                        />
                         
                          <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
