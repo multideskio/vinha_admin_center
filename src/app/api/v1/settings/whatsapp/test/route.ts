@@ -18,7 +18,6 @@ export async function POST(request: Request) {
 
         const { phone, message, config } = validatedData;
         
-        // Lógica para enviar a mensagem usando a API do WhatsApp (Evolution API)
         const response = await fetch(config.apiUrl, {
             method: 'POST',
             headers: {
@@ -27,9 +26,7 @@ export async function POST(request: Request) {
             },
             body: JSON.stringify({
                 number: phone,
-                textMessage: { // Mantendo a estrutura original que parece ser a correta para o sendText
-                    text: message,
-                },
+                text: message,
             }),
         });
 
