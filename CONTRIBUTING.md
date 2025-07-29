@@ -20,7 +20,7 @@ A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 
 2.  **Mantenha o Backup Sincronizado:** Sempre que criar ou alterar uma variável no `.env`, adicione a mesma variável (com um valor de exemplo ou vazio) ao arquivo `.env.backup`. Isso garante que a estrutura de configuração seja preservada.
 
-3.  **Atualize o Exemplo:** Para cada variável adicionada ao `.env`, adicione sua definição (sem a chave secreta) ao arquivo `.env.example`. Isso ajuda outros desenvolvedores a configurarem seus ambientes locais.
+3.  **Atualize o Exemplo:** Para cada variável adicionada ao `.env`, adicione sua definição (sem a chave secreta) ao `.env.example`. Isso ajuda outros desenvolvedores a configurarem seus ambientes locais.
     *   **Exemplo:** Se adicionou `DATABASE_URL="postgres://..."`, adicione `DATABASE_URL=` ao `.env.example`.
 
 4.  **NUNCA CODIFIQUE CREDENCIAIS:** Jamais coloque chaves de API, senhas ou qualquer informação sensível diretamente no código-fonte. O código será hospedado no GitHub e expor credenciais é uma falha de segurança grave. Utilize sempre as variáveis de ambiente, carregadas via `dotenv`.
@@ -49,7 +49,8 @@ A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 
 ### Gerenciamento do Banco de Dados com Drizzle
 
-*   **Schema:** Todas as tabelas e relações são definidas em `src/db/schema.ts`. Este é o arquivo "fonte da verdade" para a estrutura do banco.
+*   **Responsabilidade da IA:** A inteligência artificial (IA) é responsável **apenas por editar** o arquivo `src/db/schema.ts` quando for necessário alterar a estrutura do banco de dados.
+*   **Responsabilidade do Desenvolvedor:** O desenvolvedor é responsável por executar os comandos para sincronizar o banco de dados com o schema.
 *   **Gerar Migração:** Para criar um novo arquivo de migração baseado nas alterações do schema, use: `npm run db:generate`.
 *   **Aplicar Migração (Desenvolvimento):** Para aplicar as alterações diretamente no banco de desenvolvimento (sem criar arquivo de migração), use: `npm run db:push`.
 *   **Popular o Banco (Seed):** Para preencher o banco com dados iniciais, execute: `npm run db:seed`.
