@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -40,6 +40,7 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { PasswordStrength } from '@/components/ui/password-strength';
 
 const churchProfileSchema = z.object({
     id: z.string().optional(),
@@ -60,7 +61,7 @@ const churchProfileSchema = z.object({
     treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.'),
     treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.'),
     treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.'),
-    password: z.string().optional(),
+    newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
     facebook: z.string().url().optional().or(z.literal('')),
     instagram: z.string().url().optional().or(z.literal('')),
     website: z.string().url().optional().or(z.literal('')),
@@ -96,6 +97,11 @@ export default function IgrejaProfilePage() {
   const form = useForm<ChurchProfile>({
     resolver: zodResolver(churchProfileSchema),
     defaultValues: churchData,
+  });
+
+  const newPassword = useWatch({
+    control: form.control,
+    name: "newPassword",
   });
 
   const onSubmit = (data: ChurchProfile) => {
@@ -360,7 +366,7 @@ export default function IgrejaProfilePage() {
 
                      <FormField
                       control={form.control}
-                      name="password"
+                      name="newPassword"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Crie ou atualize a senha da igreja</FormLabel>
@@ -371,6 +377,7 @@ export default function IgrejaProfilePage() {
                             </div>
                            </FormControl>
                           <FormMessage />
+                          <PasswordStrength password={newPassword} />
                         </FormItem>
                       )}
                     />

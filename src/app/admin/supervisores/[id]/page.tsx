@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -45,6 +45,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { PasswordStrength } from '@/components/ui/password-strength';
 
 const supervisorProfileSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -61,7 +62,7 @@ const supervisorProfileSchema = z.object({
   number: z.string().optional(),
   complement: z.string().optional(),
   titheDay: z.coerce.number(),
-  password: z.string().optional(),
+  newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
   facebook: z.string().url().optional().or(z.literal('')),
   instagram: z.string().url().optional().or(z.literal('')),
   website: z.string().url().optional().or(z.literal('')),
@@ -112,6 +113,11 @@ export default function SupervisorProfilePage() {
   const form = useForm<SupervisorProfile>({
     resolver: zodResolver(supervisorProfileSchema),
     defaultValues: supervisorData,
+  });
+
+  const newPassword = useWatch({
+    control: form.control,
+    name: "newPassword",
   });
 
   const onSubmit = (data: SupervisorProfile) => {
@@ -387,13 +393,23 @@ export default function SupervisorProfilePage() {
                         </AlertDescription>
                     </Alert>
 
-                    <div>
-                        <Label>Atualize a senha do supervisor</Label>
-                        <div className="relative mt-1">
-                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input type="password" placeholder="Password" className="pl-9" />
-                        </div>
-                    </div>
+                     <FormField
+                      control={form.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Label>Atualize a senha do supervisor</Label>
+                           <FormControl>
+                            <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} />
+                            </div>
+                           </FormControl>
+                          <FormMessage />
+                          <PasswordStrength password={newPassword} />
+                        </FormItem>
+                      )}
+                    />
 
                     <div className="flex justify-end">
                       <Button type="submit">Alterar cadastro</Button>

@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -42,6 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PasswordStrength } from '@/components/ui/password-strength';
 
 const managerProfileSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -56,7 +57,7 @@ const managerProfileSchema = z.object({
     neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }).nullable(),
     address: z.string().min(1, { message: 'O endereço é obrigatório.' }).nullable(),
     titheDay: z.coerce.number().min(1).max(31).nullable(),
-    newPassword: z.string().optional(),
+    newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
     facebook: z.string().url().or(z.literal('')).nullable().optional(),
     instagram: z.string().url().or(z.literal('')).nullable().optional(),
     website: z.string().url().or(z.literal('')).nullable().optional(),
@@ -79,6 +80,11 @@ export default function GerenteProfilePage() {
 
     const form = useForm<z.infer<typeof managerProfileSchema>>({
         resolver: zodResolver(managerProfileSchema),
+    });
+    
+    const newPassword = useWatch({
+        control: form.control,
+        name: "newPassword",
     });
 
     const fetchManager = React.useCallback(async () => {
@@ -418,6 +424,7 @@ export default function GerenteProfilePage() {
                                 </div>
                             </FormControl>
                             <FormMessage />
+                            <PasswordStrength password={newPassword} />
                             </FormItem>
                         )}
                         />

@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -50,6 +50,7 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { PasswordStrength } from '@/components/ui/password-strength';
 
 const pastorProfileSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -67,7 +68,7 @@ const pastorProfileSchema = z.object({
   complement: z.string().optional(),
   birthDate: z.date(),
   titheDay: z.coerce.number(),
-  password: z.string().optional(),
+  newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
   facebook: z.string().url().optional().or(z.literal('')),
   instagram: z.string().url().optional().or(z.literal('')),
   website: z.string().url().optional().or(z.literal('')),
@@ -109,6 +110,11 @@ export default function PastorProfilePage() {
   const form = useForm<PastorProfile>({
     resolver: zodResolver(pastorProfileSchema),
     defaultValues: pastorData,
+  });
+
+  const newPassword = useWatch({
+    control: form.control,
+    name: "newPassword",
   });
 
   const onSubmit = (data: PastorProfile) => {
@@ -400,13 +406,23 @@ export default function PastorProfilePage() {
                         </AlertDescription>
                     </Alert>
 
-                    <div>
-                        <Label>Atualize a senha do pastor</Label>
-                        <div className="relative mt-1">
-                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input type="password" placeholder="Password" className="pl-9" />
-                        </div>
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Label>Atualize a senha do pastor</Label>
+                          <FormControl>
+                            <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} />
+                            </div>
+                           </FormControl>
+                          <FormMessage />
+                          <PasswordStrength password={newPassword} />
+                        </FormItem>
+                      )}
+                    />
 
                     <div className="flex justify-end">
                       <Button type="submit">Alterar cadastro</Button>

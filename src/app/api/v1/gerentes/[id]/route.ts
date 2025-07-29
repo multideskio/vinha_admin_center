@@ -21,7 +21,7 @@ const managerUpdateSchema = z.object({
     facebook: z.string().url().or(z.literal('')).nullable().optional(),
     instagram: z.string().url().or(z.literal('')).nullable().optional(),
     website: z.string().url().or(z.literal('')).nullable().optional(),
-    newPassword: z.string().optional(),
+    newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
 }).partial();
   
 
@@ -83,7 +83,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const userUpdateData: Partial<typeof users.$inferInsert> = {};
         if (validatedData.email) userUpdateData.email = validatedData.email;
         if (validatedData.phone) userUpdateData.phone = validatedData.phone;
-        if (validatedData.titheDay) userUpdateData.titheDay = validatedData.titheDay;
+        if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay;
         
         if (validatedData.newPassword) {
             userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10);
@@ -97,15 +97,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const profileUpdateData: Partial<typeof managerProfiles.$inferInsert> = {};
         if (validatedData.firstName) profileUpdateData.firstName = validatedData.firstName;
         if (validatedData.lastName) profileUpdateData.lastName = validatedData.lastName;
-        if (validatedData.landline) profileUpdateData.landline = validatedData.landline;
-        if (validatedData.cep) profileUpdateData.cep = validatedData.cep;
-        if (validatedData.state) profileUpdateData.state = validatedData.state;
-        if (validatedData.city) profileUpdateData.city = validatedData.city;
-        if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood;
-        if (validatedData.address) profileUpdateData.address = validatedData.address;
-        if (validatedData.facebook) profileUpdateData.facebook = validatedData.facebook;
-        if (validatedData.instagram) profileUpdateData.instagram = validatedData.instagram;
-        if (validatedData.website) profileUpdateData.website = validatedData.website;
+        if (validatedData.landline !== undefined) profileUpdateData.landline = validatedData.landline;
+        if (validatedData.cep !== undefined) profileUpdateData.cep = validatedData.cep;
+        if (validatedData.state !== undefined) profileUpdateData.state = validatedData.state;
+        if (validatedData.city !== undefined) profileUpdateData.city = validatedData.city;
+        if (validatedData.neighborhood !== undefined) profileUpdateData.neighborhood = validatedData.neighborhood;
+        if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address;
+        if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook;
+        if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram;
+        if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website;
         
         if (Object.keys(profileUpdateData).length > 0) {
             await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, id));
