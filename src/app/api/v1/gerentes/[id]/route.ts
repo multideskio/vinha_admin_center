@@ -4,22 +4,23 @@ import { db } from '@/db/drizzle';
 import { users, managerProfiles } from '@/db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import * as bcrypt from 'bcrypt';
 
 const managerUpdateSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
     lastName: z.string().min(1, 'O sobrenome é obrigatório.').optional(),
     email: z.string().email('E-mail inválido.').optional(),
     phone: z.string().min(1, 'O celular é obrigatório.').optional(),
-    landline: z.string().optional(),
-    cep: z.string().optional(),
-    state: z.string().optional(),
-    city: z.string().optional(),
-    neighborhood: z.string().optional(),
-    address: z.string().optional(),
-    titheDay: z.coerce.number().optional(),
-    facebook: z.string().url().optional().or(z.literal('')),
-    instagram: z.string().url().optional().or(z.literal('')),
-    website: z.string().url().optional().or(z.literal('')),
+    landline: z.string().nullable().optional(),
+    cep: z.string().nullable().optional(),
+    state: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+    neighborhood: z.string().nullable().optional(),
+    address: z.string().nullable().optional(),
+    titheDay: z.coerce.number().nullable().optional(),
+    facebook: z.string().url().or(z.literal('')).nullable().optional(),
+    instagram: z.string().url().or(z.literal('')).nullable().optional(),
+    website: z.string().url().or(z.literal('')).nullable().optional(),
     newPassword: z.string().optional(),
 }).partial();
   
@@ -83,6 +84,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.email) userUpdateData.email = validatedData.email;
         if (validatedData.phone) userUpdateData.phone = validatedData.phone;
         if (validatedData.titheDay) userUpdateData.titheDay = validatedData.titheDay;
+        
+        if (validatedData.newPassword) {
+            userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10);
+        }
+
         if (Object.keys(userUpdateData).length > 0) {
             userUpdateData.updatedAt = new Date();
             await tx.update(users).set(userUpdateData).where(eq(users.id, id));
@@ -100,16 +106,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.facebook) profileUpdateData.facebook = validatedData.facebook;
         if (validatedData.instagram) profileUpdateData.instagram = validatedData.instagram;
         if (validatedData.website) profileUpdateData.website = validatedData.website;
+        
         if (Object.keys(profileUpdateData).length > 0) {
             await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, id));
         }
         
         return { success: true };
       });
-  
-      if (!result) {
-        return NextResponse.json({ error: "Gerente não encontrado." }, { status: 404 });
-      }
   
       return NextResponse.json({ success: true, manager: result });
   

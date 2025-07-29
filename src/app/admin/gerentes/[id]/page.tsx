@@ -48,18 +48,18 @@ const managerProfileSchema = z.object({
     lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
     cpf: z.string().optional(),
     phone: z.string().min(1, 'O celular é obrigatório.'),
-    landline: z.string().optional(),
+    landline: z.string().optional().nullable(),
     email: z.string().email('E-mail inválido.'),
-    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-    city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-    address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-    titheDay: z.coerce.number().min(1).max(31),
+    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }).nullable(),
+    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }).nullable(),
+    city: z.string().min(1, { message: 'A cidade é obrigatória.' }).nullable(),
+    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }).nullable(),
+    address: z.string().min(1, { message: 'O endereço é obrigatório.' }).nullable(),
+    titheDay: z.coerce.number().min(1).max(31).nullable(),
     newPassword: z.string().optional(),
-    facebook: z.string().url().optional().or(z.literal('')),
-    instagram: z.string().url().optional().or(z.literal('')),
-    website: z.string().url().optional().or(z.literal('')),
+    facebook: z.string().url().or(z.literal('')).nullable().optional(),
+    instagram: z.string().url().or(z.literal('')).nullable().optional(),
+    website: z.string().url().or(z.literal('')).nullable().optional(),
   });
 
 type ManagerProfile = z.infer<typeof managerProfileSchema> & {
@@ -118,7 +118,6 @@ export default function GerenteProfilePage() {
     
     const handleSocialLinkBlur = async (fieldName: 'facebook' | 'instagram' | 'website', value: string) => {
         try {
-            // Apenas atualiza se o valor for uma URL válida ou uma string vazia
             if (value && !z.string().url().safeParse(value).success) {
                 toast({
                     title: 'URL Inválida',
@@ -131,7 +130,7 @@ export default function GerenteProfilePage() {
             const response = await fetch(`/api/v1/gerentes/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form.getValues(), [fieldName]: value }),
+                body: JSON.stringify({ [fieldName]: value }),
             });
     
             if (!response.ok) {
@@ -159,8 +158,6 @@ export default function GerenteProfilePage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreviewImage(reader.result as string);
-                // Aqui você pode adicionar a lógica para fazer o upload do arquivo para o seu backend.
-                // Por enquanto, apenas exibimos o preview.
                 toast({
                     title: 'Preview da Imagem',
                     description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
@@ -278,7 +275,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Nome</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -291,7 +288,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Sobre-nome</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -346,7 +343,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
-                                <Input type="email" {...field} />
+                                <Input type="email" {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
