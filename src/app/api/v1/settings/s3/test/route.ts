@@ -4,11 +4,11 @@ import { z } from 'zod';
 import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3';
 
 const s3SettingsSchema = z.object({
-    endpoint: z.string().min(1),
-    bucket: z.string().min(1),
-    region: z.string().min(1),
-    accessKeyId: z.string().min(1),
-    secretAccessKey: z.string().min(1),
+    endpoint: z.string().min(1, "Endpoint é obrigatório."),
+    bucket: z.string().min(1, "Nome do bucket é obrigatório."),
+    region: z.string().min(1, "Região é obrigatória."),
+    accessKeyId: z.string().min(1, "Access Key ID é obrigatório."),
+    secretAccessKey: z.string().min(1, "Secret Access Key é obrigatório."),
     forcePathStyle: z.boolean().default(false),
 });
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         const validatedData = s3SettingsSchema.parse(body);
 
         const s3Client = new S3Client({
-            endpoint: String(validatedData.endpoint), // Força a ser string
+            endpoint: validatedData.endpoint,
             region: validatedData.region,
             credentials: {
                 accessKeyId: validatedData.accessKeyId,
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Dados de configuração inválidos.", details: error.errors }, { status: 400 });
         }
         console.error("Erro ao testar conexão S3:", error);
-        return NextResponse.json({ error: `Falha na conexão: ${error.name || error.message}` }, { status: 500 });
+        // Retornar uma mensagem mais detalhada do erro pode ajudar a depurar
+        return NextResponse.json({ error: `Falha na conexão: ${error.name} - ${error.message}` }, { status: 500 });
     }
 }
