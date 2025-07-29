@@ -43,6 +43,13 @@
       "when": 1753745989020,
       "tag": "0005_crazy_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1753764747760,
+      "tag": "0006_strong_shadow_king",
+      "breakpoints": true
     }
   ]
 }

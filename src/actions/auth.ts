@@ -53,7 +53,7 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     // 3. Criar a sessão do usuário
     const session = await lucia.createSession(existingUser.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
-    cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+    (await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 
     return { success: true, role: existingUser.role };
 
@@ -71,6 +71,6 @@ export async function logoutUser() {
     await lucia.invalidateSession(session.id);
 
     const sessionCookie = lucia.createBlankSessionCookie();
-    cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+    (await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
     return redirect("/auth/login");
 }
