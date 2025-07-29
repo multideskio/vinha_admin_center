@@ -43,9 +43,7 @@ const contributionSchema = z.object({
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto'], {
     required_error: 'Selecione um método de pagamento.',
   }),
-  contributionType: z.enum(['dizimo', 'oferta'], {
-    required_error: 'O tipo de contribuição é obrigatório.'
-  }),
+  contributionType: z.enum(['dizimo', 'oferta'], { required_error: "O tipo de contribuição é obrigatório." }),
   description: z.string().optional(),
   card: z.object({
     number: z.string(),
@@ -70,6 +68,7 @@ export default function ContribuicoesPage() {
   const [paymentDetails, setPaymentDetails] = React.useState<CieloPaymentResponse | null>(null);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [pixStatus, setPixStatus] = React.useState<'idle' | 'pending' | 'confirmed'>('idle');
+  const [showPaymentDetails, setShowPaymentDetails] = React.useState(false);
   const [cardState, setCardState] = React.useState({
     number: '',
     expiry: '',
@@ -109,6 +108,7 @@ export default function ContribuicoesPage() {
   };
 
   React.useEffect(() => {
+    setShowPaymentDetails(false);
     setPaymentDetails(null);
     setPixStatus('idle');
   }, [paymentMethod, amount]);
@@ -179,6 +179,7 @@ export default function ContribuicoesPage() {
             throw new Error(result.error || 'Falha ao processar o pagamento.');
         }
         setPaymentDetails(result.data);
+        setShowPaymentDetails(true);
         if(data.paymentMethod === 'pix') {
             setPixStatus('pending');
         }
@@ -220,6 +221,7 @@ export default function ContribuicoesPage() {
         toast({ title: "Sucesso!", description: "Pagamento com cartão aprovado.", variant: "success"});
         form.reset({ amount: 0, paymentMethod: 'pix' });
         setCardState({ number: '', expiry: '', cvc: '', name: '', focus: '' });
+        setShowPaymentDetails(false);
         setPaymentDetails(null);
     } catch (error: any) {
          toast({ title: "Erro no Pagamento", description: error.message, variant: "destructive"});
@@ -348,9 +350,9 @@ export default function ContribuicoesPage() {
 
              <Separator />
              {/* Hide button if details are shown for non-card payments */}
-              {!(paymentDetails && paymentMethod !== 'credit_card') && (
+              {!showPaymentDetails && (
                  <div className="flex justify-end">
-                    <Button type={paymentMethod === 'credit_card' ? 'button' : 'submit'} size="lg" disabled={isProcessing} onClick={paymentMethod === 'credit_card' ? form.handleSubmit(() => setShowPaymentDetails(true)) : undefined}>
+                    <Button type="submit" size="lg" disabled={isProcessing}>
                          {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                          {isProcessing ? "Processando..." : getButtonLabel()}
                      </Button>
@@ -359,7 +361,7 @@ export default function ContribuicoesPage() {
             </form>
           </Form>
 
-          {paymentDetails && (
+          {showPaymentDetails && paymentDetails && (
             <>
                 {paymentMethod === 'credit_card' && (
                     <Card className="bg-muted/30">
@@ -426,7 +428,11 @@ export default function ContribuicoesPage() {
                             <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
                         </CardHeader>
                         <CardContent className='flex flex-col items-center'>
-                           <Image src={paymentDetails.QrCodeBase64Image!} width={256} height={256} alt="QR Code Pix" />
+                           {paymentDetails.QrCodeBase64Image ? (
+                                <Image src={paymentDetails.QrCodeBase64Image} width={256} height={256} alt="QR Code Pix" />
+                            ) : (
+                                <Skeleton className="h-[256px] w-[256px]" />
+                            )}
                             <Input value={paymentDetails.QrCodeString} readOnly className="mt-4 text-center" />
                             <Button variant="outline" className="w-full mt-2" onClick={() => handleCopy(paymentDetails.QrCodeString, 'Pix')}>Copiar Chave</Button>
                         </CardContent>
@@ -438,7 +444,8 @@ export default function ContribuicoesPage() {
                         <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
                         <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
                          <Button onClick={() => {
-                             form.reset({ amount: 0, paymentMethod: 'pix' });
+                             form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
+                             setShowPaymentDetails(false);
                              setPaymentDetails(null);
                              setPixStatus('idle');
                          }} className='mt-6'>Fazer Nova Contribuição</Button>
