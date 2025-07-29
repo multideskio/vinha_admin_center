@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { addDays, format, subYears } from "date-fns"
+import { addDays, format, subDays } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
 
@@ -19,7 +19,7 @@ export function DateRangePicker({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) {
   const [date, setDate] = React.useState<DateRange | undefined>(undefined);
-  const [disabledDates, setDisabledDates] = React.useState({ after: new Date() });
+  const [disabledDates, setDisabledDates] = React.useState<{ after: Date } | undefined>(undefined);
 
   React.useEffect(() => {
     // Set initial date range only on the client-side
