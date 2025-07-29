@@ -56,7 +56,7 @@ const managerProfileSchema = z.object({
     city: z.string().nullable().optional(),
     neighborhood: z.string().nullable().optional(),
     address: z.string().nullable().optional(),
-    titheDay: z.coerce.number().min(1).max(31).nullable(),
+    titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
     newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
     facebook: z.string().url().or(z.literal('')).nullable().optional(),
     instagram: z.string().url().or(z.literal('')).nullable().optional(),
@@ -273,7 +273,7 @@ export default function GerenteProfilePage() {
                 <div className="flex items-center gap-3">
                     <Facebook className="h-5 w-5 text-muted-foreground" />
                     <Input
-                        defaultValue={manager.facebook || ''}
+                        defaultValue={manager.facebook ?? ''}
                         placeholder="https://facebook.com/..."
                         onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                     />
@@ -281,7 +281,7 @@ export default function GerenteProfilePage() {
                 <div className="flex items-center gap-3">
                     <Instagram className="h-5 w-5 text-muted-foreground" />
                     <Input
-                        defaultValue={manager.instagram || ''}
+                        defaultValue={manager.instagram ?? ''}
                         placeholder="https://instagram.com/..."
                         onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
                     />
@@ -289,7 +289,7 @@ export default function GerenteProfilePage() {
                 <div className="flex items-center gap-3">
                     <Globe className="h-5 w-5 text-muted-foreground" />
                     <Input
-                        defaultValue={manager.website || ''}
+                        defaultValue={manager.website ?? ''}
                         placeholder="https://website.com/..."
                         onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
                     />
@@ -346,7 +346,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>CPF</FormLabel>
                                 <FormControl>
-                                <Input {...field} disabled />
+                                <Input {...field} disabled value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -375,7 +375,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Fixo</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -400,19 +400,19 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="cep" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>CEP</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="state" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Estado/UF</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="city" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cidade</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -421,19 +421,19 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="neighborhood" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Bairro</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="address" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Complemento</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="titheDay" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Dia do dízimo</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>

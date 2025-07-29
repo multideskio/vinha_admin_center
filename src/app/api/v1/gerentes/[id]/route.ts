@@ -17,7 +17,7 @@ const managerUpdateSchema = z.object({
     city: z.string().nullable().optional(),
     neighborhood: z.string().nullable().optional(),
     address: z.string().nullable().optional(),
-    titheDay: z.coerce.number().nullable().optional(),
+    titheDay: z.number().nullable().optional(),
     facebook: z.string().url().or(z.literal('')).nullable().optional(),
     instagram: z.string().url().or(z.literal('')).nullable().optional(),
     website: z.string().url().or(z.literal('')).nullable().optional(),
