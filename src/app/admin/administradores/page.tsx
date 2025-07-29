@@ -13,6 +13,9 @@ import {
   MapPin,
   Pencil,
   Shield,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -77,90 +80,46 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const adminSchema = z.object({
-  id: z.string().optional(),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
   cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
   email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-  state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-  city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-  neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-  address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-  password: z.string().min(6, { message: 'A senha deve ter no mínimo 6 caracteres.' }),
   role: z.enum(['admin', 'superadmin'], {
     required_error: 'Selecione uma permissão.',
   }),
-  status: z.enum(['active', 'inactive']),
 });
 
-type Admin = z.infer<typeof adminSchema>;
-
-const initialAdmins: Admin[] = [
-  {
-    id: 'adm-01',
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@example.com',
-    phone: '(11) 99999-1111',
-    status: 'active',
-    cpf: '111.111.111-11',
-    cep: '01001-000',
-    state: 'SP',
-    city: 'São Paulo',
-    neighborhood: 'Centro',
-    address: 'Av. Ipiranga, 200',
-    role: 'superadmin',
-    password: 'password123',
-  },
-  {
-    id: 'adm-02',
-    firstName: 'Limited',
-    lastName: 'Admin',
-    email: 'limited.admin@example.com',
-    phone: '(21) 98888-2222',
-    status: 'active',
-    cpf: '222.222.222-22',
-    cep: '20040-001',
-    state: 'RJ',
-    city: 'Rio de Janeiro',
-    neighborhood: 'Centro',
-    address: 'Av. Rio Branco, 156',
-    role: 'admin',
-    password: 'password123',
-  },
-];
+export type Admin = z.infer<typeof adminSchema> & {
+    id: string;
+    status: 'active' | 'inactive';
+    city?: string;
+    state?: string;
+}
 
 const AdminFormModal = ({
   onSave,
   children,
 }: {
-  onSave: (data: Admin) => void;
+  onSave: () => void;
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<Admin>({
+  const form = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
       cpf: '',
       email: '',
-      cep: '',
-      state: '',
-      city: '',
-      neighborhood: '',
-      address: '',
       phone: '',
-      password: '',
       role: 'admin',
-      status: 'active',
     },
   });
 
@@ -170,9 +129,33 @@ const AdminFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Admin) => {
-    onSave(data);
-    setIsOpen(false);
+  const handleSave = async (data: z.infer<typeof adminSchema>) => {
+    try {
+        const response = await fetch('/api/v1/administradores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if(!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Falha ao cadastrar administrador.');
+        }
+
+        toast({
+            title: 'Sucesso!',
+            description: 'Administrador cadastrado com sucesso.',
+            variant: 'success'
+        });
+        onSave();
+        setIsOpen(false);
+    } catch (error: any) {
+        toast({
+            title: 'Erro',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   };
 
   const formatCPF = (value: string) => {
@@ -183,38 +166,13 @@ const AdminFormModal = ({
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
       .slice(0, 14);
   };
-
-  const formatCEP = (value: string) => {
-    return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
-  };
-
+  
   const formatPhone = (value: string) => {
     return value
       .replace(/\D/g, '')
       .replace(/(\d{2})(\d)/, '($1) $2')
       .replace(/(\d{5})(\d)/, '$1-$2')
       .slice(0, 15);
-  };
-
-  const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
-    const cep = e.target.value.replace(/\D/g, '');
-    if (cep.length !== 8) return;
-
-    setIsFetchingCep(true);
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json();
-      if (!data.erro) {
-        form.setValue('address', data.logradouro);
-        form.setValue('neighborhood', data.bairro);
-        form.setValue('city', data.localidade);
-        form.setValue('state', data.uf);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar CEP:', error);
-    } finally {
-      setIsFetchingCep(false);
-    }
   };
 
   return (
@@ -285,83 +243,6 @@ const AdminFormModal = ({
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="cep"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CEP</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="00000-000"
-                        {...field}
-                        onChange={(e) => field.onChange(formatCEP(e.target.value))}
-                        onBlur={handleCepBlur}
-                        disabled={isFetchingCep}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <FormControl>
-                      <Input placeholder="UF" {...field} disabled={isFetchingCep} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome da cidade" {...field} disabled={isFetchingCep} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="neighborhood"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Bairro</FormLabel>
-                        <FormControl>
-                        <Input placeholder="Nome do bairro" {...field} disabled={isFetchingCep} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Endereço</FormLabel>
-                        <FormControl>
-                        <Input placeholder="O restante do endereço" {...field} disabled={isFetchingCep} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -383,20 +264,6 @@ const AdminFormModal = ({
                       </div>
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="123456" {...field} />
-                    </FormControl>
-                     <FormMessage />
-                     <p className="text-xs text-muted-foreground">A senha poderá ser alterada posteriormente.</p>
                   </FormItem>
                 )}
               />
@@ -441,9 +308,7 @@ const AdminFormModal = ({
               <DialogClose asChild>
                 <Button variant="outline">Fechar</Button>
               </DialogClose>
-              <Button type="submit" disabled={isFetchingCep}>
-                {isFetchingCep ? 'Buscando CEP...' : 'Cadastrar'}
-              </Button>
+              <Button type="submit">Cadastrar</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -453,21 +318,241 @@ const AdminFormModal = ({
 };
 
 export default function AdministradoresPage() {
-  const [admins, setAdmins] = React.useState<Admin[]>(initialAdmins);
+  const [admins, setAdmins] = React.useState<Admin[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = viewMode === 'table' ? 10 : 9;
 
-  const handleSave = (data: Admin) => {
-    const newAdmin: Admin = {
-      ...data,
-      id: `adm-${Date.now()}`,
-      status: 'active',
-    };
-    setAdmins([...admins, newAdmin]);
+  const { toast } = useToast();
+
+  const fetchAdmins = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/v1/administradores');
+        if(!response.ok) throw new Error("Falha ao carregar os administradores");
+        const data = await response.json();
+        setAdmins(data.admins);
+    } catch (error) {
+        toast({ title: "Erro", description: "Não foi possível carregar os administradores.", variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchAdmins();
+  }, [fetchAdmins]);
+
+  const handleDelete = async (adminId: string) => {
+    try {
+        const response = await fetch(`/api/v1/administradores/${adminId}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Falha ao excluir o administrador');
+        toast({ title: "Sucesso!", description: 'Administrador excluído com sucesso.', variant: 'success' });
+        fetchAdmins();
+    } catch(error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive'});
+    }
   };
 
-  const handleDelete = (adminId: string) => {
-    setAdmins(admins.filter((a) => a.id !== adminId));
+  const filteredAdmins = admins.filter(admin => 
+    `${admin.firstName} ${admin.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage);
+  const paginatedAdmins = filteredAdmins.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+
+  const TableView = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Permissão</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead>
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+          {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                ))
+            ) : paginatedAdmins.length > 0 ? (
+            paginatedAdmins.map((admin) => (
+              <TableRow key={admin.id}>
+                <TableCell className="font-medium">{`${admin.firstName} ${admin.lastName}`}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">
+                  {admin.email}
+                </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                  <Badge variant="outline">{admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}</Badge>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  <Badge
+                    variant={
+                      admin.status === 'active' ? 'success' : 'destructive'
+                    }
+                  >
+                    {admin.status === 'active' ? 'Ativo' : 'Inativo'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/administradores/${admin.id}`}>Editar</Link>
+                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                            Excluir
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Você tem certeza?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Essa ação não pode ser desfeita. Isso excluirá
+                              permanentemente o administrador.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(admin.id!)}
+                            >
+                              Continuar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+            ) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center">Nenhum administrador encontrado.</TableCell>
+                </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <PaginationControls />
+      </CardContent>
+    </Card>
+  );
+
+  const CardView = () => (
+    <>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+            ))
+        ) : paginatedAdmins.length > 0 ? (
+            paginatedAdmins.map((admin, index) => (
+            <Card key={admin.id}>
+            <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                <Image
+                    src="https://placehold.co/96x96.png"
+                    alt={`Foto de ${admin.firstName}`}
+                    width={96}
+                    height={96}
+                    className="rounded-lg object-cover w-24 h-24"
+                    data-ai-hint="person shield"
+                />
+                <div className="flex-1 space-y-2 min-w-[200px]">
+                    <h3 className="text-lg font-bold">
+                    #{((currentPage - 1) * itemsPerPage) + index + 1} - {admin.firstName} {admin.lastName}
+                    </h3>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                        <p className='flex items-center gap-2'><Shield size={14} /> <span>{admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}</span></p>
+                        <p className='flex items-center gap-2'><FileText size={14} /> <span>{admin.cpf}</span></p>
+                        <p className='flex items-center gap-2'><Phone size={14} /> <span>{admin.phone}</span></p>
+                        <p className='flex items-center gap-2'><Mail size={14} /> <span>{admin.email}</span></p>
+                        <p className='flex items-center gap-2'><MapPin size={14} /> <span>{admin.city} - {admin.state}</span></p>
+                    </div>
+                </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                <Button variant="outline" size="sm" asChild>
+                    <Link href={`/admin/administradores/${admin.id}`}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                    </Link>
+                </Button>
+                </div>
+            </CardContent>
+            </Card>
+        ))
+        ) : (
+            <div className="col-span-full text-center">Nenhum administrador encontrado.</div>
+        )}
+    </div>
+    <PaginationControls />
+    </>
+  );
+  
+  const PaginationControls = () => (
+    <div className="flex items-center justify-end space-x-2 py-4">
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1 || isLoading}
+        >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+        </Button>
+        <span className='text-sm text-muted-foreground'>
+            Página {currentPage} de {totalPages}
+        </span>
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages || isLoading}
+        >
+            Próximo
+            <ChevronRight className="h-4 w-4" />
+        </Button>
+    </div>
+  )
+
 
   return (
     <div className="flex flex-col gap-4">
@@ -477,10 +562,19 @@ export default function AdministradoresPage() {
             Administradores
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {admins.length} de {admins.length} resultados
+            Exibindo {filteredAdmins.length} de {admins.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
+            <div className='relative'>
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+                <Input 
+                    placeholder="Buscar por nome..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                />
+            </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -510,7 +604,7 @@ export default function AdministradoresPage() {
             </Tooltip>
           </TooltipProvider>
 
-          <AdminFormModal onSave={handleSave}>
+          <AdminFormModal onSave={fetchAdmins}>
             <Button size="sm" className="gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -520,132 +614,7 @@ export default function AdministradoresPage() {
           </AdminFormModal>
         </div>
       </div>
-
-      {viewMode === 'table' ? (
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Permissão</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {admins.map((admin) => (
-                  <TableRow key={admin.id}>
-                    <TableCell className="font-medium">{`${admin.firstName} ${admin.lastName}`}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {admin.email}
-                    </TableCell>
-                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      <Badge variant="outline">{admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge
-                        variant={
-                          admin.status === 'active' ? 'default' : 'secondary'
-                        }
-                        className={
-                          admin.status === 'active'
-                            ? 'bg-green-500/20 text-green-700 border-green-400'
-                            : 'bg-red-500/20 text-red-700 border-red-400'
-                        }
-                      >
-                        {admin.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/administradores/${admin.id}`}>Editar</Link>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                                Excluir
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Você tem certeza?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o administrador.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(admin.id!)}
-                                >
-                                  Continuar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {admins.map((admin, index) => (
-            <Card key={admin.id}>
-              <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                  <Image
-                    src="https://placehold.co/96x96.png"
-                    alt={`Foto de ${admin.firstName}`}
-                    width={96}
-                    height={96}
-                    className="rounded-lg object-cover w-24 h-24"
-                    data-ai-hint="person shield"
-                  />
-                  <div className="flex-1 space-y-2 min-w-[200px]">
-                    <h3 className="text-lg font-bold">
-                      #{index + 1} - {admin.firstName} {admin.lastName}
-                    </h3>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                        <p className='flex items-center gap-2'><Shield size={14} /> <span>{admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}</span></p>
-                        <p className='flex items-center gap-2'><FileText size={14} /> <span>{admin.cpf}</span></p>
-                        <p className='flex items-center gap-2'><Phone size={14} /> <span>{admin.phone}</span></p>
-                        <p className='flex items-center gap-2'><Mail size={14} /> <span>{admin.email}</span></p>
-                        <p className='flex items-center gap-2'><MapPin size={14} /> <span>{admin.city} - {admin.state}</span></p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end mt-4">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/administradores/${admin.id}`}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Editar
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   );
 }

@@ -113,8 +113,8 @@ export const managerProfiles = pgTable('manager_profiles', {
 export const supervisorProfiles = pgTable('supervisor_profiles', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    managerId: uuid('manager_id').references(() => users.id),
-    regionId: uuid('region_id').references(() => regions.id),
+    managerId: uuid('manager_id').references(() => users.id, { onDelete: 'set null' }),
+    regionId: uuid('region_id').references(() => regions.id, { onDelete: 'set null' }),
     firstName: varchar('first_name', { length: 100 }).notNull(),
     lastName: varchar('last_name', { length: 100 }).notNull(),
     cpf: varchar('cpf', { length: 14 }).unique().notNull(),
@@ -134,7 +134,7 @@ export const supervisorProfiles = pgTable('supervisor_profiles', {
 export const pastorProfiles = pgTable('pastor_profiles', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    supervisorId: uuid('supervisor_id').references(() => users.id),
+    supervisorId: uuid('supervisor_id').references(() => users.id, { onDelete: 'set null' }),
     firstName: varchar('first_name', { length: 100 }).notNull(),
     lastName: varchar('last_name', { length: 100 }).notNull(),
     cpf: varchar('cpf', { length: 14 }).unique().notNull(),
@@ -155,7 +155,7 @@ export const pastorProfiles = pgTable('pastor_profiles', {
 export const churchProfiles = pgTable('church_profiles', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    supervisorId: uuid('supervisor_id').references(() => users.id),
+    supervisorId: uuid('supervisor_id').references(() => users.id, { onDelete: 'set null' }),
     cnpj: varchar('cnpj', { length: 18 }).unique().notNull(),
     razaoSocial: varchar('razao_social', { length: 255 }).notNull(),
     nomeFantasia: varchar('nome_fantasia', { length: 255 }).notNull(),

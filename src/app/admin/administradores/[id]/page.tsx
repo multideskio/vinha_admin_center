@@ -11,10 +11,11 @@ import {
   Instagram,
   Globe,
   AlertTriangle,
-  Info,
   Lock,
+  Loader2,
 } from 'lucide-react';
 import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -35,96 +36,176 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const adminProfileSchema = z.object({
-    id: z.string().optional(),
-    firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
-    lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
-    cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-    email: z.string().email({ message: 'E-mail inválido.' }),
-    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-    city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-    address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-    phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
+    firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
+    lastName: z.string().min(1, 'O sobrenome é obrigatório.').optional(),
+    email: z.string().email('E-mail inválido.').optional(),
+    phone: z.string().optional(),
+    cep: z.string().optional(),
+    state: z.string().optional(),
+    city: z.string().optional(),
+    neighborhood: z.string().optional(),
+    address: z.string().optional(),
     newPassword: z.string().optional().or(z.literal('')),
-    role: z.enum(['admin', 'superadmin'], {
-      required_error: 'Selecione uma permissão.',
-    }),
-    status: z.enum(['active', 'inactive']),
-    facebook: z.string().url().optional().or(z.literal('')),
-    instagram: z.string().url().optional().or(z.literal('')),
-    website: z.string().url().optional().or(z.literal('')),
-});
+    role: z.enum(['admin', 'superadmin']).optional(),
+    facebook: z.string().url().or(z.literal('')).optional(),
+    instagram: z.string().url().or(z.literal('')).optional(),
+    website: z.string().url().or(z.literal('')).optional(),
+}).partial();
 
-type AdminProfile = z.infer<typeof adminProfileSchema>;
-
-const adminData: AdminProfile = {
-  id: 'adm-01',
-  firstName: 'Admin',
-  lastName: 'User',
-  email: 'admin@example.com',
-  phone: '(11) 99999-1111',
-  status: 'active',
-  cpf: '111.111.111-11',
-  cep: '01001-000',
-  state: 'SP',
-  city: 'São Paulo',
-  neighborhood: 'Centro',
-  address: 'Av. Ipiranga, 200',
-  role: 'superadmin',
-  facebook: 'https://facebook.com',
-  instagram: 'https://instagram.com',
-  website: 'https://admin-vinha.com',
+type AdminProfile = z.infer<typeof adminProfileSchema> & {
+    id?: string;
+    cpf?: string;
+    status?: string;
+    avatarUrl?: string;
 };
 
 export default function AdminProfilePage() {
+  const [admin, setAdmin] = React.useState<AdminProfile | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [previewImage, setPreviewImage] = React.useState<string | null>(null);
+
+  const params = useParams();
+  const router = useRouter();
+  const { id } = params;
+  const { toast } = useToast();
+
   const form = useForm<AdminProfile>({
     resolver: zodResolver(adminProfileSchema),
-    defaultValues: adminData,
+    defaultValues: {},
   });
 
-  const onSubmit = (data: AdminProfile) => {
-    console.log(data);
-    // Handle form submission
+  const fetchAdmin = React.useCallback(async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
+        const response = await fetch(`/api/v1/administradores/${id}`);
+        if (!response.ok) throw new Error('Falha ao carregar dados do administrador');
+        const data = await response.json();
+        
+        const sanitizedData = {
+            ...data,
+            firstName: data.firstName ?? '',
+            lastName: data.lastName ?? '',
+            cpf: data.cpf ?? '',
+            email: data.email ?? '',
+            phone: data.phone ?? '',
+            cep: data.cep ?? '',
+            state: data.state ?? '',
+            city: data.city ?? '',
+            neighborhood: data.neighborhood ?? '',
+            address: data.address ?? '',
+            role: data.permission ?? 'admin',
+            newPassword: '',
+            facebook: data.facebook ?? '',
+            instagram: data.instagram ?? '',
+            website: data.website ?? '',
+        };
+
+        setAdmin(sanitizedData);
+        form.reset(sanitizedData);
+    } catch (error) {
+        toast({ title: 'Erro', description: 'Não foi possível carregar os dados do administrador.', variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [id, form, toast]);
+
+  React.useEffect(() => {
+    fetchAdmin();
+  }, [fetchAdmin]);
+
+  const onSubmit = async (data: Partial<AdminProfile>) => {
+    setIsSaving(true);
+    try {
+        const response = await fetch(`/api/v1/administradores/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Falha ao atualizar o administrador.');
+        toast({ title: 'Sucesso', description: 'Administrador atualizado com sucesso.', variant: 'success' });
+    } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+    } finally {
+        setIsSaving(false);
+    }
   };
+
+  const handleDelete = async () => {
+      try {
+          const response = await fetch(`/api/v1/administradores/${id}`, { method: 'DELETE' });
+          if(!response.ok) throw new Error('Falha ao excluir o administrador.');
+          toast({ title: "Sucesso!", description: 'Administrador excluído com sucesso.', variant: 'success' });
+          router.push('/admin/administradores');
+      } catch(error: any) {
+          toast({ title: "Erro", description: error.message, variant: 'destructive'});
+      }
+  }
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPreviewImage(reader.result as string);
+            toast({
+                title: 'Preview da Imagem',
+                description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+  
+  if (isLoading) {
+      return (
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                  <Card><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+              </div>
+              <div className="lg:col-span-2">
+                  <Card><CardContent className="pt-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+              </div>
+          </div>
+      )
+  }
+
+  if (!admin) {
+      return <p>Administrador não encontrado.</p>;
+  }
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Left Column: Profile Card */}
       <div className="lg:col-span-1">
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                <AvatarImage src="https://placehold.co/96x96.png" alt={adminData.firstName} data-ai-hint="person shield" />
-                <AvatarFallback>{adminData.firstName.charAt(0)}{adminData.lastName.charAt(0)}</AvatarFallback>
+                <AvatarImage src={previewImage || admin.avatarUrl || "https://placehold.co/96x96.png"} alt={admin.firstName ?? ''} data-ai-hint="person shield" />
+                <AvatarFallback>{admin.firstName?.[0]}{admin.lastName?.[0]}</AvatarFallback>
               </Avatar>
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-              >
-                <Camera className="h-4 w-4" />
-                <span className="sr-only">Trocar foto</span>
-              </Button>
+              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                        <Camera className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <span className="sr-only">Trocar foto</span>
+                </Label>
+                <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
             </div>
             <h2 className="mt-4 text-xl font-semibold">
-              {adminData.firstName} {adminData.lastName}
+              {admin.firstName} {admin.lastName}
             </h2>
-            <p className="text-muted-foreground">{adminData.role === 'admin' ? 'Administrador' : 'Super Administrador'}</p>
+            <p className="text-muted-foreground">{admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}</p>
           </CardContent>
           <Separator />
           <CardContent className="pt-6">
@@ -133,21 +214,21 @@ export default function AdminProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={adminData.facebook}
+                  defaultValue={admin.facebook ?? ''}
                   placeholder="https://facebook.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={adminData.instagram}
+                  defaultValue={admin.instagram ?? ''}
                   placeholder="https://instagram.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={adminData.website}
+                  defaultValue={admin.website ?? ''}
                   placeholder="https://website.com/..."
                 />
               </div>
@@ -156,7 +237,6 @@ export default function AdminProfilePage() {
         </Card>
       </div>
 
-      {/* Right Column: Tabs and Form */}
       <div className="lg:col-span-2">
         <Tabs defaultValue="profile">
           <TabsList>
@@ -176,7 +256,7 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>Nome</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -189,7 +269,7 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>Sobrenome</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -205,7 +285,7 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>CPF</FormLabel>
                             <FormControl>
-                              <Input {...field} disabled />
+                              <Input {...field} disabled value={field.value ?? ''}/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -218,7 +298,7 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input type="email" {...field} />
+                              <Input type="email" {...field} value={field.value ?? ''}/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -230,19 +310,19 @@ export default function AdminProfilePage() {
                         <FormField control={form.control} name="cep" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>CEP</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="state" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Estado/UF</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="city" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Cidade</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -251,13 +331,13 @@ export default function AdminProfilePage() {
                         <FormField control={form.control} name="neighborhood" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Bairro</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Endereço</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -270,7 +350,7 @@ export default function AdminProfilePage() {
                             <FormItem>
                                 <FormLabel>Celular</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -285,7 +365,7 @@ export default function AdminProfilePage() {
                                 <FormControl>
                                     <RadioGroup
                                     onValueChange={field.onChange}
-                                    defaultValue={field.value}
+                                    value={field.value ?? 'admin'}
                                     className="flex pt-2 space-x-4"
                                     >
                                     <FormItem className="flex items-center space-x-2 space-y-0">
@@ -335,7 +415,10 @@ export default function AdminProfilePage() {
                     />
 
                     <div className="flex justify-end">
-                      <Button type="submit">Alterar cadastro</Button>
+                      <Button type="submit" disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Alterar cadastro
+                        </Button>
                     </div>
                   </form>
                 </Form>
@@ -351,7 +434,7 @@ export default function AdminProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive">Excluir permanentemente</Button>
+                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button>
               </CardContent>
             </Card>
           </TabsContent>
