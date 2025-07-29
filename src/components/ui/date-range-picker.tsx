@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -17,10 +18,19 @@ import {
 export function DateRangePicker({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 7),
-  })
+  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
+  const [disabledDates, setDisabledDates] = React.useState({ after: new Date() });
+
+  React.useEffect(() => {
+    // Set initial date range only on the client-side
+    setDate({
+        from: subDays(new Date(), 7),
+        to: new Date(),
+    });
+    setDisabledDates({
+        after: new Date(),
+    })
+  }, []);
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -57,7 +67,7 @@ export function DateRangePicker({
             selected={date}
             onSelect={setDate}
             numberOfMonths={2}
-            disabled={{ before: subYears(new Date(), 1), after: new Date() }}
+            disabled={disabledDates}
           />
         </PopoverContent>
       </Popover>
