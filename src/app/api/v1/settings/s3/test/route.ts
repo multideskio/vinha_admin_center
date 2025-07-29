@@ -18,8 +18,13 @@ export async function POST(request: Request) {
         const body = await request.json();
         const validatedData = s3SettingsSchema.parse(body);
 
+        let endpointUrl = validatedData.endpoint;
+        if (!endpointUrl.startsWith('http://') && !endpointUrl.startsWith('https://')) {
+            endpointUrl = `https://${endpointUrl}`;
+        }
+
         const s3Client = new S3Client({
-            endpoint: validatedData.endpoint,
+            endpoint: endpointUrl,
             region: validatedData.region,
             credentials: {
                 accessKeyId: validatedData.accessKeyId,
@@ -37,7 +42,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Dados de configuração inválidos.", details: error.errors }, { status: 400 });
         }
         console.error("Erro ao testar conexão S3:", error);
-        // Retornar uma mensagem mais detalhada do erro pode ajudar a depurar
-        return NextResponse.json({ error: `Falha na conexão: ${error.name} - ${error.message}` }, { status: 500 });
+        
+        let errorMessage = "Erro interno do servidor.";
+        if (error.name === 'TypeError' && error.message.includes('Invalid URL')) {
+            errorMessage = "Falha na conexão: URL do Endpoint inválida.";
+        } else if (error.name) {
+             errorMessage = `Falha na conexão: ${error.name}`;
+        }
+
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
