@@ -27,11 +27,7 @@ export async function POST(request: Request) {
             },
             body: JSON.stringify({
                 number: phone,
-                options: {
-                    delay: 1200,
-                    presence: "composing"
-                },
-                textMessage: {
+                textMessage: { // Mantendo a estrutura original que parece ser a correta para o sendText
                     text: message,
                 },
             }),
