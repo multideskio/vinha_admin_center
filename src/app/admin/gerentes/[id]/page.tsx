@@ -65,6 +65,7 @@ const managerProfileSchema = z.object({
 type ManagerProfile = z.infer<typeof managerProfileSchema> & {
     id: string;
     status: string;
+    avatarUrl?: string;
 };
 
 export default function GerenteProfilePage() {
@@ -79,25 +80,25 @@ export default function GerenteProfilePage() {
         resolver: zodResolver(managerProfileSchema),
     });
 
-    React.useEffect(() => {
-        const fetchManager = async () => {
-        if (!id) return;
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/v1/gerentes/${id}`);
-            if (!response.ok) throw new Error('Failed to fetch manager data');
-            const data = await response.json();
-            setManager(data);
-            form.reset(data);
-        } catch (error) {
-            toast({ title: 'Erro', description: 'Não foi possível carregar os dados do gerente.', variant: 'destructive' });
-        } finally {
-            setIsLoading(false);
-        }
-        };
-
-        fetchManager();
+    const fetchManager = React.useCallback(async () => {
+      if (!id) return;
+      setIsLoading(true);
+      try {
+          const response = await fetch(`/api/v1/gerentes/${id}`);
+          if (!response.ok) throw new Error('Failed to fetch manager data');
+          const data = await response.json();
+          setManager(data);
+          form.reset(data);
+      } catch (error) {
+          toast({ title: 'Erro', description: 'Não foi possível carregar os dados do gerente.', variant: 'destructive' });
+      } finally {
+          setIsLoading(false);
+      }
     }, [id, form, toast]);
+
+    React.useEffect(() => {
+        fetchManager();
+    }, [fetchManager]);
 
     const onSubmit = async (data: z.infer<typeof managerProfileSchema>) => {
         try {
@@ -112,6 +113,47 @@ export default function GerenteProfilePage() {
             toast({ title: 'Erro', description: 'Não foi possível atualizar o gerente.', variant: 'destructive'});
         }
   };
+
+  const handleSocialLinkBlur = async (fieldName: 'facebook' | 'instagram' | 'website', value: string) => {
+    try {
+        const currentData = form.getValues();
+        const response = await fetch(`/api/v1/gerentes/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...currentData, [fieldName]: value }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Falha ao atualizar ${fieldName}.`);
+        }
+
+        toast({
+            title: 'Sucesso!',
+            description: `Link do ${fieldName} atualizado.`,
+            variant: 'success',
+        });
+        fetchManager(); // Re-fetch to confirm update
+    } catch (error: any) {
+        toast({
+            title: 'Erro',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
+  };
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        console.log("Arquivo selecionado:", file.name);
+        // Aqui você adicionaria a lógica para fazer o upload do arquivo para o seu backend/serviço de armazenamento
+        toast({
+            title: 'Upload de foto',
+            description: 'Funcionalidade de upload ainda não implementada no backend.',
+        });
+    }
+  };
+
 
   const handleDelete = async () => {
     try {
@@ -150,17 +192,16 @@ export default function GerenteProfilePage() {
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                <AvatarImage src="https://placehold.co/96x96.png" alt={manager.firstName} data-ai-hint="male person" />
+                <AvatarImage src={manager.avatarUrl || "https://placehold.co/96x96.png"} alt={manager.firstName ?? ''} data-ai-hint="male person" />
                 <AvatarFallback>{manager.firstName?.[0]}{manager.lastName?.[0]}</AvatarFallback>
               </Avatar>
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-              >
-                <Camera className="h-4 w-4" />
+              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                    <Camera className="h-4 w-4 text-muted-foreground" />
+                </div>
                 <span className="sr-only">Trocar foto</span>
-              </Button>
+              </Label>
+              <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
             </div>
             <h2 className="mt-4 text-xl font-semibold">
               {manager.firstName} {manager.lastName}
@@ -176,6 +217,7 @@ export default function GerenteProfilePage() {
                 <Input
                   defaultValue={manager.facebook || ''}
                   placeholder="https://facebook.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -183,6 +225,7 @@ export default function GerenteProfilePage() {
                 <Input
                   defaultValue={manager.instagram || ''}
                   placeholder="https://instagram.com/..."
+                   onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -190,6 +233,7 @@ export default function GerenteProfilePage() {
                 <Input
                   defaultValue={manager.website || ''}
                   placeholder="https://website.com/..."
+                   onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
                 />
               </div>
             </div>
