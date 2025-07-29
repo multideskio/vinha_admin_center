@@ -213,6 +213,24 @@ export const gatewayConfigurations = pgTable('gateway_configurations', {
     acceptedPaymentMethods: text('accepted_payment_methods'),
 });
 
+export const otherSettings = pgTable('other_settings', {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id').references(() => companies.id, { unique: true }).notNull(),
+    smtpHost: varchar('smtp_host'),
+    smtpPort: integer('smtp_port'),
+    smtpUser: varchar('smtp_user'),
+    smtpPass: text('smtp_pass'),
+    smtpSecure: boolean('smtp_secure').default(false),
+    whatsappApiUrl: text('whatsapp_api_url'),
+    whatsappApiKey: text('whatsapp_api_key'),
+    s3Endpoint: text('s3_endpoint'),
+    s3Bucket: varchar('s3_bucket'),
+    s3Region: varchar('s3_region'),
+    s3AccessKeyId: text('s3_access_key_id'),
+    s3SecretAccessKey: text('s3_secret_access_key'),
+    s3ForcePathStyle: boolean('s3_force_path_style').default(false),
+});
+
 export const notificationRules = pgTable('notification_rules', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     companyId: uuid('company_id').references(() => companies.id).notNull(),
@@ -228,12 +246,13 @@ export const notificationRules = pgTable('notification_rules', {
 
 // Relações
 
-export const companiesRelations = relations(companies, ({ many }) => ({
+export const companiesRelations = relations(companies, ({ many, one }) => ({
     users: many(users),
     regions: many(regions),
     gatewayConfigurations: many(gatewayConfigurations),
     transactions: many(transactions),
     notificationRules: many(notificationRules),
+    otherSettings: one(otherSettings, { fields: [companies.id], references: [otherSettings.companyId] }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -298,4 +317,8 @@ export const gatewayConfigurationsRelations = relations(gatewayConfigurations, (
 
 export const notificationRulesRelations = relations(notificationRules, ({ one }) => ({
     company: one(companies, { fields: [notificationRules.companyId], references: [companies.id] }),
+}));
+
+export const otherSettingsRelations = relations(otherSettings, ({ one }) => ({
+    company: one(companies, { fields: [otherSettings.companyId], references: [companies.id] }),
 }));

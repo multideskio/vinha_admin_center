@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, MoreHorizontal, Globe, KeyRound, Trash2, Pencil, RefreshCw } from 'lucide-react';
+import { PlusCircle, Globe, RefreshCw, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,10 +39,12 @@ import {
   } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const webhookSchema = z.object({
-    id: z.string().optional(),
+    id: z.string().uuid().optional(),
     url: z.string().url({ message: "Por favor, insira uma URL válida." }),
     secret: z.string().min(1, "O segredo é obrigatório."),
     events: z.array(z.string()).refine((value) => value.some((item) => item), {
@@ -60,26 +62,42 @@ const availableEvents = [
     { id: 'usuario.atualizado', label: 'Usuário Atualizado' },
 ]
 
-const WebhookFormModal = ({ onSave, children }: { onSave: (data: Webhook) => void; children: React.ReactNode }) => {
+const WebhookFormModal = ({ onSave, children, webhook }: { onSave: () => void; children: React.ReactNode, webhook?: Webhook }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+    const { toast } = useToast();
     const form = useForm<Webhook>({
         resolver: zodResolver(webhookSchema),
-        defaultValues: {
-            url: '',
-            secret: '',
-            events: [],
-        },
+        defaultValues: webhook ? { ...webhook, events: webhook.events || [] } : { url: '', secret: '', events: [] },
     });
+
+    React.useEffect(() => {
+        if (isOpen) {
+            form.reset(webhook ? { ...webhook, events: webhook.events || [] } : { url: '', secret: '', events: [] });
+        }
+    }, [isOpen, webhook, form]);
 
     const generateSecret = () => {
         const secret = `whsec_${[...Array(32)].map(() => Math.random().toString(36)[2]).join('')}`;
         form.setValue('secret', secret);
     }
     
-    const onSubmit = (data: Webhook) => {
-        onSave(data);
-        form.reset();
-        setIsOpen(false);
+    const onSubmit = async (data: Webhook) => {
+        const method = webhook ? 'PUT' : 'POST';
+        const url = webhook ? `/api/v1/webhooks/${webhook.id}` : '/api/v1/webhooks';
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error(`Falha ao ${webhook ? 'atualizar' : 'criar'} webhook.`);
+            toast({ title: 'Sucesso!', description: `Webhook ${webhook ? 'atualizado' : 'criado'} com sucesso.`, variant: 'success'});
+            onSave();
+            setIsOpen(false);
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        }
     }
 
     return (
@@ -87,7 +105,7 @@ const WebhookFormModal = ({ onSave, children }: { onSave: (data: Webhook) => voi
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Adicionar Novo Webhook</DialogTitle>
+                    <DialogTitle>{webhook ? 'Editar Webhook' : 'Adicionar Novo Webhook'}</DialogTitle>
                     <DialogDescription>
                         Configure uma nova URL para receber notificações de eventos do sistema.
                     </DialogDescription>
@@ -143,7 +161,10 @@ const WebhookFormModal = ({ onSave, children }: { onSave: (data: Webhook) => voi
                         )} />
                          <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
-                            <Button type="submit">Salvar Webhook</Button>
+                            <Button type="submit" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar
+                            </Button>
                          </DialogFooter>
                     </form>
                 </Form>
@@ -154,10 +175,38 @@ const WebhookFormModal = ({ onSave, children }: { onSave: (data: Webhook) => voi
 
 export default function WebhooksPage() {
     const [webhooks, setWebhooks] = React.useState<Webhook[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
 
-    const handleSaveWebhook = (data: Webhook) => {
-        setWebhooks(prev => [...prev, { ...data, id: `wh_${Date.now()}` }]);
-    };
+    const fetchWebhooks = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/webhooks');
+            if(!response.ok) throw new Error('Falha ao buscar webhooks.');
+            const data = await response.json();
+            setWebhooks(data.webhooks.map((wh: any) => ({ ...wh, events: wh.events?.split(',') || [] })));
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    React.useEffect(() => {
+        fetchWebhooks();
+    }, [fetchWebhooks]);
+
+    const handleDelete = async (id?: string) => {
+        if (!id) return;
+        try {
+            const response = await fetch(`/api/v1/webhooks/${id}`, { method: 'DELETE' });
+            if(!response.ok) throw new Error('Falha ao excluir webhook.');
+            toast({ title: "Sucesso!", description: 'Webhook excluído com sucesso.', variant: 'success' });
+            fetchWebhooks();
+        } catch (error: any) {
+             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        }
+    }
   
     return (
     <div className="grid gap-6">
@@ -168,7 +217,7 @@ export default function WebhooksPage() {
                 Gerencie os endpoints que recebem eventos do seu sistema.
                 </CardDescription>
             </div>
-            <WebhookFormModal onSave={handleSaveWebhook}>
+            <WebhookFormModal onSave={fetchWebhooks}>
                 <Button>
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Adicionar Webhook
@@ -187,7 +236,15 @@ export default function WebhooksPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {webhooks.length === 0 ? (
+              {isLoading ? (
+                  Array.from({ length: 2 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-1/2" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-2/3" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-16" /></TableCell>
+                    </TableRow>
+                  ))
+              ) : webhooks.length === 0 ? (
                 <TableRow>
                     <TableCell colSpan={3} className="h-24 text-center">
                         Nenhum webhook configurado.
@@ -204,13 +261,15 @@ export default function WebhooksPage() {
                     <TableCell>
                         <div className='flex flex-wrap gap-1'>
                             {webhook.events.map(event => (
-                                <Badge key={event} variant="secondary">{event}</Badge>
+                                <Badge key={event} variant="secondary">{availableEvents.find(e => e.id === event)?.label || event}</Badge>
                             ))}
                         </div>
                     </TableCell>
                     <TableCell>
-                        <Button variant="ghost" size="icon"><Pencil className='h-4 w-4' /></Button>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 className='h-4 w-4' /></Button>
+                        <WebhookFormModal webhook={webhook} onSave={fetchWebhooks}>
+                            <Button variant="ghost" size="icon"><Pencil className='h-4 w-4' /></Button>
+                        </WebhookFormModal>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(webhook.id)}><Trash2 className='h-4 w-4' /></Button>
                     </TableCell>
                 </TableRow>
               ))}
