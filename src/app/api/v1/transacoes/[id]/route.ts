@@ -1,12 +1,60 @@
 
 import { NextResponse } from 'next/server';
+import { db } from '@/db/drizzle';
+import { transactions as transactionsTable, gatewayConfigurations } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 
-export async function GET(request: Request, { params }: { params: { id: string }}) {
-    const { id } = params;
-    return NextResponse.json({ message: `Endpoint para obter detalhes da transação ${id}` }, { status: 200 });
+async function getCieloCredentials() {
+    const [config] = await db.select()
+        .from(gatewayConfigurations)
+        .where(eq(gatewayConfigurations.gatewayName, 'Cielo'))
+        .limit(1);
+
+    if (!config) throw new Error("Configuração do gateway Cielo não encontrada.");
+
+    const isProduction = config.environment === 'production';
+    return {
+        merchantId: isProduction ? config.prodClientId : config.devClientId,
+        merchantKey: isProduction ? config.prodClientSecret : config.devClientSecret,
+        apiUrl: isProduction ? 'https://api.cieloecommerce.cielo.com.br' : 'https://apisandbox.cieloecommerce.cielo.com.br'
+    };
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string }}) {
-    const { id } = params;
-    return NextResponse.json({ message: `Endpoint para atualizar a transação ${id}` }, { status: 200 });
+
+export async function GET(request: Request, { params }: { params: { id: string }}) {
+    const { id: paymentId } = params;
+
+    if (!paymentId) {
+        return NextResponse.json({ error: "ID da transação não fornecido." }, { status: 400 });
+    }
+
+    try {
+        const credentials = await getCieloCredentials();
+
+        const response = await fetch(`${credentials.apiUrl}/1/sales/${paymentId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'MerchantId': credentials.merchantId || '',
+                'MerchantKey': credentials.merchantKey || '',
+            }
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            console.error("Erro ao consultar transação na Cielo:", errorBody);
+            throw new Error('Falha ao consultar o status da transação na Cielo.');
+        }
+
+        const cieloData = await response.json();
+        
+        // Aqui você pode opcionalmente atualizar seu banco de dados com o status mais recente
+        // ...
+
+        return NextResponse.json({ success: true, transaction: cieloData });
+
+    } catch (error: any) {
+        console.error("Erro ao consultar transação:", error);
+        return NextResponse.json({ error: error.message || "Erro interno do servidor." }, { status: 500 });
+    }
 }
