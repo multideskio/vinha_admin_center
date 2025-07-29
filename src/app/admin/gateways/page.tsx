@@ -10,9 +10,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -81,7 +78,25 @@ export default function GatewaysPage() {
             Gerencie os gateways para processamento de transações.
           </p>
         </div>
-        {/* Adicionar um novo gateway pode ser uma funcionalidade futura */}
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button size="sm" className="gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Novo Gateway
+                    </span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Selecione um Gateway</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                    <Link href="/admin/gateways/cielo">Configurar Cielo</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/admin/gateways/bradesco">Configurar Bradesco</Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Card>
@@ -157,7 +172,7 @@ export default function GatewaysPage() {
           ) : (
             <div className="text-center text-muted-foreground p-12">
               <h3 className="text-lg font-semibold">Nenhum Gateway Encontrado</h3>
-              <p>Por favor, cadastre um gateway de pagamento para começar a processar transações.</p>
+              <p>Clique em "Novo Gateway" para configurar um método de pagamento.</p>
             </div>
           )}
         </CardContent>
