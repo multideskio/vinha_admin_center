@@ -1,7 +1,7 @@
 
 'use client';
 
-import { DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode } from 'lucide-react';
+import { DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, AlertTriangle } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -15,6 +15,7 @@ import {
   Cell,
   Legend,
 } from 'recharts';
+import Link from 'next/link';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -33,6 +34,8 @@ import {
 } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 // KPIs for Manager's network
 const kpiData = [
@@ -110,7 +113,7 @@ const recentRegistrations = [
 ];
 
 
-export default function ManagerDashboardPage() {
+export default function ManagerDashboardPage({ isProfileComplete }: { isProfileComplete: boolean }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -119,6 +122,22 @@ export default function ManagerDashboardPage() {
         </h1>
         <DateRangePicker />
       </div>
+
+      {!isProfileComplete && (
+        <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <div className="flex items-center justify-between">
+                <div>
+                    <AlertDescription>
+                        Seu perfil está incompleto. Por favor, atualize suas informações para habilitar todas as funcionalidades.
+                    </AlertDescription>
+                </div>
+                <Button asChild>
+                    <Link href="/gerente/perfil">Completar Cadastro</Link>
+                </Button>
+            </div>
+        </Alert>
+      )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {kpiData.map((kpi) => (

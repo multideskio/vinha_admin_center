@@ -90,17 +90,29 @@ export default async function ManagerLayout({
   let userName = 'Gerente';
   let userFallback = 'GE';
   let userEmail = 'gerente@vinha.com';
+  let isProfileComplete = false;
   
   if (user) {
     const [profile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, user.id));
     userName = profile?.firstName || 'Gerente';
     userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
     userEmail = user.email;
+
+    if (profile) {
+      isProfileComplete = !!(profile.cep && profile.state && profile.city && profile.neighborhood && profile.address);
+    }
   }
+
+  const childrenWithProps = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, { isProfileComplete } as any);
+    }
+    return child;
+  });
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <GerenteSidebar />
+      <ManagerSidebar />
       <div className="flex flex-col">
       <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
            <Sheet>
@@ -191,7 +203,7 @@ export default async function ManagerLayout({
                     <span>Ajuda</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <form action={logoutUser}>
+                 <form action={logoutUser}>
                     <button type="submit" className='w-full'>
                         <DropdownMenuItem>
                                 <LogOut className="mr-2 h-4 w-4" />
@@ -203,7 +215,7 @@ export default async function ManagerLayout({
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {children}
+          {childrenWithProps}
         </main>
       </div>
     </div>
