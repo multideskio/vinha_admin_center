@@ -93,6 +93,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 const churchSchema = z.object({
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
