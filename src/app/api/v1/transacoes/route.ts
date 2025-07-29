@@ -13,7 +13,7 @@ const MOCK_USER_ID = 'e7bba1dd-71f2-400f-98e1-bde37817843e';
 const transactionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto']),
-  contributionType: z.enum(['dizimo', 'oferta']),
+  contributionType: z.enum(['dizimo', 'oferta'], { required_error: "O tipo de contribuição é obrigatório." }),
   description: z.string().optional(),
   card: z.object({
     number: z.string(),

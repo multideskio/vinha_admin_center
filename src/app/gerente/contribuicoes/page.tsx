@@ -44,9 +44,16 @@ const contributionSchema = z.object({
     required_error: 'Selecione um método de pagamento.',
   }),
   contributionType: z.enum(['dizimo', 'oferta'], {
-    required_error: 'Selecione o tipo de contribuição.'
+    required_error: 'O tipo de contribuição é obrigatório.'
   }),
   description: z.string().optional(),
+  card: z.object({
+    number: z.string(),
+    holder: z.string(),
+    expirationDate: z.string(),
+    securityCode: z.string(),
+    brand: z.string(),
+  }).optional(),
 });
 
 type ContributionFormValues = z.infer<typeof contributionSchema>;
@@ -153,6 +160,11 @@ export default function ContribuicoesPage() {
   }
 
   async function handleFormSubmit(data: ContributionFormValues) {
+    if (data.paymentMethod === 'credit_card') {
+      setShowPaymentDetails(true);
+      return;
+    }
+    
     setIsProcessing(true);
     setPaymentDetails(null);
     try {
@@ -191,7 +203,7 @@ export default function ContribuicoesPage() {
         holder: cardState.name,
         expirationDate: cardState.expiry,
         securityCode: cardState.cvc,
-        brand: "Visa", // O SDK da Cielo pode detectar a bandeira, mas é bom ter uma fallback
+        brand: "Visa", 
       }
     };
     setIsProcessing(true);
@@ -206,7 +218,6 @@ export default function ContribuicoesPage() {
             throw new Error(result.error || 'Falha ao processar o pagamento com cartão.');
         }
         toast({ title: "Sucesso!", description: "Pagamento com cartão aprovado.", variant: "success"});
-        // Reset form
         form.reset({ amount: 0, paymentMethod: 'pix' });
         setCardState({ number: '', expiry: '', cvc: '', name: '', focus: '' });
         setPaymentDetails(null);
@@ -339,7 +350,7 @@ export default function ContribuicoesPage() {
              {/* Hide button if details are shown for non-card payments */}
               {!(paymentDetails && paymentMethod !== 'credit_card') && (
                  <div className="flex justify-end">
-                    <Button type={paymentMethod === 'credit_card' ? 'button' : 'submit'} size="lg" disabled={isProcessing} onClick={() => { if (paymentMethod === 'credit_card') { handleFinalizeCardPayment(); } }}>
+                    <Button type={paymentMethod === 'credit_card' ? 'button' : 'submit'} size="lg" disabled={isProcessing} onClick={paymentMethod === 'credit_card' ? form.handleSubmit(() => setShowPaymentDetails(true)) : undefined}>
                          {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                          {isProcessing ? "Processando..." : getButtonLabel()}
                      </Button>
@@ -457,4 +468,3 @@ export default function ContribuicoesPage() {
     </div>
   );
 }
-
