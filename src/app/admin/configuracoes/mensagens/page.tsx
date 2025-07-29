@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, MoreHorizontal, Trash2, Pencil, ToggleLeft, ToggleRight, Info, Loader2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Trash2, Pencil, ToggleLeft, ToggleRight, Info, Loader2, Mail, Smartphone } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,6 +51,8 @@ const notificationRuleSchema = z.object({
     eventTrigger: z.enum(['user_registered', 'payment_received', 'payment_due_reminder', 'payment_overdue']),
     daysOffset: z.coerce.number().int(),
     messageTemplate: z.string().min(1, "O modelo da mensagem é obrigatório."),
+    sendViaEmail: z.boolean().default(true),
+    sendViaWhatsapp: z.boolean().default(false),
     isActive: z.boolean().default(true),
 });
 
@@ -77,13 +79,15 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
             eventTrigger: 'payment_due_reminder',
             daysOffset: 0,
             messageTemplate: '',
+            sendViaEmail: true,
+            sendViaWhatsapp: false,
             isActive: true,
         },
     });
 
     React.useEffect(() => {
         if(isOpen) {
-            form.reset(rule || { name: '', eventTrigger: 'payment_due_reminder', daysOffset: 0, messageTemplate: '', isActive: true });
+            form.reset(rule || { name: '', eventTrigger: 'payment_due_reminder', daysOffset: 0, messageTemplate: '', sendViaEmail: true, sendViaWhatsapp: false, isActive: true });
         }
     }, [isOpen, rule, form]);
     
@@ -197,6 +201,28 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                             </FormItem>
                           )}
                         />
+
+                        <div>
+                            <FormLabel>Canais de Envio</FormLabel>
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-2'>
+                                <FormField control={form.control} name="sendViaEmail" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Enviar por E-mail</FormLabel>
+                                        </div>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="sendViaWhatsapp" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Enviar por WhatsApp</FormLabel>
+                                        </div>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                            </div>
+                        </div>
                         
                          <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
@@ -296,6 +322,7 @@ export default function MessagesSettingsPage() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Gatilho</TableHead>
+                <TableHead className='hidden sm:table-cell'>Canais</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -306,13 +333,14 @@ export default function MessagesSettingsPage() {
                     <TableRow key={i}>
                         <TableCell><Skeleton className='h-5 w-32' /></TableCell>
                         <TableCell><Skeleton className='h-5 w-48' /></TableCell>
+                        <TableCell className='hidden sm:table-cell'><Skeleton className='h-5 w-20' /></TableCell>
                         <TableCell><Skeleton className='h-6 w-16 rounded-full' /></TableCell>
                         <TableCell><Skeleton className='h-8 w-24' /></TableCell>
                     </TableRow>
                 ))
               ) : rules.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                         Nenhuma automação de mensagem criada.
                     </TableCell>
                 </TableRow>
@@ -328,6 +356,12 @@ export default function MessagesSettingsPage() {
                                  rule.eventTrigger === 'payment_overdue' ? `${rule.daysOffset} dias após` : `Imediato`
                                 }
                             </span>
+                        </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                        <div className="flex items-center gap-2">
+                            {rule.sendViaEmail && <Mail className="h-4 w-4 text-muted-foreground" />}
+                            {rule.sendViaWhatsapp && <Smartphone className="h-4 w-4 text-muted-foreground" />}
                         </div>
                     </TableCell>
                     <TableCell>

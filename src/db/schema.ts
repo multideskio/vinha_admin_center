@@ -1,5 +1,4 @@
 
-
 import {
   pgTable,
   text,
@@ -239,6 +238,8 @@ export const notificationRules = pgTable('notification_rules', {
     eventTrigger: notificationEventTriggerEnum('event_trigger').notNull(),
     daysOffset: integer('days_offset').default(0).notNull(),
     messageTemplate: text('message_template').notNull(),
+    sendViaEmail: boolean('send_via_email').default(true).notNull(),
+    sendViaWhatsapp: boolean('send_via_whatsapp').default(false).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow(),

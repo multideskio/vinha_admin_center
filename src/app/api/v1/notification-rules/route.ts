@@ -12,6 +12,8 @@ const notificationRuleSchema = z.object({
     eventTrigger: z.enum(['user_registered', 'payment_received', 'payment_due_reminder', 'payment_overdue']),
     daysOffset: z.coerce.number().int(),
     messageTemplate: z.string().min(1, "O modelo da mensagem é obrigatório."),
+    sendViaEmail: z.boolean().default(true),
+    sendViaWhatsapp: z.boolean().default(false),
     isActive: z.boolean().default(true),
 });
 

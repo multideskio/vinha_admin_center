@@ -6,18 +6,20 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const notificationRuleSchema = z.object({
-    name: z.string().min(1, "O nome da automação é obrigatório."),
-    eventTrigger: z.enum(['user_registered', 'payment_received', 'payment_due_reminder', 'payment_overdue']),
-    daysOffset: z.coerce.number().int(),
-    messageTemplate: z.string().min(1, "O modelo da mensagem é obrigatório."),
-    isActive: z.boolean().default(true),
+    name: z.string().min(1, "O nome da automação é obrigatório.").optional(),
+    eventTrigger: z.enum(['user_registered', 'payment_received', 'payment_due_reminder', 'payment_overdue']).optional(),
+    daysOffset: z.coerce.number().int().optional(),
+    messageTemplate: z.string().min(1, "O modelo da mensagem é obrigatório.").optional(),
+    sendViaEmail: z.boolean().optional(),
+    sendViaWhatsapp: z.boolean().optional(),
+    isActive: z.boolean().optional(),
 });
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
     const { id } = params;
     try {
         const body = await request.json();
-        const validatedData = notificationRuleSchema.partial().parse(body);
+        const validatedData = notificationRuleSchema.parse(body);
 
         const [updatedRule] = await db.update(notificationRules)
             .set({ ...validatedData, updatedAt: new Date() })
