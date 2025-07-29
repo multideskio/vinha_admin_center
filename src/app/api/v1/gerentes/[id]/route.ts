@@ -6,22 +6,22 @@ import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 const managerUpdateSchema = z.object({
-    firstName: z.string().min(1, 'O nome é obrigatório.'),
-    lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
-    email: z.string().email('E-mail inválido.'),
-    phone: z.string().min(1, 'O celular é obrigatório.'),
+    firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
+    lastName: z.string().min(1, 'O sobrenome é obrigatório.').optional(),
+    email: z.string().email('E-mail inválido.').optional(),
+    phone: z.string().min(1, 'O celular é obrigatório.').optional(),
     landline: z.string().optional(),
-    cep: z.string(),
-    state: z.string(),
-    city: z.string(),
-    neighborhood: z.string(),
-    address: z.string(),
-    titheDay: z.coerce.number(),
+    cep: z.string().optional(),
+    state: z.string().optional(),
+    city: z.string().optional(),
+    neighborhood: z.string().optional(),
+    address: z.string().optional(),
+    titheDay: z.coerce.number().optional(),
     facebook: z.string().url().optional().or(z.literal('')),
     instagram: z.string().url().optional().or(z.literal('')),
     website: z.string().url().optional().or(z.literal('')),
-    // Não incluir CPF e senha na atualização por enquanto
-  });
+    newPassword: z.string().optional(),
+}).partial();
   
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
@@ -77,43 +77,34 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       const body = await request.json();
       const validatedData = managerUpdateSchema.parse(body);
   
-      // Transação para garantir consistência
       const result = await db.transaction(async (tx) => {
-        const [updatedUser] = await tx
-          .update(users)
-          .set({
-            email: validatedData.email,
-            phone: validatedData.phone,
-            titheDay: validatedData.titheDay,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, id))
-          .returning();
-  
-        if (!updatedUser) {
-          tx.rollback();
-          return null;
+        
+        const userUpdateData: Partial<typeof users.$inferInsert> = {};
+        if (validatedData.email) userUpdateData.email = validatedData.email;
+        if (validatedData.phone) userUpdateData.phone = validatedData.phone;
+        if (validatedData.titheDay) userUpdateData.titheDay = validatedData.titheDay;
+        if (Object.keys(userUpdateData).length > 0) {
+            userUpdateData.updatedAt = new Date();
+            await tx.update(users).set(userUpdateData).where(eq(users.id, id));
         }
   
-        const [updatedProfile] = await tx
-          .update(managerProfiles)
-          .set({
-            firstName: validatedData.firstName,
-            lastName: validatedData.lastName,
-            landline: validatedData.landline,
-            cep: validatedData.cep,
-            state: validatedData.state,
-            city: validatedData.city,
-            neighborhood: validatedData.neighborhood,
-            address: validatedData.address,
-            facebook: validatedData.facebook,
-            instagram: validatedData.instagram,
-            website: validatedData.website,
-          })
-          .where(eq(managerProfiles.userId, id))
-          .returning();
+        const profileUpdateData: Partial<typeof managerProfiles.$inferInsert> = {};
+        if (validatedData.firstName) profileUpdateData.firstName = validatedData.firstName;
+        if (validatedData.lastName) profileUpdateData.lastName = validatedData.lastName;
+        if (validatedData.landline) profileUpdateData.landline = validatedData.landline;
+        if (validatedData.cep) profileUpdateData.cep = validatedData.cep;
+        if (validatedData.state) profileUpdateData.state = validatedData.state;
+        if (validatedData.city) profileUpdateData.city = validatedData.city;
+        if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood;
+        if (validatedData.address) profileUpdateData.address = validatedData.address;
+        if (validatedData.facebook) profileUpdateData.facebook = validatedData.facebook;
+        if (validatedData.instagram) profileUpdateData.instagram = validatedData.instagram;
+        if (validatedData.website) profileUpdateData.website = validatedData.website;
+        if (Object.keys(profileUpdateData).length > 0) {
+            await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, id));
+        }
         
-        return { updatedUser, updatedProfile };
+        return { success: true };
       });
   
       if (!result) {
