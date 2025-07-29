@@ -41,11 +41,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 const bradescoGatewaySchema = z.object({
   isActive: z.boolean().default(false),
   environment: z.enum(['production', 'development']),
-  prodClientId: z.string().optional(),
-  prodClientSecret: z.string().optional(),
-  devClientId: z.string().optional(),
-  devClientSecret: z.string().optional(),
-  certificatePassword: z.string().optional(),
+  prodClientId: z.string().optional().nullable(),
+  prodClientSecret: z.string().optional().nullable(),
+  devClientId: z.string().optional().nullable(),
+  devClientSecret: z.string().optional().nullable(),
+  certificatePassword: z.string().optional().nullable(),
 });
 
 type BradescoGatewayValues = z.infer<typeof bradescoGatewaySchema>;

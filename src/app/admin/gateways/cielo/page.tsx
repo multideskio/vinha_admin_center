@@ -42,10 +42,10 @@ import { Switch } from '@/components/ui/switch';
 const cieloGatewaySchema = z.object({
   isActive: z.boolean().default(false),
   environment: z.enum(['production', 'development']),
-  prodClientId: z.string().optional(),
-  prodClientSecret: z.string().optional(),
-  devClientId: z.string().optional(),
-  devClientSecret: z.string().optional(),
+  prodClientId: z.string().optional().nullable(),
+  prodClientSecret: z.string().optional().nullable(),
+  devClientId: z.string().optional().nullable(),
+  devClientSecret: z.string().optional().nullable(),
   acceptedPaymentMethods: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: "Você deve selecionar pelo menos um meio de pagamento.",
   }),
