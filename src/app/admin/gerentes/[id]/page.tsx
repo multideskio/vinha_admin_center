@@ -105,14 +105,19 @@ export default function GerenteProfilePage() {
           
           const sanitizedData = {
               ...data,
+              firstName: data.firstName ?? '',
+              lastName: data.lastName ?? '',
               cpf: data.cpf ?? '',
+              phone: data.phone ?? '',
               landline: data.landline ?? '',
+              email: data.email ?? '',
               cep: data.cep ?? '',
               state: data.state ?? '',
               city: data.city ?? '',
               neighborhood: data.neighborhood ?? '',
               address: data.address ?? '',
               titheDay: data.titheDay ?? 1,
+              newPassword: '',
               facebook: data.facebook ?? '',
               instagram: data.instagram ?? '',
               website: data.website ?? '',
@@ -149,15 +154,6 @@ export default function GerenteProfilePage() {
     
     const handleSocialLinkBlur = async (fieldName: 'facebook' | 'instagram' | 'website', value: string | null) => {
         try {
-            if (value && !z.string().url().safeParse(value).success) {
-                toast({
-                    title: 'URL Inválida',
-                    description: `Por favor, insira uma URL válida para o ${fieldName}.`,
-                    variant: 'destructive',
-                });
-                return;
-            }
-            
             const payload = { [fieldName]: value };
     
             const response = await fetch(`/api/v1/gerentes/${id}`, {
@@ -310,7 +306,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Nome</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -323,7 +319,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Sobre-nome</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -352,7 +348,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Celular/WhatsApp</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -378,7 +374,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
-                                <Input type="email" {...field} />
+                                <Input type="email" {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -423,7 +419,7 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="titheDay" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Dia do dízimo</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value ?? 1} /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -444,7 +440,7 @@ export default function GerenteProfilePage() {
                             <FormControl>
                                 <div className="relative mt-1">
                                     <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} />
+                                    <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} value={field.value ?? ''}/>
                                 </div>
                             </FormControl>
                             <FormMessage />
@@ -494,3 +490,4 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
+
