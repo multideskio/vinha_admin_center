@@ -149,3 +149,5 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
+
+    

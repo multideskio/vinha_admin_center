@@ -44,26 +44,23 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PasswordStrength } from '@/components/ui/password-strength';
 
-const managerProfileSchema = z.object({
-    firstName: z.string().min(1, 'O nome é obrigatório.'),
-    lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
-    cpf: z.string().optional(),
-    phone: z.string().min(1, 'O celular é obrigatório.'),
-    landline: z.string().nullable().optional(),
-    email: z.string().email('E-mail inválido.'),
-    cep: z.string().nullable().optional(),
-    state: z.string().nullable().optional(),
-    city: z.string().nullable().optional(),
-    neighborhood: z.string().nullable().optional(),
-    address: z.string().nullable().optional(),
-    titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
-    newPassword: z.string().min(4, "A senha deve ter no mínimo 4 caracteres.").optional().or(z.literal('')),
-    facebook: z.string().url().or(z.literal('')).nullable().optional(),
-    instagram: z.string().url().or(z.literal('')).nullable().optional(),
-    website: z.string().url().or(z.literal('')).nullable().optional(),
-  });
-
-type ManagerProfile = z.infer<typeof managerProfileSchema> & {
+type ManagerProfile = {
+    firstName: string;
+    lastName: string;
+    cpf?: string | null;
+    phone: string;
+    landline?: string | null;
+    email: string;
+    cep?: string | null;
+    state?: string | null;
+    city?: string | null;
+    neighborhood?: string | null;
+    address?: string | null;
+    titheDay?: number | null;
+    newPassword?: string;
+    facebook?: string | null;
+    instagram?: string | null;
+    website?: string | null;
     id: string;
     status: string;
     avatarUrl?: string;
@@ -78,8 +75,7 @@ export default function GerenteProfilePage() {
     const { id } = params;
     const { toast } = useToast();
 
-    const form = useForm<z.infer<typeof managerProfileSchema>>({
-        resolver: zodResolver(managerProfileSchema),
+    const form = useForm<ManagerProfile>({
         defaultValues: {
             firstName: '',
             lastName: '',
@@ -141,7 +137,7 @@ export default function GerenteProfilePage() {
         fetchManager();
     }, [fetchManager]);
 
-    const onSubmit = async (data: z.infer<typeof managerProfileSchema>) => {
+    const onSubmit = async (data: ManagerProfile) => {
         try {
             const response = await fetch(`/api/v1/gerentes/${id}`, {
                 method: 'PUT',
@@ -505,3 +501,5 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
+
+    
