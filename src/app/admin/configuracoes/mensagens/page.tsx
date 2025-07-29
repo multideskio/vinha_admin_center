@@ -68,8 +68,11 @@ const eventTriggerOptions = {
     'payment_overdue': 'Aviso de Atraso'
 };
 
+const availableTags = ['{nome}', '{valor}', '{data_vencimento}', '{link_pagamento}', '{pedido}'];
+
 const NotificationFormModal = ({ rule, onSave, children }: { rule?: NotificationRule, onSave: (data: NotificationRule) => void; children: React.ReactNode }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
     const form = useForm<NotificationRule>({
         resolver: zodResolver(notificationRuleSchema),
         defaultValues: rule || {
@@ -96,10 +99,31 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
 
     const renderDaysOffsetLabel = () => {
         switch(eventTrigger) {
-            case 'payment_due_reminder': return 'Dias ANTES do Vencimento';
-            case 'payment_overdue': return 'Dias APÓS o Vencimento';
+            case 'payment_due_reminder': return 'Disparar X dias ANTES do Vencimento';
+            case 'payment_overdue': return 'Disparar X dias APÓS o Vencimento';
             default: return 'Dias de Atraso (0 para imediato)';
         }
+    }
+
+    const handleTagClick = (tag: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const newText = text.substring(0, start) + tag + text.substring(end);
+        
+        form.setValue('messageTemplate', newText, { shouldValidate: true });
+
+        // Move cursor to after the inserted tag
+        const newCursorPosition = start + tag.length;
+        
+        // Use timeout to make sure the state is updated before setting cursor
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+        }, 0);
     }
 
     return (
@@ -147,9 +171,30 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                         <FormField control={form.control} name="messageTemplate" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Modelo da Mensagem</FormLabel>
-                                <FormControl><Textarea placeholder="Olá {nome}, sua fatura de R${valor} vence em {dias} dias." rows={5} {...field} /></FormControl>
+                                <FormControl>
+                                    <Textarea
+                                        ref={textareaRef}
+                                        placeholder="Olá {nome}, sua fatura de R${valor} vence em {dias} dias."
+                                        rows={5}
+                                        {...field}
+                                    />
+                                </FormControl>
                                 <FormDescription>
-                                    Variáveis disponíveis: {'{nome}'}, {'{valor}'}, {'{data_vencimento}'}, {'{link_pagamento}'}.
+                                    Clique em uma variável para adicioná-la ao texto:
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                        {availableTags.map(tag => (
+                                            <Button
+                                                key={tag}
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-auto px-2 py-0.5 text-xs"
+                                                onClick={() => handleTagClick(tag)}
+                                            >
+                                                {tag}
+                                            </Button>
+                                        ))}
+                                    </div>
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -201,7 +246,7 @@ export default function MessagesSettingsPage() {
         <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-                As mensagens são enviadas com base nos gatilhos definidos. Lembretes usam números negativos para "dias antes" (ex: -5) e avisos usam números positivos.
+            Crie regras personalizadas para cada evento. Lembretes usam números negativos para "dias antes" (ex: -5) e avisos usam números positivos.
             </AlertDescription>
         </Alert>
 
@@ -260,3 +305,4 @@ export default function MessagesSettingsPage() {
     </div>
   );
 }
+
