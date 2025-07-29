@@ -1,12 +1,13 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { gatewayConfigurations, transactions as transactionsTable, users, type TransactionStatus } from '@/db/schema';
+import { gatewayConfigurations, transactions as transactionsTable, users, managerProfiles, type TransactionStatus } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
-const MOCK_USER_ID = 'e7bba1dd-71f2-400f-98e1-bde37817843e';
+const GERENTE_EMAIL_FOR_TESTING = 'gerente@vinha.com';
+
 
 const transactionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
@@ -55,19 +56,24 @@ function mapCieloStatusToDbStatus(cieloStatus: number): TransactionStatus {
 }
 
 export async function POST(request: Request) {
-    const user = { id: MOCK_USER_ID, email: 'gerente@vinha.com' }; 
-
     try {
+        const [gerenteUser] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, GERENTE_EMAIL_FOR_TESTING)).limit(1);
+        if (!gerenteUser) {
+            return NextResponse.json({ error: "Usuário gerente de teste não encontrado." }, { status: 404 });
+        }
+        
         const body = await request.json();
         const validatedData = transactionSchema.parse(body);
         const credentials = await getCieloCredentials();
         
         const merchantOrderId = `vinha-${Date.now()}`;
+        
+        const [gerenteProfile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, gerenteUser.id));
 
         let cieloPayload: any = {
             MerchantOrderId: merchantOrderId,
             Customer: {
-                Name: user.email 
+                Name: `${gerenteProfile?.firstName || 'Usuário'} ${gerenteProfile?.lastName || 'Teste'}`
             },
             Payment: {
                 Type: '',
@@ -84,27 +90,31 @@ export async function POST(request: Request) {
                     throw new Error("Dados do cartão de crédito são obrigatórios.");
                 }
                 cieloPayload.Payment.Type = 'CreditCard';
-                cieloPayload.Payment.Capture = true; // Capturar automaticamente
+                cieloPayload.Payment.Capture = true;
                 cieloPayload.Payment.Installments = 1;
                 cieloPayload.Payment.CreditCard = {
                     CardNumber: validatedData.card.number.replace(/\s/g, ''), 
                     Holder: validatedData.card.holder,
-                    ExpirationDate: validatedData.card.expirationDate, // MM/YYYY
+                    ExpirationDate: validatedData.card.expirationDate,
                     SecurityCode: validatedData.card.securityCode,
                     Brand: validatedData.card.brand
                 }
                 break;
             case 'boleto':
+                if (!gerenteProfile || !gerenteProfile.cpf || !gerenteProfile.address || !gerenteProfile.neighborhood || !gerenteProfile.city || !gerenteProfile.state || !gerenteProfile.cep) {
+                    throw new Error("Endereço ou CPF incompletos. Por favor, complete seu perfil antes de gerar um boleto.");
+                }
                 cieloPayload.Payment.Type = 'Boleto';
                 cieloPayload.Payment.Provider = 'Bradesco2';
-                cieloPayload.Customer.Identity = '12345678901';
+                cieloPayload.Customer.Identity = gerenteProfile.cpf.replace(/\D/g, '');
                 cieloPayload.Customer.IdentityType = 'CPF';
                 cieloPayload.Customer.Address = {
-                    "Street": "Rua Teste",
-                    "Number": "123",
-                    "ZipCode": "12345987",
-                    "City": "Cidade Teste",
-                    "State": "SP",
+                    "Street": gerenteProfile.address,
+                    "Number": "123", // Número ainda fixo, pode ser adicionado ao perfil
+                    "District": gerenteProfile.neighborhood,
+                    "ZipCode": gerenteProfile.cep.replace(/\D/g, ''),
+                    "City": gerenteProfile.city,
+                    "State": gerenteProfile.state,
                     "Country": "BRA"
                 }
                 break;
@@ -131,7 +141,7 @@ export async function POST(request: Request) {
 
         await db.insert(transactionsTable).values({
             companyId: MOCK_COMPANY_ID,
-            contributorId: user.id,
+            contributorId: gerenteUser.id,
             amount: String(validatedData.amount),
             status: dbStatus,
             paymentMethod: validatedData.paymentMethod,
