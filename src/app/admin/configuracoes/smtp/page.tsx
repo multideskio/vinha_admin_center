@@ -20,6 +20,7 @@ const smtpSettingsSchema = z.object({
   port: z.coerce.number().min(1, 'Porta é obrigatória.'),
   user: z.string().min(1, 'Usuário SMTP é obrigatório.'),
   password: z.string().min(1, 'Senha SMTP é obrigatória.'),
+  from: z.string().email('E-mail de envio inválido.').optional().nullable(),
 });
 
 type SmtpSettingsValues = z.infer<typeof smtpSettingsSchema>;
@@ -38,6 +39,7 @@ export default function SmtpSettingsPage() {
             port: 587,
             user: '',
             password: '',
+            from: '',
         },
     });
 
@@ -54,6 +56,7 @@ export default function SmtpSettingsPage() {
                         port: data.config.port || 587,
                         user: data.config.user || '',
                         password: data.config.password || '',
+                        from: data.config.from || '',
                     });
                 }
             } catch (error: any) {
@@ -155,6 +158,9 @@ export default function SmtpSettingsPage() {
                                 <FormItem><FormLabel>Senha SMTP</FormLabel><FormControl><Input type='password' placeholder='Sua senha SMTP' {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
+                        <FormField control={form.control} name="from" render={({field}) => (
+                            <FormItem><FormLabel>E-mail de Envio (From)</FormLabel><FormControl><Input type="email" placeholder='remetente@autorizado.com' {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                        )} />
                         <div className='flex justify-end'>
                              <Button type="submit" disabled={isSaving}>
                                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

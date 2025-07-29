@@ -10,6 +10,7 @@ const testEmailSchema = z.object({
         port: z.number(),
         user: z.string(),
         password: z.string(),
+        from: z.string().email().optional().nullable(),
     }),
 });
 
@@ -28,9 +29,11 @@ export async function POST(request: Request) {
               pass: config.password,
             },
         });
+        
+        const fromAddress = config.from || config.user;
 
         await transporter.sendMail({
-            from: `"Vinha Admin Teste" <${config.user}>`, 
+            from: `"Vinha Admin Teste" <${fromAddress}>`, 
             to: email, 
             subject: "E-mail de Teste - Vinha Admin", 
             text: "Se você recebeu este e-mail, suas configurações de SMTP estão funcionando corretamente!",
@@ -44,7 +47,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
         }
         console.error("Erro ao enviar e-mail de teste:", error);
-        // Retornar a mensagem de erro específica para o frontend
         return NextResponse.json({ error: error.message || "Erro interno do servidor." }, { status: 500 });
     }
 }

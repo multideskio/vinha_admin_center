@@ -220,6 +220,7 @@ export const otherSettings = pgTable('other_settings', {
     smtpPort: integer('smtp_port'),
     smtpUser: varchar('smtp_user'),
     smtpPass: text('smtp_pass'),
+    smtpFrom: varchar('smtp_from'),
     whatsappApiUrl: text('whatsapp_api_url'),
     whatsappApiKey: text('whatsapp_api_key'),
     s3Endpoint: text('s3_endpoint'),

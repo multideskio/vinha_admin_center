@@ -12,6 +12,7 @@ const smtpSettingsSchema = z.object({
   port: z.coerce.number().min(1, 'Porta é obrigatória.'),
   user: z.string().min(1, 'Usuário SMTP é obrigatório.'),
   password: z.string().min(1, 'Senha SMTP é obrigatória.'),
+  from: z.string().email('E-mail de envio inválido.').optional().nullable(),
 });
 
 export async function GET() {
@@ -28,6 +29,7 @@ export async function GET() {
                 port: config.smtpPort,
                 user: config.smtpUser,
                 password: config.smtpPass,
+                from: config.smtpFrom,
             }
         });
 
@@ -50,6 +52,7 @@ export async function PUT(request: Request) {
             smtpPort: validatedData.port,
             smtpUser: validatedData.user,
             smtpPass: validatedData.password,
+            smtpFrom: validatedData.from,
         };
 
         if(existingConfig) {
