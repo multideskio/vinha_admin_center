@@ -1,7 +1,7 @@
 
 
 import type { Metadata } from 'next';
-import { GerenteSidebar } from '@/components/layout/manager-sidebar';
+import { ManagerSidebar } from '@/components/layout/manager-sidebar';
 import {
   Search,
   User,
@@ -100,7 +100,7 @@ export default async function ManagerLayout({
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <GerenteSidebar />
+      <ManagerSidebar />
       <div className="flex flex-col">
       <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
            <Sheet>
@@ -191,7 +191,7 @@ export default async function ManagerLayout({
                     <span>Ajuda</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <form action={logoutUser}>
+                 <form action={logoutUser}>
                     <button type="submit" className='w-full'>
                         <DropdownMenuItem>
                                 <LogOut className="mr-2 h-4 w-4" />
