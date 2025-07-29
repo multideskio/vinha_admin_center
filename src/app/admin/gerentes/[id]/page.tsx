@@ -114,6 +114,7 @@ export default function GerenteProfilePage() {
           const data = await response.json();
           const sanitizedData = {
               ...data,
+              cpf: data.cpf || '',
               landline: data.landline || '',
               cep: data.cep || '',
               state: data.state || '',
@@ -502,3 +503,4 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
+
