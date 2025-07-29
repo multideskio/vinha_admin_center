@@ -86,29 +86,43 @@ export default function GatewaysPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Tipos de Pagamento</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>
-                  <span className="sr-only">Ações</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 2 }).map((_, i) => (
+          {isLoading ? (
+             <Table>
+             <TableHeader>
+               <TableRow>
+                 <TableHead>Nome</TableHead>
+                 <TableHead>Tipos de Pagamento</TableHead>
+                 <TableHead>Status</TableHead>
+                 <TableHead>
+                   <span className="sr-only">Ações</span>
+                 </TableHead>
+               </TableRow>
+             </TableHeader>
+             <TableBody>
+                {Array.from({ length: 2 }).map((_, i) => (
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-48" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                     </TableRow>
-                ))
-              ) : (
-                gateways.map((gateway) => (
+                ))}
+             </TableBody>
+           </Table>
+          ) : gateways.length > 0 ? (
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipos de Pagamento</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>
+                    <span className="sr-only">Ações</span>
+                    </TableHead>
+                </TableRow>
+                </TableHeader>
+                <TableBody>
+                {gateways.map((gateway) => (
                     <TableRow key={gateway.id}>
                     <TableCell className="font-medium">{gateway.name}</TableCell>
                     <TableCell className="text-muted-foreground">{gateway.acceptedPaymentMethods?.split(',').join(', ')}</TableCell>
@@ -137,10 +151,15 @@ export default function GatewaysPage() {
                         </DropdownMenu>
                     </TableCell>
                     </TableRow>
-                ))
-              )}
-            </TableBody>
+                ))}
+                </TableBody>
           </Table>
+          ) : (
+            <div className="text-center text-muted-foreground p-12">
+              <h3 className="text-lg font-semibold">Nenhum Gateway Encontrado</h3>
+              <p>Por favor, cadastre um gateway de pagamento para começar a processar transações.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
