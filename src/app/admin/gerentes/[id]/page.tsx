@@ -114,17 +114,17 @@ export default function GerenteProfilePage() {
           const data = await response.json();
           const sanitizedData = {
               ...data,
-              cpf: data.cpf || '',
-              landline: data.landline || '',
-              cep: data.cep || '',
-              state: data.state || '',
-              city: data.city || '',
-              neighborhood: data.neighborhood || '',
-              address: data.address || '',
-              titheDay: data.titheDay || 1,
-              facebook: data.facebook || '',
-              instagram: data.instagram || '',
-              website: data.website || '',
+              cpf: data.cpf ?? '',
+              landline: data.landline ?? '',
+              cep: data.cep ?? '',
+              state: data.state ?? '',
+              city: data.city ?? '',
+              neighborhood: data.neighborhood ?? '',
+              address: data.address ?? '',
+              titheDay: data.titheDay ?? 1,
+              facebook: data.facebook ?? '',
+              instagram: data.instagram ?? '',
+              website: data.website ?? '',
           };
           setManager(sanitizedData);
           form.reset(sanitizedData);
