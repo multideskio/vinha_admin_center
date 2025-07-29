@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, Globe, RefreshCw, Trash2, Pencil, Loader2, ToggleLeft, ToggleRight, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Globe, RefreshCw, Trash2, Pencil, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -281,7 +281,7 @@ export default function WebhooksPage() {
                                 <span>{webhook.url}</span>
                             </div>
                            <span className='text-xs text-muted-foreground pl-6'>
-                                Criado {formatDistanceToNow(new Date(webhook.createdAt!), { addSuffix: true, locale: ptBR })}
+                                Criado {webhook.createdAt ? formatDistanceToNow(new Date(webhook.createdAt), { addSuffix: true, locale: ptBR }) : 'há pouco'}
                            </span>
                         </div>
                     </TableCell>
