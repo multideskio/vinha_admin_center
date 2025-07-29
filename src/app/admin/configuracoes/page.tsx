@@ -6,16 +6,12 @@ import {
   Mail,
   Smartphone,
   MessageSquareQuote,
-  CreditCard,
   ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
 
 import {
   Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 
 const settingsLinks = [
