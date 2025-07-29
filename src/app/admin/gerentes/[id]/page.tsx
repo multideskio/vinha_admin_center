@@ -80,6 +80,24 @@ export default function GerenteProfilePage() {
 
     const form = useForm<z.infer<typeof managerProfileSchema>>({
         resolver: zodResolver(managerProfileSchema),
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+            cpf: '',
+            phone: '',
+            landline: '',
+            email: '',
+            cep: '',
+            state: '',
+            city: '',
+            neighborhood: '',
+            address: '',
+            titheDay: 1,
+            newPassword: '',
+            facebook: '',
+            instagram: '',
+            website: '',
+        },
     });
     
     const newPassword = useWatch({
@@ -115,8 +133,9 @@ export default function GerenteProfilePage() {
                 body: JSON.stringify(data),
             });
             if (!response.ok) throw new Error('Failed to update manager.');
+            const updatedManager = await response.json();
             toast({ title: 'Sucesso', description: 'Gerente atualizado com sucesso.', variant: 'success' });
-            setManager((prev) => prev ? { ...prev, ...data } : null);
+            setManager((prev) => prev ? { ...prev, ...updatedManager.manager } : null);
         } catch (error) {
             toast({ title: 'Erro', description: 'Não foi possível atualizar o gerente.', variant: 'destructive'});
         }
@@ -145,12 +164,13 @@ export default function GerenteProfilePage() {
                 throw new Error(`Falha ao atualizar ${fieldName}.`);
             }
     
+            const updatedManager = await response.json();
             toast({
                 title: 'Sucesso!',
                 description: `Link do ${fieldName} atualizado.`,
                 variant: 'success',
             });
-            setManager((prev) => prev ? { ...prev, ...payload } : null);
+            setManager((prev) => prev ? { ...prev, ...updatedManager.manager } : null);
 
         } catch (error: any) {
             toast({
@@ -286,7 +306,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Nome</FormLabel>
                                 <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <Input {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -299,7 +319,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Sobre-nome</FormLabel>
                                 <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <Input {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -312,7 +332,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>CPF</FormLabel>
                                 <FormControl>
-                                <Input {...field} value={field.value ?? ''} disabled />
+                                <Input {...field} disabled />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -328,7 +348,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Celular/WhatsApp</FormLabel>
                                 <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <Input {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -354,7 +374,7 @@ export default function GerenteProfilePage() {
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
-                                <Input type="email" {...field} value={field.value ?? ''} />
+                                <Input type="email" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -366,19 +386,19 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="cep" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>CEP</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="state" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Estado/UF</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="city" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cidade</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -387,19 +407,19 @@ export default function GerenteProfilePage() {
                             <FormField control={form.control} name="neighborhood" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Bairro</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="address" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Complemento</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl><Input {...field} /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="titheDay" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Dia do dízimo</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
