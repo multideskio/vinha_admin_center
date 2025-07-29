@@ -137,7 +137,10 @@ export default function ContribuicoesPage() {
     if (name === 'number') {
         formattedValue = value.replace(/\D/g, '').slice(0, 16);
     } else if (name === 'expiry') {
-        formattedValue = value.replace(/\D/g, '').slice(0, 4);
+        formattedValue = value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '$1/$2')
+            .slice(0, 5);
     } else if (name === 'cvc') {
         formattedValue = value.replace(/\D/g, '').slice(0, 4);
     }
@@ -149,14 +152,15 @@ export default function ContribuicoesPage() {
     setCardState((prev) => ({ ...prev, focus: evt.target.name as Focused }));
   }
 
-  async function handleProceedToPayment(data: ContributionFormValues) {
+  async function handleFormSubmit(data: ContributionFormValues) {
     setIsProcessing(true);
     setPaymentDetails(null);
     try {
+        const payload = { ...data };
         const response = await fetch('/api/v1/transacoes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
+            body: JSON.stringify(payload),
         });
         const result = await response.json();
         if (!response.ok) {
@@ -177,6 +181,42 @@ export default function ContribuicoesPage() {
         setIsProcessing(false);
     }
   }
+
+  const handleFinalizeCardPayment = async () => {
+    const contributionData = form.getValues();
+    const payload = {
+      ...contributionData,
+      card: {
+        number: cardState.number,
+        holder: cardState.name,
+        expirationDate: cardState.expiry,
+        securityCode: cardState.cvc,
+        brand: "Visa", // O SDK da Cielo pode detectar a bandeira, mas é bom ter uma fallback
+      }
+    };
+    setIsProcessing(true);
+    try {
+        const response = await fetch('/api/v1/transacoes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Falha ao processar o pagamento com cartão.');
+        }
+        toast({ title: "Sucesso!", description: "Pagamento com cartão aprovado.", variant: "success"});
+        // Reset form
+        form.reset({ amount: 0, paymentMethod: 'pix' });
+        setCardState({ number: '', expiry: '', cvc: '', name: '', focus: '' });
+        setPaymentDetails(null);
+    } catch (error: any) {
+         toast({ title: "Erro no Pagamento", description: error.message, variant: "destructive"});
+    } finally {
+        setIsProcessing(false);
+    }
+  }
+
 
   const getButtonLabel = () => {
     switch (paymentMethod) {
@@ -201,7 +241,7 @@ export default function ContribuicoesPage() {
       <Card>
         <CardContent className="pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleProceedToPayment)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 <div className="space-y-6">
                     <FormField
@@ -296,14 +336,14 @@ export default function ContribuicoesPage() {
               </div>
 
              <Separator />
-
-              {!paymentDetails && (
-                <div className="flex justify-end">
-                    <Button type="submit" size="lg" disabled={isProcessing}>
-                        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isProcessing ? "Processando..." : getButtonLabel()}
-                    </Button>
-                </div>
+             {/* Hide button if details are shown for non-card payments */}
+              {!(paymentDetails && paymentMethod !== 'credit_card') && (
+                 <div className="flex justify-end">
+                    <Button type={paymentMethod === 'credit_card' ? 'button' : 'submit'} size="lg" disabled={isProcessing} onClick={() => { if (paymentMethod === 'credit_card') { handleFinalizeCardPayment(); } }}>
+                         {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                         {isProcessing ? "Processando..." : getButtonLabel()}
+                     </Button>
+                 </div>
               )}
             </form>
           </Form>
@@ -360,7 +400,8 @@ export default function ContribuicoesPage() {
                                         onFocus={handleInputFocus}
                                     />
                                 </div>
-                                <Button className="w-full" size="lg">
+                                <Button onClick={handleFinalizeCardPayment} className="w-full" size="lg" disabled={isProcessing}>
+                                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Pagar R$ {Number(amount).toFixed(2)}
                                 </Button>
                             </div>
@@ -416,3 +457,4 @@ export default function ContribuicoesPage() {
     </div>
   );
 }
+

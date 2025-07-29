@@ -15,7 +15,13 @@ const transactionSchema = z.object({
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto']),
   contributionType: z.enum(['dizimo', 'oferta']),
   description: z.string().optional(),
-  // Adicione outros campos necessários para a Cielo (dados do cliente, etc.)
+  card: z.object({
+    number: z.string(),
+    holder: z.string(),
+    expirationDate: z.string(),
+    securityCode: z.string(),
+    brand: z.string(),
+  }).optional(),
 });
 
 async function getCieloCredentials() {
@@ -36,11 +42,6 @@ async function getCieloCredentials() {
 
 
 export async function POST(request: Request) {
-    // const { user } = await validateRequest();
-    // if (!user) {
-    //     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    // }
-
     const user = { id: MOCK_USER_ID, email: 'gerente@vinha.com' }; // Mock user for development
 
     try {
@@ -66,14 +67,17 @@ export async function POST(request: Request) {
                 cieloPayload.Payment.Type = 'Pix';
                 break;
             case 'credit_card':
+                if (!validatedData.card) {
+                    throw new Error("Dados do cartão de crédito são obrigatórios.");
+                }
                 cieloPayload.Payment.Type = 'CreditCard';
                 cieloPayload.Payment.Installments = 1;
                 cieloPayload.Payment.CreditCard = {
-                    "CardNumber": "4551870000000181", 
-                    "Holder": "Comprador Teste",
-                    "ExpirationDate": "12/2030",
-                    "SecurityCode": "123",
-                    "Brand": "Visa"
+                    CardNumber: validatedData.card.number, 
+                    Holder: validatedData.card.holder,
+                    ExpirationDate: validatedData.card.expirationDate,
+                    SecurityCode: validatedData.card.securityCode,
+                    Brand: validatedData.card.brand
                 }
                 break;
             case 'boleto':
