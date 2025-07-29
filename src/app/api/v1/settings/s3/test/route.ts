@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         const validatedData = s3SettingsSchema.parse(body);
 
         const s3Client = new S3Client({
-            endpoint: validatedData.endpoint,
+            endpoint: String(validatedData.endpoint), // Força a ser string
             region: validatedData.region,
             credentials: {
                 accessKeyId: validatedData.accessKeyId,
