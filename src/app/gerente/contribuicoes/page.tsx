@@ -219,7 +219,7 @@ export default function ContribuicoesPage() {
             throw new Error(result.error || 'Falha ao processar o pagamento com cartão.');
         }
         toast({ title: "Sucesso!", description: "Pagamento com cartão aprovado.", variant: "success"});
-        form.reset({ amount: 0, paymentMethod: 'pix' });
+        form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
         setCardState({ number: '', expiry: '', cvc: '', name: '', focus: '' });
         setShowPaymentDetails(false);
         setPaymentDetails(null);
@@ -240,6 +240,17 @@ export default function ContribuicoesPage() {
     }
   }
 
+  const getFullQrCodeSrc = () => {
+    if (!paymentDetails?.QrCodeBase64Image) {
+        return null;
+    }
+    if (paymentDetails.QrCodeBase64Image.startsWith('data:image/png;base64,')) {
+        return paymentDetails.QrCodeBase64Image;
+    }
+    return `data:image/png;base64,${paymentDetails.QrCodeBase64Image}`;
+  }
+  
+  const qrCodeSrc = getFullQrCodeSrc();
 
   return (
     <div className="flex flex-col gap-8">
@@ -428,8 +439,8 @@ export default function ContribuicoesPage() {
                             <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
                         </CardHeader>
                         <CardContent className='flex flex-col items-center'>
-                           {paymentDetails.QrCodeBase64Image ? (
-                                <Image src={paymentDetails.QrCodeBase64Image} width={256} height={256} alt="QR Code Pix" />
+                           {qrCodeSrc ? (
+                                <Image src={qrCodeSrc} width={256} height={256} alt="QR Code Pix" />
                             ) : (
                                 <Skeleton className="h-[256px] w-[256px]" />
                             )}
