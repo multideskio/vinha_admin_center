@@ -38,19 +38,21 @@ export async function PUT(request: Request) {
         const body = await request.json();
         const validatedData = whatsappSettingsSchema.parse(body);
 
-        await db.insert(otherSettings)
-            .values({
-                companyId: MOCK_COMPANY_ID,
-                whatsappApiUrl: validatedData.apiUrl,
-                whatsappApiKey: validatedData.apiKey,
-            })
-            .onConflictDoUpdate({
-                target: otherSettings.companyId,
-                set: {
-                    whatsappApiUrl: validatedData.apiUrl,
-                    whatsappApiKey: validatedData.apiKey,
-                }
-            });
+        const [existingConfig] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, MOCK_COMPANY_ID)).limit(1);
+
+        const dataToUpsert = {
+            companyId: MOCK_COMPANY_ID,
+            whatsappApiUrl: validatedData.apiUrl,
+            whatsappApiKey: validatedData.apiKey,
+        };
+        
+        if(existingConfig) {
+            await db.update(otherSettings)
+                .set(dataToUpsert)
+                .where(eq(otherSettings.id, existingConfig.id));
+        } else {
+            await db.insert(otherSettings).values(dataToUpsert);
+        }
             
         return NextResponse.json({ success: true });
     } catch (error) {

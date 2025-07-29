@@ -44,25 +44,24 @@ export async function PUT(request: Request) {
         const body = await request.json();
         const validatedData = smtpSettingsSchema.parse(body);
 
-        await db.insert(otherSettings)
-            .values({
-                companyId: MOCK_COMPANY_ID,
-                smtpHost: validatedData.host,
-                smtpPort: validatedData.port,
-                smtpUser: validatedData.user,
-                smtpPass: validatedData.password,
-                smtpSecure: validatedData.secure,
-            })
-            .onConflictDoUpdate({
-                target: otherSettings.companyId,
-                set: {
-                    smtpHost: validatedData.host,
-                    smtpPort: validatedData.port,
-                    smtpUser: validatedData.user,
-                    smtpPass: validatedData.password,
-                    smtpSecure: validatedData.secure,
-                }
-            });
+        const [existingConfig] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, MOCK_COMPANY_ID)).limit(1);
+
+        const dataToUpsert = {
+            companyId: MOCK_COMPANY_ID,
+            smtpHost: validatedData.host,
+            smtpPort: validatedData.port,
+            smtpUser: validatedData.user,
+            smtpPass: validatedData.password,
+            smtpSecure: validatedData.secure,
+        };
+
+        if(existingConfig) {
+            await db.update(otherSettings)
+                .set(dataToUpsert)
+                .where(eq(otherSettings.id, existingConfig.id));
+        } else {
+            await db.insert(otherSettings).values(dataToUpsert);
+        }
             
         return NextResponse.json({ success: true });
     } catch (error) {
