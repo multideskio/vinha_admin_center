@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, MoreHorizontal, Trash2, Pencil, ToggleLeft, ToggleRight, Info } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Trash2, Pencil, ToggleLeft, ToggleRight, Info, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,9 +42,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const notificationRuleSchema = z.object({
-    id: z.string().optional(),
+    id: z.string().uuid().optional(),
     name: z.string().min(1, "O nome da automação é obrigatório."),
     eventTrigger: z.enum(['user_registered', 'payment_received', 'payment_due_reminder', 'payment_overdue']),
     daysOffset: z.coerce.number().int(),
@@ -54,12 +56,6 @@ const notificationRuleSchema = z.object({
 
 type NotificationRule = z.infer<typeof notificationRuleSchema>;
 
-const initialRules: NotificationRule[] = [
-    { id: 'rule-1', name: 'Boas-Vindas', eventTrigger: 'user_registered', daysOffset: 0, messageTemplate: 'Olá {nome}, seja bem-vindo(a) à nossa plataforma! Estamos felizes em ter você conosco.', isActive: true },
-    { id: 'rule-2', name: 'Lembrete (5 dias antes)', eventTrigger: 'payment_due_reminder', daysOffset: -5, messageTemplate: 'Olá {nome}, passando para lembrar que sua contribuição vencerá em 5 dias. Deus abençoe!', isActive: true },
-    { id: 'rule-3', name: 'Aviso de Atraso (3 dias depois)', eventTrigger: 'payment_overdue', daysOffset: 3, messageTemplate: 'Olá {nome}}, notamos que sua contribuição está pendente. Se precisar de ajuda, entre em contato conosco.', isActive: false },
-    { id: 'rule-4', name: 'Pagamento Confirmado', eventTrigger: 'payment_received', daysOffset: 0, messageTemplate: 'Olá {nome}, recebemos sua contribuição no valor de R${valor} com gratidão. Que o Senhor te retribua!', isActive: true },
-];
 
 const eventTriggerOptions = {
     'user_registered': 'Novo Usuário Cadastrado',
@@ -70,8 +66,9 @@ const eventTriggerOptions = {
 
 const availableTags = ['{nome}', '{valor}', '{data_vencimento}', '{link_pagamento}', '{pedido}'];
 
-const NotificationFormModal = ({ rule, onSave, children }: { rule?: NotificationRule, onSave: (data: NotificationRule) => void; children: React.ReactNode }) => {
+const NotificationFormModal = ({ rule, onSave, children }: { rule?: NotificationRule, onSave: () => void; children: React.ReactNode }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+    const { toast } = useToast();
     
     const form = useForm<NotificationRule>({
         resolver: zodResolver(notificationRuleSchema),
@@ -90,9 +87,23 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
         }
     }, [isOpen, rule, form]);
     
-    const onSubmit = (data: NotificationRule) => {
-        onSave(data);
-        setIsOpen(false);
+    const onSubmit = async (data: NotificationRule) => {
+        const method = data.id ? 'PUT' : 'POST';
+        const url = data.id ? `/api/v1/notification-rules/${data.id}` : '/api/v1/notification-rules';
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error(`Falha ao ${rule ? 'atualizar' : 'criar'} a regra.`);
+            toast({ title: 'Sucesso!', description: `Regra ${rule ? 'atualizada' : 'criada'} com sucesso.`, variant: 'success'});
+            onSave();
+            setIsOpen(false);
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        }
     }
 
     const eventTrigger = form.watch('eventTrigger');
@@ -138,7 +149,7 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             {Object.entries(eventTriggerOptions).map(([value, label]) => (
-                                                <SelectItem key={value} value={value}>{label}</SelectItem>
+                                                <SelectItem key={value} value={value as any}>{label}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -189,7 +200,10 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                         
                          <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
-                            <Button type="submit">Salvar Automação</Button>
+                            <Button type="submit" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Automação
+                            </Button>
                          </DialogFooter>
                     </form>
                 </Form>
@@ -199,18 +213,56 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
 }
 
 export default function MessagesSettingsPage() {
-    const [rules, setRules] = React.useState<NotificationRule[]>(initialRules);
+    const [rules, setRules] = React.useState<NotificationRule[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
 
-    const handleSave = (data: NotificationRule) => {
-        if(data.id) {
-            setRules(rules.map(r => r.id === data.id ? data : r));
-        } else {
-            setRules([...rules, { ...data, id: `rule-${Date.now()}` }]);
+    const fetchRules = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/notification-rules');
+            if(!response.ok) throw new Error('Falha ao buscar as regras de notificação.');
+            const data = await response.json();
+            setRules(data.rules);
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    React.useEffect(() => {
+        fetchRules();
+    }, [fetchRules]);
+
+    const handleSave = async (data: NotificationRule) => {
+        const method = 'PUT';
+        const url = `/api/v1/notification-rules/${data.id}`;
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error(`Falha ao atualizar a regra.`);
+            toast({ title: 'Sucesso!', description: `Regra atualizada com sucesso.`, variant: 'success'});
+            fetchRules();
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
         }
     };
 
-    const handleDelete = (id: string) => {
-        setRules(rules.filter(r => r.id !== id));
+    const handleDelete = async (id?: string) => {
+        if (!id) return;
+        try {
+            const response = await fetch(`/api/v1/notification-rules/${id}`, { method: 'DELETE' });
+            if(!response.ok) throw new Error('Falha ao excluir a regra.');
+            toast({ title: "Sucesso!", description: 'Regra excluída com sucesso.', variant: 'success' });
+            fetchRules();
+        } catch (error: any) {
+             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        }
     }
   
     return (
@@ -222,7 +274,7 @@ export default function MessagesSettingsPage() {
                 Gerencie as regras de comunicação com os usuários.
                 </CardDescription>
             </div>
-            <NotificationFormModal onSave={handleSave}>
+            <NotificationFormModal onSave={fetchRules}>
                 <Button>
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Adicionar Mensagem
@@ -249,7 +301,16 @@ export default function MessagesSettingsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rules.length === 0 ? (
+              {isLoading ? (
+                Array.from({length: 3}).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className='h-5 w-32' /></TableCell>
+                        <TableCell><Skeleton className='h-5 w-48' /></TableCell>
+                        <TableCell><Skeleton className='h-6 w-16 rounded-full' /></TableCell>
+                        <TableCell><Skeleton className='h-8 w-24' /></TableCell>
+                    </TableRow>
+                ))
+              ) : rules.length === 0 ? (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
                         Nenhuma automação de mensagem criada.
@@ -277,7 +338,7 @@ export default function MessagesSettingsPage() {
                     <TableCell>
                         <div className='flex items-center gap-2'>
                             <Switch checked={rule.isActive} onCheckedChange={(checked) => handleSave({ ...rule, isActive: checked })} />
-                            <NotificationFormModal rule={rule} onSave={handleSave}>
+                            <NotificationFormModal rule={rule} onSave={fetchRules}>
                                 <Button variant="ghost" size="icon"><Pencil className='h-4 w-4' /></Button>
                             </NotificationFormModal>
                             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(rule.id!)}><Trash2 className='h-4 w-4' /></Button>
@@ -292,5 +353,3 @@ export default function MessagesSettingsPage() {
     </div>
   );
 }
-
-
