@@ -34,6 +34,7 @@ type Gateway = {
     name: string;
     isActive: boolean;
     acceptedPaymentMethods: string | null;
+    environment: 'production' | 'development';
     href: string;
 }
 
@@ -53,6 +54,7 @@ export default function GatewaysPage() {
                 name: g.gatewayName,
                 isActive: g.isActive,
                 acceptedPaymentMethods: g.acceptedPaymentMethods,
+                environment: g.environment,
                 href: `/admin/gateways/${g.gatewayName.toLowerCase()}`
             }));
             setGateways(formattedGateways);
@@ -107,6 +109,7 @@ export default function GatewaysPage() {
                <TableRow>
                  <TableHead>Nome</TableHead>
                  <TableHead>Tipos de Pagamento</TableHead>
+                 <TableHead>Ambiente</TableHead>
                  <TableHead>Status</TableHead>
                  <TableHead>
                    <span className="sr-only">Ações</span>
@@ -118,6 +121,7 @@ export default function GatewaysPage() {
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                     </TableRow>
@@ -130,6 +134,7 @@ export default function GatewaysPage() {
                 <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipos de Pagamento</TableHead>
+                    <TableHead>Ambiente</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>
                     <span className="sr-only">Ações</span>
@@ -144,6 +149,11 @@ export default function GatewaysPage() {
                         <div className="flex flex-wrap gap-1">
                         {(gateway.acceptedPaymentMethods || '').split(',').map(method => method.trim() && <Badge key={method} variant="secondary">{method}</Badge>)}
                         </div>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={gateway.environment === 'production' ? 'destructive' : 'warning'}>
+                            {gateway.environment === 'production' ? 'Produção' : 'Desenvolvimento'}
+                        </Badge>
                     </TableCell>
                     <TableCell>
                         <Badge
