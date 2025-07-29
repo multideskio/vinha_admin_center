@@ -41,7 +41,7 @@ Para garantir um desacoplamento claro entre o frontend e o backend, a aplicaçã
 
 *   **Endpoints:** Os endpoints da API estão localizados no diretório `src/app/api/`. A estrutura de pastas segue o padrão de versionamento, como em `src/app/api/v1/[recurso]`.
 *   **Manipuladores de Rota (Route Handlers):** Cada endpoint é implementado usando os *Route Handlers* do Next.js, com arquivos como `route.ts` que exportam funções assíncronas correspondentes aos métodos HTTP (`GET`, `POST`, `PUT`, `DELETE`).
-*   **Exemplo (Regiões):** A funcionalidade de Regiões foi a primeira a ser migrada para esta arquitetura. As operações de Leitura, Criação, Atualização e Exclusão são todas tratadas pelo endpoint `api/v1/regioes`.
+*   **Exemplo (Regiões e Administradores):** As funcionalidades de Regiões, Administradores, e Gateways foram migradas para esta arquitetura. Todas as operações CRUD são tratadas por seus respectivos endpoints, como `/api/v1/regioes`, `/api/v1/administradores`, etc. Além disso, foi criado um endpoint específico para o dashboard (`/api/v1/dashboard/admin`) para agregar dados.
 
 Esta abordagem substitui o uso inicial de Server Actions para a busca e manipulação de dados, proporcionando uma forma mais tradicional e explícita de comunicação de dados.
 

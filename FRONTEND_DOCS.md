@@ -26,7 +26,9 @@ src
 ├── app
 │   ├── api           # Endpoints da API RESTful (backend)
 │   │   └── v1
-│   │       └── regioes
+│   │       ├── regioes
+│   │       ├── administradores
+│   │       └── ...
 │   ├── admin         # Layout e páginas do painel de Administrador
 │   ├── auth          # Layout e páginas de autenticação (login, cadastro, etc.)
 │   ├── gerente       # Layout e páginas do painel de Gerente
@@ -76,7 +78,7 @@ src
 A aplicação utiliza uma abordagem híbrida:
 
 1.  **API REST (Preferencial):** Para a maioria das operações CRUD (Criar, Ler, Atualizar, Deletar), o frontend faz chamadas `fetch` para os endpoints da API REST em `src/app/api/v1/`. Isso é feito dentro de componentes do cliente, geralmente com `useEffect`.
-    *   **Exemplo:** A página de Regiões (`/admin/regioes`) busca e manipula dados exclusivamente através do endpoint `/api/v1/regioes`.
+    *   **Exemplo:** As páginas de Regiões, Administradores e Gateways buscam e manipulam dados exclusivamente através de seus respectivos endpoints na API.
 
 2.  **Server Actions (Para Casos Específicos):** São usadas para funcionalidades onde uma chamada de procedimento remoto (RPC) do cliente para o servidor é mais direta, como no processo de login e logout.
 

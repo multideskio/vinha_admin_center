@@ -2,6 +2,23 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.5] - 2024-08-01
+
+### Adicionado
+*   **API REST para Administradores:**
+    *   Criação dos endpoints `GET` e `POST` em `/api/v1/administradores` para listar e criar administradores.
+    *   Criação dos endpoints dinâmicos `GET`, `PUT` e `DELETE` em `/api/v1/administradores/[id]` para gerenciar administradores específicos.
+*   **API REST para Gateways de Pagamento:**
+    *   Criação do endpoint `GET /api/v1/gateways` para listar as configurações de todos os gateways.
+    *   Criação de rotas dinâmicas como `/api/v1/gateways/cielo` e `/api/v1/gateways/bradesco` para buscar (`GET`) e salvar (`PUT`) configurações específicas.
+*   **API para Dashboard do Admin:**
+    *   Implementado o endpoint `GET /api/v1/dashboard/admin` para fornecer dados agregados (KPIs, estatísticas) para o painel principal.
+*   **Documentação da API da Cielo:**
+    *   Adicionado o arquivo `CIELO_API_GUIDE.md` com um guia técnico completo para a integração, incluindo exemplos de cURL para Cartão de Crédito, Boleto, PIX, e instruções para cancelamento e consulta.
+
+### Corrigido
+*   **Valores Nulos em Formulários:** Corrigido o erro "Expected string, received null" nos formulários de configuração de gateway, garantindo que valores nulos do banco de dados sejam tratados corretamente.
+
 ## [1.0.4] - 2024-07-31
 
 ### Adicionado
