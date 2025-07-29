@@ -24,6 +24,8 @@ MerchantId: SEU_MERCHANT_ID
 MerchantKey: SEU_MERCHANT_KEY
 ```
 
+---
+
 ## 2. Exemplos de Pagamento (cURL)
 
 Abaixo estão exemplos práticos usando `cURL` para cada tipo de pagamento.
@@ -185,22 +187,26 @@ A resposta conterá o QR Code em dois formatos. O `Status` inicial será **12** 
 }
 ```
 
-## 3. Tratamento de Retorno e Baixa Automática
+---
+
+## 3. Tratamento de Retorno e Conciliação
+
+### a) Webhook de Notificação (Recomendado)
 
 A forma mais eficiente de saber se um pagamento foi confirmado (especialmente para Boleto e PIX) é através do **Webhook de Notificação** (Notificação Post).
 
-### Como Funciona:
+**Como Funciona:**
 
 1.  **Configuração:** No portal da Cielo, você cadastra uma URL do seu sistema que receberá as atualizações de status.
-2.  **Notificação:** Sempre que o status de uma transação mudar (ex: um boleto for pago), a Cielo enviará uma requisição `POST` para a sua URL.
+2.  **Notificação:** Sempre que o status de uma transação mudar (ex: um boleto for pago), a Cielo enviará uma requisição `POST` para a sua URL com o `PaymentId`.
 3.  **Consulta:** Ao receber a notificação, seu sistema deve usar o `PaymentId` recebido para fazer uma consulta (`GET`) na API da Cielo e obter o status final e confiável da transação.
 
-#### Passo 1: Receber a Notificação
+#### Fluxo do Webhook:
 
+**Passo 1: Receber a Notificação**
 A Cielo enviará um `POST` para sua URL com o `PaymentId`.
 
-#### Passo 2: Consultar o Status da Transação
-
+**Passo 2: Consultar o Status da Transação**
 Use o `PaymentId` para fazer uma requisição `GET`.
 
 ```bash
@@ -211,8 +217,7 @@ curl -X GET \
   -H 'MerchantKey: SEU_MERCHANT_KEY'
 ```
 
-#### Passo 3: Interpretar o Status
-
+**Passo 3: Interpretar o Status**
 Analise o campo `Status` na resposta para dar a baixa no seu sistema.
 
 | Status          | Código | Significado                                          | Ação Recomendada                                  |
@@ -224,8 +229,64 @@ Analise o campo `Status` na resposta para dar a baixa no seu sistema.
 | Cancelada       | 10     | A transação foi cancelada.                           | Cancelar o pedido no sistema.                     |
 | Não Finalizada  | 0      | A transação não foi finalizada.                      | Tratar como abandonada ou falha inicial.          |
 
-**Fluxo de Baixa Automática:**
-
+**Exemplo de Fluxo de Baixa Automática:**
 > Notificação da Cielo chega na sua URL -> Seu sistema pega o `PaymentId` -> Seu sistema faz um `GET` na API da Cielo -> Seu sistema lê o campo `"Status"` -> Se `Status == 2` -> `UPDATE pedidos SET status = 'PAGO' WHERE id_pedido = ...`
 
 Este método garante que você sempre trabalhe com a informação mais recente e segura, automatizando completamente o processo de conciliação financeira.
+
+### b) Consulta por ID do Pedido
+
+Alternativamente, você pode consultar o status de uma transação usando o seu próprio ID de pedido (`MerchantOrderId`).
+
+```bash
+curl -X GET \
+  https://apisandbox.cieloecommerce.cielo.com.br/1/sales?merchantOrderId=2024072801 \
+  -H 'Content-Type: application/json' \
+  -H 'MerchantId: SEU_MERCHANT_ID' \
+  -H 'MerchantKey: SEU_MERCHANT_KEY'
+```
+
+---
+
+## 4. Cancelamento de Transação (Estorno)
+
+Para cancelar uma transação, você deve fazer uma requisição `PUT` para o endpoint de cancelamento.
+
+-   **Se a transação ainda não foi capturada:** A operação é um `void` (anulação).
+-   **Se a transação já foi capturada:** A operação é um `refund` (reembolso/estorno).
+
+O endpoint é o mesmo para ambos os casos. Você pode cancelar o valor total ou parcial.
+
+```bash
+curl -X PUT \
+  https://apisandbox.cieloecommerce.cielo.com.br/1/sales/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/void?amount=15700 \
+  -H 'Content-Type: application/json' \
+  -H 'MerchantId: SEU_MERCHANT_ID' \
+  -H 'MerchantKey: SEU_MERCHANT_KEY'
+```
+-   **`amount` (opcional):** Se não for especificado, o valor total será cancelado. Se for especificado, será um cancelamento parcial. O valor deve ser em centavos.
+
+**Resposta (Sucesso):**
+O `Status` da transação mudará para **10** (Cancelada).
+
+---
+
+## 5. Estrutura de Erros
+
+Quando uma requisição falha, a API da Cielo retorna um array de erros em formato JSON, o que permite um tratamento detalhado de cada problema.
+
+**Exemplo de Resposta de Erro:**
+```json
+[
+  {
+    "Code": 105,
+    "Message": "CreditCardNumber is required"
+  },
+  {
+    "Code": 121,
+    "Message": "Customer name is required"
+  }
+]
+```
+
+Seu código deve ser capaz de interpretar este array para exibir mensagens de erro adequadas para o usuário ou para registrar logs de depuração.
