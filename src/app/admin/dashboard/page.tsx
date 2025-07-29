@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Activity, DollarSign, Users, Church, UserCheck, UserCog, Building, User, CreditCard, Banknote, QrCode } from 'lucide-react';
+import { Activity, DollarSign, Users, Church, UserCheck, UserCog, Building, User, CreditCard, Banknote, QrCode, RefreshCw } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -36,6 +36,7 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 type KpiData = {
     title: string;
@@ -59,40 +60,41 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = React.useState(true);
     const { toast } = useToast();
 
-    React.useEffect(() => {
-        async function fetchData() {
-            setIsLoading(true);
-            try {
-                const response = await fetch('/api/v1/dashboard/admin');
-                if (!response.ok) {
-                    throw new Error('Falha ao carregar os dados do dashboard.');
-                }
-                const dashboardData = await response.json();
-                
-                const kpis: KpiData[] = [
-                    { title: 'Arrecadação no Mês', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+20.1% em relação ao mês passado', icon: DollarSign },
-                    { title: 'Total de Membros', value: `+${dashboardData.kpis.totalMembers}`, change: '+180 este mês', icon: Users },
-                    { title: 'Total de Transações', value: `+${dashboardData.kpis.totalTransactions}`, change: '+34 hoje', icon: Activity },
-                    { title: 'Total de Igrejas', value: `${dashboardData.kpis.totalChurches}`, change: '+2 este mês', icon: Building },
-                    { title: 'Total de Pastores', value: `${dashboardData.kpis.totalPastors}`, change: '+5 este mês', icon: User },
-                    { title: 'Total de Supervisores', value: `${dashboardData.kpis.totalSupervisors}`, change: 'Nenhuma alteração', icon: UserCog },
-                    { title: 'Total de Gerentes', value: `${dashboardData.kpis.totalManagers}`, change: '+1 este ano', icon: UserCheck },
-                ];
-
-                setData({ ...dashboardData, kpis });
-
-            } catch (error: any) {
-                toast({
-                    title: "Erro",
-                    description: error.message,
-                    variant: 'destructive',
-                })
-            } finally {
-                setIsLoading(false);
+    const fetchData = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/dashboard/admin');
+            if (!response.ok) {
+                throw new Error('Falha ao carregar os dados do dashboard.');
             }
+            const dashboardData = await response.json();
+            
+            const kpis: KpiData[] = [
+                { title: 'Arrecadação no Mês', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+20.1% em relação ao mês passado', icon: DollarSign },
+                { title: 'Total de Membros', value: `+${dashboardData.kpis.totalMembers}`, change: '+180 este mês', icon: Users },
+                { title: 'Total de Transações', value: `+${dashboardData.kpis.totalTransactions}`, change: '+34 hoje', icon: Activity },
+                { title: 'Total de Igrejas', value: `${dashboardData.kpis.totalChurches}`, change: '+2 este mês', icon: Building },
+                { title: 'Total de Pastores', value: `${dashboardData.kpis.totalPastors}`, change: '+5 este mês', icon: User },
+                { title: 'Total de Supervisores', value: `${dashboardData.kpis.totalSupervisors}`, change: 'Nenhuma alteração', icon: UserCog },
+                { title: 'Total de Gerentes', value: `${dashboardData.kpis.totalManagers}`, change: '+1 este ano', icon: UserCheck },
+            ];
+
+            setData({ ...dashboardData, kpis });
+
+        } catch (error: any) {
+            toast({
+                title: "Erro",
+                description: error.message,
+                variant: 'destructive',
+            })
+        } finally {
+            setIsLoading(false);
         }
-        fetchData();
     }, [toast]);
+
+    React.useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
 
   if (isLoading || !data) {
@@ -152,9 +154,15 @@ export default function DashboardPage() {
       
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <Card>
-            <CardHeader>
-                <CardTitle>Últimas Transações</CardTitle>
-                <CardDescription>As 10 transações mais recentes.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Últimas Transações</CardTitle>
+                    <CardDescription>As 10 transações mais recentes.</CardDescription>
+                </div>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={fetchData}>
+                    <RefreshCw className="h-4 w-4" />
+                    <span className="sr-only">Atualizar</span>
+                </Button>
             </CardHeader>
             <CardContent>
                 <Table>
