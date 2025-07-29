@@ -10,6 +10,7 @@ const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
 const whatsappSettingsSchema = z.object({
     apiUrl: z.string().url(),
     apiKey: z.string().min(1),
+    apiInstance: z.string().min(1),
 });
 
 export async function GET() {
@@ -24,6 +25,7 @@ export async function GET() {
             config: {
                 apiUrl: config.whatsappApiUrl,
                 apiKey: config.whatsappApiKey,
+                apiInstance: config.whatsappApiInstance,
             }
         });
 
@@ -44,6 +46,7 @@ export async function PUT(request: Request) {
             companyId: MOCK_COMPANY_ID,
             whatsappApiUrl: validatedData.apiUrl,
             whatsappApiKey: validatedData.apiKey,
+            whatsappApiInstance: validatedData.apiInstance,
         };
         
         if(existingConfig) {

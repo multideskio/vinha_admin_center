@@ -19,6 +19,7 @@ import { Loader2 } from 'lucide-react';
 const whatsappSettingsSchema = z.object({
   apiUrl: z.string().url('URL da API inválida.'),
   apiKey: z.string().min(1, 'API Key é obrigatória.'),
+  apiInstance: z.string().min(1, 'Nome da instância é obrigatório.'),
 });
 
 type WhatsappSettingsValues = z.infer<typeof whatsappSettingsSchema>;
@@ -36,6 +37,7 @@ export default function WhatsappSettingsPage() {
         defaultValues: {
             apiUrl: '',
             apiKey: '',
+            apiInstance: '',
         },
     });
 
@@ -50,6 +52,7 @@ export default function WhatsappSettingsPage() {
                     form.reset({
                         apiUrl: data.config.apiUrl || '',
                         apiKey: data.config.apiKey || '',
+                        apiInstance: data.config.apiInstance || '',
                     });
                 }
             } catch (error: any) {
@@ -111,6 +114,7 @@ export default function WhatsappSettingsPage() {
                 <CardContent className="space-y-6">
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
                     <Separator />
                     <div className="space-y-4">
                         <Skeleton className="h-6 w-32" />
@@ -136,10 +140,13 @@ export default function WhatsappSettingsPage() {
                         <CardContent className="space-y-6">
                             <div className='space-y-4'>
                                 <FormField control={form.control} name="apiUrl" render={({field}) => (
-                                    <FormItem><FormLabel>URL da API</FormLabel><FormControl><Input placeholder='https://api.seuservico.com/send' {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>URL da API</FormLabel><FormControl><Input placeholder='https://api.seuservico.com' {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="apiInstance" render={({field}) => (
+                                    <FormItem><FormLabel>Nome da Instância</FormLabel><FormControl><Input placeholder='ex: sua_instancia' {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name="apiKey" render={({field}) => (
-                                    <FormItem><FormLabel>API Key</FormLabel><FormControl><Input type='password' placeholder='Sua chave de API secreta' {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>API Key</FormLabel><FormControl><Input type='password' placeholder='Sua chave de API secreta' {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <div className='flex justify-end'>
                                     <Button type="submit" disabled={isSaving}>

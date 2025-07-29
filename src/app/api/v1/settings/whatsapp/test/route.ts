@@ -8,6 +8,7 @@ const testMessageSchema = z.object({
     config: z.object({
         apiUrl: z.string().url(),
         apiKey: z.string(),
+        apiInstance: z.string(),
     }),
 });
 
@@ -18,7 +19,9 @@ export async function POST(request: Request) {
 
         const { phone, message, config } = validatedData;
         
-        const response = await fetch(config.apiUrl, {
+        const url = `${config.apiUrl.replace(/\/$/, '')}/message/sendText/${config.apiInstance}`;
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

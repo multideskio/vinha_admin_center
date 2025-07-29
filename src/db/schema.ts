@@ -223,6 +223,7 @@ export const otherSettings = pgTable('other_settings', {
     smtpFrom: varchar('smtp_from'),
     whatsappApiUrl: text('whatsapp_api_url'),
     whatsappApiKey: text('whatsapp_api_key'),
+    whatsappApiInstance: varchar('whatsapp_api_instance'),
     s3Endpoint: text('s3_endpoint'),
     s3Bucket: varchar('s3_bucket'),
     s3Region: varchar('s3_region'),
