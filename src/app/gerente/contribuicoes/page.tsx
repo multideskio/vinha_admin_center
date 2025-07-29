@@ -84,6 +84,7 @@ export default function ContribuicoesPage() {
     defaultValues: {
         paymentMethod: 'pix',
         amount: 0,
+        contributionType: undefined,
         description: '',
     },
   });
@@ -147,7 +148,7 @@ export default function ContribuicoesPage() {
         formattedValue = value
             .replace(/\D/g, '')
             .replace(/(\d{2})(\d)/, '$1/$2')
-            .slice(0, 5);
+            .slice(0, 7); // MM/YYYY
     } else if (name === 'cvc') {
         formattedValue = value.replace(/\D/g, '').slice(0, 4);
     }
@@ -409,7 +410,7 @@ export default function ContribuicoesPage() {
                                     <Input
                                         type="text"
                                         name="expiry"
-                                        placeholder="Validade (MM/AA)"
+                                        placeholder="Validade (MM/AAAA)"
                                         value={cardState.expiry}
                                         onChange={handleInputChange}
                                         onFocus={handleInputFocus}
@@ -454,7 +455,7 @@ export default function ContribuicoesPage() {
                         <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
                         <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
                          <Button onClick={() => {
-                             form.reset({ amount: 0, paymentMethod: 'pix', contributionType: 'dizimo', description: '' });
+                             form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
                              setShowPaymentDetails(false);
                              setPaymentDetails(null);
                              setPixStatus('idle');
