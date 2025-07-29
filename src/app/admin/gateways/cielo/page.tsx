@@ -5,6 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -34,14 +35,18 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+
 
 const cieloGatewaySchema = z.object({
+  isActive: z.boolean().default(false),
   environment: z.enum(['production', 'development']),
-  production_merchant_id: z.string().optional(),
-  production_merchant_key: z.string().optional(),
-  development_merchant_id: z.string().optional(),
-  development_merchant_key: z.string().optional(),
-  payment_methods: z.array(z.string()).refine((value) => value.some((item) => item), {
+  prodClientId: z.string().optional(),
+  prodClientSecret: z.string().optional(),
+  devClientId: z.string().optional(),
+  devClientSecret: z.string().optional(),
+  acceptedPaymentMethods: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: "Você deve selecionar pelo menos um meio de pagamento.",
   }),
 });
@@ -54,32 +59,88 @@ const paymentMethods = [
     { id: "boleto", label: "Boletos" },
 ]
 
-// Mock initial data
-const initialData: CieloGatewayValues = {
-    environment: 'development',
-    production_merchant_id: '',
-    production_merchant_key: '',
-    development_merchant_id: '12345678-1234-1234-1234-123456789012',
-    development_merchant_key: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEF',
-    payment_methods: ["pix", "credit_card"],
-};
-
 export default function CieloGatewayPage() {
     const { toast } = useToast();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isSaving, setIsSaving] = React.useState(false);
 
     const form = useForm<CieloGatewayValues>({
         resolver: zodResolver(cieloGatewaySchema),
-        defaultValues: initialData,
+        defaultValues: {
+            isActive: false,
+            environment: 'development',
+            acceptedPaymentMethods: [],
+        },
     });
 
-    const onSubmit = (data: CieloGatewayValues) => {
-        console.log(data);
-        toast({
-            title: "Sucesso!",
-            description: "Configurações da Cielo salvas com sucesso.",
-            variant: "success",
-        });
+    const fetchConfig = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/gateways/cielo');
+            if (!response.ok) throw new Error('Falha ao carregar configurações.');
+            const data = await response.json();
+            form.reset({
+                ...data.config,
+                acceptedPaymentMethods: data.config.acceptedPaymentMethods ? data.config.acceptedPaymentMethods.split(',') : [],
+            });
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [form, toast]);
+
+    React.useEffect(() => {
+        fetchConfig();
+    }, [fetchConfig]);
+
+    const onSubmit = async (data: CieloGatewayValues) => {
+        setIsSaving(true);
+        try {
+            const payload = {
+                ...data,
+                acceptedPaymentMethods: data.acceptedPaymentMethods.join(','),
+            };
+            const response = await fetch('/api/v1/gateways/cielo', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error('Falha ao salvar configurações.');
+            toast({
+                title: "Sucesso!",
+                description: "Configurações da Cielo salvas com sucesso.",
+                variant: "success",
+            });
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    if(isLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-32" />
+                    <Skeleton className="h-4 w-64" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-8">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-10 w-1/2" />
+                        <Separator />
+                        <div className="space-y-4">
+                            <Skeleton className="h-6 w-32" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card>
@@ -94,11 +155,34 @@ export default function CieloGatewayPage() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <FormField
                             control={form.control}
+                            name="isActive"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <FormLabel className="text-base">
+                                    Ativar Gateway
+                                    </FormLabel>
+                                    <FormDescription>
+                                    Ative ou desative o processamento de pagamentos pela Cielo.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
                             name="environment"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Ambiente</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selecione o ambiente" />
@@ -123,12 +207,12 @@ export default function CieloGatewayPage() {
                             <h3 className="text-lg font-medium">Credenciais de Produção</h3>
                             <FormField
                                 control={form.control}
-                                name="production_merchant_id"
+                                name="prodClientId"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>MerchantId</FormLabel>
                                     <FormControl>
-                                    <Input placeholder="Seu MerchantId de produção" {...field} />
+                                    <Input placeholder="Seu MerchantId de produção" {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -136,12 +220,12 @@ export default function CieloGatewayPage() {
                             />
                              <FormField
                                 control={form.control}
-                                name="production_merchant_key"
+                                name="prodClientSecret"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>MerchantKey</FormLabel>
                                     <FormControl>
-                                    <Input placeholder="Sua MerchantKey de produção" {...field} />
+                                    <Input placeholder="Sua MerchantKey de produção" {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -155,12 +239,12 @@ export default function CieloGatewayPage() {
                             <h3 className="text-lg font-medium">Credenciais de Desenvolvimento</h3>
                              <FormField
                                 control={form.control}
-                                name="development_merchant_id"
+                                name="devClientId"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>MerchantId</FormLabel>
                                     <FormControl>
-                                    <Input placeholder="Seu MerchantId de desenvolvimento" {...field} />
+                                    <Input placeholder="Seu MerchantId de desenvolvimento" {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -168,12 +252,12 @@ export default function CieloGatewayPage() {
                             />
                              <FormField
                                 control={form.control}
-                                name="development_merchant_key"
+                                name="devClientSecret"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>MerchantKey</FormLabel>
                                     <FormControl>
-                                    <Input placeholder="Sua MerchantKey de desenvolvimento" {...field} />
+                                    <Input placeholder="Sua MerchantKey de desenvolvimento" {...field} value={field.value ?? ''}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -185,7 +269,7 @@ export default function CieloGatewayPage() {
 
                         <FormField
                             control={form.control}
-                            name="payment_methods"
+                            name="acceptedPaymentMethods"
                             render={() => (
                                 <FormItem>
                                 <div className="mb-4">
@@ -198,7 +282,7 @@ export default function CieloGatewayPage() {
                                     <FormField
                                     key={item.id}
                                     control={form.control}
-                                    name="payment_methods"
+                                    name="acceptedPaymentMethods"
                                     render={({ field }) => {
                                         return (
                                         <FormItem
@@ -209,10 +293,11 @@ export default function CieloGatewayPage() {
                                             <Checkbox
                                                 checked={field.value?.includes(item.id)}
                                                 onCheckedChange={(checked) => {
+                                                const currentValue = field.value || [];
                                                 return checked
-                                                    ? field.onChange([...field.value, item.id])
+                                                    ? field.onChange([...currentValue, item.id])
                                                     : field.onChange(
-                                                        field.value?.filter(
+                                                        currentValue?.filter(
                                                         (value) => value !== item.id
                                                         )
                                                     )
@@ -233,7 +318,10 @@ export default function CieloGatewayPage() {
                         />
                         
                         <div className="flex justify-end">
-                            <Button type="submit">Salvar Configurações da Cielo</Button>
+                            <Button type="submit" disabled={isSaving}>
+                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Configurações
+                            </Button>
                         </div>
                     </form>
                 </Form>

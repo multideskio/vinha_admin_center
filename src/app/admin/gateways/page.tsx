@@ -29,25 +29,47 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const gateways = [
-  {
-    id: 'gtw-cielo',
-    name: 'Cielo',
-    status: 'active',
-    type: 'Pix, Cartão de Crédito, Boleto',
-    href: '/admin/gateways/cielo',
-  },
-  {
-    id: 'gtw-bradesco',
-    name: 'Bradesco',
-    status: 'active',
-    type: 'Pix, Boleto, Crédito',
-    href: '/admin/gateways/bradesco',
-  },
-];
+type Gateway = {
+    id: string;
+    name: string;
+    isActive: boolean;
+    acceptedPaymentMethods: string | null;
+    href: string;
+}
 
 export default function GatewaysPage() {
+    const [gateways, setGateways] = React.useState<Gateway[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+
+    const fetchGateways = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/gateways');
+            if(!response.ok) throw new Error('Falha ao carregar gateways.');
+            const data = await response.json();
+            const formattedGateways = data.gateways.map((g: any) => ({
+                id: g.id,
+                name: g.gatewayName,
+                isActive: g.isActive,
+                acceptedPaymentMethods: g.acceptedPaymentMethods,
+                href: `/admin/gateways/${g.gatewayName.toLowerCase()}`
+            }));
+            setGateways(formattedGateways);
+        } catch(error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    React.useEffect(() => {
+        fetchGateways();
+    }, [fetchGateways]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -59,24 +81,7 @@ export default function GatewaysPage() {
             Gerencie os gateways para processamento de transações.
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" className="gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Novo Gateway
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Selecione um Gateway</DropdownMenuLabel>
-            {gateways.map((gateway) => (
-              <DropdownMenuItem key={gateway.id} asChild>
-                <Link href={gateway.href}>{gateway.name}</Link>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Adicionar um novo gateway pode ser uma funcionalidade futura */}
       </div>
 
       <Card>
@@ -93,36 +98,47 @@ export default function GatewaysPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {gateways.map((gateway) => (
-                <TableRow key={gateway.id}>
-                  <TableCell className="font-medium">{gateway.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{gateway.type}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={gateway.status === 'active' ? 'success' : 'secondary'}
-                    >
-                      {gateway.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                            <Link href={gateway.href}>Configurar</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Desativar</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                Array.from({ length: 2 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                ))
+              ) : (
+                gateways.map((gateway) => (
+                    <TableRow key={gateway.id}>
+                    <TableCell className="font-medium">{gateway.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{gateway.acceptedPaymentMethods?.split(',').join(', ')}</TableCell>
+                    <TableCell>
+                        <Badge
+                        variant={gateway.isActive ? 'success' : 'secondary'}
+                        >
+                        {gateway.isActive ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                    </TableCell>
+                    <TableCell>
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                                <Link href={gateway.href}>Configurar</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>{gateway.isActive ? 'Desativar' : 'Ativar'}</DropdownMenuItem>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                    </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

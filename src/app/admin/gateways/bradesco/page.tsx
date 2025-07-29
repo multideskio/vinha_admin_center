@@ -5,7 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -36,46 +36,94 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const bradescoGatewaySchema = z.object({
-  status: z.boolean().default(false),
+  isActive: z.boolean().default(false),
   environment: z.enum(['production', 'development']),
-  production_client_id: z.string().optional(),
-  production_client_secret: z.string().optional(),
-  development_client_id: z.string().optional(),
-  development_client_secret: z.string().optional(),
-  certificate_password: z.string().optional(),
+  prodClientId: z.string().optional(),
+  prodClientSecret: z.string().optional(),
+  devClientId: z.string().optional(),
+  devClientSecret: z.string().optional(),
+  certificatePassword: z.string().optional(),
 });
 
 type BradescoGatewayValues = z.infer<typeof bradescoGatewaySchema>;
 
-// Mock initial data
-const initialData: BradescoGatewayValues = {
-    status: true,
-    environment: 'development',
-    production_client_id: '',
-    production_client_secret: '',
-    development_client_id: 'dev-client-id-12345',
-    development_client_secret: 'dev-client-secret-67890',
-    certificate_password: '',
-};
-
 export default function BradescoGatewayPage() {
     const { toast } = useToast();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isSaving, setIsSaving] = React.useState(false);
 
     const form = useForm<BradescoGatewayValues>({
         resolver: zodResolver(bradescoGatewaySchema),
-        defaultValues: initialData,
+        defaultValues: {
+            isActive: false,
+            environment: 'development',
+        },
     });
 
-    const onSubmit = (data: BradescoGatewayValues) => {
-        console.log(data);
-        toast({
-            title: "Sucesso!",
-            description: "Configurações do Bradesco salvas com sucesso.",
-            variant: "success",
-        });
+    const fetchConfig = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/gateways/bradesco');
+            if (!response.ok) throw new Error('Falha ao carregar configurações.');
+            const data = await response.json();
+            form.reset(data.config);
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [form, toast]);
+
+    React.useEffect(() => {
+        fetchConfig();
+    }, [fetchConfig]);
+
+    const onSubmit = async (data: BradescoGatewayValues) => {
+        setIsSaving(true);
+        try {
+            const response = await fetch('/api/v1/gateways/bradesco', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) throw new Error('Falha ao salvar configurações.');
+            toast({
+                title: "Sucesso!",
+                description: "Configurações do Bradesco salvas com sucesso.",
+                variant: "success",
+            });
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    if(isLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-8">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-10 w-1/2" />
+                        <Separator />
+                        <div className="space-y-4">
+                            <Skeleton className="h-6 w-32" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card>
@@ -90,7 +138,7 @@ export default function BradescoGatewayPage() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                         <FormField
                             control={form.control}
-                            name="status"
+                            name="isActive"
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-0.5">
@@ -142,12 +190,12 @@ export default function BradescoGatewayPage() {
                             <h3 className="text-lg font-medium">Credenciais de Produção</h3>
                             <FormField
                                 control={form.control}
-                                name="production_client_id"
+                                name="prodClientId"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Client ID</FormLabel>
                                     <FormControl>
-                                    <Input placeholder="Seu Client ID de produção" {...field} />
+                                    <Input placeholder="Seu Client ID de produção" {...field} value={field.value ?? ''}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -155,12 +203,12 @@ export default function BradescoGatewayPage() {
                             />
                              <FormField
                                 control={form.control}
-                                name="production_client_secret"
+                                name="prodClientSecret"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Client Secret</FormLabel>
                                     <FormControl>
-                                    <Input type="password" placeholder="Seu Client Secret de produção" {...field} />
+                                    <Input type="password" placeholder="Seu Client Secret de produção" {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -174,12 +222,12 @@ export default function BradescoGatewayPage() {
                             <h3 className="text-lg font-medium">Credenciais de Desenvolvimento</h3>
                              <FormField
                                 control={form.control}
-                                name="development_client_id"
+                                name="devClientId"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Client ID</FormLabel>
                                     <FormControl>
-                                    <Input placeholder="Seu Client ID de desenvolvimento" {...field} />
+                                    <Input placeholder="Seu Client ID de desenvolvimento" {...field} value={field.value ?? ''}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -187,12 +235,12 @@ export default function BradescoGatewayPage() {
                             />
                              <FormField
                                 control={form.control}
-                                name="development_client_secret"
+                                name="devClientSecret"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Client Secret</FormLabel>
                                     <FormControl>
-                                    <Input type="password" placeholder="Seu Client Secret de desenvolvimento" {...field} />
+                                    <Input type="password" placeholder="Seu Client Secret de desenvolvimento" {...field} value={field.value ?? ''}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -224,12 +272,12 @@ export default function BradescoGatewayPage() {
                             </FormItem>
                             <FormField
                                 control={form.control}
-                                name="certificate_password"
+                                name="certificatePassword"
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Senha do Certificado</FormLabel>
                                     <FormControl>
-                                        <Input type="password" placeholder="Senha do arquivo de certificado" {...field} />
+                                        <Input type="password" placeholder="Senha do arquivo de certificado" {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -238,7 +286,10 @@ export default function BradescoGatewayPage() {
                         </div>
                         
                         <div className="flex justify-end">
-                            <Button type="submit">Salvar Configurações do Bradesco</Button>
+                            <Button type="submit" disabled={isSaving}>
+                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Configurações
+                            </Button>
                         </div>
                     </form>
                 </Form>
