@@ -141,7 +141,7 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
 
       {!isProfileComplete && (
         <Alert variant="destructive">
-          <div className="flex items-center justify-center sm:justify-between flex-wrap gap-4">
+          <div className="flex items-center justify-center sm:justify-between flex-wrap gap-4 text-center sm:text-left">
             <div className='flex items-center gap-2'>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
@@ -156,7 +156,7 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
       )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {kpiData.map((kpi) => (
+        {data.kpis.slice(0, 5).map((kpi) => (
           <Card key={kpi.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
@@ -186,12 +186,12 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {recentTransactions.map(transaction => (
+                        {data.recentTransactions.map(transaction => (
                             <TableRow key={transaction.id}>
                                 <TableCell className='font-medium'>{transaction.name}</TableCell>
                                 <TableCell className='text-right'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
                                 <TableCell className='hidden sm:table-cell'>
-                                     <Badge variant={transaction.status === 'Aprovada' ? 'success' : transaction.status === 'Pendente' ? 'warning' : 'destructive'}>
+                                     <Badge variant={transaction.status === 'approved' ? 'success' : transaction.status === 'pending' ? 'warning' : 'destructive'}>
                                         {transaction.status}
                                     </Badge>
                                 </TableCell>
@@ -208,7 +208,7 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
             </CardHeader>
             <CardContent>
                  <div className="space-y-6">
-                    {recentRegistrations.map(user => (
+                    {data.recentRegistrations.map(user => (
                         <div key={user.id} className="flex items-center">
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={'https://placehold.co/36x36.png'} alt="Avatar" data-ai-hint="person symbol" />
@@ -242,8 +242,8 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
                     <PieChart>
                         <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
                         <Legend content={<ChartLegendContent nameKey="method" />} />
-                        <Pie data={paymentMethodsData} dataKey="value" nameKey="method" innerRadius={60}>
-                             {paymentMethodsData.map((entry) => (
+                        <Pie data={data.revenueByMethod} dataKey="value" nameKey="method" innerRadius={60}>
+                             {data.revenueByMethod.map((entry) => (
                                 <Cell key={entry.method} fill={entry.fill} />
                             ))}
                         </Pie>
@@ -261,8 +261,8 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
                     <PieChart>
                         <Tooltip content={<ChartTooltipContent hideLabel />} />
                         <Legend content={<ChartLegendContent nameKey="name" />} />
-                        <Pie data={revenueByChurch} dataKey="revenue" nameKey="name" innerRadius={60}>
-                             {revenueByChurch.map((entry, index) => (
+                        <Pie data={data.revenueByRegion} dataKey="revenue" nameKey="name" innerRadius={60}>
+                             {data.revenueByRegion.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                         </Pie>
@@ -280,8 +280,8 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
                      <PieChart>
                         <Tooltip content={<ChartTooltipContent hideLabel />} />
                         <Legend content={<ChartLegendContent nameKey="name" />} />
-                        <Pie data={membersByChurch} dataKey="count" nameKey="name" innerRadius={60}>
-                            {membersByChurch.map((entry, index) => (
+                        <Pie data={data.churchesByRegion} dataKey="count" nameKey="name" innerRadius={60}>
+                            {data.churchesByRegion.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                         </Pie>
