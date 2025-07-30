@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, AlertTriangle } from 'lucide-react';
 import {
   Bar,
@@ -36,84 +37,99 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// KPIs for Manager's network
-const kpiData = [
-  {
-    title: 'Arrecadação da Rede',
-    value: 'R$ 12.850,40',
-    change: '+15.2% em relação ao mês passado',
-    icon: DollarSign,
-  },
-  {
-    title: 'Membros Ativos na Rede',
-    value: '480',
-    change: '+75 este mês',
-    icon: Users,
-  },
-  {
-    title: 'Igrejas na Rede',
-    value: '12',
-    change: '+1 este mês',
-    icon: Church,
-  },
-  {
-    title: 'Pastores na Rede',
-    value: '15',
-    change: '+2 este mês',
-    icon: User,
-  },
-  {
-    title: 'Supervisores na Rede',
-    value: '4',
-    change: 'Nenhuma alteração',
-    icon: UserCog,
-  },
-];
+type KpiData = {
+    title: string;
+    value: string;
+    change: string;
+    icon: React.ElementType;
+};
 
-const churchesData = [
-  { id: 'chu-01', name: 'Assembleia de Deus Madureira', monthlyRevenue: 3500.00, members: 120, fill: '#16a34a' },
-  { id: 'chu-02', name: 'Comunidade da Graça', monthlyRevenue: 2800.50, members: 95, fill: '#3b82f6' },
-  { id: 'chu-03', name: 'Videira', monthlyRevenue: 4100.00, members: 150, fill: '#f97316' },
-  { id: 'chu-04', name: 'Fonte da Vida', monthlyRevenue: 2450.00, members: 115, fill: '#ef4444' },
-];
-
-const revenueByChurch = churchesData.map(church => ({
-    name: church.name,
-    revenue: church.monthlyRevenue,
-    fill: church.fill
-}));
-
-const membersByChurch = churchesData.map(church => ({
-    name: church.name,
-    count: church.members,
-    fill: church.fill
-}));
-
-const paymentMethodsData = [
-    { method: 'Pix', value: 7850.40, fill: '#10b981', icon: QrCode },
-    { method: 'Crédito', value: 3500.00, fill: '#3b82f6', icon: CreditCard },
-    { method: 'Boleto', value: 1500.00, fill: '#f59e0b', icon: Banknote },
-];
-
-
-const recentTransactions = [
-    { id: 'TRN-006', name: 'Jabez Henrique', amount: 120.00, date: '26/07/2024', status: 'Aprovada' },
-    { id: 'TRN-007', name: 'Lucas Mendes', amount: 90.00, date: '25/07/2024', status: 'Aprovada' },
-    { id: 'TRN-008', name: 'Fernanda Costa', amount: 250.00, date: '25/07/2024', status: 'Aprovada' },
-    { id: 'TRN-009', name: 'José Contas', amount: 80.00, date: '24/07/2024', status: 'Pendente' },
-    { id: 'TRN-010', name: 'Maria Finanças', amount: 450.00, date: '24/07/2024', status: 'Aprovada' },
-];
-
-const recentRegistrations = [
-    { id: 'USR-002', name: 'Pastor Silva', type: 'Pastor', date: '28/07/2024', avatar: 'PS' },
-    { id: 'USR-003', name: 'Supervisora Ana', type: 'Supervisor', date: '27/07/2024', avatar: 'SA' },
-    { id: 'USR-006', name: 'Igreja Central', type: 'Igreja', date: '26/07/2024', avatar: 'IC' },
-    { id: 'USR-009', name: 'Pastor João', type: 'Pastor', date: '24/07/2024', avatar: 'PJ' },
-];
-
+type DashboardData = {
+    kpis: KpiData[];
+    revenueByMethod: { method: string; value: number; fill: string; }[];
+    revenueByRegion: { name: string; revenue: number; fill: string; }[];
+    churchesByRegion: { name: string; count: number; fill: string; }[];
+    recentTransactions: { id: string; name: string; amount: number; date: string; status: string; }[];
+    recentRegistrations: { id: string; name: string; type: string; date: string; avatar: string; }[];
+    newMembers: { month: string; count: number; }[];
+}
 
 export default function ManagerDashboardPage({ isProfileComplete }: { isProfileComplete: boolean }) {
+    const [data, setData] = React.useState<DashboardData | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+
+    const fetchData = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/dashboard/admin');
+            if (!response.ok) {
+                throw new Error('Falha ao carregar os dados do dashboard.');
+            }
+            const dashboardData = await response.json();
+            
+            const kpis: KpiData[] = [
+                { title: 'Arrecadação no Mês', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+20.1% em relação ao mês passado', icon: DollarSign },
+                { title: 'Total de Membros', value: `+${dashboardData.kpis.totalMembers}`, change: '+180 este mês', icon: Users },
+                { title: 'Total de Transações', value: `+${dashboardData.kpis.totalTransactions}`, change: '+34 hoje', icon: Activity },
+                { title: 'Total de Igrejas', value: `${dashboardData.kpis.totalChurches}`, change: '+2 este mês', icon: Building },
+                { title: 'Total de Pastores', value: `${dashboardData.kpis.totalPastors}`, change: '+5 este mês', icon: User },
+                { title: 'Total de Supervisores', value: `${dashboardData.kpis.totalSupervisors}`, change: 'Nenhuma alteração', icon: UserCog },
+                { title: 'Total de Gerentes', value: `${dashboardData.kpis.totalManagers}`, change: '+1 este ano', icon: UserCheck },
+            ];
+
+            setData({ ...dashboardData, kpis });
+
+        } catch (error: any) {
+            toast({
+                title: "Erro",
+                description: error.message,
+                variant: 'destructive',
+            })
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    React.useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+
+  if (isLoading || !data) {
+    return (
+        <div className="flex flex-col gap-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-64" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+                {Array.from({ length: 7 }).map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-4" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-8 w-24 mb-2" />
+                            <Skeleton className="h-3 w-40" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                <Card><CardContent className="pt-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
+                <Card><CardContent className="pt-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
+                <Card><CardContent className="pt-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
+                <Card><CardContent className="pt-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
+            </div>
+        </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -125,17 +141,17 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
 
       {!isProfileComplete && (
         <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <div className="flex items-center justify-between">
-                <div>
-                    <AlertDescription>
-                        Seu perfil está incompleto. Por favor, atualize suas informações para habilitar todas as funcionalidades.
-                    </AlertDescription>
-                </div>
-                <Button asChild>
-                    <Link href="/gerente/perfil">Completar Cadastro</Link>
-                </Button>
+          <div className="flex items-center justify-center sm:justify-between flex-wrap gap-4">
+            <div className='flex items-center gap-2'>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Seu perfil está incompleto. Por favor, atualize suas informações para habilitar todas as funcionalidades.
+              </AlertDescription>
             </div>
+            <Button asChild>
+              <Link href="/gerente/perfil">Completar Cadastro</Link>
+            </Button>
+          </div>
         </Alert>
       )}
 
@@ -195,7 +211,7 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
                     {recentRegistrations.map(user => (
                         <div key={user.id} className="flex items-center">
                             <Avatar className="h-9 w-9">
-                                <AvatarImage src={`https://placehold.co/36x36.png`} alt="Avatar" data-ai-hint="person symbol" />
+                                <AvatarImage src={'https://placehold.co/36x36.png'} alt="Avatar" data-ai-hint="person symbol" />
                                 <AvatarFallback>{user.avatar}</AvatarFallback>
                             </Avatar>
                             <div className="ml-4 space-y-1">
