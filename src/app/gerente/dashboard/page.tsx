@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, AlertTriangle } from 'lucide-react';
+import { Activity, DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, AlertTriangle } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -72,13 +72,12 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
             const dashboardData = await response.json();
             
             const kpis: KpiData[] = [
-                { title: 'Arrecadação no Mês', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+20.1% em relação ao mês passado', icon: DollarSign },
-                { title: 'Total de Membros', value: `+${dashboardData.kpis.totalMembers}`, change: '+180 este mês', icon: Users },
+                { title: 'Arrecadação na Rede', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+15.2% em relação ao mês passado', icon: DollarSign },
+                { title: 'Membros Ativos na Rede', value: `${dashboardData.kpis.totalMembers}`, change: '+75 este mês', icon: Users },
+                { title: 'Igrejas na Rede', value: `${dashboardData.kpis.totalChurches}`, change: '+1 este mês', icon: Church },
+                { title: 'Pastores na Rede', value: `${dashboardData.kpis.totalPastors}`, change: '+2 este mês', icon: User },
+                { title: 'Supervisores na Rede', value: `${dashboardData.kpis.totalSupervisors}`, change: 'Nenhuma alteração', icon: UserCog },
                 { title: 'Total de Transações', value: `+${dashboardData.kpis.totalTransactions}`, change: '+34 hoje', icon: Activity },
-                { title: 'Total de Igrejas', value: `${dashboardData.kpis.totalChurches}`, change: '+2 este mês', icon: Building },
-                { title: 'Total de Pastores', value: `${dashboardData.kpis.totalPastors}`, change: '+5 este mês', icon: User },
-                { title: 'Total de Supervisores', value: `${dashboardData.kpis.totalSupervisors}`, change: 'Nenhuma alteração', icon: UserCog },
-                { title: 'Total de Gerentes', value: `${dashboardData.kpis.totalManagers}`, change: '+1 este ano', icon: UserCheck },
             ];
 
             setData({ ...dashboardData, kpis });
@@ -106,8 +105,8 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
                 <Skeleton className="h-10 w-64" />
                 <Skeleton className="h-10 w-64" />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-                {Array.from({ length: 7 }).map((_, i) => (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+                {Array.from({ length: 5 }).map((_, i) => (
                     <Card key={i}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <Skeleton className="h-4 w-32" />
@@ -156,7 +155,7 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
       )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {data.kpis.slice(0, 5).map((kpi) => (
+        {data.kpis.map((kpi) => (
           <Card key={kpi.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
