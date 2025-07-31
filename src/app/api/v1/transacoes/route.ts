@@ -42,8 +42,8 @@ async function getCieloCredentials() {
 function mapCieloStatusToDbStatus(cieloStatus: number): TransactionStatus {
     switch (cieloStatus) {
         case 2: // PaymentConfirmed
+        case 1: // Authorized (auto-capture)
             return 'approved';
-        case 1: // Authorized
         case 12: // Pending
             return 'pending';
         case 3: // Denied
