@@ -1,6 +1,5 @@
 
 
-import * as React from 'react';
 import type { Metadata } from 'next';
 import { GerenteSidebar } from '@/components/layout/gerente-sidebar';
 import {
@@ -56,7 +55,7 @@ const menuItems = [
   ];
   
   const settingsItem = {
-    href: '/gerente/perfil',
+    href: '/manager/perfil',
     label: 'Meu Perfil',
     icon: Settings,
   };

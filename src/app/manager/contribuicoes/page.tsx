@@ -1,358 +1,98 @@
-
 'use client';
 
-import * as React from 'react';
-import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Banknote, CreditCard, QrCode, DollarSign, CheckCircle } from 'lucide-react';
-import Image from 'next/image';
-import Cards, { Focused } from 'react-credit-cards-2';
-import 'react-credit-cards-2/dist/es/styles-compiled.css';
-
-
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+  LayoutDashboard,
+  UserCog,
+  User,
+  Church,
+  Settings,
+  ArrowRightLeft,
+  Handshake,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 
+const Logo = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
+      <path d="M12 2v2" />
+      <path d="M12 18v-8" />
+      <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+      <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+      <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+    </svg>
+  );
 
-const contributionSchema = z.object({
-  amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
-  paymentMethod: z.enum(['pix', 'credit_card', 'boleto'], {
-    required_error: 'Selecione um método de pagamento.',
-  }),
-});
+const menuItems = [
+    { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/manager/supervisores', label: 'Supervisores', icon: UserCog },
+    { href: '/manager/pastores', label: 'Pastores', icon: User },
+    { href: '/manager/igrejas', label: 'Igrejas', icon: Church },
+    { href: '/manager/transacoes', label: 'Transações', icon: ArrowRightLeft },
+    { href: '/manager/contribuicoes', label: 'Contribuições', icon: Handshake },
+];
 
-type ContributionFormValues = z.infer<typeof contributionSchema>;
+const settingsItem = {
+  href: '/manager/perfil',
+  label: 'Meu Perfil',
+  icon: Settings,
+};
 
-export default function ContribuicoesPage() {
-  const [showPaymentDetails, setShowPaymentDetails] = React.useState(false);
-  const [pixStatus, setPixStatus] = React.useState<'idle' | 'pending' | 'confirmed'>('idle');
-  const [cardState, setCardState] = React.useState({
-    number: '',
-    expiry: '',
-    cvc: '',
-    name: '',
-    focus: '' as Focused,
-  });
-
-  const { toast } = useToast();
-
-  const form = useForm<ContributionFormValues>({
-    resolver: zodResolver(contributionSchema),
-    defaultValues: {
-        paymentMethod: 'pix',
-        amount: 0,
-    },
-  });
-
-  const paymentMethod = useWatch({
-    control: form.control,
-    name: 'paymentMethod',
-  });
-  
-  const amount = useWatch({
-    control: form.control,
-    name: 'amount',
-  });
-
-  const handleCopyPixCode = () => {
-    const pixCode = "copia-e-cola-chave-pix-aqui-12345";
-    navigator.clipboard.writeText(pixCode);
-    toast({
-        title: "Copiado!",
-        description: "Código Pix copiado com sucesso.",
-    });
-  };
-
-  const handleCopyBoletoCode = () => {
-    const boletoCode = "00190500954014481606906809350314337370000000123";
-    navigator.clipboard.writeText(boletoCode);
-    toast({
-        title: "Copiado!",
-        description: "Código do boleto copiado com sucesso.",
-    });
-  };
-
-  // Reset payment details view when payment method or amount changes
-  React.useEffect(() => {
-    setShowPaymentDetails(false);
-    setPixStatus('idle');
-  }, [paymentMethod, amount]);
-
-  React.useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (showPaymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
-        timer = setTimeout(() => {
-            setPixStatus('confirmed');
-            toast({
-                title: "Sucesso!",
-                description: "Pagamento via Pix confirmado com sucesso.",
-                variant: 'success' as any,
-            });
-        }, 5000);
-    }
-    return () => clearTimeout(timer);
-  }, [showPaymentDetails, paymentMethod, pixStatus, toast]);
-
-
-  const handleInputChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = evt.target;
-    let formattedValue = value;
-
-    if (name === 'number') {
-        formattedValue = value.replace(/\D/g, '').slice(0, 16);
-    } else if (name === 'expiry') {
-        formattedValue = value.replace(/\D/g, '').slice(0, 4);
-    } else if (name === 'cvc') {
-        formattedValue = value.replace(/\D/g, '').slice(0, 4);
-    }
-
-    setCardState((prev) => ({ ...prev, [name]: formattedValue }));
-  }
-
-  const handleInputFocus = (evt: React.FocusEvent<HTMLInputElement>) => {
-    setCardState((prev) => ({ ...prev, focus: evt.target.name as Focused }));
-  }
-
-  function handleProceedToPayment(data: ContributionFormValues) {
-    console.log("Proceeding to payment with:", data);
-    setShowPaymentDetails(true);
-    if(data.paymentMethod === 'pix') {
-        setPixStatus('pending');
-    }
-  }
-
-  function handleFinalizePayment() {
-    // This is where you would handle the final submission to the payment gateway
-     if(paymentMethod === 'credit_card') {
-        console.log('Finalizing Credit Card Payment:', cardState);
-    } else {
-        console.log('Finalizing Payment for', paymentMethod)
-    }
-  }
-
-  const getButtonLabel = () => {
-    switch (paymentMethod) {
-        case 'pix': return 'Gerar QR Code Pix';
-        case 'credit_card': return 'Pagar com Cartão de Crédito';
-        case 'boleto': return 'Gerar Boleto';
-        default: return 'Continuar';
-    }
-  }
-
+export function GerenteSidebar() {
+  const pathname = usePathname();
 
   return (
-    <div className="flex flex-col gap-8">
-       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Nova Contribuição
-        </h1>
-        <p className="text-sm text-muted-foreground">
-            Realize uma nova contribuição.
-        </p>
+    <div className="hidden border-r bg-muted/40 md:block sticky top-0 h-screen">
+      <div className="flex h-full max-h-screen flex-col gap-2">
+        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+          <Link href="/manager/dashboard" className="flex items-center gap-2 font-semibold">
+            <Logo className="h-6 w-6 text-primary" />
+            <span className="">Vinha Ministérios</span>
+          </Link>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                  (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))) &&
+                    'bg-muted text-primary'
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-auto p-4">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+                <Link
+                    href={settingsItem.href}
+                    className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                    pathname.startsWith(settingsItem.href) && 'bg-muted text-primary'
+                    )}
+                >
+                    <settingsItem.icon className="h-4 w-4" />
+                    {settingsItem.label}
+                </Link>
+            </nav>
+        </div>
       </div>
-      <Card>
-        <CardContent className="pt-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleProceedToPayment)} className="space-y-8">
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <div className="space-y-6">
-                    <FormField
-                        control={form.control}
-                        name="amount"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Valor da Contribuição</FormLabel>
-                                <FormControl>
-                                    <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input type="number" placeholder="0,00" className="pl-9" {...field} />
-                                    </div>
-                                </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <div className="space-y-4">
-                    <Label>Método de Pagamento</Label>
-                     <FormField
-                        control={form.control}
-                        name="paymentMethod"
-                        render={({ field }) => (
-                            <FormItem>
-                               <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-                                    >
-                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'pix' && "border-primary")}>
-                                            <RadioGroupItem value="pix" className="sr-only" />
-                                            <QrCode className="mb-3 h-6 w-6" />
-                                            Pix
-                                        </Label>
-                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'credit_card' && "border-primary")}>
-                                            <RadioGroupItem value="credit_card" className="sr-only" />
-                                            <CreditCard className="mb-3 h-6 w-6" />
-                                            Crédito
-                                        </Label>
-                                        <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer", field.value === 'boleto' && "border-primary")}>
-                                            <RadioGroupItem value="boleto" className="sr-only" />
-                                            <Banknote className="mb-3 h-6 w-6" />
-                                            Boleto
-                                        </Label>
-                                    </RadioGroup>
-                               </FormControl>
-                               <FormMessage className="pt-2" />
-                            </FormItem>
-                        )}
-                        />
-                </div>
-              </div>
-
-             <Separator />
-
-              {!showPaymentDetails && (
-                <div className="flex justify-end">
-                    <Button type="submit" size="lg">
-                        {getButtonLabel()}
-                    </Button>
-                </div>
-              )}
-            </form>
-          </Form>
-
-          {showPaymentDetails && (
-            <>
-                {paymentMethod === 'credit_card' && (
-                    <Card className="bg-muted/30">
-                        <CardHeader>
-                            <CardTitle>Dados do Cartão</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                            <div className="flex justify-center md:order-2">
-                                <Cards
-                                    number={cardState.number}
-                                    expiry={cardState.expiry}
-                                    cvc={cardState.cvc}
-                                    name={cardState.name}
-                                    focused={cardState.focus}
-                                />
-                            </div>
-                            <div className="space-y-4 md:order-1">
-                                <Input
-                                    type="text"
-                                    name="number"
-                                    placeholder="Número do Cartão"
-                                    value={cardState.number}
-                                    onChange={handleInputChange}
-                                    onFocus={handleInputFocus}
-                                />
-                                <Input
-                                    type="text"
-                                    name="name"
-                                    placeholder="Nome no Cartão"
-                                    value={cardState.name}
-                                    onChange={handleInputChange}
-                                    onFocus={handleInputFocus}
-                                />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input
-                                        type="text"
-                                        name="expiry"
-                                        placeholder="Validade (MM/AA)"
-                                        value={cardState.expiry}
-                                        onChange={handleInputChange}
-                                        onFocus={handleInputFocus}
-                                    />
-                                    <Input
-                                        type="text"
-                                        name="cvc"
-                                        placeholder="CVC"
-                                        value={cardState.cvc}
-                                        onChange={handleInputChange}
-                                        onFocus={handleInputFocus}
-                                    />
-                                </div>
-                                <Button onClick={handleFinalizePayment} className="w-full" size="lg">
-                                    Pagar R$ {Number(amount).toFixed(2)}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-                 {paymentMethod === 'pix' && (
-                    <Card className="bg-muted/30 flex flex-col items-center p-6">
-                        {pixStatus === 'pending' && (
-                            <>
-                                <CardHeader className="items-center">
-                                    <CardTitle>Aguardando Pagamento</CardTitle>
-                                    <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
-                                </CardHeader>
-                                <CardContent className='flex flex-col items-center'>
-                                    <Skeleton className="h-[256px] w-[256px]">
-                                        <Image src="https://placehold.co/256x256.png" width={256} height={256} alt="QR Code Pix" data-ai-hint="qr code" className="opacity-20" />
-                                    </Skeleton>
-                                    <Input value="copia-e-cola-chave-pix-aqui-12345" readOnly className="mt-4 text-center" />
-                                    <Button variant="outline" className="w-full mt-2" onClick={handleCopyPixCode}>Copiar Chave</Button>
-                                </CardContent>
-                            </>
-                        )}
-                        {pixStatus === 'confirmed' && (
-                             <CardContent className="flex flex-col items-center justify-center p-10 text-center">
-                                <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-                                <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
-                                <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
-                                 <Button onClick={() => {
-                                     form.reset({ amount: 0, paymentMethod: 'pix' });
-                                     setShowPaymentDetails(false);
-                                     setPixStatus('idle');
-                                 }} className='mt-6'>Fazer Nova Contribuição</Button>
-                            </CardContent>
-                        )}
-                    </Card>
-                )}
-                {paymentMethod === 'boleto' && (
-                    <Card className="bg-muted/30 flex flex-col items-center p-6">
-                        <CardHeader className="items-center text-center">
-                            <CardTitle>Boleto Gerado</CardTitle>
-                            <CardDescription>Clique no botão abaixo para baixar ou copiar o código de barras.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="w-full">
-                                <Input value="00190500954014481606906809350314337370000000123" readOnly className="mt-4 text-center" />
-                                <div className='flex gap-2 mt-2'>
-                                    <Button variant="secondary" className="w-full mt-2" onClick={handleCopyBoletoCode}>Copiar Código</Button>
-                                    <Button className="w-full mt-2">Baixar Boleto</Button>
-                                </div>
-                        </CardContent>
-                    </Card>
-                )}
-            </>
-            )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

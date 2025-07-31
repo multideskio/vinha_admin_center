@@ -1,98 +1,396 @@
+
+
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import * as React from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  LayoutDashboard,
-  UserCog,
-  User,
-  Church,
-  Settings,
-  ArrowRightLeft,
-  Handshake,
+  Camera,
+  Facebook,
+  Instagram,
+  Globe,
+  AlertTriangle,
+  Info,
+  Lock,
+  Loader2,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
 
-const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-      <path d="M12 2v2" />
-      <path d="M12 18v-8" />
-      <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    </svg>
-  );
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const menuItems = [
-    { href: '/gerente/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/gerente/supervisores', label: 'Supervisores', icon: UserCog },
-    { href: '/gerente/pastores', label: 'Pastores', icon: User },
-    { href: '/gerente/igrejas', label: 'Igrejas', icon: Church },
-    { href: '/gerente/transacoes', label: 'Transações', icon: ArrowRightLeft },
-    { href: '/gerente/contribuicoes', label: 'Contribuições', icon: Handshake },
-];
 
-const settingsItem = {
-  href: '/gerente/perfil',
-  label: 'Meu Perfil',
-  icon: Settings,
+const managerProfileSchema = z.object({
+  firstName: z.string().min(1, 'O nome é obrigatório.'),
+  lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
+  cpf: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  landline: z.string().optional().nullable(),
+  email: z.string().email('E-mail inválido.'),
+  cep: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  neighborhood: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  titheDay: z.coerce.number().optional().nullable(),
+  newPassword: z.string().optional().or(z.literal('')),
+  facebook: z.string().url().or(z.literal('')).optional().nullable(),
+  instagram: z.string().url().or(z.literal('')).optional().nullable(),
+  website: z.string().url().or(z.literal('')).optional().nullable(),
+});
+
+type ManagerProfile = z.infer<typeof managerProfileSchema> & {
+    id: string;
+    status: string;
+    avatarUrl?: string;
 };
 
-export function ManagerSidebar() {
-  const pathname = usePathname();
+export default function GerenteProfilePage() {
+    const [manager, setManager] = React.useState<ManagerProfile | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [isSaving, setIsSaving] = React.useState(false);
+    const [previewImage, setPreviewImage] = React.useState<string | null>(null);
+    const { toast } = useToast();
 
-  return (
-    <div className="hidden border-r bg-muted/40 md:block sticky top-0 h-screen">
-      <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/gerente/dashboard" className="flex items-center gap-2 font-semibold">
-            <Logo className="h-6 w-6 text-primary" />
-            <span className="">Vinha Ministérios</span>
-          </Link>
+    // Como esta é uma página de perfil do usuário logado, 
+    // não precisamos de um ID dinâmico, mas podemos simular para manter a estrutura
+    // Em um app real, o ID viria da sessão do usuário
+    const fakeId = "user_2f9bO0wL5d2bQ3yZ1xR6a4cE9";
+
+    const form = useForm<ManagerProfile>({
+        resolver: zodResolver(managerProfileSchema),
+        defaultValues: {},
+    });
+
+    const fetchManager = React.useCallback(async () => {
+      // Simulação: em um app real, buscaríamos o perfil do usuário logado
+      // Aqui, vamos usar um ID estático para buscar o gerente de exemplo do seed
+      const gerenteUserId = "034c4d5b-1c5c-4e8a-9e1e-4b2e8a1c7e2d"; 
+      
+      setIsLoading(true);
+      try {
+          const response = await fetch(`/api/v1/gerentes/${gerenteUserId}`);
+          if (!response.ok) throw new Error('Falha ao carregar dados do gerente');
+          const data = await response.json();
+          
+          setManager(data);
+          form.reset(data);
+      } catch (error: any) {
+          toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      } finally {
+          setIsLoading(false);
+      }
+    }, [form, toast]);
+
+    React.useEffect(() => {
+        fetchManager();
+    }, [fetchManager]);
+
+    const onSubmit = async (data: Partial<ManagerProfile>) => {
+        setIsSaving(true);
+        const gerenteUserId = "034c4d5b-1c5c-4e8a-9e1e-4b2e8a1c7e2d";
+        try {
+            const response = await fetch(`/api/v1/gerentes/${gerenteUserId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar o gerente.');
+            toast({ title: 'Sucesso', description: 'Perfil atualizado com sucesso.', variant: 'success' });
+            fetchManager(); // Recarrega os dados para mostrar as atualizações
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewImage(reader.result as string);
+                toast({
+                    title: 'Preview da Imagem',
+                    description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-1">
+                    <Card><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+                </div>
+                <div className="lg:col-span-2">
+                    <Card><CardContent className="pt-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+                </div>
+            </div>
+        )
+    }
+
+    if (!manager) {
+        return <p>Gerente não encontrado.</p>;
+    }
+
+
+    return (
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Left Column: Profile Card */}
+        <div className="lg:col-span-1">
+            <Card>
+            <CardContent className="flex flex-col items-center pt-6 text-center">
+                <div className="relative">
+                <Avatar className="h-24 w-24">
+                    <AvatarImage src={previewImage || manager.avatarUrl || "https://placehold.co/96x96.png"} alt={manager.firstName ?? ''} data-ai-hint="male person" />
+                    <AvatarFallback>{manager.firstName?.[0]}{manager.lastName?.[0]}</AvatarFallback>
+                </Avatar>
+                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                        <Camera className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <span className="sr-only">Trocar foto</span>
+                </Label>
+                <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                </div>
+                <h2 className="mt-4 text-xl font-semibold">
+                {manager.firstName} {manager.lastName}
+                </h2>
+                <p className="text-muted-foreground">Gerente</p>
+            </CardContent>
+            <Separator />
+            <CardContent className="pt-6">
+                <h3 className="mb-4 font-semibold">Redes sociais</h3>
+                <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <Facebook className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                        defaultValue={manager.facebook ?? ''}
+                        placeholder="https://facebook.com/..."
+                    />
+                </div>
+                <div className="flex items-center gap-3">
+                    <Instagram className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                        defaultValue={manager.instagram ?? ''}
+                        placeholder="https://instagram.com/..."
+                    />
+                </div>
+                <div className="flex items-center gap-3">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                        defaultValue={manager.website ?? ''}
+                        placeholder="https://website.com/..."
+                    />
+                </div>
+                </div>
+            </CardContent>
+            </Card>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  (pathname === item.href || (item.href !== '/gerente/dashboard' && pathname.startsWith(item.href))) &&
-                    'bg-muted text-primary'
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+
+        {/* Right Column: Tabs and Form */}
+        <div className="lg:col-span-2">
+            <Tabs defaultValue="profile">
+            <TabsList>
+                <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+                <Card>
+                <CardContent className="pt-6">
+                    <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                            control={form.control}
+                            name="firstName"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nome</FormLabel>
+                                <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Sobre-nome</FormLabel>
+                                <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="cpf"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>CPF</FormLabel>
+                                <FormControl>
+                                <Input {...field} disabled value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Celular/WhatsApp</FormLabel>
+                                <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="landline"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Fixo</FormLabel>
+                                <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                <Input type="email" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <FormField control={form.control} name="cep" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>CEP</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="state" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Estado/UF</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="city" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Cidade</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                </FormItem>
+                            )} />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Bairro</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="address" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Endereço</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="titheDay" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Dia do dízimo</FormLabel>
+                                    <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
+                                </FormItem>
+                            )} />
+                        </div>
+
+                        <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <AlertDescription>
+                            <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá acessar usando a senha anterior.
+                        </AlertDescription>
+                        </Alert>
+
+                        <FormField
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                            <Label>Atualize a senha do gerente</Label>
+                            <FormControl>
+                                <div className="relative mt-1">
+                                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} value={field.value ?? ''}/>
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+
+                        <div className="flex justify-end">
+                        <Button type="submit" disabled={isSaving}>
+                            {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                            Alterar cadastro
+                        </Button>
+                        </div>
+                    </form>
+                    </Form>
+                </CardContent>
+                </Card>
+            </TabsContent>
+            </Tabs>
         </div>
-        <div className="mt-auto p-4">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                <Link
-                    href={settingsItem.href}
-                    className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    pathname.startsWith(settingsItem.href) && 'bg-muted text-primary'
-                    )}
-                >
-                    <settingsItem.icon className="h-4 w-4" />
-                    {settingsItem.label}
-                </Link>
-            </nav>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
