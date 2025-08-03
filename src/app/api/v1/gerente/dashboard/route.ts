@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles, managerProfiles } from '@/db/schema';
-import { count, sum, eq, isNull, and, desc, sql } from 'drizzle-orm';
+import { count, sum, eq, isNull, and, desc, sql, inArray } from 'drizzle-orm';
 import { format } from 'date-fns';
 
 const GERENTE_INIT_ID = process.env.GERENTE_INIT;
@@ -13,34 +13,33 @@ export async function GET() {
     }
 
     try {
-        const supervisorIdsQuery = db
+        const supervisorsResult = await db
             .select({ id: users.id })
             .from(users)
             .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-            .where(eq(supervisorProfiles.managerId, GERENTE_INIT_ID));
+            .where(and(eq(supervisorProfiles.managerId, GERENTE_INIT_ID), isNull(users.deletedAt)));
+        
+        const supervisorIds = supervisorsResult.map(s => s.id);
 
-        const pastorIdsQuery = db
+        const pastorIds = supervisorIds.length > 0 ? (await db
             .select({ id: users.id })
             .from(users)
             .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-            .where(inArray(pastorProfiles.supervisorId, sql`(${supervisorIdsQuery.toSQL().sql})`));
+            .where(and(inArray(pastorProfiles.supervisorId, supervisorIds), isNull(users.deletedAt)))).map(p => p.id) : [];
         
-        const churchIdsQuery = db
+        const churchIds = supervisorIds.length > 0 ? (await db
             .select({ id: users.id })
             .from(users)
             .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-            .where(inArray(churchProfiles.supervisorId, sql`(${supervisorIdsQuery.toSQL().sql})`));
-        
-        const supervisorIds = (await supervisorIdsQuery).map(s => s.id);
-        const pastorIds = (await pastorIdsQuery).map(p => p.id);
-        const churchIds = (await churchIdsQuery).map(c => c.id);
+            .where(and(inArray(churchProfiles.supervisorId, supervisorIds), isNull(users.deletedAt)))).map(c => c.id) : [];
 
         const networkUserIds = [GERENTE_INIT_ID, ...supervisorIds, ...pastorIds, ...churchIds];
+        if(networkUserIds.length === 0) networkUserIds.push(GERENTE_INIT_ID);
 
         const totalSupervisors = supervisorIds.length;
         const totalPastors = pastorIds.length;
         const totalChurches = churchIds.length;
-        const totalMembers = 1 + totalSupervisors + totalPastors + totalChurches; // Manager + their network
+        const totalMembers = 1 + totalSupervisors + totalPastors + totalChurches;
 
         const totalTransactionsResult = await db.select({ value: count() }).from(transactions).where(inArray(transactions.contributorId, networkUserIds));
         const totalRevenueResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), inArray(transactions.contributorId, networkUserIds)));
@@ -54,7 +53,7 @@ export async function GET() {
         .where(and(eq(transactions.status, 'approved'), inArray(transactions.contributorId, networkUserIds)))
         .groupBy(transactions.paymentMethod);
         
-        const revenueByChurchData = await db
+        const revenueByChurchData = churchIds.length > 0 ? await db
             .select({
                 name: churchProfiles.nomeFantasia,
                 revenue: sum(transactions.amount).mapWith(Number),
@@ -62,17 +61,17 @@ export async function GET() {
             .from(transactions)
             .innerJoin(churchProfiles, eq(transactions.contributorId, churchProfiles.userId))
             .where(and(eq(transactions.status, 'approved'), inArray(transactions.contributorId, churchIds)))
-            .groupBy(churchProfiles.nomeFantasia);
+            .groupBy(churchProfiles.nomeFantasia) : [];
 
-        const membersByChurchData = await db
+        const membersByChurchData = churchIds.length > 0 ? await db
             .select({
                 name: churchProfiles.nomeFantasia,
-                count: count(pastorProfiles.id), // Exemplo: contando pastores por igreja
+                count: count(pastorProfiles.id),
             })
             .from(churchProfiles)
             .leftJoin(pastorProfiles, eq(churchProfiles.supervisorId, pastorProfiles.supervisorId))
             .where(inArray(churchProfiles.userId, churchIds))
-            .groupBy(churchProfiles.nomeFantasia);
+            .groupBy(churchProfiles.nomeFantasia) : [];
 
         const recentTransactionsData = await db
             .select({
@@ -118,7 +117,6 @@ export async function GET() {
         const recentTransactions = recentTransactionsData.map(t => ({...t, amount: Number(t.amount), date: format(new Date(t.date), 'dd/MM/yyyy')}));
         const recentRegistrations = recentRegistrationsData.map(u => ({...u, type: u.role, avatar: u.name.substring(0, 2).toUpperCase(), date: format(new Date(u.date), 'dd/MM/yyyy') }));
         
-        // Simulação de cores para os gráficos de pizza
         const colors = ['#16a34a', '#3b82f6', '#f97316', '#ef4444', '#8b5cf6'];
         const revenueByChurch = revenueByChurchData.map((r, i) => ({...r, revenue: Number(r.revenue), fill: colors[i % colors.length]}));
         const membersByChurch = membersByChurchData.map((m, i) => ({ ...m, fill: colors[i % colors.length] }));
@@ -140,14 +138,4 @@ export async function GET() {
         console.error("Erro ao buscar dados para o dashboard do gerente:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
-}
-
-
-// Helper to construct IN (...) array for SQL queries
-function inArray<T>(column: any, values: T[]) {
-    if (values.length === 0) {
-        // Retorna uma condição que sempre será falsa se não houver IDs.
-        return sql`1 = 0`; 
-    }
-    return sql`${column} IN ${values}`;
 }

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -77,10 +76,7 @@ export default function GerenteProfilePage() {
     const [previewImage, setPreviewImage] = React.useState<string | null>(null);
     const { toast } = useToast();
 
-    // Como esta é uma página de perfil do usuário logado, 
-    // não precisamos de um ID dinâmico, mas podemos simular para manter a estrutura
-    // Em um app real, o ID viria da sessão do usuário
-    const fakeId = "user_2f9bO0wL5d2bQ3yZ1xR6a4cE9";
+    const gerenteUserId = process.env.NEXT_PUBLIC_GERENTE_INIT;
 
     const form = useForm<ManagerProfile>({
         resolver: zodResolver(managerProfileSchema),
@@ -88,9 +84,11 @@ export default function GerenteProfilePage() {
     });
 
     const fetchManager = React.useCallback(async () => {
-      // Simulação: em um app real, buscaríamos o perfil do usuário logado
-      // Aqui, vamos usar um ID estático para buscar o gerente de exemplo do seed
-      const gerenteUserId = "034c4d5b-1c5c-4e8a-9e1e-4b2e8a1c7e2d"; 
+      if (!gerenteUserId) {
+        toast({ title: 'Erro de Configuração', description: 'ID do gerente não encontrado no ambiente.', variant: 'destructive'});
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
@@ -105,15 +103,15 @@ export default function GerenteProfilePage() {
       } finally {
           setIsLoading(false);
       }
-    }, [form, toast]);
+    }, [form, toast, gerenteUserId]);
 
     React.useEffect(() => {
         fetchManager();
     }, [fetchManager]);
 
     const onSubmit = async (data: Partial<ManagerProfile>) => {
+        if (!gerenteUserId) return;
         setIsSaving(true);
-        const gerenteUserId = "034c4d5b-1c5c-4e8a-9e1e-4b2e8a1c7e2d";
         try {
             const response = await fetch(`/api/v1/gerentes/${gerenteUserId}`, {
                 method: 'PUT',
@@ -122,7 +120,7 @@ export default function GerenteProfilePage() {
             });
             if (!response.ok) throw new Error('Falha ao atualizar o gerente.');
             toast({ title: 'Sucesso', description: 'Perfil atualizado com sucesso.', variant: 'success' });
-            fetchManager(); // Recarrega os dados para mostrar as atualizações
+            fetchManager();
         } catch (error: any) {
             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
         } finally {
