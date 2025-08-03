@@ -20,9 +20,11 @@ export default async function SupervisorLayout({
 }) {
   const { user } = await validateRequest();
 
+  /*
    if (!user) {
     return redirect('/auth/login');
   }
+  */
 
   let userName = 'Supervisor';
   let userFallback = 'SU';

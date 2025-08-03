@@ -20,9 +20,11 @@ export default async function ChurchLayout({
 }) {
   const { user } = await validateRequest();
 
+  /*
   if (!user) {
     return redirect('/auth/login');
   }
+  */
 
   let userName = 'Igreja';
   let userFallback = 'IG';
