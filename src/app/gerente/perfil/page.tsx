@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -262,13 +263,18 @@ export default function GerenteProfilePage() {
                             control={form.control}
                             name="phone"
                             render={({ field }) => (
-                            <FormItem>
+                                <FormItem>
                                 <FormLabel>Celular/WhatsApp</FormLabel>
                                 <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                    <div className="relative">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <span className="text-muted-foreground">🇧🇷 +55</span>
+                                    </div>
+                                    <Input {...field} value={field.value ?? ''} className="pl-16"/>
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
-                            </FormItem>
+                                </FormItem>
                             )}
                         />
                         <FormField
