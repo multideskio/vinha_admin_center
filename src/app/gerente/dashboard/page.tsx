@@ -50,8 +50,8 @@ type KpiData = {
 type DashboardData = {
     kpis: KpiData[];
     revenueByMethod: { method: string; value: number; fill: string; }[];
-    revenueByRegion: { name: string; revenue: number; fill: string; }[];
-    churchesByRegion: { name: string; count: number; fill: string; }[];
+    revenueByChurch: { name: string; revenue: number; fill: string; }[];
+    membersByChurch: { name: string; count: number; fill: string; }[];
     recentTransactions: { id: string; name: string; amount: number; date: string; status: string; }[];
     recentRegistrations: { id: string; name: string; type: string; date: string; avatar: string; }[];
     newMembers: { month: string; count: number; }[];
@@ -67,13 +67,14 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
         try {
             const response = await fetch('/api/v1/gerente/dashboard');
             if (!response.ok) {
-                throw new Error('Falha ao carregar os dados do dashboard.');
+                const errorData = await response.json();
+                throw new Error(errorData.error ||'Falha ao carregar os dados do dashboard.');
             }
             const dashboardData = await response.json();
             
             const kpis: KpiData[] = [
                 { title: 'Arrecadação na Rede', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+15.2% em relação ao mês passado', icon: DollarSign },
-                { title: 'Membros Ativos na Rede', value: `${dashboardData.kpis.totalMembers}`, change: '+75 este mês', icon: Users },
+                { title: 'Membros na Rede', value: `${dashboardData.kpis.totalMembers}`, change: '+75 este mês', icon: Users },
                 { title: 'Igrejas na Rede', value: `${dashboardData.kpis.totalChurches}`, change: '+1 este mês', icon: Church },
                 { title: 'Pastores na Rede', value: `${dashboardData.kpis.totalPastors}`, change: '+2 este mês', icon: User },
                 { title: 'Supervisores na Rede', value: `${dashboardData.kpis.totalSupervisors}`, change: 'Nenhuma alteração', icon: UserCog },
@@ -105,8 +106,8 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
                 <Skeleton className="h-10 w-64" />
                 <Skeleton className="h-10 w-64" />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-                {Array.from({ length: 5 }).map((_, i) => (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                {Array.from({ length: 6 }).map((_, i) => (
                     <Card key={i}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <Skeleton className="h-4 w-32" />
@@ -154,7 +155,7 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
         </Alert>
       )}
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {data.kpis.map((kpi) => (
           <Card key={kpi.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -229,13 +230,13 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
          <Card>
             <CardHeader>
-                <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
+                <CardTitle>Arrecadação por Método</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{
                      value: { label: "Valor" },
                      pix: { label: "Pix", color: "#10b981"},
-                     credito: { label: "Crédito", color: "#3b82f6"},
+                     credit_card: { label: "Crédito", color: "#3b82f6"},
                      boleto: { label: "Boleto", color: "#f59e0b"},
                 }} className="h-[300px] w-full">
                     <PieChart>
@@ -258,10 +259,10 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
             <CardContent>
                 <ChartContainer config={{}} className="h-[300px] w-full">
                     <PieChart>
-                        <Tooltip content={<ChartTooltipContent hideLabel />} />
+                        <Tooltip content={<ChartTooltipContent nameKey="name" />} />
                         <Legend content={<ChartLegendContent nameKey="name" />} />
-                        <Pie data={data.revenueByRegion} dataKey="revenue" nameKey="name" innerRadius={60}>
-                             {data.revenueByRegion.map((entry, index) => (
+                        <Pie data={data.revenueByChurch} dataKey="revenue" nameKey="name" innerRadius={60}>
+                             {data.revenueByChurch.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                         </Pie>
@@ -277,10 +278,10 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
             <CardContent>
                 <ChartContainer config={{}} className="h-[300px] w-full">
                      <PieChart>
-                        <Tooltip content={<ChartTooltipContent hideLabel />} />
+                        <Tooltip content={<ChartTooltipContent nameKey="name" />} />
                         <Legend content={<ChartLegendContent nameKey="name" />} />
-                        <Pie data={data.churchesByRegion} dataKey="count" nameKey="name" innerRadius={60}>
-                            {data.churchesByRegion.map((entry, index) => (
+                        <Pie data={data.membersByChurch} dataKey="count" nameKey="name" innerRadius={60}>
+                            {data.membersByChurch.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                         </Pie>
