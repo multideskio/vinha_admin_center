@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -138,7 +137,7 @@ const GerenteFormModal = ({
 
   const handleSave = async (data: z.infer<typeof managerSchema>) => {
     try {
-        const response = await fetch('/api/v1/gerentes', {
+        const response = await fetch('/api/v1/admin/gerentes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -445,7 +444,7 @@ export default function GerentesPage() {
   const fetchManagers = React.useCallback(async () => {
     setIsLoading(true);
     try {
-        const response = await fetch('/api/v1/gerentes');
+        const response = await fetch('/api/v1/admin/gerentes');
         if(!response.ok) throw new Error("Failed to fetch managers");
         const data = await response.json();
         setManagers(data.managers);
@@ -462,12 +461,12 @@ export default function GerentesPage() {
 
   const handleDelete = async (managerId: string) => {
     try {
-        const response = await fetch(`/api/v1/gerentes/${managerId}`, { method: 'DELETE' });
+        const response = await fetch(`/api/v1/admin/gerentes/${managerId}`, { method: 'DELETE' });
         if(!response.ok) throw new Error('Failed to delete manager');
         toast({ title: "Sucesso!", description: 'Gerente excluído com sucesso.', variant: 'success' });
         fetchManagers();
-    } catch(error) {
-        toast({ title: "Erro", description: 'Não foi possível excluir o gerente.', variant: 'destructive'});
+    } catch(error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive'});
     }
   };
 

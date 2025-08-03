@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -75,44 +74,35 @@ export default function GerenteProfilePage() {
     const [previewImage, setPreviewImage] = React.useState<string | null>(null);
     const { toast } = useToast();
 
-    const gerenteUserId = process.env.NEXT_PUBLIC_GERENTE_INIT;
-
     const form = useForm<ManagerProfile>({
         resolver: zodResolver(managerProfileSchema),
         defaultValues: {},
     });
 
     const fetchManager = React.useCallback(async () => {
-      if (!gerenteUserId) {
-        toast({ title: 'Erro de Configuração', description: 'ID do gerente não encontrado no ambiente.', variant: 'destructive'});
-        setIsLoading(false);
-        return;
-      }
-      
       setIsLoading(true);
       try {
-          const response = await fetch(`/api/v1/gerentes/${gerenteUserId}`);
+          const response = await fetch(`/api/v1/gerente/perfil`);
           if (!response.ok) throw new Error('Falha ao carregar dados do gerente');
           const data = await response.json();
           
-          setManager(data);
-          form.reset(data);
+          setManager(data.manager);
+          form.reset(data.manager);
       } catch (error: any) {
           toast({ title: 'Erro', description: error.message, variant: 'destructive' });
       } finally {
           setIsLoading(false);
       }
-    }, [form, toast, gerenteUserId]);
+    }, [form, toast]);
 
     React.useEffect(() => {
         fetchManager();
     }, [fetchManager]);
 
     const onSubmit = async (data: Partial<ManagerProfile>) => {
-        if (!gerenteUserId) return;
         setIsSaving(true);
         try {
-            const response = await fetch(`/api/v1/gerentes/${gerenteUserId}`, {
+            const response = await fetch(`/api/v1/gerente/perfil`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),

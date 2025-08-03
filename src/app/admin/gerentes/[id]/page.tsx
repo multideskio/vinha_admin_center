@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -99,7 +98,7 @@ export default function GerenteProfilePage() {
       if (!id) return;
       setIsLoading(true);
       try {
-          const response = await fetch(`/api/v1/gerentes/${id}`);
+          const response = await fetch(`/api/v1/admin/gerentes/${id}`);
           if (!response.ok) throw new Error('Failed to fetch manager data');
           const data = await response.json();
           
@@ -138,7 +137,7 @@ export default function GerenteProfilePage() {
 
     const onSubmit = async (data: ManagerProfile) => {
         try {
-            const response = await fetch(`/api/v1/gerentes/${id}`, {
+            const response = await fetch(`/api/v1/admin/gerentes/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -156,7 +155,7 @@ export default function GerenteProfilePage() {
         try {
             const payload = { [fieldName]: value };
     
-            const response = await fetch(`/api/v1/gerentes/${id}`, {
+            const response = await fetch(`/api/v1/admin/gerentes/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -201,7 +200,7 @@ export default function GerenteProfilePage() {
 
     const handleDelete = async () => {
         try {
-            const response = await fetch(`/api/v1/gerentes/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/v1/admin/gerentes/${id}`, { method: 'DELETE' });
             if(!response.ok) throw new Error('Failed to delete manager');
             toast({ title: "Sucesso!", description: 'Gerente excluído com sucesso.', variant: 'success' });
             router.push('/admin/gerentes');
@@ -490,4 +489,3 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
-
