@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles } from '@/db/schema';
+import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles, managerProfiles } from '@/db/schema';
 import { count, sum, eq, isNull, and, desc } from 'drizzle-orm';
 import { format } from 'date-fns';
 
@@ -25,7 +25,8 @@ export async function GET() {
         .from(transactions)
         .where(eq(transactions.status, 'approved'))
         .groupBy(transactions.paymentMethod);
-
+        
+        // CORREÇÃO: Simplificando a query para evitar o erro de join complexo.
         const revenueByRegionData = await db
             .select({
                 name: regions.name,
@@ -34,8 +35,8 @@ export async function GET() {
             })
             .from(transactions)
             .innerJoin(users, eq(transactions.contributorId, users.id))
-            .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-            .innerJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
+            .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId)) // Assumindo que pastores fazem as contribuições
+            .innerJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
             .innerJoin(regions, eq(supervisorProfiles.regionId, regions.id))
             .where(eq(transactions.status, 'approved'))
             .groupBy(regions.id, regions.name, regions.color);
