@@ -9,10 +9,7 @@ import {
   LogOut,
   PanelLeft,
   LayoutDashboard,
-  UserCog,
-  Church,
   Settings,
-  User as UserIcon,
   ArrowRightLeft,
   Handshake,
 } from 'lucide-react';
@@ -32,16 +29,13 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { logoutUser } from '@/actions/auth';
 
 const menuItems = [
-    { href: '/gerente/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/gerente/supervisores', label: 'Supervisores', icon: UserCog },
-    { href: '/gerente/pastores', label: 'Pastores', icon: UserIcon },
-    { href: '/gerente/igrejas', label: 'Igrejas', icon: Church },
-    { href: '/gerente/transacoes', label: 'Transações', icon: ArrowRightLeft },
-    { href: '/gerente/contribuicoes', label: 'Contribuições', icon: Handshake },
+    { href: '/pastor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/pastor/transacoes', label: 'Transações', icon: ArrowRightLeft },
+    { href: '/pastor/contribuir', label: 'Contribuir', icon: Handshake },
 ];
-  
+
 const settingsItem = {
-    href: '/gerente/perfil',
+    href: '/pastor/perfil',
     label: 'Meu Perfil',
     icon: Settings,
 };
@@ -66,13 +60,13 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-type ManagerHeaderProps = {
+type HeaderProps = {
     userName: string;
     userEmail: string;
     userFallback: string;
 }
 
-export function ManagerHeader({ userName, userEmail, userFallback }: ManagerHeaderProps) {
+export function PastorHeader({ userName, userEmail, userFallback }: HeaderProps) {
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
             <Sheet>
@@ -89,7 +83,7 @@ export function ManagerHeader({ userName, userEmail, userFallback }: ManagerHead
                 <SheetContent side="left" className="flex flex-col">
                 <nav className="grid gap-2 text-lg font-medium">
                     <Link
-                    href="/gerente/dashboard"
+                    href="/pastor/dashboard"
                     className="flex items-center gap-2 text-lg font-semibold"
                     >
                     <Logo className="h-6 w-6 text-primary" />
