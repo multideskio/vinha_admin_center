@@ -5,7 +5,11 @@ import { gatewayConfigurations, transactions as transactionsTable, users, manage
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
+
 const GERENTE_EMAIL_FOR_TESTING = 'gerente@vinha.com';
 
 
@@ -140,7 +144,7 @@ export async function POST(request: Request) {
         const dbStatus = mapCieloStatusToDbStatus(cieloData.Payment?.Status);
 
         await db.insert(transactionsTable).values({
-            companyId: MOCK_COMPANY_ID,
+            companyId: COMPANY_ID,
             contributorId: gerenteUser.id,
             amount: String(validatedData.amount),
             status: dbStatus,

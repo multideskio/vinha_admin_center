@@ -5,7 +5,10 @@ import { notificationRules } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
 
 const notificationRuleSchema = z.object({
     name: z.string().min(1, "O nome da automação é obrigatório."),
@@ -22,7 +25,7 @@ export async function GET() {
     const allRules = await db
       .select()
       .from(notificationRules)
-      .where(eq(notificationRules.companyId, MOCK_COMPANY_ID))
+      .where(eq(notificationRules.companyId, COMPANY_ID))
       .orderBy(desc(notificationRules.createdAt));
       
     return NextResponse.json({ rules: allRules });
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
       
       const [newRule] = await db.insert(notificationRules).values({
         ...validatedData,
-        companyId: MOCK_COMPANY_ID,
+        companyId: COMPANY_ID,
       }).returning();
   
       return NextResponse.json({ success: true, rule: newRule }, { status: 201 });

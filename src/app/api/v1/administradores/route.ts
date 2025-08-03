@@ -6,7 +6,11 @@ import { eq, and, isNull, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
+
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
 const adminSchema = z.object({
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
 
       const newAdmin = await db.transaction(async (tx) => {
         const [newUser] = await tx.insert(users).values({
-            companyId: MOCK_COMPANY_ID,
+            companyId: COMPANY_ID,
             email: validatedData.email,
             password: hashedPassword,
             role: 'admin',

@@ -5,7 +5,10 @@ import { companies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
 
 const companyUpdateSchema = z.object({
   name: z.string().min(1, 'O nome da aplicação é obrigatório.').optional(),
@@ -16,7 +19,7 @@ const companyUpdateSchema = z.object({
 
 export async function GET() {
     try {
-        const [company] = await db.select().from(companies).where(eq(companies.id, MOCK_COMPANY_ID)).limit(1);
+        const [company] = await db.select().from(companies).where(eq(companies.id, COMPANY_ID)).limit(1);
 
         if (!company) {
             return NextResponse.json({ error: "Empresa não encontrada." }, { status: 404 });
@@ -37,7 +40,7 @@ export async function PUT(request: Request) {
 
         const [updatedCompany] = await db.update(companies)
             .set({ ...validatedData, updatedAt: new Date() })
-            .where(eq(companies.id, MOCK_COMPANY_ID))
+            .where(eq(companies.id, COMPANY_ID))
             .returning();
             
         return NextResponse.json({ success: true, company: updatedCompany });

@@ -5,7 +5,10 @@ import { otherSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
 
 const whatsappSettingsSchema = z.object({
     apiUrl: z.string().url(),
@@ -15,7 +18,7 @@ const whatsappSettingsSchema = z.object({
 
 export async function GET() {
     try {
-        const [config] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, MOCK_COMPANY_ID)).limit(1);
+        const [config] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, COMPANY_ID)).limit(1);
         
         if (!config) {
             return NextResponse.json({ config: null });
@@ -40,10 +43,10 @@ export async function PUT(request: Request) {
         const body = await request.json();
         const validatedData = whatsappSettingsSchema.parse(body);
 
-        const [existingConfig] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, MOCK_COMPANY_ID)).limit(1);
+        const [existingConfig] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, COMPANY_ID)).limit(1);
 
         const dataToUpsert = {
-            companyId: MOCK_COMPANY_ID,
+            companyId: COMPANY_ID,
             whatsappApiUrl: validatedData.apiUrl,
             whatsappApiKey: validatedData.apiKey,
             whatsappApiInstance: validatedData.apiInstance,

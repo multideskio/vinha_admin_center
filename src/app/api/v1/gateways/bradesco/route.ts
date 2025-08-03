@@ -5,17 +5,20 @@ import { gatewayConfigurations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
 const GATEWAY_NAME = 'Bradesco';
 
 const bradescoGatewaySchema = z.object({
-    isActive: z.boolean().default(false),
-    environment: z.enum(['production', 'development']),
-    prodClientId: z.string().optional().nullable(),
-    prodClientSecret: z.string().optional().nullable(),
-    devClientId: z.string().optional().nullable(),
-    devClientSecret: z.string().optional().nullable(),
-    certificatePassword: z.string().optional().nullable(),
+  isActive: z.boolean().default(false),
+  environment: z.enum(['production', 'development']),
+  prodClientId: z.string().optional().nullable(),
+  prodClientSecret: z.string().optional().nullable(),
+  devClientId: z.string().optional().nullable(),
+  devClientSecret: z.string().optional().nullable(),
+  certificatePassword: z.string().optional().nullable(),
   });
 
 export async function GET() {
@@ -23,14 +26,14 @@ export async function GET() {
         const [config] = await db.select()
             .from(gatewayConfigurations)
             .where(and(
-                eq(gatewayConfigurations.companyId, MOCK_COMPANY_ID),
+                eq(gatewayConfigurations.companyId, COMPANY_ID),
                 eq(gatewayConfigurations.gatewayName, GATEWAY_NAME)
             ))
             .limit(1);
 
         if (!config) {
              const [newConfig] = await db.insert(gatewayConfigurations).values({
-                companyId: MOCK_COMPANY_ID,
+                companyId: COMPANY_ID,
                 gatewayName: GATEWAY_NAME,
                 isActive: false,
                 environment: 'development',
@@ -53,7 +56,7 @@ export async function PUT(request: Request) {
         const [updatedConfig] = await db.update(gatewayConfigurations)
             .set(validatedData)
             .where(and(
-                eq(gatewayConfigurations.companyId, MOCK_COMPANY_ID),
+                eq(gatewayConfigurations.companyId, COMPANY_ID),
                 eq(gatewayConfigurations.gatewayName, GATEWAY_NAME)
             ))
             .returning();

@@ -5,7 +5,10 @@ import { regions } from '@/db/schema';
 import { eq, and, isNull, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
 
 const regionSchema = z.object({
   name: z.string().min(1),
@@ -17,7 +20,7 @@ export async function GET() {
     const allRegions = await db
       .select()
       .from(regions)
-      .where(and(eq(regions.companyId, MOCK_COMPANY_ID), isNull(regions.deletedAt)))
+      .where(and(eq(regions.companyId, COMPANY_ID), isNull(regions.deletedAt)))
       .orderBy(desc(regions.updatedAt));
       
     return NextResponse.json({ regions: allRegions });
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
   
       const newRegion = await db.insert(regions).values({
         ...validatedData,
-        companyId: MOCK_COMPANY_ID,
+        companyId: COMPANY_ID,
       }).returning();
   
       return NextResponse.json({ success: true, region: newRegion[0] }, { status: 201 });

@@ -25,6 +25,10 @@ if (!process.env.DEFAULT_PASSWORD) {
     throw new Error("DEFAULT_PASSWORD is not set in the environment variables");
 }
 
+if (!process.env.COMPANY_INIT) {
+    throw new Error("COMPANY_INIT is not set in the environment variables");
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -47,6 +51,7 @@ async function main() {
   // Criar Empresa
   console.log('Seeding company...');
   const [company] = await db.insert(companies).values({
+    id: process.env.COMPANY_INIT,
     name: 'Vinha Ministérios',
     supportEmail: 'suporte@vinha.com'
   }).returning() as any[];  
@@ -88,6 +93,7 @@ async function main() {
   // 2. Gerente
   console.log('Seeding manager...');
   const [managerUser] = await db.insert(users).values({
+    id: '034c4d5b-1c5c-4e8a-9e1e-4b2e8a1c7e2d', // ID estático para teste
     companyId: company.id,
     email: 'gerente@vinha.com',
     password: await bcrypt.hash(password, 10),

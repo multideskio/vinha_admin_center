@@ -5,7 +5,10 @@ import { webhooks, webhookEventEnum } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
-const MOCK_COMPANY_ID = "b46ba55d-32d7-43d2-a176-7ab93d7b14dc";
+const COMPANY_ID = process.env.COMPANY_INIT;
+if (!COMPANY_ID) {
+    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+}
 
 const webhookSchema = z.object({
     url: z.string().url(),
@@ -18,7 +21,7 @@ export async function GET() {
     const allWebhooks = await db
       .select()
       .from(webhooks)
-      .where(eq(webhooks.companyId, MOCK_COMPANY_ID))
+      .where(eq(webhooks.companyId, COMPANY_ID))
       .orderBy(desc(webhooks.createdAt));
       
     return NextResponse.json({ webhooks: allWebhooks });
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
       const validatedData = webhookSchema.parse(body);
       
       const [newWebhook] = await db.insert(webhooks).values({
-        companyId: MOCK_COMPANY_ID,
+        companyId: COMPANY_ID,
         url: validatedData.url,
         secret: validatedData.secret,
         events: validatedData.events,
@@ -52,5 +55,3 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
-
-    
