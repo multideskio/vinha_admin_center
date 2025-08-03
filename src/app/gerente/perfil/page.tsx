@@ -74,6 +74,7 @@ export default function GerenteProfilePage() {
     const [manager, setManager] = React.useState<ManagerProfile | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [isSaving, setIsSaving] = React.useState(false);
+    const [isFetchingCep, setIsFetchingCep] = React.useState(false);
     const [previewImage, setPreviewImage] = React.useState<string | null>(null);
     const { toast } = useToast();
 
@@ -101,6 +102,34 @@ export default function GerenteProfilePage() {
     React.useEffect(() => {
         fetchManager();
     }, [fetchManager]);
+
+    const formatCEP = (value: string) => {
+        return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+    };
+
+    const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+        const cep = e.target.value.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+
+        setIsFetchingCep(true);
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const data = await response.json();
+            if (!data.erro) {
+                form.setValue('address', data.logradouro);
+                form.setValue('neighborhood', data.bairro);
+                form.setValue('city', data.localidade);
+                form.setValue('state', data.uf);
+            } else {
+                toast({ title: "Erro", description: "CEP não encontrado.", variant: "destructive" });
+            }
+        } catch (error) {
+            toast({ title: "Erro", description: "Falha ao buscar CEP.", variant: "destructive" });
+        } finally {
+            setIsFetchingCep(false);
+        }
+    };
+
 
     const onSubmit = async (data: Partial<ManagerProfile>) => {
         setIsSaving(true);
@@ -270,9 +299,9 @@ export default function GerenteProfilePage() {
                                 <FormControl>
                                     <PhoneInput
                                         country={'br'}
-                                        value={field.value}
+                                        value={field.value ?? ''}
                                         onChange={field.onChange}
-                                        inputClass="!w-full"
+                                        inputClass='!w-full'
                                      />
                                 </FormControl>
                                 <FormMessage />
@@ -308,12 +337,24 @@ export default function GerenteProfilePage() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <FormField control={form.control} name="cep" render={({ field }) => (
+                             <FormField
+                                control={form.control}
+                                name="cep"
+                                render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>CEP</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormControl>
+                                    <Input 
+                                        {...field} 
+                                        value={field.value ?? ''}
+                                        onChange={(e) => field.onChange(formatCEP(e.target.value))}
+                                        onBlur={handleCepBlur}
+                                        disabled={isFetchingCep}
+                                    />
+                                    </FormControl>
                                 </FormItem>
-                            )} />
+                                )}
+                            />
                             <FormField control={form.control} name="state" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Estado/UF</FormLabel>

@@ -81,6 +81,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import PhoneInput from 'react-phone-input-2';
 
 const managerSchema = z.object({
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
@@ -198,9 +199,11 @@ const GerenteFormModal = ({
         form.setValue('neighborhood', data.bairro);
         form.setValue('city', data.localidade);
         form.setValue('state', data.uf);
+      } else {
+        toast({ title: "Erro", description: "CEP não encontrado.", variant: "destructive" });
       }
     } catch (error) {
-      console.error('Erro ao buscar CEP:', error);
+      toast({ title: "Erro", description: "Falha ao buscar CEP.", variant: "destructive" });
     } finally {
       setIsFetchingCep(false);
     }
@@ -399,17 +402,12 @@ const GerenteFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <PhoneInput
+                        country={'br'}
+                        value={field.value}
+                        onChange={field.onChange}
+                        inputClass='!w-full'
+                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
