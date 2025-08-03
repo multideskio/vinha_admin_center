@@ -45,9 +45,9 @@ export async function GET() {
       
     return NextResponse.json({ admins: result });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar administradores:", error);
-    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao buscar administradores", details: error.message }, { status: 500 });
   }
 }
 
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   
       return NextResponse.json({ success: true, admin: newAdmin }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
@@ -90,6 +90,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Email ou CPF já cadastrado." }, { status: 409 });
       }
 
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+      return NextResponse.json({ error: "Erro ao criar administrador", details: error.message }, { status: 500 });
     }
 }

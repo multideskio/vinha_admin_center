@@ -13,7 +13,6 @@ export async function GET() {
     }
 
     try {
-        // Encontrar os IDs dos supervisores gerenciados por este gerente
         const supervisorsResult = await db
             .select({ id: supervisorProfiles.userId })
             .from(supervisorProfiles)
@@ -35,7 +34,6 @@ export async function GET() {
 
         const networkUserIds = [GERENTE_INIT_ID, ...supervisorIds, ...pastorIds, ...churchIds];
         if (networkUserIds.length === 1 && networkUserIds[0] === GERENTE_INIT_ID) {
-             // To prevent errors with inArray on an empty set, we add a non-existent UUID if the network is empty besides the manager
              networkUserIds.push('00000000-0000-0000-0000-000000000000');
         }
 
@@ -117,8 +115,8 @@ export async function GET() {
             ]
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao buscar dados para o dashboard do gerente:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro ao buscar dados do dashboard do gerente", details: error.message }, { status: 500 });
     }
 }

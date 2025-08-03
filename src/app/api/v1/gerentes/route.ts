@@ -52,9 +52,9 @@ export async function GET() {
       
     return NextResponse.json({ managers: result });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar gerentes:", error);
-    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao buscar gerentes", details: error.message }, { status: 500 });
   }
 }
 
@@ -93,16 +93,15 @@ export async function POST(request: Request) {
   
       return NextResponse.json({ success: true, manager: newManager }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
       console.error("Erro ao criar gerente:", error);
-      // Tratar erro de e-mail duplicado
       if (error instanceof Error && 'constraint' in error && (error as any).constraint === 'users_email_unique') {
         return NextResponse.json({ error: "Este e-mail já está em uso." }, { status: 409 });
       }
 
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+      return NextResponse.json({ error: "Erro ao criar gerente", details: error.message }, { status: 500 });
     }
 }

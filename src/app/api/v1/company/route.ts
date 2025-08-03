@@ -27,9 +27,9 @@ export async function GET() {
 
         return NextResponse.json({ company });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao buscar dados da empresa:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro ao buscar dados da empresa", details: error.message }, { status: 500 });
     }
 }
 
@@ -44,11 +44,11 @@ export async function PUT(request: Request) {
             .returning();
             
         return NextResponse.json({ success: true, company: updatedCompany });
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof z.ZodError) {
             return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
         }
         console.error("Erro ao atualizar dados da empresa:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro ao atualizar dados da empresa", details: error.message }, { status: 500 });
     }
 }

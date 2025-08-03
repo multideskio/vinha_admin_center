@@ -39,12 +39,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     return NextResponse.json({ success: true, region: updatedRegion[0] });
 
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
     }
     console.error("Erro ao atualizar região:", error);
-    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao atualizar região", details: error.message }, { status: 500 });
   }
 }
 
@@ -56,7 +56,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         .update(regions)
         .set({
           deletedAt: new Date(),
-          // Removida a dependência do MOCK_USER_ID
         })
         .where(eq(regions.id, id))
         .returning();
@@ -67,9 +66,8 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   
       return NextResponse.json({ success: true, message: "Região excluída com sucesso." });
   
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao excluir região:", error);
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+      return NextResponse.json({ error: "Erro ao excluir região", details: error.message }, { status: 500 });
     }
   }
-

@@ -25,9 +25,9 @@ export async function GET() {
       
     return NextResponse.json({ regions: allRegions });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar regiões:", error);
-    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao buscar regiões", details: error.message }, { status: 500 });
   }
 }
 
@@ -42,11 +42,11 @@ export async function POST(request: Request) {
       }).returning();
   
       return NextResponse.json({ success: true, region: newRegion[0] }, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
       console.error("Erro ao criar região:", error);
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+      return NextResponse.json({ error: "Erro ao criar região", details: error.message }, { status: 500 });
     }
 }

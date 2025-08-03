@@ -61,9 +61,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
             status: user.status
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao buscar administrador:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro ao buscar administrador", details: error.message }, { status: 500 });
     }
 }
 
@@ -108,12 +108,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   
       return NextResponse.json({ success: true });
   
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
       console.error("Erro ao atualizar administrador:", error);
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+      return NextResponse.json({ error: "Erro ao atualizar administrador", details: error.message }, { status: 500 });
     }
 }
 
@@ -131,8 +131,8 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
         return NextResponse.json({ success: true, message: "Administrador excluído com sucesso." });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao excluir administrador:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro ao excluir administrador", details: error.message }, { status: 500 });
     }
 }

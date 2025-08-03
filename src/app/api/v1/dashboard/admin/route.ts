@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles, managerProfiles } from '@/db/schema';
-import { count, sum, eq, isNull, and, desc } from 'drizzle-orm';
+import { count, sum, eq, isNull, and, desc, sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 
 export async function GET() {
@@ -26,18 +26,17 @@ export async function GET() {
         .where(eq(transactions.status, 'approved'))
         .groupBy(transactions.paymentMethod);
         
-        // CORREÇÃO: Simplificando a query para evitar o erro de join complexo.
         const revenueByRegionData = await db
             .select({
                 name: regions.name,
                 color: regions.color,
-                revenue: sum(transactions.amount).mapWith(Number),
+                revenue: sql<number>`sum(${transactions.amount})`.mapWith(Number),
             })
-            .from(transactions)
-            .innerJoin(users, eq(transactions.contributorId, users.id))
-            .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId)) // Assumindo que pastores fazem as contribuições
-            .innerJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+            .from(supervisorProfiles)
             .innerJoin(regions, eq(supervisorProfiles.regionId, regions.id))
+            .innerJoin(pastorProfiles, eq(supervisorProfiles.userId, pastorProfiles.supervisorId))
+            .innerJoin(users, eq(pastorProfiles.userId, users.id))
+            .innerJoin(transactions, eq(users.id, transactions.contributorId))
             .where(eq(transactions.status, 'approved'))
             .groupBy(regions.id, regions.name, regions.color);
 
@@ -55,7 +54,7 @@ export async function GET() {
         const recentTransactionsData = await db
             .select({
                 id: transactions.id,
-                name: users.email, // Ajustar para pegar o nome do perfil
+                name: users.email,
                 amount: transactions.amount,
                 date: transactions.createdAt,
                 status: transactions.status
@@ -68,7 +67,7 @@ export async function GET() {
         const recentRegistrationsData = await db
             .select({
                 id: users.id,
-                name: users.email, // Ajustar para pegar o nome do perfil
+                name: users.email,
                 role: users.role,
                 date: users.createdAt,
             })
@@ -101,15 +100,14 @@ export async function GET() {
             churchesByRegion: churchesByRegionData,
             recentTransactions,
             recentRegistrations,
-            // Mocked data for now
             newMembers: [
                 { month: 'Jan', count: 120 }, { month: 'Fev', count: 150 }, { month: 'Mar', count: 170 }, 
                 { month: 'Abr', count: 200 }, { month: 'Mai', count: 230 }, { month: 'Jun', count: 180 },
             ]
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao buscar dados para o dashboard do admin:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro ao buscar dados do dashboard", details: error.message }, { status: 500 });
     }
 }

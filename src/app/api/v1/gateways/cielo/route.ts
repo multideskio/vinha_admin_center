@@ -43,9 +43,9 @@ export async function GET() {
         }
         
         return NextResponse.json({ config });
-    } catch (error) {
+    } catch (error: any) {
         console.error(`Erro ao buscar configuração do gateway ${GATEWAY_NAME}:`, error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: `Erro ao buscar configuração do gateway ${GATEWAY_NAME}`, details: error.message }, { status: 500 });
     }
 }
 
@@ -63,11 +63,11 @@ export async function PUT(request: Request) {
             .returning();
             
         return NextResponse.json({ success: true, config: updatedConfig });
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof z.ZodError) {
             return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
         }
         console.error(`Erro ao atualizar configuração do gateway ${GATEWAY_NAME}:`, error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: `Erro ao atualizar configuração do gateway ${GATEWAY_NAME}`, details: error.message }, { status: 500 });
     }
 }
