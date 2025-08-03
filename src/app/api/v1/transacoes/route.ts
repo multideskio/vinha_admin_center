@@ -79,7 +79,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Perfil do gerente de teste não encontrado." }, { status: 404 });
         }
 
-
         let cieloPayload: any = {
             MerchantOrderId: merchantOrderId,
             Customer: {
@@ -120,7 +119,7 @@ export async function POST(request: Request) {
                 cieloPayload.Customer.IdentityType = 'CPF';
                 cieloPayload.Customer.Address = {
                     "Street": gerenteProfile.address,
-                    "Number": "123", // Número ainda fixo, pode ser adicionado ao perfil
+                    "Number": "123",
                     "District": gerenteProfile.neighborhood,
                     "ZipCode": gerenteProfile.cep.replace(/\D/g, ''),
                     "City": gerenteProfile.city,

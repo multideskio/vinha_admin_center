@@ -76,7 +76,6 @@ export default function GerenteProfilePage() {
     const [previewImage, setPreviewImage] = React.useState<string | null>(null);
     const { toast } = useToast();
 
-    // Em um app real, o ID viria da sessão do usuário
     const gerenteUserId = process.env.NEXT_PUBLIC_GERENTE_INIT;
 
     const form = useForm<ManagerProfile>({
@@ -121,7 +120,7 @@ export default function GerenteProfilePage() {
             });
             if (!response.ok) throw new Error('Falha ao atualizar o gerente.');
             toast({ title: 'Sucesso', description: 'Perfil atualizado com sucesso.', variant: 'success' });
-            fetchManager(); // Recarrega os dados para mostrar as atualizações
+            fetchManager();
         } catch (error: any) {
             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
         } finally {
