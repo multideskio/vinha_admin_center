@@ -347,18 +347,18 @@ export default function AdminProfilePage() {
                             control={form.control}
                             name="phone"
                             render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Celular</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                      <span className="text-muted-foreground">🇧🇷 +55</span>
-                                    </div>
-                                    <Input {...field} value={field.value ?? ''} className="pl-16"/>
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                                <FormItem>
+                                    <FormLabel>Celular</FormLabel>
+                                    <FormControl>
+                                        <div className="flex items-center">
+                                            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
+                                            🇧🇷 +55
+                                            </span>
+                                            <Input {...field} value={field.value ?? ''} className="rounded-l-none"/>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                             )}
                         />
                         <FormField
