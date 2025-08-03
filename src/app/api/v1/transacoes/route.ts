@@ -10,8 +10,10 @@ if (!COMPANY_ID) {
     throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
 }
 
-const GERENTE_EMAIL_FOR_TESTING = 'gerente@vinha.com';
-
+const GERENTE_INIT_ID = process.env.GERENTE_INIT;
+if (!GERENTE_INIT_ID) {
+    throw new Error("A variável de ambiente GERENTE_INIT não está definida.");
+}
 
 const transactionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
@@ -61,7 +63,7 @@ function mapCieloStatusToDbStatus(cieloStatus: number): TransactionStatus {
 
 export async function POST(request: Request) {
     try {
-        const [gerenteUser] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, GERENTE_EMAIL_FOR_TESTING)).limit(1);
+        const [gerenteUser] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, GERENTE_INIT_ID)).limit(1);
         if (!gerenteUser) {
             return NextResponse.json({ error: "Usuário gerente de teste não encontrado." }, { status: 404 });
         }
@@ -73,6 +75,10 @@ export async function POST(request: Request) {
         const merchantOrderId = `vinha-${Date.now()}`;
         
         const [gerenteProfile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, gerenteUser.id));
+        if (!gerenteProfile) {
+            return NextResponse.json({ error: "Perfil do gerente de teste não encontrado." }, { status: 404 });
+        }
+
 
         let cieloPayload: any = {
             MerchantOrderId: merchantOrderId,
@@ -105,8 +111,8 @@ export async function POST(request: Request) {
                 }
                 break;
             case 'boleto':
-                if (!gerenteProfile || !gerenteProfile.cpf || !gerenteProfile.address || !gerenteProfile.neighborhood || !gerenteProfile.city || !gerenteProfile.state || !gerenteProfile.cep) {
-                    throw new Error("Endereço ou CPF incompletos. Por favor, complete seu perfil antes de gerar um boleto.");
+                if (!gerenteProfile.cpf || !gerenteProfile.address || !gerenteProfile.neighborhood || !gerenteProfile.city || !gerenteProfile.state || !gerenteProfile.cep) {
+                    return NextResponse.json({ error: "Endereço ou CPF incompletos. Por favor, complete seu perfil antes de gerar um boleto." }, { status: 400 });
                 }
                 cieloPayload.Payment.Type = 'Boleto';
                 cieloPayload.Payment.Provider = 'Bradesco2';

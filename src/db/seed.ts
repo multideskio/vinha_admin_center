@@ -29,6 +29,18 @@ if (!process.env.COMPANY_INIT) {
     throw new Error("COMPANY_INIT is not set in the environment variables");
 }
 
+// IDs de teste do ambiente
+const ADMIN_INIT = process.env.ADMIN_INIT;
+const GERENTE_INIT = process.env.GERENTE_INIT;
+const SUPERVISOR_INIT = process.env.SUPERVISOR_INIT;
+const PASTOR_INIT = process.env.PASTOR_INIT;
+const IGREJA_INIT = process.env.IGREJA_INIT;
+
+if (!ADMIN_INIT || !GERENTE_INIT || !SUPERVISOR_INIT || !PASTOR_INIT || !IGREJA_INIT) {
+    throw new Error("Uma ou mais variáveis de ID de usuário inicial não estão definidas no ambiente.");
+}
+
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -69,13 +81,10 @@ async function main() {
 
   const password = process.env.DEFAULT_PASSWORD!;
 
-  if (!process.env.DEFAULT_PASSWORD) {
-    throw new Error("DEFAULT_PASSWORD is not set");
-  }
-
   // 1. Admin
   console.log('Seeding admin...');
   const [adminUser] = await db.insert(users).values({
+    id: ADMIN_INIT,
     companyId: company.id,
     email: 'admin@vinha.com',
     password: await bcrypt.hash(password, 10),
@@ -93,7 +102,7 @@ async function main() {
   // 2. Gerente
   console.log('Seeding manager...');
   const [managerUser] = await db.insert(users).values({
-    id: '034c4d5b-1c5c-4e8a-9e1e-4b2e8a1c7e2d', // ID estático para teste
+    id: GERENTE_INIT,
     companyId: company.id,
     email: 'gerente@vinha.com',
     password: await bcrypt.hash(password, 10),
@@ -106,11 +115,17 @@ async function main() {
     firstName: 'Paulo',
     lastName: 'Ferreira',
     cpf: '222.222.222-22',
+    address: 'Av. Exemplo, 123',
+    neighborhood: 'Centro',
+    city: 'São Paulo',
+    state: 'SP',
+    cep: '01000-000'
   });
 
   // 3. Supervisor
   console.log('Seeding supervisor...');
   const [supervisorUser] = await db.insert(users).values({
+    id: SUPERVISOR_INIT,
     companyId: company.id,
     email: 'supervisor@vinha.com',
     password: await bcrypt.hash(password, 10),
@@ -130,6 +145,7 @@ async function main() {
   // 4. Pastor
   console.log('Seeding pastor...');
   const [pastorUser] = await db.insert(users).values({
+    id: PASTOR_INIT,
     companyId: company.id,
     email: 'pastor@vinha.com',
     password: await bcrypt.hash(password, 10),
@@ -148,6 +164,7 @@ async function main() {
   // 5. Igreja
   console.log('Seeding church...');
   const [churchUser] = await db.insert(users).values({
+    id: IGREJA_INIT,
     companyId: company.id,
     email: 'igreja@vinha.com',
     password: await bcrypt.hash(password, 10),
