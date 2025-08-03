@@ -1,4 +1,5 @@
 
+
 import * as React from 'react';
 import type { Metadata } from 'next';
 import { GerenteSidebar } from '@/components/layout/gerente-sidebar';
