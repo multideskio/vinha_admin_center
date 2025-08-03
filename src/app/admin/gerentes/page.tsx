@@ -215,7 +215,7 @@ const GerenteFormModal = ({
           <DialogTitle>Cadastro de gerente</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4 overflow-y-auto max-h-[80vh]">
             <Alert
               variant="default"
               className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
@@ -702,4 +702,3 @@ export default function GerentesPage() {
     </div>
   );
 }
-

@@ -290,7 +290,7 @@ const ChurchFormModal = ({
           <DialogTitle>Cadastro de igrejas</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-2 overflow-y-auto max-h-[80vh]">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4 overflow-y-auto max-h-[80vh]">
             <FormField
               control={form.control}
               name="supervisorId"
@@ -524,7 +524,6 @@ const ChurchFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
-                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -768,7 +767,6 @@ export default function IgrejasPage() {
             ))
         ) : paginatedChurches.length > 0 ? (
             paginatedChurches.map((church, index) => {
-              const supervisor = supervisors.find((s) => s.id === church.supervisorId);
               return (
                 <Card key={church.id}>
                   <CardContent className="pt-6">
@@ -786,7 +784,7 @@ export default function IgrejasPage() {
                           #{((currentPage - 1) * itemsPerPage) + index + 1} - {church.nomeFantasia}
                         </h3>
                         <div className="space-y-1 text-sm text-muted-foreground">
-                          <p className="flex items-center gap-2"><User size={14} /> <span>Supervisor: {supervisor?.firstName} {supervisor?.lastName}</span></p>
+                          <p className="flex items-center gap-2"><User size={14} /> <span>Supervisor: {church.supervisorName || 'N/A'}</span></p>
                           <p className="flex items-center gap-2"><FileText size={14} /> <span>{church.cnpj}</span></p>
                           <p className="flex items-center gap-2"><Phone size={14} /> <span>{church.phone}</span></p>
                           <p className="flex items-center gap-2"><Mail size={14} /> <span>{church.email}</span></p>

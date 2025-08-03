@@ -243,7 +243,7 @@ const SupervisorFormModal = ({
           <DialogTitle>Cadastro de supervisor</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6 p-2">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4 overflow-y-auto max-h-[80vh]">
             <Alert
               variant="default"
               className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
@@ -458,7 +458,6 @@ const SupervisorFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
-                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -715,8 +714,12 @@ export default function SupervisoresPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Supervisores</h1>
-          <p className="text-sm text-muted-foreground">Exibindo {filteredSupervisors.length} de {supervisors.length} resultados</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Supervisores
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Exibindo {filteredSupervisors.length} de {supervisors.length} resultados
+          </p>
         </div>
         <div className="flex items-center gap-2">
             <div className='relative'>

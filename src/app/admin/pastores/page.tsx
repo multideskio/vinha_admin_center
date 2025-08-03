@@ -14,6 +14,7 @@ import {
   MapPin,
   Pencil,
   User,
+  Map,
   Calendar as CalendarIcon,
   Search,
   ChevronLeft,
@@ -96,7 +97,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 const pastorSchema = z.object({
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
@@ -191,7 +192,7 @@ const PastorFormModal = ({
         });
     }
   };
-
+  
   const formatCPF = (value: string) => {
     return value
       .replace(/\D/g, '')
@@ -200,7 +201,7 @@ const PastorFormModal = ({
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
       .slice(0, 14);
   };
-
+    
   const formatCEP = (value: string) => {
     return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
   };
@@ -242,7 +243,7 @@ const PastorFormModal = ({
           <DialogTitle>Cadastro de pastores</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6 p-2">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4 overflow-y-auto max-h-[80vh]">
             <Alert
               variant="default"
               className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
@@ -478,7 +479,6 @@ const PastorFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
-                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -674,7 +674,6 @@ export default function PastoresPage() {
             ))
         ) : paginatedPastors.length > 0 ? (
             paginatedPastors.map((pastor, index) => {
-                const supervisor = supervisors.find(s => s.id === pastor.supervisorId);
                 return (
                     <Card key={pastor.id}>
                         <CardContent className="pt-6">
@@ -692,7 +691,7 @@ export default function PastoresPage() {
                                 #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
                             </h3>
                             <div className="space-y-1 text-sm text-muted-foreground">
-                                <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {supervisor?.firstName} {supervisor?.lastName}</span></p>
+                                <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
                                 <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
                                 <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
                                 <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
