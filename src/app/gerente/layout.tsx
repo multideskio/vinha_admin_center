@@ -1,4 +1,5 @@
 
+'use client';
 
 import * as React from 'react';
 import type { Metadata } from 'next';
@@ -100,7 +101,7 @@ export default async function ManagerLayout({
     userEmail = user.email;
 
     if (profile) {
-      isProfileComplete = !!(profile.cep && profile.state && profile.city && profile.neighborhood && profile.address);
+      isProfileComplete = !!(profile.cep && profile.state && profile.city && profile.neighborhood);
     }
   }
 
