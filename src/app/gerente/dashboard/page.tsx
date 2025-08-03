@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Activity, DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, AlertTriangle } from 'lucide-react';
+import { Activity, DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, RefreshCw, AlertTriangle } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -65,7 +65,7 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
     const fetchData = React.useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/v1/dashboard/admin');
+            const response = await fetch('/api/v1/gerente/dashboard');
             if (!response.ok) {
                 throw new Error('Falha ao carregar os dados do dashboard.');
             }
@@ -292,4 +292,3 @@ export default function ManagerDashboardPage({ isProfileComplete }: { isProfileC
     </div>
   );
 }
-    
