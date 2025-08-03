@@ -2,12 +2,11 @@
 'use client';
 
 import * as React from 'react';
-import { Activity, DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Activity, DollarSign, Users, Church, UserCog, User, RefreshCw, AlertTriangle } from 'lucide-react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -57,20 +56,33 @@ type DashboardData = {
     newMembers: { month: string; count: number; }[];
 }
 
-export default function ManagerDashboardPage({ isProfileComplete }: { isProfileComplete: boolean }) {
+export default function ManagerDashboardPage() {
     const [data, setData] = React.useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [isProfileComplete, setIsProfileComplete] = React.useState(true);
     const { toast } = useToast();
 
     const fetchData = React.useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/v1/gerente/dashboard');
-            if (!response.ok) {
-                const errorData = await response.json();
+            const [dashboardRes, profileRes] = await Promise.all([
+                fetch('/api/v1/gerente/dashboard'),
+                fetch('/api/v1/gerente/perfil')
+            ]);
+            
+            if (!dashboardRes.ok) {
+                const errorData = await dashboardRes.json();
                 throw new Error(errorData.error ||'Falha ao carregar os dados do dashboard.');
             }
-            const dashboardData = await response.json();
+            if (!profileRes.ok) {
+                 throw new Error('Falha ao verificar o perfil do gerente.');
+            }
+
+            const dashboardData = await dashboardRes.json();
+            const profileData = await profileRes.json();
+            
+            const profile = profileData.manager;
+            setIsProfileComplete(!!(profile.cep && profile.state && profile.city && profile.neighborhood));
             
             const kpis: KpiData[] = [
                 { title: 'Arrecadação na Rede', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+15.2% em relação ao mês passado', icon: DollarSign },
