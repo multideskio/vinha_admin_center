@@ -183,250 +183,272 @@ export default function GerenteProfilePage() {
 
 
     return (
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left Column: Profile Card */}
-        <div className="lg:col-span-1">
-            <Card>
-            <CardContent className="flex flex-col items-center pt-6 text-center">
-                <div className="relative">
-                <Avatar className="h-24 w-24">
-                    <AvatarImage src={previewImage || manager.avatarUrl || "https://placehold.co/96x96.png"} alt={manager.firstName ?? ''} data-ai-hint="male person" />
-                    <AvatarFallback>{manager.firstName?.[0]}{manager.lastName?.[0]}</AvatarFallback>
-                </Avatar>
-                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                        <Camera className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <span className="sr-only">Trocar foto</span>
-                </Label>
-                <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-                </div>
-                <h2 className="mt-4 text-xl font-semibold">
-                {manager.firstName} {manager.lastName}
-                </h2>
-                <p className="text-muted-foreground">Gerente</p>
-            </CardContent>
-            <Separator />
-            <CardContent className="pt-6">
-                <h3 className="mb-4 font-semibold">Redes sociais</h3>
-                <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                    <Facebook className="h-5 w-5 text-muted-foreground" />
-                    <Input
-                        defaultValue={manager.facebook ?? ''}
-                        placeholder="https://facebook.com/..."
-                    />
-                </div>
-                <div className="flex items-center gap-3">
-                    <Instagram className="h-5 w-5 text-muted-foreground" />
-                    <Input
-                        defaultValue={manager.instagram ?? ''}
-                        placeholder="https://instagram.com/..."
-                    />
-                </div>
-                <div className="flex items-center gap-3">
-                    <Globe className="h-5 w-5 text-muted-foreground" />
-                    <Input
-                        defaultValue={manager.website ?? ''}
-                        placeholder="https://website.com/..."
-                    />
-                </div>
-                </div>
-            </CardContent>
-            </Card>
-        </div>
-
-        {/* Right Column: Tabs and Form */}
-        <div className="lg:col-span-2">
-            <Tabs defaultValue="profile">
-            <TabsList>
-                <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-            </TabsList>
-            <TabsContent value="profile">
-                <Card>
-                <CardContent className="pt-6">
-                    <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField
-                            control={form.control}
-                            name="firstName"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Nome</FormLabel>
-                                <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="lastName"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Sobre-nome</FormLabel>
-                                <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="cpf"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>CPF</FormLabel>
-                                <FormControl>
-                                <Input {...field} disabled value={field.value ?? ''} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                {/* Left Column: Profile Card */}
+                <div className="lg:col-span-1">
+                    <Card>
+                    <CardContent className="flex flex-col items-center pt-6 text-center">
+                        <div className="relative">
+                        <Avatar className="h-24 w-24">
+                            <AvatarImage src={previewImage || manager.avatarUrl || "https://placehold.co/96x96.png"} alt={manager.firstName ?? ''} data-ai-hint="male person" />
+                            <AvatarFallback>{manager.firstName?.[0]}{manager.lastName?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                                <Camera className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <span className="sr-only">Trocar foto</span>
+                        </Label>
+                        <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                         </div>
-
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <h2 className="mt-4 text-xl font-semibold">
+                        {manager.firstName} {manager.lastName}
+                        </h2>
+                        <p className="text-muted-foreground">Gerente</p>
+                    </CardContent>
+                    <Separator />
+                    <CardContent className="pt-6">
+                        <h3 className="mb-4 font-semibold">Redes sociais</h3>
+                        <div className="space-y-3">
                         <FormField
                             control={form.control}
-                            name="phone"
+                            name="facebook"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Celular/WhatsApp</FormLabel>
-                                <FormControl>
-                                    <PhoneInput
-                                        country={'br'}
-                                        value={field.value ?? ''}
-                                        onChange={field.onChange}
-                                        inputClass='!w-full'
-                                     />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="landline"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Fixo</FormLabel>
-                                <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Email</FormLabel>
-                                <FormControl>
-                                <Input type="email" {...field} value={field.value ?? ''} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                             <FormField
-                                control={form.control}
-                                name="cep"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>CEP</FormLabel>
                                     <FormControl>
-                                    <Input 
-                                        {...field} 
-                                        value={field.value ?? ''}
-                                        onChange={(e) => field.onChange(formatCEP(e.target.value))}
-                                        onBlur={handleCepBlur}
-                                        disabled={isFetchingCep}
-                                    />
+                                        <div className="flex items-center gap-3">
+                                            <Facebook className="h-5 w-5 text-muted-foreground" />
+                                            <Input placeholder="https://facebook.com/..." {...field} value={field.value ?? ''}/>
+                                        </div>
                                     </FormControl>
-                                </FormItem>
-                                )}
-                            />
-                            <FormField control={form.control} name="state" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Estado/UF</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                    <FormMessage/>
                                 </FormItem>
                             )} />
-                            <FormField control={form.control} name="city" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Cidade</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
-                                </FormItem>
-                            )} />
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <FormField control={form.control} name="neighborhood" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Bairro</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="address" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Endereço</FormLabel>
-                                    <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="titheDay" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Dia do dízimo</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
-                                </FormItem>
-                            )} />
-                        </div>
-
-                        <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        <AlertDescription>
-                            <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá acessar usando a senha anterior.
-                        </AlertDescription>
-                        </Alert>
-
                         <FormField
-                        control={form.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                            <FormItem>
-                            <Label>Atualize a senha do gerente</Label>
-                            <FormControl>
-                                <div className="relative mt-1">
-                                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} value={field.value ?? ''}/>
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-
-                        <div className="flex justify-end">
-                        <Button type="submit" disabled={isSaving}>
-                            {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                            Alterar cadastro
-                        </Button>
+                            control={form.control}
+                            name="instagram"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <div className="flex items-center gap-3">
+                                            <Instagram className="h-5 w-5 text-muted-foreground" />
+                                            <Input placeholder="https://instagram.com/..." {...field} value={field.value ?? ''}/>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            )} />
+                         <FormField
+                            control={form.control}
+                            name="website"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <div className="flex items-center gap-3">
+                                            <Globe className="h-5 w-5 text-muted-foreground" />
+                                            <Input placeholder="https://seu-site.com" {...field} value={field.value ?? ''}/>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            )} />
                         </div>
-                    </form>
-                    </Form>
-                </CardContent>
-                </Card>
-            </TabsContent>
-            </Tabs>
-        </div>
-        </div>
+                    </CardContent>
+                    </Card>
+                </div>
+
+                {/* Right Column: Tabs and Form */}
+                <div className="lg:col-span-2">
+                    <Tabs defaultValue="profile">
+                    <TabsList>
+                        <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="profile">
+                        <Card>
+                        <CardContent className="pt-6 space-y-6">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <FormField
+                                    control={form.control}
+                                    name="firstName"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nome</FormLabel>
+                                        <FormControl>
+                                        <Input {...field} value={field.value ?? ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="lastName"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Sobre-nome</FormLabel>
+                                        <FormControl>
+                                        <Input {...field} value={field.value ?? ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="cpf"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>CPF</FormLabel>
+                                        <FormControl>
+                                        <Input {...field} disabled value={field.value ?? ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <FormField
+                                    control={form.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Celular/WhatsApp</FormLabel>
+                                        <FormControl>
+                                            <PhoneInput
+                                                country={'br'}
+                                                value={field.value ?? ''}
+                                                onChange={field.onChange}
+                                                inputClass='!w-full'
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="landline"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fixo</FormLabel>
+                                        <FormControl>
+                                        <Input {...field} value={field.value ?? ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                        <Input type="email" {...field} value={field.value ?? ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <FormField
+                                        control={form.control}
+                                        name="cep"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>CEP</FormLabel>
+                                            <FormControl>
+                                            <Input 
+                                                {...field} 
+                                                value={field.value ?? ''}
+                                                onChange={(e) => field.onChange(formatCEP(e.target.value))}
+                                                onBlur={handleCepBlur}
+                                                disabled={isFetchingCep}
+                                            />
+                                            </FormControl>
+                                        </FormItem>
+                                        )}
+                                    />
+                                    <FormField control={form.control} name="state" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Estado/UF</FormLabel>
+                                            <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="city" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Cidade</FormLabel>
+                                            <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Bairro</FormLabel>
+                                            <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="address" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Endereço</FormLabel>
+                                            <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="titheDay" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Dia do dízimo</FormLabel>
+                                            <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
+                                        </FormItem>
+                                    )} />
+                                </div>
+
+                                <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
+                                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                <AlertDescription>
+                                    <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá acessar usando a senha anterior.
+                                </AlertDescription>
+                                </Alert>
+
+                                <FormField
+                                control={form.control}
+                                name="newPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <Label>Atualize a senha do gerente</Label>
+                                    <FormControl>
+                                        <div className="relative mt-1">
+                                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            <Input type="password" placeholder="Nova Senha" className="pl-9" {...field} value={field.value ?? ''}/>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+
+                                <div className="flex justify-end">
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                                    Alterar cadastro
+                                </Button>
+                                </div>
+                        </CardContent>
+                        </Card>
+                    </TabsContent>
+                    </Tabs>
+                </div>
+                </div>
+            </form>
+        </Form>
     );
 }
+
