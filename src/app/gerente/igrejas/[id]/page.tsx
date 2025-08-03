@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -50,11 +51,11 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const churchProfileSchema = z.object({
-    id: z.string().optional(),
     supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
-    cnpj: z.string().min(1, 'O CNPJ/CPF é obrigatório.'),
     razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
     nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
     email: z.string().email({ message: 'E-mail inválido.' }),
@@ -66,59 +67,179 @@ const churchProfileSchema = z.object({
     foundationDate: z.date({
       required_error: 'A data de fundação é obrigatória.',
     }),
-    titheDay: z.coerce.number().min(1).max(31),
+    titheDay: z.coerce.number().min(1).max(31).nullable(),
     phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.'),
-    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.'),
-    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.'),
-    password: z.string().optional(),
-    facebook: z.string().url().optional().or(z.literal('')),
-    instagram: z.string().url().optional().or(z.literal('')),
-    website: z.string().url().optional().or(z.literal('')),
-  });
+    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable(),
+    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable(),
+    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable(),
+    newPassword: z.string().optional().or(z.literal('')),
+    facebook: z.string().url().or(z.literal('')).nullable(),
+    instagram: z.string().url().or(z.literal('')).nullable(),
+    website: z.string().url().or(z.literal('')).nullable(),
+}).partial();
 
-type ChurchProfile = z.infer<typeof churchProfileSchema>;
-
-
-const churchData: ChurchProfile = {
-  id: 'chu-01',
-  razaoSocial: 'IGREJA EVANGELICA ASSEMBLEIA DE DEUS',
-  nomeFantasia: 'Assembleia de Deus Madureira',
-  email: 'contato@admadureira.com',
-  phone: '(11) 98888-7777',
-  cnpj: '55.343.456/0001-21',
-  cep: '01002-000',
-  state: 'SP',
-  city: 'São Paulo',
-  neighborhood: 'Sé',
-  address: 'Praça da Sé, 100',
-  foundationDate: new Date('1950-01-15T00:00:00'),
-  titheDay: 10,
-  supervisorId: 'sup-01',
-  treasurerFirstName: 'José',
-  treasurerLastName: 'Contas',
-  treasurerCpf: '123.456.789-00',
-  facebook: 'https://facebook.com',
-  instagram: 'https://instagram.com',
-  website: 'https://admadureira.com',
+type ChurchProfile = z.infer<typeof churchProfileSchema> & {
+    id: string;
+    cnpj?: string;
+    status: string;
+    avatarUrl?: string;
 };
 
-const supervisors = [
-    { id: 'sup-01', name: 'Carlos Andrade' },
-    { id: 'sup-02', name: 'Ana Beatriz' },
-    { id: 'sup-03', name: 'Jabez Henrique' },
-];
+type Supervisor = {
+    id: string;
+    firstName: string;
+    lastName: string;
+}
+
 
 export default function IgrejaProfilePage() {
+  const [church, setChurch] = React.useState<ChurchProfile | null>(null);
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [previewImage, setPreviewImage] = React.useState<string | null>(null);
+
+  const params = useParams();
+  const router = useRouter();
+  const { id } = params;
+  const { toast } = useToast();
+
   const form = useForm<ChurchProfile>({
     resolver: zodResolver(churchProfileSchema),
-    defaultValues: churchData,
+    defaultValues: {
+        razaoSocial: '',
+        nomeFantasia: '',
+        email: '',
+        phone: '',
+        cep: '',
+        state: '',
+        city: '',
+        neighborhood: '',
+        address: '',
+        foundationDate: new Date(),
+        titheDay: 1,
+        supervisorId: '',
+        treasurerFirstName: '',
+        treasurerLastName: '',
+        treasurerCpf: '',
+        newPassword: '',
+        facebook: '',
+        instagram: '',
+        website: '',
+    },
   });
 
-  const onSubmit = (data: ChurchProfile) => {
-    console.log(data);
-    // Handle form submission
+  const fetchData = React.useCallback(async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
+        const [churchRes, supervisorsRes] = await Promise.all([
+            fetch(`/api/v1/igrejas/${id}`),
+            fetch('/api/v1/supervisores?minimal=true'),
+        ]);
+
+        if (!churchRes.ok) throw new Error('Falha ao carregar dados da igreja.');
+        if (!supervisorsRes.ok) throw new Error('Falha ao carregar supervisores.');
+
+        const churchData = await churchRes.json();
+        const supervisorsData = await supervisorsRes.json();
+        
+        const sanitizedData = {
+            ...churchData,
+            supervisorId: churchData.supervisorId ?? '',
+            razaoSocial: churchData.razaoSocial ?? '',
+            nomeFantasia: churchData.nomeFantasia ?? '',
+            email: churchData.email ?? '',
+            phone: churchData.phone ?? '',
+            cep: churchData.cep ?? '',
+            state: churchData.state ?? '',
+            city: churchData.city ?? '',
+            neighborhood: churchData.neighborhood ?? '',
+            address: churchData.address ?? '',
+            foundationDate: churchData.foundationDate ? new Date(churchData.foundationDate) : new Date(),
+            titheDay: churchData.titheDay ?? 1,
+            treasurerFirstName: churchData.treasurerFirstName ?? '',
+            treasurerLastName: churchData.treasurerLastName ?? '',
+            treasurerCpf: churchData.treasurerCpf ?? '',
+            newPassword: '',
+            facebook: churchData.facebook ?? '',
+            instagram: churchData.instagram ?? '',
+            website: churchData.website ?? '',
+        };
+
+        setChurch(sanitizedData);
+        setSupervisors(supervisorsData.supervisors);
+        form.reset(sanitizedData);
+    } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [id, form, toast]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const onSubmit = async (data: Partial<ChurchProfile>) => {
+    setIsSaving(true);
+    try {
+        const response = await fetch(`/api/v1/igrejas/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Falha ao atualizar a igreja.');
+        toast({ title: 'Sucesso', description: 'Igreja atualizada com sucesso.', variant: 'success' });
+    } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+    } finally {
+        setIsSaving(false);
+    }
   };
+
+  const handleDelete = async () => {
+    try {
+        const response = await fetch(`/api/v1/igrejas/${id}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Falha ao excluir a igreja.');
+        toast({ title: "Sucesso!", description: 'Igreja excluída com sucesso.', variant: 'success' });
+        router.push('/admin/igrejas');
+    } catch(error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive'});
+    }
+  }
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPreviewImage(reader.result as string);
+            toast({
+                title: 'Preview da Imagem',
+                description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
+  if (isLoading) {
+      return (
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                  <Card><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+              </div>
+              <div className="lg:col-span-2">
+                  <Card><CardContent className="pt-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+              </div>
+          </div>
+      )
+  }
+
+  if (!church) {
+      return <p>Igreja não encontrada.</p>;
+  }
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -126,22 +247,21 @@ export default function IgrejaProfilePage() {
       <div className="lg:col-span-1">
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
+          <div className="relative">
               <Avatar className="h-24 w-24">
-                <AvatarImage src="https://placehold.co/96x96.png" alt={churchData.nomeFantasia} data-ai-hint="church building" />
-                <AvatarFallback>IDM</AvatarFallback>
+                <AvatarImage src={previewImage || church.avatarUrl || "https://placehold.co/96x96.png"} alt={church.nomeFantasia ?? ''} data-ai-hint="church building" />
+                <AvatarFallback>{church.nomeFantasia?.[0]}</AvatarFallback>
               </Avatar>
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-              >
-                <Camera className="h-4 w-4" />
-                <span className="sr-only">Trocar foto</span>
-              </Button>
-            </div>
+              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <span className="sr-only">Trocar foto</span>
+              </Label>
+              <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+              </div>
             <h2 className="mt-4 text-xl font-semibold">
-              {churchData.nomeFantasia}
+              {church.nomeFantasia}
             </h2>
             <p className="text-muted-foreground">Igreja</p>
           </CardContent>
@@ -152,21 +272,21 @@ export default function IgrejaProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={churchData.facebook}
+                  defaultValue={church.facebook ?? ''}
                   placeholder="https://facebook.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={churchData.instagram}
+                  defaultValue={church.instagram ?? ''}
                   placeholder="https://instagram.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={churchData.website}
+                  defaultValue={church.website ?? ''}
                   placeholder="https://website.com/..."
                 />
               </div>
@@ -194,7 +314,7 @@ export default function IgrejaProfilePage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Selecione um supervisor</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecione um supervisor" />
@@ -203,7 +323,7 @@ export default function IgrejaProfilePage() {
                             <SelectContent>
                             {supervisors.map((supervisor) => (
                                 <SelectItem key={supervisor.id} value={supervisor.id}>
-                                {supervisor.name}
+                                {supervisor.firstName} {supervisor.lastName}
                                 </SelectItem>
                             ))}
                             </SelectContent>
@@ -221,7 +341,7 @@ export default function IgrejaProfilePage() {
                             <FormItem>
                                 <FormLabel>CNPJ</FormLabel>
                                 <FormControl>
-                                <Input {...field} disabled />
+                                <Input {...field} disabled value={church.cnpj ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -234,7 +354,7 @@ export default function IgrejaProfilePage() {
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
-                                <Input type="email" {...field} />
+                                <Input type="email" {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -250,7 +370,7 @@ export default function IgrejaProfilePage() {
                             <FormItem>
                                 <FormLabel>Razão Social</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -263,7 +383,7 @@ export default function IgrejaProfilePage() {
                             <FormItem>
                                 <FormLabel>Nome Fantasia</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -275,19 +395,19 @@ export default function IgrejaProfilePage() {
                         <FormField control={form.control} name="cep" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>CEP</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="state" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Estado/UF</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="city" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Cidade</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -296,13 +416,13 @@ export default function IgrejaProfilePage() {
                         <FormField control={form.control} name="neighborhood" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Bairro</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Endereço</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -325,7 +445,7 @@ export default function IgrejaProfilePage() {
                                         )}
                                     >
                                         {field.value ? (
-                                        format(field.value, "dd/MM/yyyy")
+                                        format(new Date(field.value), "dd/MM/yyyy")
                                         ) : (
                                         <span>dd/mm/aaaa</span>
                                         )}
@@ -352,7 +472,7 @@ export default function IgrejaProfilePage() {
                         <FormField control={form.control} name="titheDay" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Dia do dízimo</FormLabel>
-                                <FormControl><Input type="number" {...field} /></FormControl>
+                                <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
                             </FormItem>
                         )} />
                          <FormField
@@ -362,7 +482,7 @@ export default function IgrejaProfilePage() {
                             <FormItem>
                                 <FormLabel>Celular</FormLabel>
                                 <FormControl>
-                                <Input {...field} />
+                                <Input {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -376,19 +496,19 @@ export default function IgrejaProfilePage() {
                         <FormField control={form.control} name="treasurerFirstName" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Nome</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="treasurerLastName" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Sobrenome</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="treasurerCpf" render={({ field }) => (
                              <FormItem>
                                 <FormLabel>CPF</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -403,7 +523,7 @@ export default function IgrejaProfilePage() {
 
                      <FormField
                       control={form.control}
-                      name="password"
+                      name="newPassword"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Crie ou atualize a senha da igreja</FormLabel>
@@ -420,7 +540,10 @@ export default function IgrejaProfilePage() {
 
 
                     <div className="flex justify-end">
-                      <Button type="submit">Alterar cadastro</Button>
+                      <Button type="submit" disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Alterar cadastro
+                      </Button>
                     </div>
                   </form>
                 </Form>
@@ -449,7 +572,7 @@ export default function IgrejaProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive">Excluir permanentemente</Button>
+                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button>
               </CardContent>
             </Card>
           </TabsContent>
