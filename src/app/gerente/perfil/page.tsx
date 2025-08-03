@@ -42,6 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import PhoneInput from 'react-phone-input-2';
 
 
 const managerProfileSchema = z.object({
@@ -267,12 +268,12 @@ export default function GerenteProfilePage() {
                                 <FormItem>
                                 <FormLabel>Celular/WhatsApp</FormLabel>
                                 <FormControl>
-                                    <div className="flex items-center">
-                                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                        🇧🇷 +55
-                                        </span>
-                                        <Input {...field} value={field.value ?? ''} className="rounded-l-none"/>
-                                    </div>
+                                    <PhoneInput
+                                        country={'br'}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        inputClass="!w-full"
+                                     />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
