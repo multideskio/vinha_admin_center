@@ -22,7 +22,7 @@ A estrutura foi projetada para ser centralizada, segura e escalável.
 A tabela `companies` é a "mãe" de toda a estrutura. Ela armazena as configurações globais da aplicação, como o nome do sistema, logo, e-mail de suporte e modo de manutenção. Todos os outros dados (usuários, regiões, etc.) estão vinculados a uma empresa.
 
 ### Tabela Central: `users`
-A tabela `users` é o pilar da autenticação e identificação. Ela contém as informações essenciais de login (`email`, `password` em hash) e o `role` (perfil) de cada pessoa ou entidade no sistema. Perfis específicos (como administrador, pastor, igreja) são armazenados em tabelas separadas e se relacionam com a tabela `users` através de uma chave estrangeira (`userId`).
+A tabela `users` é o pilar da autenticação e identificação. Ela contém as informações essenciais de login (`email`, `password` em hash) e o `role` (perfil) de cada pessoa ou entidade no sistema. Perfis específicos (como administrador, gerente, pastor) são armazenados em tabelas separadas e se relacionam com a tabela `users` através de uma chave estrangeira (`userId`).
 
 ### Tabela de Sessões: `sessions`
 Para gerenciar o estado de login dos usuários, a tabela `sessions` armazena as sessões ativas. Ela é gerenciada pelo Lucia Auth e contém o ID da sessão, a referência ao `userId` e a data de expiração.
@@ -41,7 +41,7 @@ Para garantir um desacoplamento claro entre o frontend e o backend, a aplicaçã
 
 *   **Endpoints:** Os endpoints da API estão localizados no diretório `src/app/api/`. A estrutura de pastas segue o padrão de versionamento, como em `src/app/api/v1/[recurso]`.
 *   **Manipuladores de Rota (Route Handlers):** Cada endpoint é implementado usando os *Route Handlers* do Next.js, com arquivos como `route.ts` que exportam funções assíncronas correspondentes aos métodos HTTP (`GET`, `POST`, `PUT`, `DELETE`).
-*   **Exemplo (Regiões e Administradores):** As funcionalidades de Regiões, Administradores, e Gateways foram migradas para esta arquitetura. Todas as operações CRUD são tratadas por seus respectivos endpoints, como `/api/v1/regioes`, `/api/v1/administradores`, etc. Além disso, foi criado um endpoint específico para o dashboard (`/api/v1/dashboard/admin`) para agregar dados.
+*   **Exemplo (Gerentes e Administradores):** As funcionalidades de Regiões, Administradores, Gerentes e Gateways foram migradas para esta arquitetura. Todas as operações CRUD são tratadas por seus respectivos endpoints, como `/api/v1/regioes`, `/api/v1/admin/administradores`, `/api/v1/manager/gerentes`, etc. Além disso, foram criados endpoints específicos para cada dashboard (ex: `/api/v1/admin/dashboard`) para agregar dados.
 
 Esta abordagem substitui o uso inicial de Server Actions para a busca e manipulação de dados, proporcionando uma forma mais tradicional e explícita de comunicação de dados.
 

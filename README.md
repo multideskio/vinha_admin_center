@@ -1,5 +1,3 @@
-
-
 # Vinha Admin Center
 
 Este é o painel de administração para o sistema Vinha Ministérios.
@@ -12,11 +10,11 @@ O Vinha Admin Center é uma aplicação completa construída com Next.js e TypeS
 
 O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel e permissões, garantindo que cada usuário tenha acesso apenas às ferramentas e dados relevantes para sua função:
 
--   **Administrador:** Acesso total a todas as funcionalidades do sistema, incluindo gerenciamento de todos os outros usuários, configurações globais e relatórios.
--   **Gerente:** Visualiza e gerencia uma rede específica de supervisores, pastores e igrejas.
--   **Supervisor:** Supervisiona um grupo de pastores e igrejas dentro de uma região.
--   **Pastor:** Gerencia seu próprio perfil, contribuições e pode estar associado a uma ou mais igrejas.
--   **Igreja:** Gerencia suas próprias informações, finanças e membros.
+-   **Administrador (`/admin`):** Acesso total a todas as funcionalidades do sistema, incluindo gerenciamento de todos os outros usuários, configurações globais e relatórios.
+-   **Gerente (`/manager`):** Visualiza e gerencia uma rede específica de supervisores, pastores e igrejas.
+-   **Supervisor (`/supervisor`):** Supervisiona um grupo de pastores e igrejas dentro de uma região.
+-   **Pastor (`/pastor`):** Gerencia seu próprio perfil, contribuições e pode estar associado a uma ou mais igrejas.
+-   **Igreja (`/igreja`):** Gerencia suas próprias informações, finanças e membros.
 
 ## Funcionalidades Principais
 
@@ -35,4 +33,4 @@ Para iniciar o projeto em ambiente de desenvolvimento, execute o seguinte comand
 npm run dev
 ```
 
-Isso iniciará o servidor de desenvolvimento do Next.js, geralmente na porta `http://localhost:3000`.
+Isso iniciará o servidor de desenvolvimento do Next.js, geralmente na porta `http://localhost:3002`.

@@ -2,6 +2,28 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.6] - 2024-08-02
+
+### Adicionado
+*   **API REST para Gerentes:**
+    *   Criação dos endpoints `GET` e `POST` em `/api/v1/manager/gerentes` para listar e criar gerentes.
+    *   Criação dos endpoints dinâmicos `GET`, `PUT` e `DELETE` em `/api/v1/manager/gerentes/[id]` para gerenciar gerentes específicos.
+    *   Criação do endpoint `GET /api/v1/manager/dashboard` para fornecer dados agregados para o painel do gerente.
+    *   Criação do endpoint `GET /api/v1/manager/perfil` para buscar os dados do perfil do gerente logado.
+*   **Conexão do Frontend com a API:**
+    *   A página `/manager/gerentes` agora consome a nova API para listar, criar e excluir gerentes, substituindo os dados estáticos.
+    *   Implementado feedback de carregamento (skeletons) e tratamento de erros com toasts em todas as páginas do painel de gerente.
+
+### Corrigido
+*   **Erro Crítico de Metadados:** Resolvido o problema recorrente "You are attempting to export "metadata" from a component marked with "use client"", reestruturando os layouts de todos os perfis (`admin`, `manager`, `supervisor`, `pastor`, `igreja`) para isolar corretamente os Componentes de Cliente dos Componentes de Servidor.
+*   **Links Quebrados (404):** Corrigidos todos os links de navegação que apontavam para a antiga rota `/gerente`, que foi migrada para `/manager`.
+*   **Lógica de Perfil Incompleto:** Removida a verificação estrita do campo de endereço no alerta de "perfil incompleto" do gerente para evitar confusão.
+
+### Melhorias
+*   **Estrutura de Rotas:** A rota do painel de gerente foi padronizada de `/gerente` para `/manager` para consistência.
+*   **Componentização:** Os componentes de sidebar e header de cada perfil foram movidos para seus respectivos diretórios `_components` para uma melhor organização e escopo.
+*   **Ambiente de Desenvolvimento:** Removida temporariamente a validação de sessão de todos os painéis para agilizar o desenvolvimento, com a adição de dados de fallback para evitar quebras na interface.
+
 ## [1.0.5] - 2024-08-01
 
 ### Adicionado
@@ -35,9 +57,6 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 *   **Erro de "Não Autorizado":** Corrigido o erro que impedia a manipulação de regiões (criação, exclusão) ao remover a dependência de um usuário autenticado nas rotas da API durante o desenvolvimento.
 *   **Atualização de `updatedAt`:** A função de atualização de região agora define corretamente o campo `updatedAt` no banco de dados.
 
-### Melhorias
-*   **Ambiente de Desenvolvimento:** Removida temporariamente a validação de sessão (`validateRequest`) de todos os `layout.tsx` dos painéis (`/admin`, `/gerente`, etc.) para agilizar o desenvolvimento e evitar redirecionamentos indesejados. Os dados do usuário agora usam um fallback para evitar quebras na interface.
-
 ## [1.0.3] - 2024-07-31
 
 ### Adicionado
@@ -50,7 +69,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
     *   A página de login (`/auth/login`) agora se comunica com a ação `loginUser` para autenticar os usuários.
     *   Implementação de um painel de logs na tela de login para exibir o feedback do processo de autenticação, incluindo erros detalhados do backend para facilitar a depuração.
 *   **Redirecionamento Pós-Login:**
-    *   Após o login bem-sucedido, os usuários são automaticamente redirecionados para o dashboard correspondente ao seu perfil (`/admin`, `/gerente`, etc.).
+    *   Após o login bem-sucedido, os usuários são automaticamente redirecionados para o dashboard correspondente ao seu perfil (`/admin`, `/manager`, etc.).
 *   **Exibição de Dados Dinâmicos:**
     *   O cabeçalho de todos os painéis agora busca e exibe dinamicamente o nome e o e-mail do usuário autenticado.
 *   **Backend para Regiões:**
@@ -96,7 +115,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
     *   Dashboard com KPIs e gráficos de exemplo.
     *   Página de Relatórios e Transações.
 *   **Painéis por Perfil de Usuário:**
-    *   Criação de layouts e páginas dedicadas para os perfis: Gerente (`/gerente`), Supervisor (`/supervisor`), Pastor (`/pastor`) e Igreja (`/igreja`).
+    *   Criação de layouts e páginas dedicadas para os perfis: Gerente (`/manager`), Supervisor (`/supervisor`), Pastor (`/pastor`) e Igreja (`/igreja`).
     *   Cada painel possui dashboard, páginas de gerenciamento e perfil customizadas.
 *   **Fluxo de Autenticação (`/auth`):**
     *   Criação das páginas de Login, Cadastro de Conta (Pastor e Igreja) e Recuperação de Senha.

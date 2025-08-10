@@ -26,16 +26,16 @@ src
 ├── app
 │   ├── api           # Endpoints da API RESTful (backend)
 │   │   └── v1
-│   │       ├── regioes
-│   │       ├── administradores
+│   │       ├── admin
+│   │       ├── manager
 │   │       └── ...
 │   ├── admin         # Layout e páginas do painel de Administrador
 │   ├── auth          # Layout e páginas de autenticação (login, cadastro, etc.)
-│   ├── gerente       # Layout e páginas do painel de Gerente
+│   ├── manager       # Layout e páginas do painel de Gerente
 │   └── ...           # Outros painéis de perfil
 ├── actions           # Server Actions (usadas primariamente para autenticação)
 ├── components
-│   ├── layout        # Componentes de layout (Sidebars, Header)
+│   ├── layout        # Componentes de layout (Sidebars, Header) - DEPRECIADO
 │   └── ui            # Componentes da biblioteca ShadCN/UI
 ├── hooks             # Hooks customizados (ex: use-toast)
 └── lib               # Utilitários, configurações (auth.ts) e funções auxiliares (cn)
@@ -43,7 +43,8 @@ src
 
 ### Principais Diretórios
 
-*   **`src/app/[role]`**: Cada diretório dentro de `app` (como `admin`, `gerente`, etc.) representa um perfil de usuário diferente e contém seu próprio `layout.tsx` e sub-rotas.
+*   **`src/app/[role]`**: Cada diretório dentro de `app` (como `admin`, `manager`, etc.) representa um perfil de usuário diferente e contém seu próprio `layout.tsx` e sub-rotas.
+*   **`src/app/[role]/_components`**: Diretório específico de cada perfil que armazena os componentes de cliente (como `sidebar.tsx` e `header.tsx`) para aquele layout, isolando-os para evitar conflitos de renderização no Next.js.
 *   **`src/app/api`**: Contém os *Route Handlers* que formam a API RESTful do backend. É a principal fonte de dados para as páginas do cliente.
 *   **`src/app/auth`**: Contém todas as páginas relacionadas à autenticação.
 *   **`src/actions`**: Armazena as Server Actions. Com a migração para a API REST, seu uso principal se concentra em operações específicas como o fluxo de login (`loginUser`) e logout (`logoutUser`).
@@ -68,8 +69,8 @@ src
     *   Verifica o usuário e a senha no banco.
     *   Se as credenciais forem válidas, cria uma sessão com `lucia.createSession()` e define o cookie de sessão no navegador.
     *   Retorna um objeto de sucesso com o `role` do usuário.
-4.  O frontend recebe a resposta e redireciona o usuário para o dashboard apropriado (ex: `/admin/dashboard`).
-5.  Em cada painel (`/admin`, `/gerente`, etc.), o `layout.tsx` principal usa a função `validateRequest` de `lucia` para verificar a sessão. Durante o desenvolvimento, o redirecionamento em caso de falha foi removido para agilizar o trabalho, mas os dados do usuário (nome, email) são carregados e exibidos se a sessão for válida.
+4.  O frontend recebe a resposta e redireciona o usuário para o dashboard apropriado (ex: `/admin`, `/manager`).
+5.  Em cada painel (`/admin`, `/manager`, etc.), o `layout.tsx` principal usa a função `validateRequest` de `lucia` para verificar a sessão. Durante o desenvolvimento, o redirecionamento em caso de falha foi removido para agilizar o trabalho, mas os dados do usuário (nome, email) são carregados e exibidos se a sessão for válida.
 
 ---
 
