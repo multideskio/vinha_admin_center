@@ -11,11 +11,12 @@ import {
   CalendarIcon,
   Clock,
   Pencil,
-  CreditCard,
-  Banknote,
-  QrCode,
+  DollarSign,
+  ArrowRightLeft
 } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,57 +28,48 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { format } from 'date-fns';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const churchData = {
-  id: 'chu-01',
-  razaoSocial: 'IGREJA EVANGELICA ASSEMBLEIA DE DEUS',
-  nomeFantasia: 'Assembleia de Deus Madureira',
-  email: 'contato@admadureira.com',
-  phone: '(11) 98888-7777',
-  cnpj: '55.343.456/0001-21',
-  cep: '01002-000',
-  state: 'SP',
-  city: 'São Paulo',
-  neighborhood: 'Sé',
-  address: 'Praça da Sé, 100',
-  foundationDate: new Date('1950-01-15T00:00:00'),
-  titheDay: 10,
-  supervisorId: 'sup-01',
-  treasurerFirstName: 'José',
-  treasurerLastName: 'Contas',
-  treasurerCpf: '123.456.789-00',
-  facebook: 'https://facebook.com',
-  instagram: 'https://instagram.com',
-  website: 'https://admadureira.com',
-};
-
-const monthlyContributions = [
-    { month: 'Jan', total: Math.floor(Math.random() * 2000) + 1000 },
-    { month: 'Fev', total: Math.floor(Math.random() * 2000) + 1000 },
-    { month: 'Mar', total: Math.floor(Math.random() * 2000) + 1000 },
-    { month: 'Abr', total: Math.floor(Math.random() * 2000) + 1000 },
-    { month: 'Mai', total: Math.floor(Math.random() * 2000) + 1000 },
-    { month: 'Jun', total: Math.floor(Math.random() * 2000) + 1000 },
-];
-
-const paymentMethodsData = [
-    { method: 'Pix', value: 5430.80, fill: '#10b981' },
-    { method: 'Crédito', value: 3250.00, fill: '#3b82f6' },
-    { method: 'Boleto', value: 1120.45, fill: '#f59e0b' },
-];
-
-const InfoItem = ({
-  icon: Icon,
-  label,
-  value,
-}: {
+type InfoItemProps = {
   icon: React.ElementType;
   label: string;
   value: string | undefined | null;
-}) => (
+};
+
+type KpiBlock = {
+    totalContributed: { value: string; change: string; };
+    monthlyContribution: { value: string; change: string; };
+    totalTransactions: { value: string; change: string; };
+}
+
+type ChurchProfileData = {
+    nomeFantasia: string;
+    razaoSocial: string;
+    cnpj: string;
+    email: string;
+    phone: string;
+    address: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    foundationDate: string;
+    titheDay: number;
+    treasurerFirstName: string;
+    treasurerLastName: string;
+    treasurerCpf: string;
+}
+
+type DashboardData = {
+    profile: ChurchProfileData;
+    kpis: KpiBlock;
+    monthlyContributions: { month: string; total: number; }[];
+    paymentMethods: { method: string; value: number; fill: string; }[];
+};
+
+
+const InfoItem = ({ icon: Icon, label, value }: InfoItemProps) => (
   <div className="flex items-start gap-4">
     <Icon className="h-5 w-5 text-muted-foreground mt-1" />
     <div>
@@ -88,6 +80,72 @@ const InfoItem = ({
 );
 
 export default function ChurchDashboardPage() {
+    const [data, setData] = React.useState<DashboardData | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+
+    const fetchData = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/igreja/dashboard');
+            if (!response.ok) {
+                throw new Error('Falha ao carregar os dados do dashboard.');
+            }
+            const dashboardData = await response.json();
+            setData(dashboardData);
+        } catch (error: any) {
+             toast({
+                title: "Erro",
+                description: error.message,
+                variant: 'destructive',
+            })
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    React.useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const kpiDisplayData = data ? [
+        { title: 'Total Arrecadado', ...data.kpis.totalContributed, icon: DollarSign },
+        { title: 'Arrecadação no Mês', ...data.kpis.monthlyContribution, icon: DollarSign },
+        { title: 'Total de Transações', ...data.kpis.totalTransactions, icon: ArrowRightLeft },
+    ] : [];
+
+    if (isLoading || !data) {
+        return (
+            <div className="flex flex-col gap-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <Card key={i}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-4 w-4" />
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-8 w-24 mb-2" />
+                                <Skeleton className="h-3 w-40" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+                 <div className="grid gap-8 lg:grid-cols-2">
+                    <Card><CardContent className="pt-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
+                    <Card><CardContent className="pt-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
+                    <Card className="lg:col-span-2"><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+                </div>
+            </div>
+        )
+    }
+
+    const { profile } = data;
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -96,7 +154,7 @@ export default function ChurchDashboardPage() {
                 Dashboard da Igreja
             </h1>
             <p className="text-sm text-muted-foreground">
-                Bem-vindo ao seu painel, {churchData.nomeFantasia}.
+                Bem-vindo ao seu painel, {profile.nomeFantasia}.
             </p>
         </div>
         <Button asChild>
@@ -107,15 +165,30 @@ export default function ChurchDashboardPage() {
         </Button>
       </div>
 
+       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {kpiDisplayData.map((kpi) => (
+            <Card key={kpi.title}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
+                <kpi.icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">{kpi.value}</div>
+                <p className="text-xs text-muted-foreground">{kpi.change}</p>
+                </CardContent>
+            </Card>
+            ))}
+        </div>
+
       <div className="grid gap-8 lg:grid-cols-2">
          <Card>
             <CardHeader>
                 <CardTitle>Arrecadação Mensal</CardTitle>
-                <CardDescription>Suas contribuições totais (dízimos e ofertas) nos últimos 6 meses.</CardDescription>
+                <CardDescription>Contribuições recebidas nos últimos 6 meses.</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{}} className="h-[300px] w-full">
-                    <BarChart data={monthlyContributions} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                    <BarChart data={data.monthlyContributions} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `R$${value/1000}k`} />
@@ -135,8 +208,8 @@ export default function ChurchDashboardPage() {
                     <PieChart>
                         <Tooltip content={<ChartTooltipContent hideLabel />} />
                         <Legend content={<ChartLegendContent nameKey="method" />} />
-                        <Pie data={paymentMethodsData} dataKey="value" nameKey="method" innerRadius={60}>
-                            {paymentMethodsData.map((entry) => (
+                        <Pie data={data.paymentMethods} dataKey="value" nameKey="method" innerRadius={60}>
+                            {data.paymentMethods.map((entry) => (
                                 <Cell key={entry.method} fill={entry.fill} />
                             ))}
                         </Pie>
@@ -148,12 +221,12 @@ export default function ChurchDashboardPage() {
         <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center gap-4">
             <Avatar className="h-20 w-20">
-                <AvatarImage src="https://placehold.co/80x80.png" alt={churchData.nomeFantasia} data-ai-hint="church building" />
+                <AvatarImage src="https://placehold.co/80x80.png" alt={profile.nomeFantasia} data-ai-hint="church building" />
                 <AvatarFallback>IDM</AvatarFallback>
             </Avatar>
             <div>
-                <CardTitle className="text-2xl">{churchData.nomeFantasia}</CardTitle>
-                <CardDescription>{churchData.razaoSocial}</CardDescription>
+                <CardTitle className="text-2xl">{profile.nomeFantasia}</CardTitle>
+                <CardDescription>{profile.razaoSocial}</CardDescription>
             </div>
             </CardHeader>
             <Separator />
@@ -161,24 +234,24 @@ export default function ChurchDashboardPage() {
             <InfoItem
                 icon={Building2}
                 label="CNPJ"
-                value={churchData.cnpj}
+                value={profile.cnpj}
             />
-            <InfoItem icon={Mail} label="E-mail" value={churchData.email} />
-            <InfoItem icon={Phone} label="Telefone" value={churchData.phone} />
+            <InfoItem icon={Mail} label="E-mail" value={profile.email} />
+            <InfoItem icon={Phone} label="Telefone" value={profile.phone} />
             <InfoItem
                 icon={MapPin}
                 label="Endereço"
-                value={`${churchData.address}, ${churchData.neighborhood}, ${churchData.city} - ${churchData.state}`}
+                value={`${profile.address}, ${profile.neighborhood}, ${profile.city} - ${profile.state}`}
             />
             <InfoItem
                 icon={CalendarIcon}
                 label="Data de Fundação"
-                value={format(churchData.foundationDate, 'dd/MM/yyyy')}
+                value={profile.foundationDate ? format(new Date(profile.foundationDate), 'dd/MM/yyyy') : 'N/A'}
             />
             <InfoItem
                 icon={Clock}
                 label="Dia para dízimo"
-                value={String(churchData.titheDay)}
+                value={String(profile.titheDay)}
             />
 
             <div className="col-span-1 md:col-span-2">
@@ -188,12 +261,12 @@ export default function ChurchDashboardPage() {
                     <InfoItem
                         icon={User}
                         label="Nome do Tesoureiro"
-                        value={`${churchData.treasurerFirstName} ${churchData.treasurerLastName}`}
+                        value={`${profile.treasurerFirstName} ${profile.treasurerLastName}`}
                     />
                     <InfoItem
                         icon={User}
                         label="CPF do Tesoureiro"
-                        value={churchData.treasurerCpf}
+                        value={profile.treasurerCpf}
                     />
                 </div>
             </div>
