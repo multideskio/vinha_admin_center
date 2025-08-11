@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -176,14 +177,6 @@ const GerenteFormModal = ({
 
   const formatCEP = (value: string) => {
     return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
-  };
-
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15);
   };
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
@@ -378,6 +371,24 @@ const GerenteFormModal = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Celular *</FormLabel>
+                    <FormControl>
+                      <PhoneInput
+                        country={'br'}
+                        value={field.value}
+                        onChange={field.onChange}
+                        inputClass='!w-full'
+                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="titheDay"
                 render={({ field }) => (
                   <FormItem>
@@ -390,24 +401,6 @@ const GerenteFormModal = ({
                         placeholder="1 a 31"
                         {...field}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Celular *</FormLabel>
-                    <FormControl>
-                      <PhoneInput
-                        country={'br'}
-                        value={field.value}
-                        onChange={field.onChange}
-                        inputClass='!w-full'
-                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -587,7 +580,7 @@ export default function GerentesPage() {
                                 className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32"
                                 data-ai-hint="handshake business"
                             />
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-2 min-w-[200px]">
                             <h3 className="text-lg font-bold">
                             #{index + 1} - {manager.firstName} {manager.lastName}
                             </h3>
@@ -617,7 +610,7 @@ export default function GerentesPage() {
         <PaginationControls />
     </>
   );
-
+  
   const PaginationControls = () => (
     <div className="flex items-center justify-end space-x-2 py-4">
         <Button
@@ -643,6 +636,7 @@ export default function GerentesPage() {
         </Button>
     </div>
   )
+
 
   return (
     <div className="flex flex-col gap-4">
@@ -694,8 +688,8 @@ export default function GerentesPage() {
           </GerenteFormModal>
         </div>
       </div>
-
       {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   );
 }
+
