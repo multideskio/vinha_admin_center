@@ -5,7 +5,7 @@ import { users, managerProfiles } from '@/db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const managerUpdateSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
@@ -27,8 +27,10 @@ const managerUpdateSchema = z.object({
   
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 
@@ -46,26 +48,26 @@ export async function GET(request: Request, { params }: { params: { id: string }
             return NextResponse.json({ error: "Gerente não encontrado." }, { status: 404 });
         }
 
-        const { user, profile } = result[0];
+        const { user: managerUser, profile } = result[0];
 
         return NextResponse.json({ 
-            id: user.id,
+            id: managerUser.id,
             firstName: profile?.firstName,
             lastName: profile?.lastName,
             cpf: profile?.cpf,
-            email: user.email,
-            phone: user.phone,
+            email: managerUser.email,
+            phone: managerUser.phone,
             landline: profile?.landline,
             cep: profile?.cep,
             state: profile?.state,
             city: profile?.city,
             neighborhood: profile?.neighborhood,
             address: profile?.address,
-            titheDay: user.titheDay,
+            titheDay: managerUser.titheDay,
             facebook: profile?.facebook,
             instagram: profile?.instagram,
             website: profile?.website,
-            status: user.status
+            status: managerUser.status
         });
 
     } catch (error: any) {
@@ -76,8 +78,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
     
     const { id } = params;
   
@@ -133,8 +137,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 

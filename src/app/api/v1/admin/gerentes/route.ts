@@ -5,7 +5,7 @@ import { users, managerProfiles } from '@/db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -30,8 +30,10 @@ const managerSchema = z.object({
 
 
 export async function GET(request: Request) {
-  const authResponse = await authenticateApiKey(request);
-  if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
   try {
     const result = await db.select({
@@ -63,8 +65,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
     
     try {
       const body = await request.json();
