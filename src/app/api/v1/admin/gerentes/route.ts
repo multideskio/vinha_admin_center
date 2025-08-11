@@ -47,7 +47,7 @@ export async function GET(request: Request) {
         })
         .from(managerProfiles)
         .innerJoin(users, eq(users.id, managerProfiles.userId))
-        .where(isNull(users.deletedAt))
+        .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
         .orderBy(desc(users.createdAt));
         return NextResponse.json({ managers: result });
     }
