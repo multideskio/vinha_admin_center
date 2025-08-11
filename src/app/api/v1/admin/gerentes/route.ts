@@ -36,6 +36,22 @@ export async function GET(request: Request) {
     }
 
   try {
+    const url = new URL(request.url);
+    const minimal = url.searchParams.get('minimal') === 'true';
+
+    if (minimal) {
+        const result = await db.select({
+            id: users.id,
+            firstName: managerProfiles.firstName,
+            lastName: managerProfiles.lastName,
+        })
+        .from(managerProfiles)
+        .innerJoin(users, eq(users.id, managerProfiles.userId))
+        .where(isNull(users.deletedAt))
+        .orderBy(desc(users.createdAt));
+        return NextResponse.json({ managers: result });
+    }
+
     const result = await db.select({
         id: users.id,
         firstName: managerProfiles.firstName,
