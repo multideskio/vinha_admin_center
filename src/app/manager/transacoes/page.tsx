@@ -2,99 +2,180 @@
 
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import * as React from 'react';
 import {
-  LayoutDashboard,
-  UserCog,
-  User,
-  Church,
-  Settings,
-  ArrowRightLeft,
-  Handshake,
+  Download,
+  ListFilter,
+  MoreHorizontal,
+  Search,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
-const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-      <path d="M12 2v2" />
-      <path d="M12 18v-8" />
-      <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    </svg>
-  );
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const menuItems = [
-    { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/manager/supervisores', label: 'Supervisores', icon: UserCog },
-    { href: '/manager/pastores', label: 'Pastores', icon: User },
-    { href: '/manager/igrejas', label: 'Igrejas', icon: Church },
-    { href: '/manager/transacoes', label: 'Transações', icon: ArrowRightLeft },
-    { href: '/manager/contribuicoes', label: 'Contribuições', icon: Handshake },
-];
-
-const settingsItem = {
-  href: '/manager/perfil',
-  label: 'Meu Perfil',
-  icon: Settings,
+type Transaction = {
+  id: string;
+  contributor: string;
+  church: string;
+  amount: number;
+  method: 'Pix' | 'Cartão de Crédito' | 'Boleto';
+  status: 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada';
+  date: string;
+  refundRequestReason?: string;
 };
 
-export function ManagerSidebar() {
-  const pathname = usePathname();
+const transactions: Transaction[] = [
+    { id: 'TRN-001', contributor: 'João Silva', church: 'Assembleia de Deus Madureira', amount: 150.00, method: 'Pix', status: 'Aprovada', date: '28/07/2024' },
+    { id: 'TRN-002', contributor: 'Maria Oliveira', church: 'IURD', amount: 75.50, method: 'Cartão de Crédito', status: 'Aprovada', date: '28/07/2024' },
+    { id: 'TRN-003', contributor: 'Carlos Andrade', church: 'Igreja Batista', amount: 200.00, method: 'Boleto', status: 'Pendente', date: '27/07/2024' },
+    { id: 'TRN-004', contributor: 'Ana Beatriz', church: 'Comunidade da Graça', amount: 50.00, method: 'Pix', status: 'Reembolsada', date: '27/07/2024', refundRequestReason: 'Contribuição duplicada por engano.' },
+    { id: 'TRN-005', contributor: 'Paulo Ferreira', church: 'Videira', amount: 300.00, method: 'Cartão de Crédito', status: 'Recusada', date: '26/07/2024' },
+    { id: 'TRN-006', contributor: 'Jabez Henrique', church: 'Fonte da Vida', amount: 120.00, method: 'Pix', status: 'Aprovada', date: '26/07/2024' },
+    { id: 'TRN-007', contributor: 'Lucas Mendes', church: 'Renascer em Cristo', amount: 90.00, method: 'Boleto', status: 'Aprovada', date: '25/07/2024' },
+    { id: 'TRN-008', contributor: 'Fernanda Costa', church: 'Bola de Neve', amount: 250.00, method: 'Cartão de Crédito', status: 'Aprovada', date: '25/07/2024' },
+    { id: 'TRN-009', contributor: 'José Contas', church: 'Igreja Presbiteriana', amount: 80.00, method: 'Pix', status: 'Pendente', date: '24/07/2024' },
+    { id: 'TRN-010', contributor: 'Maria Finanças', church: 'Igreja Metodista', amount: 450.00, method: 'Boleto', status: 'Aprovada', date: '24/07/2024' },
+];
 
+export default function TransacoesPage() {
   return (
-    <div className="hidden border-r bg-muted/40 md:block sticky top-0 h-screen">
-      <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/manager/dashboard" className="flex items-center gap-2 font-semibold">
-            <Logo className="h-6 w-6 text-primary" />
-            <span className="">Vinha Ministérios</span>
-          </Link>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))) &&
-                    'bg-muted text-primary'
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <div className="mt-auto p-4">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                <Link
-                    href={settingsItem.href}
-                    className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    pathname.startsWith(settingsItem.href) && 'bg-muted text-primary'
-                    )}
-                >
-                    <settingsItem.icon className="h-4 w-4" />
-                    {settingsItem.label}
-                </Link>
-            </nav>
-        </div>
+    <div className="flex flex-col gap-8">
+       <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Transações da Rede
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Gerencie as transações financeiras da sua rede.
+        </p>
       </div>
+      <Card>
+        <CardContent className='pt-6'>
+            <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
+                <div className="relative flex-1 sm:flex-initial">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                    type="search"
+                    placeholder="Buscar por contribuinte..."
+                    className="pl-8 w-full sm:w-[250px]"
+                    />
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1">
+                        <ListFilter className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only">Filtro</span>
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <DateRangePicker />
+                <Button size="sm" variant="outline" className="gap-1">
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only">Exportar</span>
+                </Button>
+            </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Contribuinte</TableHead>
+                <TableHead className="hidden lg:table-cell">Igreja</TableHead>
+                <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
+                <TableHead className="hidden md:table-cell">Motivo Solicitação</TableHead>
+                <TableHead>
+                  <span className="sr-only">Ações</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-medium">{transaction.contributor}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">{transaction.church}</TableCell>
+                  <TableCell className="hidden md:table-cell text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                  <Badge variant={transaction.status === 'Aprovada' ? 'default' 
+                      : transaction.status === 'Pendente' ? 'secondary' 
+                      : transaction.status === 'Reembolsada' ? 'outline'
+                      : 'destructive'}
+                        className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
+                        : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
+                        : transaction.status === 'Reembolsada' ? 'bg-blue-500/20 text-blue-700 border-blue-400'
+                        : 'bg-red-500/20 text-red-700 border-red-400'}>
+                        {transaction.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {transaction.refundRequestReason ? (
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <span className='truncate max-w-[150px] inline-block'>{transaction.refundRequestReason}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {transaction.refundRequestReason}
+                                </TooltipContent>
+                            </Tooltip>
+                         </TooltipProvider>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/manager/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>Reenviar Comprovante</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
