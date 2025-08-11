@@ -5,7 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Banknote, CreditCard, QrCode, DollarSign, CheckCircle } from 'lucide-react';
+import { Banknote, CreditCard, QrCode, DollarSign, CheckCircle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Cards, { Focused } from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
@@ -43,17 +43,32 @@ const contributionSchema = z.object({
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto'], {
     required_error: 'Selecione um método de pagamento.',
   }),
-  contributionType: z.enum(['dizimo', 'oferta'], {
-    required_error: 'Selecione o tipo de contribuição.'
-  }),
+  contributionType: z.enum(['dizimo', 'oferta'], { required_error: "O tipo de contribuição é obrigatório." }),
   description: z.string().optional(),
+  card: z.object({
+    number: z.string(),
+    holder: z.string(),
+    expirationDate: z.string(),
+    securityCode: z.string(),
+    brand: z.string(),
+  }).optional(),
 });
 
 type ContributionFormValues = z.infer<typeof contributionSchema>;
 
+type CieloPaymentResponse = {
+    QrCodeBase64Image?: string;
+    QrCodeString?: string;
+    DigitableLine?: string;
+    Url?: string;
+    PaymentId?: string;
+};
+
 export default function ContribuirPage() {
-  const [showPaymentDetails, setShowPaymentDetails] = React.useState(false);
+  const [paymentDetails, setPaymentDetails] = React.useState<CieloPaymentResponse | null>(null);
+  const [isProcessing, setIsProcessing] = React.useState(false);
   const [pixStatus, setPixStatus] = React.useState<'idle' | 'pending' | 'confirmed'>('idle');
+  const [showPaymentDetails, setShowPaymentDetails] = React.useState(false);
   const [cardState, setCardState] = React.useState({
     number: '',
     expiry: '',
@@ -69,6 +84,7 @@ export default function ContribuirPage() {
     defaultValues: {
         paymentMethod: 'pix',
         amount: 0,
+        contributionType: undefined,
         description: '',
     },
   });
@@ -83,44 +99,43 @@ export default function ContribuirPage() {
     name: 'amount',
   });
 
-  const handleCopyPixCode = () => {
-    const pixCode = "copia-e-cola-chave-pix-aqui-12345";
-    navigator.clipboard.writeText(pixCode);
+  const handleCopy = (code: string | undefined, type: string) => {
+    if(!code) return;
+    navigator.clipboard.writeText(code);
     toast({
         title: "Copiado!",
-        description: "Código Pix copiado com sucesso.",
+        description: `Código do ${type} copiado com sucesso.`,
     });
   };
 
-  const handleCopyBoletoCode = () => {
-    const boletoCode = "00190500954014481606906809350314337370000000123";
-    navigator.clipboard.writeText(boletoCode);
-    toast({
-        title: "Copiado!",
-        description: "Código do boleto copiado com sucesso.",
-    });
-  };
-
-  // Reset payment details view when payment method or amount changes
   React.useEffect(() => {
     setShowPaymentDetails(false);
+    setPaymentDetails(null);
     setPixStatus('idle');
   }, [paymentMethod, amount]);
 
   React.useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (showPaymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
-        timer = setTimeout(() => {
-            setPixStatus('confirmed');
-            toast({
-                title: "Sucesso!",
-                description: "Pagamento via Pix confirmado com sucesso.",
-                variant: 'success' as any,
-            });
-        }, 5000);
+    if (paymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
+        timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/v1/transacoes/${paymentDetails.PaymentId}`);
+                const data = await res.json();
+                if(data.transaction?.Payment?.Status === 2){
+                    setPixStatus('confirmed');
+                    toast({
+                        title: "Sucesso!",
+                        description: "Pagamento via Pix confirmado com sucesso.",
+                        variant: 'success',
+                    });
+                }
+            } catch (error) {
+                console.error("Falha ao verificar status do Pix");
+            }
+        }, 8000); 
     }
     return () => clearTimeout(timer);
-  }, [showPaymentDetails, paymentMethod, pixStatus, toast]);
+  }, [paymentDetails, paymentMethod, pixStatus, toast]);
 
 
   const handleInputChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +145,10 @@ export default function ContribuirPage() {
     if (name === 'number') {
         formattedValue = value.replace(/\D/g, '').slice(0, 16);
     } else if (name === 'expiry') {
-        formattedValue = value.replace(/\D/g, '').slice(0, 4);
+        formattedValue = value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '$1/$2')
+            .slice(0, 5); // MM/YY
     } else if (name === 'cvc') {
         formattedValue = value.replace(/\D/g, '').slice(0, 4);
     }
@@ -142,32 +160,98 @@ export default function ContribuirPage() {
     setCardState((prev) => ({ ...prev, focus: evt.target.name as Focused }));
   }
 
-  function handleProceedToPayment(data: ContributionFormValues) {
-    console.log("Proceeding to payment with:", data);
-    setShowPaymentDetails(true);
-    if(data.paymentMethod === 'pix') {
-        setPixStatus('pending');
+  async function handleFormSubmit(data: ContributionFormValues) {
+    if (data.paymentMethod === 'credit_card') {
+      setShowPaymentDetails(true);
+      return;
+    }
+    
+    setIsProcessing(true);
+    setPaymentDetails(null);
+    try {
+        const payload = { ...data };
+        const response = await fetch('/api/v1/transacoes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Falha ao processar o pagamento.');
+        }
+        setPaymentDetails(result.data);
+        setShowPaymentDetails(true);
+        if(data.paymentMethod === 'pix') {
+            setPixStatus('pending');
+        }
+
+    } catch (error: any) {
+        toast({
+            title: "Erro no Pagamento",
+            description: error.message,
+            variant: "destructive"
+        })
+    } finally {
+        setIsProcessing(false);
     }
   }
 
-  function handleFinalizePayment() {
-    // This is where you would handle the final submission to the payment gateway
-     if(paymentMethod === 'credit_card') {
-        console.log('Finalizing Credit Card Payment:', cardState);
-    } else {
-        console.log('Finalizing Payment for', paymentMethod)
+  const handleFinalizeCardPayment = async () => {
+    const contributionData = form.getValues();
+    const payload = {
+      ...contributionData,
+      card: {
+        number: cardState.number,
+        holder: cardState.name,
+        expirationDate: cardState.expiry,
+        securityCode: cardState.cvc,
+        brand: "Visa", 
+      }
+    };
+    setIsProcessing(true);
+    try {
+        const response = await fetch('/api/v1/transacoes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Falha ao processar o pagamento com cartão.');
+        }
+        toast({ title: "Sucesso!", description: "Pagamento com cartão aprovado.", variant: "success"});
+        form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
+        setCardState({ number: '', expiry: '', cvc: '', name: '', focus: '' });
+        setShowPaymentDetails(false);
+        setPaymentDetails(null);
+    } catch (error: any) {
+         toast({ title: "Erro no Pagamento", description: error.message, variant: "destructive"});
+    } finally {
+        setIsProcessing(false);
     }
   }
+
 
   const getButtonLabel = () => {
     switch (paymentMethod) {
         case 'pix': return 'Gerar QR Code Pix';
-        case 'credit_card': return 'Pagar com Cartão de Crédito';
+        case 'credit_card': return 'Ir para o Cartão de Crédito';
         case 'boleto': return 'Gerar Boleto';
         default: return 'Continuar';
     }
   }
-
+  
+  const getFullQrCodeSrc = () => {
+    if (!paymentDetails?.QrCodeBase64Image) {
+        return null;
+    }
+    if (paymentDetails.QrCodeBase64Image.startsWith('data:image/png;base64,')) {
+        return paymentDetails.QrCodeBase64Image;
+    }
+    return `data:image/png;base64,${paymentDetails.QrCodeBase64Image}`;
+  }
+  
+  const qrCodeSrc = getFullQrCodeSrc();
 
   return (
     <div className="flex flex-col gap-8">
@@ -182,7 +266,7 @@ export default function ContribuirPage() {
       <Card>
         <CardContent className="pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleProceedToPayment)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                  <div className="space-y-6">
                     <FormField
@@ -280,9 +364,10 @@ export default function ContribuirPage() {
 
               {!showPaymentDetails && (
                 <div className="flex justify-end">
-                    <Button type="submit" size="lg">
-                        {getButtonLabel()}
-                    </Button>
+                    <Button type="submit" size="lg" disabled={isProcessing}>
+                         {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                         {isProcessing ? "Processando..." : getButtonLabel()}
+                     </Button>
                 </div>
               )}
             </form>
@@ -340,55 +425,57 @@ export default function ContribuirPage() {
                                         onFocus={handleInputFocus}
                                     />
                                 </div>
-                                <Button onClick={handleFinalizePayment} className="w-full" size="lg">
+                                <Button onClick={handleFinalizeCardPayment} className="w-full" size="lg" disabled={isProcessing}>
+                                     {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Pagar R$ {Number(amount).toFixed(2)}
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
                 )}
-                 {paymentMethod === 'pix' && (
+                 {paymentMethod === 'pix' && paymentDetails && pixStatus === 'pending' && (
                     <Card className="bg-muted/30 flex flex-col items-center p-6">
-                        {pixStatus === 'pending' && (
-                            <>
-                                <CardHeader className="items-center">
-                                    <CardTitle>Aguardando Pagamento</CardTitle>
-                                    <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
-                                </CardHeader>
-                                <CardContent className='flex flex-col items-center'>
-                                    <Skeleton className="h-[256px] w-[256px]">
-                                        <Image src="https://placehold.co/256x256.png" width={256} height={256} alt="QR Code Pix" data-ai-hint="qr code" className="opacity-20" />
-                                    </Skeleton>
-                                    <Input value="copia-e-cola-chave-pix-aqui-12345" readOnly className="mt-4 text-center" />
-                                    <Button variant="outline" className="w-full mt-2" onClick={handleCopyPixCode}>Copiar Chave</Button>
-                                </CardContent>
-                            </>
-                        )}
-                        {pixStatus === 'confirmed' && (
-                             <CardContent className="flex flex-col items-center justify-center p-10 text-center">
-                                <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-                                <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
-                                <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
-                                 <Button onClick={() => {
-                                     form.reset({ amount: 0, paymentMethod: 'pix' });
-                                     setShowPaymentDetails(false);
-                                     setPixStatus('idle');
-                                 }} className='mt-6'>Fazer Nova Contribuição</Button>
-                            </CardContent>
-                        )}
+                        <CardHeader className="items-center">
+                            <CardTitle>Aguardando Pagamento</CardTitle>
+                            <CardDescription>Aponte a câmera do seu celular para o QR Code</CardDescription>
+                        </CardHeader>
+                        <CardContent className='flex flex-col items-center'>
+                           {qrCodeSrc ? (
+                                <Image src={qrCodeSrc} width={256} height={256} alt="QR Code Pix" />
+                            ) : (
+                                <Skeleton className="h-[256px] w-[256px]" />
+                            )}
+                            <Input value={paymentDetails.QrCodeString} readOnly className="mt-4 text-center" />
+                            <Button variant="outline" className="w-full mt-2" onClick={() => handleCopy(paymentDetails.QrCodeString, 'Pix')}>Copiar Chave</Button>
+                        </CardContent>
                     </Card>
                 )}
-                {paymentMethod === 'boleto' && (
+                {pixStatus === 'confirmed' && (
+                     <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+                        <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                        <h2 className="text-2xl font-bold mb-2">Pagamento Confirmado!</h2>
+                        <p className="text-muted-foreground">Sua contribuição de R$ {Number(amount).toFixed(2)} foi recebida com sucesso.</p>
+                         <Button onClick={() => {
+                             form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
+                             setShowPaymentDetails(false);
+                             setPaymentDetails(null);
+                             setPixStatus('idle');
+                         }} className='mt-6'>Fazer Nova Contribuição</Button>
+                    </CardContent>
+                )}
+                {paymentMethod === 'boleto' && paymentDetails && (
                     <Card className="bg-muted/30 flex flex-col items-center p-6">
                         <CardHeader className="items-center text-center">
                             <CardTitle>Boleto Gerado</CardTitle>
                             <CardDescription>Clique no botão abaixo para baixar ou copiar o código de barras.</CardDescription>
                         </CardHeader>
                         <CardContent className="w-full">
-                                <Input value="00190500954014481606906809350314337370000000123" readOnly className="mt-4 text-center" />
+                                <Input value={paymentDetails.DigitableLine} readOnly className="mt-4 text-center" />
                                 <div className='flex gap-2 mt-2'>
-                                    <Button variant="secondary" className="w-full mt-2" onClick={handleCopyBoletoCode}>Copiar Código</Button>
-                                    <Button className="w-full mt-2">Baixar Boleto</Button>
+                                    <Button variant="secondary" className="w-full mt-2" onClick={() => handleCopy(paymentDetails.DigitableLine, 'Boleto')}>Copiar Código</Button>
+                                    <Button asChild className="w-full mt-2">
+                                        <a href={paymentDetails.Url} target="_blank" rel="noopener noreferrer">Baixar Boleto</a>
+                                    </Button>
                                 </div>
                         </CardContent>
                     </Card>
@@ -400,5 +487,3 @@ export default function ContribuirPage() {
     </div>
   );
 }
-
-    
