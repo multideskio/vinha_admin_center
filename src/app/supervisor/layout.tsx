@@ -20,21 +20,20 @@ export default async function SupervisorLayout({
 }) {
   const { user } = await validateRequest();
 
-  /*
-   if (!user) {
+  if (!user || user.role !== 'supervisor') {
     return redirect('/auth/login');
   }
-  */
 
   let userName = 'Supervisor';
   let userFallback = 'SU';
-  let userEmail = 'supervisor@vinha.com';
+  let userEmail = user.email;
   
   if (user) {
     const [profile] = await db.select().from(supervisorProfiles).where(eq(supervisorProfiles.userId, user.id));
-    userName = profile?.firstName || 'Supervisor';
-    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
-    userEmail = user.email;
+    if (profile) {
+      userName = profile.firstName || 'Supervisor';
+      userFallback = (profile.firstName?.[0] || '') + (profile.lastName?.[0] || '');
+    }
   }
 
   return (

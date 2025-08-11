@@ -20,21 +20,20 @@ export default async function PastorLayout({
 }) {
   const { user } = await validateRequest();
 
-  /*
-  if (!user) {
+  if (!user || user.role !== 'pastor') {
     return redirect('/auth/login');
   }
-  */
 
   let userName = 'Pastor';
   let userFallback = 'PA';
-  let userEmail = 'pastor@vinha.com';
+  let userEmail = user.email;
   
   if (user) {
     const [profile] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, user.id));
-    userName = profile?.firstName || 'Pastor';
-    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
-    userEmail = user.email;
+    if(profile) {
+      userName = profile.firstName || 'Pastor';
+      userFallback = (profile.firstName?.[0] || '') + (profile.lastName?.[0] || '');
+    }
   }
 
   return (

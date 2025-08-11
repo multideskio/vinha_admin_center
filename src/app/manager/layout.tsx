@@ -20,21 +20,20 @@ export default async function ManagerLayout({
 }) {
   const { user } = await validateRequest();
   
-  /*
-  if (!user) {
+  if (!user || user.role !== 'manager') {
     return redirect('/auth/login');
   }
-  */
 
   let userName = 'Gerente';
   let userFallback = 'GE';
-  let userEmail = 'gerente@vinha.com';
+  let userEmail = user.email;
   
   if (user) {
     const [profile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, user.id));
-    userName = profile?.firstName || 'Gerente';
-    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
-    userEmail = user.email;
+    if(profile) {
+      userName = profile.firstName || 'Gerente';
+      userFallback = (profile.firstName?.[0] || '') + (profile.lastName?.[0] || '');
+    }
   }
 
   return (
