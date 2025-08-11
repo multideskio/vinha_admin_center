@@ -2,10 +2,13 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, MoreHorizontal, Trash2, Pencil, ToggleLeft, ToggleRight, Info, Loader2, Mail, Smartphone } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Trash2, Pencil, Info, Loader2, Mail, Smartphone } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,7 +59,7 @@ const notificationRuleSchema = z.object({
     isActive: z.boolean().default(true),
 });
 
-type NotificationRule = z.infer<typeof notificationRuleSchema>;
+type NotificationRule = z.infer<typeof notificationRuleSchema> & { createdAt?: string };
 
 
 const eventTriggerOptions = {
@@ -66,7 +69,7 @@ const eventTriggerOptions = {
     'payment_overdue': 'Aviso de Atraso'
 };
 
-const availableTags = ['{nome}', '{valor}', '{data_vencimento}', '{link_pagamento}', '{pedido}'];
+const availableTags = ['{nome_usuario}', '{valor_transacao}', '{data_vencimento}', '{link_pagamento}', '{nome_igreja}'];
 
 const NotificationFormModal = ({ rule, onSave, children }: { rule?: NotificationRule, onSave: () => void; children: React.ReactNode }) => {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -74,7 +77,10 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
     
     const form = useForm<NotificationRule>({
         resolver: zodResolver(notificationRuleSchema),
-        defaultValues: rule || {
+        defaultValues: rule ? {
+            ...rule,
+            daysOffset: rule.daysOffset || 0
+        } : {
             name: '',
             eventTrigger: 'payment_due_reminder',
             daysOffset: 0,
@@ -87,7 +93,18 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
 
     React.useEffect(() => {
         if(isOpen) {
-            form.reset(rule || { name: '', eventTrigger: 'payment_due_reminder', daysOffset: 0, messageTemplate: '', sendViaEmail: true, sendViaWhatsapp: false, isActive: true });
+             form.reset(rule ? {
+                ...rule,
+                daysOffset: rule.daysOffset || 0,
+            } : {
+                name: '',
+                eventTrigger: 'payment_due_reminder',
+                daysOffset: 0,
+                messageTemplate: '',
+                sendViaEmail: true,
+                sendViaWhatsapp: false,
+                isActive: true,
+            });
         }
     }, [isOpen, rule, form]);
     
@@ -175,7 +192,7 @@ const NotificationFormModal = ({ rule, onSave, children }: { rule?: Notification
                               <FormLabel>Modelo da Mensagem</FormLabel>
                               <FormControl>
                                 <Textarea
-                                  placeholder="Olá {nome}, sua fatura de R${valor} vence em {dias} dias."
+                                  placeholder="Olá {nome_usuario}, sua fatura de R${valor_transacao} vence em {data_vencimento}."
                                   rows={5}
                                   {...field}
                                 />
@@ -261,33 +278,40 @@ export default function MessagesSettingsPage() {
         fetchRules();
     }, [fetchRules]);
 
-    const handleSave = async (data: NotificationRule) => {
-        const method = 'PUT';
-        const url = `/api/v1/notification-rules/${data.id}`;
-
+    const handleToggleActive = async (rule: NotificationRule) => {
+        const newStatus = !rule.isActive;
+        const originalStatus = rule.isActive;
+        
+        // Optimistic update
+        setRules(currentRules => currentRules.map(r => r.id === rule.id ? {...r, isActive: newStatus } : r));
+        
         try {
-            const response = await fetch(url, {
-                method,
+            const response = await fetch(`/api/v1/notification-rules/${rule.id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ isActive: newStatus })
             });
-            if (!response.ok) throw new Error(`Falha ao atualizar a regra.`);
-            toast({ title: 'Sucesso!', description: `Regra atualizada com sucesso.`, variant: 'success'});
-            fetchRules();
+            if (!response.ok) throw new Error('Falha ao atualizar o status da regra.');
         } catch (error: any) {
-            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+             // Revert optimistic update
+             setRules(currentRules => currentRules.map(r => r.id === rule.id ? {...r, isActive: originalStatus } : r));
         }
     };
 
     const handleDelete = async (id?: string) => {
         if (!id) return;
+        
+        const originalRules = [...rules];
+        setRules(currentRules => currentRules.filter(r => r.id !== id));
+
         try {
             const response = await fetch(`/api/v1/notification-rules/${id}`, { method: 'DELETE' });
             if(!response.ok) throw new Error('Falha ao excluir a regra.');
             toast({ title: "Sucesso!", description: 'Regra excluída com sucesso.', variant: 'success' });
-            fetchRules();
         } catch (error: any) {
              toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+             setRules(originalRules);
         }
     }
   
@@ -311,7 +335,7 @@ export default function MessagesSettingsPage() {
         <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-            Crie regras personalizadas para cada evento. Lembretes usam números negativos para "dias antes" (ex: -5) e avisos usam números positivos.
+            Crie regras personalizadas para cada evento. Lembretes usam números negativos para &quot;dias antes&quot; (ex: -5) e avisos usam números positivos.
             </AlertDescription>
         </Alert>
 
@@ -371,7 +395,7 @@ export default function MessagesSettingsPage() {
                     </TableCell>
                     <TableCell>
                         <div className='flex items-center gap-2'>
-                            <Switch checked={rule.isActive} onCheckedChange={(checked) => handleSave({ ...rule, isActive: checked })} />
+                            <Switch checked={rule.isActive} onCheckedChange={() => handleToggleActive(rule)} />
                             <NotificationFormModal rule={rule} onSave={fetchRules}>
                                 <Button variant="ghost" size="icon"><Pencil className='h-4 w-4' /></Button>
                             </NotificationFormModal>
@@ -387,3 +411,4 @@ export default function MessagesSettingsPage() {
     </div>
   );
 }
+

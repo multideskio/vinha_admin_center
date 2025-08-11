@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { notificationRules } from '@/db/schema';
+import { notificationRules, webhookEventEnum } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { authenticateApiKey } from '@/lib/api-auth';
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       .orderBy(desc(notificationRules.createdAt));
       
     return NextResponse.json({ rules: allRules });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar regras de notificação:", error);
     return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
   }

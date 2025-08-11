@@ -59,8 +59,9 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         }
   
         return NextResponse.json({ success: true, message: "Regra excluída com sucesso." });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao excluir regra de notificação:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
+
