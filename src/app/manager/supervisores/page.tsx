@@ -15,6 +15,9 @@ import {
   Pencil,
   User,
   Map,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -27,8 +30,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -88,107 +89,50 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const supervisorSchema = z.object({
-  id: z.string().optional(),
-  managerId: z.string({ required_error: 'Selecione um gerente.' }),
   regionId: z.string({ required_error: 'Selecione uma região.' }),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
   cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
   email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-  state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-  city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-  neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-  address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  titheDay: z.coerce.number().min(1).max(31),
+  cep: z.string().nullable(),
+  state: z.string().nullable(),
+  city: z.string().nullable(),
+  neighborhood: z.string().nullable(),
+  address: z.string().nullable(),
+  titheDay: z.coerce.number().min(1).max(31).nullable(),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-  status: z.enum(['active', 'inactive']),
 });
 
-type Supervisor = z.infer<typeof supervisorSchema>;
+type Supervisor = z.infer<typeof supervisorSchema> & {
+    id: string;
+    status: 'active' | 'inactive';
+    managerName?: string;
+    regionName?: string;
+}
 
-const initialSupervisors: Supervisor[] = [
-  {
-    id: 'sup-01',
-    firstName: 'Carlos',
-    lastName: 'Andrade',
-    email: 'carlos.andrade@example.com',
-    phone: '(11) 98765-1111',
-    status: 'active',
-    cpf: '444.555.666-77',
-    cep: '01001-000',
-    state: 'SP',
-    city: 'São Paulo',
-    neighborhood: 'Centro',
-    address: 'Av. Paulista, 2000',
-    titheDay: 15,
-    managerId: 'mgr-01',
-    regionId: 'reg-02',
-  },
-  {
-    id: 'sup-02',
-    firstName: 'Ana',
-    lastName: 'Beatriz',
-    email: 'ana.beatriz@example.com',
-    phone: '(21) 91234-2222',
-    status: 'inactive',
-    cpf: '555.666.777-88',
-    cep: '20040-001',
-    state: 'RJ',
-    city: 'Rio de Janeiro',
-    neighborhood: 'Copacabana',
-    address: 'Av. Atlântica, 3000',
-    titheDay: 10,
-    managerId: 'mgr-02',
-    regionId: 'reg-02',
-  },
-  {
-    id: 'sup-03',
-    firstName: 'Jabez',
-    lastName: 'Henrique',
-    email: 'jabez@multidesk.io',
-    phone: '(62) 98115-4120',
-    status: 'active',
-    cpf: '037.628.391-23',
-    cep: '75264-230',
-    state: 'GO',
-    city: 'Senador Canedo',
-    neighborhood: 'Terrabela Cerrado I',
-    address: 'Rua RP 15',
-    titheDay: 8,
-    managerId: 'mgr-03',
-    regionId: 'reg-03',
-  },
-];
-
-// Mock data, should come from API
-const managers = [
-    { id: 'mgr-01', name: 'João Silva' },
-    { id: 'mgr-02', name: 'Maria Oliveira' },
-    { id: 'mgr-03', name: 'Paulo Ferreira' },
-];
-
-const regions = [
-    { id: 'reg-01', name: 'Sul' },
-    { id: 'reg-02', name: 'Sudeste' },
-    { id: 'reg-03', name: 'Centro-Oeste' },
-    { id: 'reg-04', name: 'Norte' },
-    { id: 'reg-05', name: 'Nordeste' },
-];
+type Region = {
+    id: string;
+    name: string;
+}
 
 const SupervisorFormModal = ({
   onSave,
+  regions,
   children,
 }: {
-  onSave: (data: Supervisor) => void;
+  onSave: () => void;
+  regions: Region[];
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<Supervisor>({
+  const form = useForm<z.infer<typeof supervisorSchema>>({
     resolver: zodResolver(supervisorSchema),
     defaultValues: {
       firstName: '',
@@ -202,32 +146,42 @@ const SupervisorFormModal = ({
       address: '',
       titheDay: 1,
       phone: '',
-      status: 'active',
     },
   });
 
   React.useEffect(() => {
     if (isOpen) {
-      form.reset({
-        firstName: '',
-        lastName: '',
-        cpf: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        titheDay: 1,
-        phone: '',
-        status: 'active',
-      });
+      form.reset();
     }
   }, [isOpen, form]);
 
-  const handleSave = (data: Supervisor) => {
-    onSave(data);
-    setIsOpen(false);
+  const handleSave = async (data: z.infer<typeof supervisorSchema>) => {
+    try {
+        const response = await fetch('/api/v1/manager/supervisores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if(!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Falha ao cadastrar supervisor.');
+        }
+
+        toast({
+            title: 'Sucesso!',
+            description: 'Supervisor cadastrado com sucesso.',
+            variant: 'success'
+        });
+        onSave();
+        setIsOpen(false);
+    } catch (error: any) {
+        toast({
+            title: 'Erro',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   };
 
   const formatCPF = (value: string) => {
@@ -280,7 +234,7 @@ const SupervisorFormModal = ({
           <DialogTitle>Cadastro de supervisor</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6 p-2">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4 overflow-y-auto max-h-[80vh]">
             <Alert
               variant="default"
               className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
@@ -294,31 +248,9 @@ const SupervisorFormModal = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="managerId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selecione um gerente</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um gerente" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {managers.map(manager => (
-                            <SelectItem key={manager.id} value={manager.id}>{manager.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="regionId"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Selecione uma região</FormLabel>
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
@@ -541,207 +473,244 @@ const SupervisorFormModal = ({
 };
 
 export default function SupervisoresPage() {
-  const [supervisors, setSupervisors] = React.useState<Supervisor[]>(initialSupervisors);
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
+  const [regions, setRegions] = React.useState<Region[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = viewMode === 'table' ? 10 : 9;
+  const { toast } = useToast();
 
-  const handleSave = (data: Supervisor) => {
-    // Create new supervisor
-    const newSupervisor: Supervisor = {
-      ...data,
-      id: `sup-${Date.now()}`,
-      status: 'active',
-    };
-    setSupervisors([...supervisors, newSupervisor]);
+  const fetchData = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const [supervisorsRes, regionsRes] = await Promise.all([
+            fetch('/api/v1/manager/supervisores'),
+            fetch('/api/v1/regioes'),
+        ]);
+
+        if (!supervisorsRes.ok) throw new Error('Falha ao carregar supervisores.');
+        if (!regionsRes.ok) throw new Error('Falha ao carregar regiões.');
+
+        const supervisorsData = await supervisorsRes.json();
+        const regionsData = await regionsRes.json();
+
+        setSupervisors(supervisorsData.supervisors);
+        setRegions(regionsData.regions);
+    } catch (error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleDelete = async (supervisorId: string) => {
+    try {
+        const response = await fetch(`/api/v1/manager/supervisores/${supervisorId}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Falha ao excluir o supervisor.');
+        toast({ title: "Sucesso!", description: 'Supervisor excluído com sucesso.', variant: 'success' });
+        fetchData();
+    } catch(error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive'});
+    }
   };
 
-  const handleDelete = (supervisorId: string) => {
-    setSupervisors(supervisors.filter((s) => s.id !== supervisorId));
+  const filteredSupervisors = supervisors.filter(supervisor => 
+    `${supervisor.firstName} ${supervisor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredSupervisors.length / itemsPerPage);
+  const paginatedSupervisors = filteredSupervisors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const TableView = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Região</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead><span className="sr-only">Ações</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-48" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                ))
+            ) : paginatedSupervisors.length > 0 ? (
+              paginatedSupervisors.map((supervisor) => (
+                <TableRow key={supervisor.id}>
+                  <TableCell className="font-medium">{`${supervisor.firstName} ${supervisor.lastName}`}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{supervisor.email}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{supervisor.regionName || 'N/A'}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Badge variant={supervisor.status === 'active' ? 'success' : 'destructive'}>
+                      {supervisor.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/manager/supervisores/${supervisor.id}`}>Editar</Link>
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                              Excluir
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                              <AlertDialogDescription>Essa ação não pode ser desfeita. Isso excluirá permanentemente o supervisor.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(supervisor.id!)}>Continuar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+                <TableRow><TableCell colSpan={5} className="text-center">Nenhum supervisor encontrado.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <PaginationControls />
+      </CardContent>
+    </Card>
+  );
+
+  const CardView = () => (
+    <>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                    <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+                ))
+            ) : paginatedSupervisors.length > 0 ? (
+                paginatedSupervisors.map((supervisor, index) => (
+                    <Card key={supervisor.id}>
+                        <CardContent className="pt-6">
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                            <Image
+                            src="https://placehold.co/96x96.png"
+                            alt={`Foto de ${supervisor.firstName}`}
+                            width={96}
+                            height={96}
+                            className="rounded-lg object-cover w-24 h-24"
+                            data-ai-hint="male person"
+                            />
+                            <div className="flex-1 space-y-2 min-w-[200px]">
+                            <h3 className="text-lg font-bold">
+                                #{((currentPage - 1) * itemsPerPage) + index + 1} - {supervisor.firstName} {supervisor.lastName}
+                            </h3>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                                <p className='flex items-center gap-2'><Map size={14} /> <span>Região: {supervisor.regionName || 'N/A'}</span></p>
+                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{supervisor.cpf}</span></p>
+                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{supervisor.phone}</span></p>
+                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{supervisor.email}</span></p>
+                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{supervisor.city} - {supervisor.state}</span></p>
+                            </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <Button variant="outline" size="sm" asChild>
+                            <Link href={`/manager/supervisores/${supervisor.id}`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Editar
+                            </Link>
+                            </Button>
+                        </div>
+                        </CardContent>
+                    </Card>
+                ))
+            ) : (
+                <div className="col-span-full text-center">Nenhum supervisor encontrado.</div>
+            )}
+        </div>
+        <PaginationControls />
+    </>
+  );
+
+  const PaginationControls = () => (
+    <div className="flex items-center justify-end space-x-2 py-4">
+        <Button variant="outline" size="sm" onClick={handlePreviousPage} disabled={currentPage === 1 || isLoading}><ChevronLeft className="h-4 w-4" /> Anterior</Button>
+        <span className='text-sm text-muted-foreground'>Página {currentPage} de {totalPages}</span>
+        <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || isLoading}>Próximo <ChevronRight className="h-4 w-4" /></Button>
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Supervisores
+            Supervisores da Rede
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {supervisors.length} de {supervisors.length} resultados
+            Exibindo {filteredSupervisors.length} de {supervisors.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
+            <div className='relative'>
+                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+                <Input placeholder="Buscar por nome..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+            </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 w-8"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
+                <Button variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('table')} className="h-8 w-8"><List className="h-4 w-4" /></Button>
               </TooltipTrigger>
               <TooltipContent>Visualizar em tabela</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('card')}
-                  className="h-8 w-8"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
+                <Button variant={viewMode === 'card' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('card')} className="h-8 w-8"><Grid3x3 className="h-4 w-4" /></Button>
               </TooltipTrigger>
               <TooltipContent>Visualizar em cards</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
-          <SupervisorFormModal onSave={handleSave}>
-            <Button size="sm" className="gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Novo Supervisor
-              </span>
-            </Button>
+          <SupervisorFormModal onSave={fetchData} regions={regions}>
+            <Button size="sm" className="gap-1"><PlusCircle className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Novo Supervisor</span></Button>
           </SupervisorFormModal>
         </div>
       </div>
-
-      {viewMode === 'table' ? (
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Celular</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {supervisors.map((supervisor) => (
-                  <TableRow key={supervisor.id}>
-                    <TableCell className="font-medium">{`${supervisor.firstName} ${supervisor.lastName}`}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {supervisor.email}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {supervisor.phone}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge
-                        variant={
-                          supervisor.status === 'active' ? 'default' : 'secondary'
-                        }
-                        className={
-                          supervisor.status === 'active'
-                            ? 'bg-green-500/20 text-green-700 border-green-400'
-                            : 'bg-red-500/20 text-red-700 border-red-400'
-                        }
-                      >
-                        {supervisor.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/manager/supervisores/${supervisor.id}`}>Editar</Link>
-                          </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                                Excluir
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Você tem certeza?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Essa ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o supervisor.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(supervisor.id!)}
-                                >
-                                  Continuar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {supervisors.map((supervisor, index) => {
-            const manager = managers.find(m => m.id === supervisor.managerId);
-            const region = regions.find(r => r.id === supervisor.regionId);
-            return (
-                <Card key={supervisor.id}>
-                    <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                        <Image
-                        src="https://placehold.co/96x96.png"
-                        alt={`Foto de ${supervisor.firstName}`}
-                        width={96}
-                        height={96}
-                        className="rounded-lg object-cover w-24 h-24"
-                        data-ai-hint="male person"
-                        />
-                        <div className="flex-1 space-y-2 min-w-[200px]">
-                        <h3 className="text-lg font-bold">
-                            #{index + 1} - {supervisor.firstName} {supervisor.lastName}
-                        </h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                            <p className='flex items-center gap-2'><User size={14} /> <span>Gerente: {manager?.name || 'N/A'}</span></p>
-                            <p className='flex items-center gap-2'><Map size={14} /> <span>Região: {region?.name || 'N/A'}</span></p>
-                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{supervisor.cpf}</span></p>
-                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{supervisor.phone}</span></p>
-                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{supervisor.email}</span></p>
-                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{supervisor.city} - {supervisor.state}</span></p>
-                        </div>
-                        </div>
-                    </div>
-                    <div className="flex justify-end mt-4">
-                        <Button variant="outline" size="sm" asChild>
-                        <Link href={`/manager/supervisores/${supervisor.id}`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Editar
-                        </Link>
-                        </Button>
-                    </div>
-                    </CardContent>
-                </Card>
-            )
-            })}
-        </div>
-      )}
+      {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   );
 }
 
-    
