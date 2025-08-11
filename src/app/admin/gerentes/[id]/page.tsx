@@ -3,20 +3,19 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import {
   Camera,
   Facebook,
   Instagram,
   Globe,
   AlertTriangle,
-  Info,
   Lock,
   Loader2,
   Bell,
   Mail,
   Smartphone,
+  MoreHorizontal,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -46,6 +45,10 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
 type ManagerProfile = {
     firstName: string;
@@ -68,6 +71,111 @@ type ManagerProfile = {
     status: string;
     avatarUrl?: string;
 };
+
+type Transaction = {
+    id: string;
+    amount: number;
+    status: 'approved' | 'pending' | 'refused' | 'refunded';
+    date: string;
+  };
+
+const TransactionsTab = ({ userId }: { userId: string }) => {
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+  
+    React.useEffect(() => {
+      const fetchTransactions = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/v1/transacoes?userId=${userId}`);
+          if (!response.ok) throw new Error('Falha ao carregar transações.');
+          const data = await response.json();
+          setTransactions(data.transactions);
+        } catch (error: any) {
+          toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTransactions();
+    }, [userId, toast]);
+  
+    const statusMap: { [key: string]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+        approved: { text: "Aprovada", variant: "success" },
+        pending: { text: "Pendente", variant: "warning" },
+        refused: { text: "Recusada", variant: "destructive" },
+        refunded: { text: "Reembolsada", variant: "outline" },
+    };
+  
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Transações do Usuário</CardTitle>
+          <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>ID da Transação</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead><span className="sr-only">Ações</span></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                    ))
+                ) : transactions.length > 0 ? (
+                    transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                        <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                        <TableCell>
+                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                            {statusMap[transaction.status]?.text || transaction.status}
+                        </Badge>
+                        </TableCell>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
+                        <TableCell className='text-right'>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                                </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">Nenhuma transação encontrada para este usuário.</TableCell>
+                    </TableRow>
+                )}
+                </TableBody>
+            </Table>
+        </CardContent>
+      </Card>
+    );
+  };
+
 
 export default function GerenteProfilePage() {
     const [manager, setManager] = React.useState<ManagerProfile | null>(null);
@@ -140,7 +248,7 @@ export default function GerenteProfilePage() {
         fetchManager();
     }, [fetchManager]);
 
-    const onSubmit = async (data: ManagerProfile) => {
+    const onSubmit = async (data: Partial<ManagerProfile>) => {
         try {
             const response = await fetch(`/api/v1/admin/gerentes/${id}`, {
                 method: 'PUT',
@@ -151,7 +259,7 @@ export default function GerenteProfilePage() {
             const updatedData = await response.json();
             toast({ title: 'Sucesso', description: 'Gerente atualizado com sucesso.', variant: 'success' });
             setManager((prev) => prev ? { ...prev, ...updatedData.manager } : null);
-        } catch (error) {
+        } catch (error: any) {
             toast({ title: 'Erro', description: 'Não foi possível atualizar o gerente.', variant: 'destructive'});
         }
     };
@@ -470,17 +578,7 @@ export default function GerenteProfilePage() {
                 </Card>
             </TabsContent>
             <TabsContent value="transactions">
-                <Card>
-                <CardHeader>
-                    <CardTitle>Transações do Usuário</CardTitle>
-                    <CardDescription>
-                    Histórico de transações financeiras do usuário.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p>O histórico de transações aparecerá aqui.</p>
-                </CardContent>
-                </Card>
+                <TransactionsTab userId={id as string} />
             </TabsContent>
              <TabsContent value="configuracoes">
               <Card>
@@ -561,3 +659,4 @@ export default function GerenteProfilePage() {
         </div>
     );
 }
+

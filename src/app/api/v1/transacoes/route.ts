@@ -1,11 +1,12 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { gatewayConfigurations, transactions as transactionsTable, users, managerProfiles, churchProfiles, type TransactionStatus } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { gatewayConfigurations, transactions as transactionsTable, users, churchProfiles, type TransactionStatus } from '@/db/schema';
+import { eq, desc, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { format } from 'date-fns';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 
 const COMPANY_ID = process.env.COMPANY_INIT;
@@ -174,7 +175,10 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
     try {
-        const results = await db.select({
+        const url = new URL(request.url);
+        const userId = url.searchParams.get('userId');
+
+        const query = db.select({
             id: transactionsTable.id,
             contributor: users.email,
             church: churchProfiles.nomeFantasia,
@@ -188,6 +192,12 @@ export async function GET(request: Request) {
         .leftJoin(users, eq(transactionsTable.contributorId, users.id))
         .leftJoin(churchProfiles, eq(transactionsTable.originChurchId, churchProfiles.userId))
         .orderBy(desc(transactionsTable.createdAt));
+        
+        if (userId) {
+            query.where(eq(transactionsTable.contributorId, userId));
+        }
+
+        const results = await query;
         
         const formattedTransactions = results.map(t => ({
             ...t,
