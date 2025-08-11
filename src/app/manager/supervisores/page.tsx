@@ -487,7 +487,7 @@ export default function SupervisoresPage() {
     try {
         const [supervisorsRes, regionsRes] = await Promise.all([
             fetch('/api/v1/manager/supervisores'),
-            fetch('/api/v1/regioes'),
+            fetch('/api/v1/regioes?minimal=true'),
         ]);
 
         if (!supervisorsRes.ok) throw new Error('Falha ao carregar supervisores.');
@@ -713,4 +713,3 @@ export default function SupervisoresPage() {
     </div>
   );
 }
-

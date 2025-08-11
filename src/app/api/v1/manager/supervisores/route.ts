@@ -16,7 +16,7 @@ if (!COMPANY_ID) {
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
 const supervisorSchema = z.object({
-  regionId: z.string().uuid({ message: 'Selecione uma região.' }),
+  regionId: z.string({ required_error: 'Selecione uma região.' }),
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
   lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
   cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
@@ -41,11 +41,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const url = new URL(request.url);
-    const minimal = url.searchParams.get('minimal') === 'true';
-
-    const baseQuery = db
-      .select({
+    const result = await db.select({
         id: users.id,
         firstName: supervisorProfiles.firstName,
         lastName: supervisorProfiles.lastName,
@@ -65,8 +61,6 @@ export async function GET(request: Request) {
       ))
       .orderBy(desc(users.createdAt));
       
-    const result = await baseQuery;
-
     return NextResponse.json({ supervisors: result });
 
   } catch (error: any) {

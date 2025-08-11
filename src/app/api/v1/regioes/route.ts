@@ -21,6 +21,18 @@ export async function GET(request: Request) {
     if (authResponse) return authResponse;
 
   try {
+    const url = new URL(request.url);
+    const minimal = url.searchParams.get('minimal') === 'true';
+
+    if (minimal) {
+        const allRegions = await db
+            .select({ id: regions.id, name: regions.name })
+            .from(regions)
+            .where(and(eq(regions.companyId, COMPANY_ID), isNull(regions.deletedAt)))
+            .orderBy(desc(regions.updatedAt));
+        return NextResponse.json({ regions: allRegions });
+    }
+
     const allRegions = await db
       .select()
       .from(regions)
