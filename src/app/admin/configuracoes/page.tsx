@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Webhook,
   Cloud,
+  KeyRound,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -52,6 +53,12 @@ const settingsLinks = [
     icon: Cloud,
     title: 'Armazenamento (S3)',
     description: 'Configure o local para armazenamento de arquivos (ex: S3, MinIO).',
+  },
+  {
+    href: '/admin/configuracoes/api',
+    icon: KeyRound,
+    title: 'Chaves de API',
+    description: 'Gerencie as chaves para acesso programático à API.',
   }
 ];
 

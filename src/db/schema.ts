@@ -36,6 +36,8 @@ export const webhookEventEnum = pgEnum('webhook_event', [
     'usuario_criado'
 ]);
 
+export const apiKeyStatusEnum = pgEnum('api_key_status', ['active', 'inactive']);
+
 
 // Tabelas Principais
 
@@ -264,6 +266,16 @@ export const webhooks = pgTable('webhooks', {
     updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+export const apiKeys = pgTable('api_keys', {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id').references(() => companies.id).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    key: varchar('key', { length: 255 }).unique().notNull(), // Should be hashed in a real app
+    status: apiKeyStatusEnum('status').default('active').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastUsedAt: timestamp('last_used_at'),
+});
+
 
 // Relações
 
@@ -275,6 +287,7 @@ export const companiesRelations = relations(companies, ({ many, one }) => ({
     notificationRules: many(notificationRules),
     webhooks: many(webhooks),
     otherSettings: one(otherSettings, { fields: [companies.id], references: [otherSettings.companyId] }),
+    apiKeys: many(apiKeys),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -347,4 +360,8 @@ export const webhooksRelations = relations(webhooks, ({ one }) => ({
 
 export const otherSettingsRelations = relations(otherSettings, ({ one }) => ({
     company: one(companies, { fields: [otherSettings.companyId], references: [companies.id] }),
+}));
+
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+    company: one(companies, { fields: [apiKeys.companyId], references: [companies.id] }),
 }));
