@@ -6,7 +6,6 @@ import { eq, desc, and, isNull, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { format } from 'date-fns';
-import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
 
 
@@ -77,15 +76,12 @@ async function getContributorProfile(userId: string, role: string) {
 }
 
 export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user: sessionUser } = await validateRequest();
+    if(!sessionUser) {
+         return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+    }
     
     try {
-        const { user: sessionUser } = await validateRequest();
-        if(!sessionUser) {
-             return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-        }
-
         const [contributorProfile] = await getContributorProfile(sessionUser.id, sessionUser.role);
 
         if (!contributorProfile) {
@@ -192,8 +188,10 @@ export async function POST(request: Request) {
 
 
 export async function GET(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     try {
         const url = new URL(request.url);

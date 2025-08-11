@@ -1,8 +1,11 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { transactions as transactionsTable, gatewayConfigurations } from '@/db/schema';
+import { transactions as transactionsTable, gatewayConfigurations, users, churchProfiles } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { format, parseISO } from 'date-fns';
+import { validateRequest } from '@/lib/auth';
+
 
 async function getCieloCredentials() {
     const [config] = await db.select()
@@ -22,6 +25,11 @@ async function getCieloCredentials() {
 
 
 export async function GET(request: Request, { params }: { params: { id: string }}) {
+    const { user } = await validateRequest();
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id: paymentId } = params;
 
     if (!paymentId) {

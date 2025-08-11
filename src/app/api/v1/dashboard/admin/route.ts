@@ -4,7 +4,7 @@ import { db } from '@/db/drizzle';
 import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles, managerProfiles } from '@/db/schema';
 import { count, sum, eq, isNull, and, desc, sql, gte, lt } from 'drizzle-orm';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
-import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const calculateChange = (current: number, previous: number): string => {
     if (previous === 0) {
@@ -18,8 +18,10 @@ const calculateChange = (current: number, previous: number): string => {
 
 
 export async function GET(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     try {
         const now = new Date();
