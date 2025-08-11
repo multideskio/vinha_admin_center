@@ -2,7 +2,13 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle, MoreHorizontal, KeyRound, Copy, Trash2, Eye, EyeOff } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Copy, Trash2, Loader2, KeyRound } from 'lucide-react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
 import {
   Table,
   TableBody,
@@ -19,6 +25,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -32,27 +39,198 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogClose,
+    DialogFooter,
+    DialogDescription,
+} from '@/components/ui/dialog';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 
-// Mock data. This should be replaced with API data.
-const apiKeys = [
-    { id: '1', name: 'Chave Principal (Servidor)', key: 'vma_sk_....1234', lastUsed: '2 horas atrás', createdAt: '15/07/2024', status: 'active' },
-    { id: '2', name: 'Integração Contabilidade', key: 'vma_sk_....5678', lastUsed: '3 dias atrás', createdAt: '10/07/2024', status: 'active' },
-    { id: '3', name: 'Chave Legada', key: 'vma_sk_....abcd', lastUsed: 'Nunca', createdAt: '01/01/2024', status: 'inactive' },
-]
+type ApiKey = {
+    id: string;
+    name: string;
+    key: string;
+    status: 'active' | 'inactive';
+    lastUsedAt: string | null;
+    createdAt: string;
+}
+
+const newKeySchema = z.object({
+    name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.'}),
+});
+
+const NewKeyModal = ({ onKeyCreated }: { onKeyCreated: () => void }) => {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [newKey, setNewKey] = React.useState<string | null>(null);
+    const [isCreating, setIsCreating] = React.useState(false);
+    const { toast } = useToast();
+
+    const form = useForm<z.infer<typeof newKeySchema>>({
+        resolver: zodResolver(newKeySchema),
+        defaultValues: { name: '' },
+    });
+
+    const handleCreateKey = async (values: z.infer<typeof newKeySchema>) => {
+        setIsCreating(true);
+        try {
+            const response = await fetch('/api/v1/api-keys', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(values),
+            });
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.error || 'Falha ao criar chave.');
+            
+            setNewKey(result.key);
+            onKeyCreated();
+            form.reset();
+        } catch(error: any) {
+            toast({ title: "Erro", description: error.message, variant: "destructive" });
+        } finally {
+            setIsCreating(false);
+        }
+    }
+
+    const handleClose = () => {
+        setIsOpen(false);
+        setNewKey(null);
+    }
+    
+    const copyToClipboard = () => {
+        if (!newKey) return;
+        navigator.clipboard.writeText(newKey);
+        toast({ title: 'Sucesso', description: 'Chave copiada para a área de transferência.' });
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => {
+            if (!open) handleClose();
+            setIsOpen(open);
+        }}>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Criar nova chave
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                {!newKey ? (
+                     <>
+                        <DialogHeader>
+                            <DialogTitle>Criar Nova Chave de API</DialogTitle>
+                            <DialogDescription>Dê um nome para sua nova chave para identificá-la.</DialogDescription>
+                        </DialogHeader>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(handleCreateKey)} className="space-y-4">
+                                <FormField control={form.control} name="name" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nome da Chave</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ex: Integração Contábil" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <DialogFooter>
+                                    <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+                                    <Button type="submit" disabled={isCreating}>
+                                        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Criar Chave
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </Form>
+                     </>
+                ) : (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>Chave de API Criada com Sucesso!</DialogTitle>
+                            <DialogDescription>Copie sua chave de API. Você não poderá vê-la novamente.</DialogDescription>
+                        </DialogHeader>
+                        <Alert variant="destructive">
+                            <KeyRound className="h-4 w-4" />
+                            <AlertTitle>Guarde esta chave em um lugar seguro!</AlertTitle>
+                        </Alert>
+                        <div className="relative rounded-md bg-muted font-mono text-sm p-4 break-all">
+                            {newKey}
+                            <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7" onClick={copyToClipboard}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleClose}>Concluído</Button>
+                        </DialogFooter>
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function ApiKeysPage() {
+    const [keys, setKeys] = React.useState<ApiKey[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const { toast } = useToast();
 
+    const fetchKeys = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/api-keys');
+            if(!response.ok) throw new Error('Falha ao carregar chaves de API.');
+            const data = await response.json();
+            setKeys(data.keys);
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+    
     React.useEffect(() => {
-        // Simulating API fetch
-        setTimeout(() => setIsLoading(false), 1000);
-    }, []);
+        fetchKeys();
+    }, [fetchKeys]);
 
-    const handleDelete = (id: string) => {
-        toast({ title: "Ação não implementada", description: `A exclusão da chave ${id} será implementada.`});
+    const handleToggleStatus = async (id: string, currentStatus: 'active' | 'inactive') => {
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        try {
+            const response = await fetch(`/api/v1/api-keys/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status: newStatus })
+            });
+            if(!response.ok) throw new Error('Falha ao atualizar status da chave.');
+            toast({ title: 'Sucesso', description: 'Status da chave atualizado.' });
+            fetchKeys();
+        } catch (error: any) {
+             toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            const response = await fetch(`/api/v1/api-keys/${id}`, { method: 'DELETE' });
+            if(!response.ok) throw new Error('Falha ao excluir a chave.');
+            toast({ title: "Sucesso!", description: 'Chave de API excluída com sucesso.', variant: 'success' });
+            fetchKeys();
+        } catch(error: any) {
+             toast({ title: "Erro", description: error.message, variant: 'destructive'});
+        }
     }
 
   return (
@@ -64,10 +242,7 @@ export default function ApiKeysPage() {
                 Gerencie chaves de API para integrações e acesso seguro.
                 </CardDescription>
             </div>
-            <Button>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Criar nova chave
-            </Button>
+            <NewKeyModal onKeyCreated={fetchKeys} />
         </div>
       
       <Card>
@@ -97,17 +272,16 @@ export default function ApiKeysPage() {
                         <TableCell><Skeleton className='h-8 w-8' /></TableCell>
                     </TableRow>
                 ))
-              ) : apiKeys.map((apiKey) => (
+              ) : keys.map((apiKey) => (
                 <TableRow key={apiKey.id}>
                     <TableCell className='font-medium'>{apiKey.name}</TableCell>
                     <TableCell>
                         <div className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
                             <span>{apiKey.key}</span>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><Copy className='h-4 w-4'/></Button>
                         </div>
                     </TableCell>
-                    <TableCell>{apiKey.lastUsed}</TableCell>
-                    <TableCell>{apiKey.createdAt}</TableCell>
+                    <TableCell>{apiKey.lastUsedAt ? formatDistanceToNow(new Date(apiKey.lastUsedAt), { addSuffix: true, locale: ptBR }) : 'Nunca'}</TableCell>
+                    <TableCell>{format(new Date(apiKey.createdAt), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>
                         <Badge variant={apiKey.status === 'active' ? 'success' : 'secondary'}>
                             {apiKey.status === 'active' ? 'Ativa' : 'Inativa'}
@@ -123,8 +297,9 @@ export default function ApiKeysPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>{apiKey.status === 'active' ? 'Desativar' : 'Ativar'}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleStatus(apiKey.id, apiKey.status)}>
+                                {apiKey.status === 'active' ? 'Desativar' : 'Ativar'}
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -155,3 +330,4 @@ export default function ApiKeysPage() {
     </div>
   );
 }
+
