@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { DollarSign, Users, Church, UserCog, Building, User, CreditCard, Banknote, QrCode, RefreshCw } from 'lucide-react';
+import { DollarSign, Users, Church, UserCog, User, CreditCard, Banknote, QrCode, RefreshCw, ArrowRightLeft } from 'lucide-react';
 import {
   Bar,
   BarChart,
