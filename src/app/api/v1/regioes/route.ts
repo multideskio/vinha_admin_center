@@ -4,7 +4,7 @@ import { db } from '@/db/drizzle';
 import { regions } from '@/db/schema';
 import { eq, and, isNull, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -17,8 +17,10 @@ const regionSchema = z.object({
 });
 
 export async function GET(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user) {
+        return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
 
   try {
     const url = new URL(request.url);
@@ -48,8 +50,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user } = await validateRequest();
+    if (!user) {
+        return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
 
     try {
       const body = await request.json();
