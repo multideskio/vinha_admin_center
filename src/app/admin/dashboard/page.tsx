@@ -45,8 +45,18 @@ type KpiData = {
     icon: React.ElementType;
 };
 
+type KpiBlock = {
+    totalRevenue: Omit<KpiData, 'icon' | 'title'>,
+    totalMembers: Omit<KpiData, 'icon' | 'title'>,
+    totalTransactions: Omit<KpiData, 'icon' | 'title'>,
+    totalChurches: Omit<KpiData, 'icon' | 'title'>,
+    totalPastors: Omit<KpiData, 'icon' | 'title'>,
+    totalSupervisors: Omit<KpiData, 'icon' | 'title'>,
+    totalManagers: Omit<KpiData, 'icon' | 'title'>,
+}
+
 type DashboardData = {
-    kpis: KpiData[];
+    kpis: KpiBlock;
     revenueByMethod: { method: string; value: number; fill: string; }[];
     revenueByRegion: { name: string; revenue: number; fill: string; }[];
     churchesByRegion: { name: string; count: number; fill: string; }[];
@@ -67,19 +77,8 @@ export default function DashboardPage() {
             if (!response.ok) {
                 throw new Error('Falha ao carregar os dados do dashboard.');
             }
-            const dashboardData = await response.json();
-            
-            const kpis: KpiData[] = [
-                { title: 'Arrecadação no Mês', value: `R$ ${dashboardData.kpis.totalRevenue.toFixed(2)}`, change: '+20.1% em relação ao mês passado', icon: DollarSign },
-                { title: 'Total de Membros', value: `+${dashboardData.kpis.totalMembers}`, change: '+180 este mês', icon: Users },
-                { title: 'Total de Transações', value: `+${dashboardData.kpis.totalTransactions}`, change: '+34 hoje', icon: Activity },
-                { title: 'Total de Igrejas', value: `${dashboardData.kpis.totalChurches}`, change: '+2 este mês', icon: Building },
-                { title: 'Total de Pastores', value: `${dashboardData.kpis.totalPastors}`, change: '+5 este mês', icon: User },
-                { title: 'Total de Supervisores', value: `${dashboardData.kpis.totalSupervisors}`, change: 'Nenhuma alteração', icon: UserCog },
-                { title: 'Total de Gerentes', value: `${dashboardData.kpis.totalManagers}`, change: '+1 este ano', icon: UserCheck },
-            ];
-
-            setData({ ...dashboardData, kpis });
+            const dashboardData: DashboardData = await response.json();
+            setData(dashboardData);
 
         } catch (error: any) {
             toast({
@@ -95,6 +94,16 @@ export default function DashboardPage() {
     React.useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    const kpiDisplayData = data ? [
+        { title: 'Arrecadação no Mês', ...data.kpis.totalRevenue, icon: DollarSign },
+        { title: 'Total de Membros', ...data.kpis.totalMembers, icon: Users },
+        { title: 'Total de Transações', ...data.kpis.totalTransactions, icon: Activity },
+        { title: 'Total de Igrejas', ...data.kpis.totalChurches, icon: Building },
+        { title: 'Total de Pastores', ...data.kpis.totalPastors, icon: User },
+        { title: 'Total de Supervisores', ...data.kpis.totalSupervisors, icon: UserCog },
+        { title: 'Total de Gerentes', ...data.kpis.totalManagers, icon: UserCheck },
+    ] : [];
 
 
   if (isLoading || !data) {
@@ -138,7 +147,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        {data.kpis.map((kpi) => (
+        {kpiDisplayData.map((kpi) => (
           <Card key={kpi.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>

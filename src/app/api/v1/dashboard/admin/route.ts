@@ -2,25 +2,56 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles, managerProfiles } from '@/db/schema';
-import { count, sum, eq, isNull, and, desc, sql } from 'drizzle-orm';
-import { format } from 'date-fns';
+import { count, sum, eq, isNull, and, desc, sql, gte, lt } from 'drizzle-orm';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { authenticateApiKey } from '@/lib/api-auth';
+
+const calculateChange = (current: number, previous: number): string => {
+    if (previous === 0) {
+        return current > 0 ? "+100% (era 0)" : "Nenhuma alteração";
+    }
+    const percentage = ((current - previous) / previous) * 100;
+    if (Math.abs(percentage) < 0.1) return "Nenhuma alteração";
+    const sign = percentage > 0 ? '+' : '';
+    return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`;
+};
+
 
 export async function GET(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
     try {
+        const now = new Date();
+        const startOfCurrentMonth = startOfMonth(now);
+        const startOfPreviousMonth = startOfMonth(subMonths(now, 1));
+        const endOfPreviousMonth = endOfMonth(startOfPreviousMonth);
+
+        // --- KPI Calculations ---
         const totalManagers = await db.select({ value: count() }).from(users).where(and(eq(users.role, 'manager'), isNull(users.deletedAt)));
         const totalSupervisors = await db.select({ value: count() }).from(users).where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)));
         const totalPastors = await db.select({ value: count() }).from(users).where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)));
         const totalChurches = await db.select({ value: count() }).from(users).where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)));
         
-        const totalMembers = totalManagers[0].value + totalSupervisors[0].value + totalPastors[0].value + totalChurches[0].value;
+        // Revenue
+        const revenueCurrentMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfCurrentMonth)));
+        const revenuePreviousMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth)));
+        const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0].value || '0');
+        const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0].value || '0');
 
-        const totalTransactions = await db.select({ value: count() }).from(transactions);
-        const totalRevenueResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(eq(transactions.status, 'approved'));
-        const totalRevenue = parseFloat(totalRevenueResult[0].value || '0');
+        // Members
+        const totalMembersResult = await db.select({ value: count() }).from(users).where(isNull(users.deletedAt));
+        const newMembersThisMonthResult = await db.select({ value: count() }).from(users).where(gte(users.createdAt, startOfCurrentMonth));
+        const totalMembers = totalMembersResult[0].value;
+        const newMembersThisMonth = newMembersThisMonthResult[0].value;
+
+        // Transactions
+        const totalTransactionsResult = await db.select({ value: count() }).from(transactions);
+        const newTransactionsThisMonthResult = await db.select({ value: count() }).from(transactions).where(gte(transactions.createdAt, startOfCurrentMonth));
+        const newTransactionsLastMonthResult = await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth)));
+        const totalTransactions = totalTransactionsResult[0].value;
+        const newTransactionsThisMonth = newTransactionsThisMonthResult[0].value;
+        const newTransactionsLastMonth = newTransactionsLastMonthResult[0].value;
 
         const revenueByMethod = await db.select({
             method: transactions.paymentMethod,
@@ -79,19 +110,46 @@ export async function GET(request: Request) {
             .orderBy(desc(users.createdAt))
             .limit(10);
             
+        const startOfSixMonthsAgo = startOfMonth(subMonths(now, 5));
+        const newMembersByMonthData = await db
+            .select({
+                month: sql<string>`TO_CHAR(${users.createdAt}, 'YYYY-MM')`,
+                count: count(users.id),
+            })
+            .from(users)
+            .where(gte(users.createdAt, startOfSixMonthsAgo))
+            .groupBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
+            .orderBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`);
+    
+        const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+        const formattedNewMembers = newMembersByMonthData.map(item => ({
+            month: monthNames[parseInt(item.month.substring(5, 7)) - 1],
+            count: item.count,
+        }));
+
+
         const formattedRevenueByMethod = revenueByMethod.map(item => ({
             ...item,
             fill: item.method === 'pix' ? '#10b981' : item.method === 'credit_card' ? '#3b82f6' : '#f59e0b'
         }));
         
         const kpis = {
-            totalRevenue,
-            totalMembers,
-            totalTransactions: totalTransactions[0].value,
-            totalChurches: totalChurches[0].value,
-            totalPastors: totalPastors[0].value,
-            totalSupervisors: totalSupervisors[0].value,
-            totalManagers: totalManagers[0].value
+            totalRevenue: {
+                value: `R$ ${totalRevenueCurrentMonth.toFixed(2)}`,
+                change: calculateChange(totalRevenueCurrentMonth, totalRevenuePreviousMonth)
+            },
+            totalMembers: {
+                value: `+${totalMembers}`,
+                change: `+${newMembersThisMonth} este mês`
+            },
+            totalTransactions: {
+                value: `+${totalTransactions}`,
+                change: calculateChange(newTransactionsThisMonth, newTransactionsLastMonth)
+            },
+            totalChurches: { value: `${totalChurches[0].value}`, change: '' },
+            totalPastors: { value: `${totalPastors[0].value}`, change: '' },
+            totalSupervisors: { value: `${totalSupervisors[0].value}`, change: '' },
+            totalManagers: { value: `${totalManagers[0].value}`, change: '' }
         };
 
         const recentTransactions = recentTransactionsData.map(t => ({...t, amount: Number(t.amount), date: format(new Date(t.date), 'dd/MM/yyyy')}));
@@ -104,10 +162,7 @@ export async function GET(request: Request) {
             churchesByRegion: churchesByRegionData,
             recentTransactions,
             recentRegistrations,
-            newMembers: [
-                { month: 'Jan', count: 120 }, { month: 'Fev', count: 150 }, { month: 'Mar', count: 170 }, 
-                { month: 'Abr', count: 200 }, { month: 'Mai', count: 230 }, { month: 'Jun', count: 180 },
-            ]
+            newMembers: formattedNewMembers
         });
 
     } catch (error: any) {
