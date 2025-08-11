@@ -1,11 +1,11 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema';
 import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
@@ -32,15 +32,31 @@ const supervisorSchema = z.object({
 
 
 export async function GET(request: Request) {
-  const authResponse = await authenticateApiKey(request);
-  if (authResponse) return authResponse;
-
   const { user } = await validateRequest();
   if (!user || user.role !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
   }
 
   try {
+    const url = new URL(request.url);
+    const minimal = url.searchParams.get('minimal') === 'true';
+
+    if (minimal) {
+        const result = await db.select({
+            id: users.id,
+            firstName: supervisorProfiles.firstName,
+            lastName: supervisorProfiles.lastName,
+        })
+        .from(supervisorProfiles)
+        .innerJoin(users, eq(users.id, supervisorProfiles.userId))
+        .where(and(
+            eq(supervisorProfiles.managerId, user.id),
+            isNull(users.deletedAt)
+        ))
+        .orderBy(desc(users.createdAt));
+        return NextResponse.json({ supervisors: result });
+    }
+
     const result = await db.select({
         id: users.id,
         firstName: supervisorProfiles.firstName,
@@ -70,9 +86,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
     const { user } = await validateRequest();
     if (!user || user.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
