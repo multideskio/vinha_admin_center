@@ -7,6 +7,8 @@ import {
   ListFilter,
   MoreHorizontal,
   Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -36,32 +38,85 @@ import {
 import { Input } from '@/components/ui/input';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Transaction = {
   id: string;
   contributor: string;
-  church: string;
+  church: string | null;
   amount: number;
-  method: 'Pix' | 'Cartão de Crédito' | 'Boleto';
-  status: 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada';
+  method: 'pix' | 'credit_card' | 'boleto';
+  status: 'approved' | 'pending' | 'refused' | 'refunded';
   date: string;
-  refundRequestReason?: string;
+  refundRequestReason?: string | null;
 };
 
-const transactions: Transaction[] = [
-    { id: 'TRN-001', contributor: 'João Silva', church: 'Assembleia de Deus Madureira', amount: 150.00, method: 'Pix', status: 'Aprovada', date: '28/07/2024' },
-    { id: 'TRN-002', contributor: 'Maria Oliveira', church: 'IURD', amount: 75.50, method: 'Cartão de Crédito', status: 'Aprovada', date: '28/07/2024' },
-    { id: 'TRN-003', contributor: 'Carlos Andrade', church: 'Igreja Batista', amount: 200.00, method: 'Boleto', status: 'Pendente', date: '27/07/2024' },
-    { id: 'TRN-004', contributor: 'Ana Beatriz', church: 'Comunidade da Graça', amount: 50.00, method: 'Pix', status: 'Reembolsada', date: '27/07/2024', refundRequestReason: 'Contribuição duplicada por engano.' },
-    { id: 'TRN-005', contributor: 'Paulo Ferreira', church: 'Videira', amount: 300.00, method: 'Cartão de Crédito', status: 'Recusada', date: '26/07/2024' },
-    { id: 'TRN-006', contributor: 'Jabez Henrique', church: 'Fonte da Vida', amount: 120.00, method: 'Pix', status: 'Aprovada', date: '26/07/2024' },
-    { id: 'TRN-007', contributor: 'Lucas Mendes', church: 'Renascer em Cristo', amount: 90.00, method: 'Boleto', status: 'Aprovada', date: '25/07/2024' },
-    { id: 'TRN-008', contributor: 'Fernanda Costa', church: 'Bola de Neve', amount: 250.00, method: 'Cartão de Crédito', status: 'Aprovada', date: '25/07/2024' },
-    { id: 'TRN-009', contributor: 'José Contas', church: 'Igreja Presbiteriana', amount: 80.00, method: 'Pix', status: 'Pendente', date: '24/07/2024' },
-    { id: 'TRN-010', contributor: 'Maria Finanças', church: 'Igreja Metodista', amount: 450.00, method: 'Boleto', status: 'Aprovada', date: '24/07/2024' },
-];
-
 export default function TransacoesPage() {
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const [statusFilter, setStatusFilter] = React.useState<string[]>([]);
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const itemsPerPage = 10;
+    const { toast } = useToast();
+
+    const fetchTransactions = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/supervisor/transacoes');
+            if (!response.ok) {
+                throw new Error('Falha ao carregar as transações da supervisão.');
+            }
+            const data = await response.json();
+            setTransactions(data.transactions);
+        } catch (error: any) {
+            toast({
+                title: "Erro",
+                description: error.message,
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    React.useEffect(() => {
+        fetchTransactions();
+    }, [fetchTransactions]);
+
+    const handleStatusFilterChange = (status: string) => {
+        setStatusFilter(prev => 
+            prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+        );
+    }
+    
+    const filteredTransactions = transactions
+        .filter(transaction => 
+            transaction.contributor.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .filter(transaction => 
+            statusFilter.length === 0 || statusFilter.includes(transaction.status)
+        );
+
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+    const paginatedTransactions = filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    };
+
+    const handlePreviousPage = () => {
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
+
+    const statusMap: { [key: string]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+        approved: { text: "Aprovada", variant: "success" },
+        pending: { text: "Pendente", variant: "warning" },
+        refused: { text: "Recusada", variant: "destructive" },
+        refunded: { text: "Reembolsada", variant: "outline" },
+    };
+
   return (
     <div className="flex flex-col gap-8">
        <div>
@@ -81,6 +136,8 @@ export default function TransacoesPage() {
                     type="search"
                     placeholder="Buscar por contribuinte..."
                     className="pl-8 w-full sm:w-[250px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <DropdownMenu>
@@ -93,10 +150,15 @@ export default function TransacoesPage() {
                     <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
+                    {Object.entries(statusMap).map(([key, { text }]) => (
+                        <DropdownMenuCheckboxItem
+                            key={key}
+                            checked={statusFilter.includes(key)}
+                            onCheckedChange={() => handleStatusFilterChange(key)}
+                        >
+                            {text}
+                        </DropdownMenuCheckboxItem>
+                    ))}
                     </DropdownMenuContent>
                 </DropdownMenu>
                 <DateRangePicker />
@@ -119,21 +181,26 @@ export default function TransacoesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
+              {isLoading ? (
+                     Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                            <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-48" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
+                            <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                        </TableRow>
+                    ))
+                ) : paginatedTransactions.length > 0 ? (
+                paginatedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium">{transaction.contributor}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground">{transaction.church}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">{transaction.church || 'N/A'}</TableCell>
                   <TableCell className="hidden md:table-cell text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                  <Badge variant={transaction.status === 'Aprovada' ? 'default' 
-                      : transaction.status === 'Pendente' ? 'secondary' 
-                      : transaction.status === 'Reembolsada' ? 'outline'
-                      : 'destructive'}
-                        className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
-                        : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
-                        : transaction.status === 'Reembolsada' ? 'bg-blue-500/20 text-blue-700 border-blue-400'
-                        : 'bg-red-500/20 text-red-700 border-red-400'}>
-                        {transaction.status}
+                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                        {statusMap[transaction.status]?.text || transaction.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
@@ -170,9 +237,37 @@ export default function TransacoesPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">Nenhuma transação encontrada.</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
+           <div className="flex items-center justify-end space-x-2 py-4">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1 || isLoading}
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <span className='text-sm text-muted-foreground'>
+                    Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages || isLoading}
+                >
+                    Próximo
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
         </CardContent>
       </Card>
     </div>

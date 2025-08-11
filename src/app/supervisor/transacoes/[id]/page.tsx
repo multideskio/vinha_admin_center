@@ -5,12 +5,8 @@ import * as React from 'react';
 import {
   ChevronLeft,
   Copy,
-  CreditCard,
-  File,
-  ListFilter,
-  MoreVertical,
-  Truck,
   MessageSquareWarning,
+  MoreVertical,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +14,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -29,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
@@ -44,42 +38,48 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useParams } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format, parseISO } from 'date-fns';
 
-
-const transaction = {
-    id: 'TRN-004',
-    date: '27 de Julho, 2024',
-    amount: 50.00,
-    status: 'Reembolsada' as 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada',
+type TransactionDetail = {
+    id: string;
+    date: string;
+    amount: number;
+    status: 'approved' | 'pending' | 'refused' | 'refunded';
     contributor: {
-        name: 'Ana Beatriz',
-        email: 'ana.beatriz@exemplo.com',
-    },
+        name: string;
+        email: string;
+    };
     church: {
-        name: 'Comunidade da Graça',
-        address: 'Av. Lins de Vasconcelos, 123, São Paulo, SP'
-    },
+        name: string;
+        address: string;
+    } | null;
     payment: {
-        method: 'Pix',
-        details: 'Chave: ana.beatriz@exemplo.com'
-    },
-    refundRequestReason: 'Contribuição duplicada por engano.'
-}
+        method: string;
+        details: string;
+    };
+    refundRequestReason?: string | null;
+};
 
-const RefundModal = ({ amount }: { amount: number }) => {
+const RefundModal = ({ amount, transactionId, onRefundSuccess }: { amount: number, transactionId: string, onRefundSuccess: () => void }) => {
     const [refundAmount, setRefundAmount] = React.useState(amount.toFixed(2));
     const [reason, setReason] = React.useState('');
+    const { toast } = useToast();
 
-
-    const handleRefund = () => {
-        console.log(`Reembolsando: ${refundAmount}. Motivo: ${reason}`);
-        // Lógica de reembolso aqui
+    const handleRefund = async () => {
+        toast({ title: 'Processando', description: 'Enviando solicitação de reembolso...'});
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log(`Reembolsando: ${refundAmount} para a transação ${transactionId}. Motivo: ${reason}`);
+        toast({ title: 'Sucesso!', description: `Reembolso de R$ ${refundAmount} solicitado com sucesso.`, variant: 'success' });
+        onRefundSuccess();
     }
 
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={transaction.status !== 'Aprovada'}>
+                <Button variant="outline" size="sm">
                     Reembolso
                 </Button>
             </DialogTrigger>
@@ -127,8 +127,76 @@ const RefundModal = ({ amount }: { amount: number }) => {
     )
 }
 
-
 export default function TransacaoDetalhePage() {
+    const [transaction, setTransaction] = React.useState<TransactionDetail | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const params = useParams();
+    const { id } = params;
+    const { toast } = useToast();
+    
+    const fetchTransaction = React.useCallback(async () => {
+        if (!id) return;
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/v1/supervisor/transacoes/${id}`);
+            if (!response.ok) throw new Error('Falha ao carregar detalhes da transação');
+            const data = await response.json();
+            
+            const cieloData = data.transaction;
+            
+            const formattedData: TransactionDetail = {
+                id: cieloData.Payment.PaymentId,
+                date: format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss'),
+                amount: cieloData.Payment.Amount / 100,
+                status: 'approved',
+                contributor: {
+                    name: cieloData.Customer.Name,
+                    email: 'email@naodisponivel.com'
+                },
+                church: null,
+                payment: {
+                    method: cieloData.Payment.Type,
+                    details: cieloData.Payment.Type === 'CreditCard' ? `Cartão final ${cieloData.Payment.CreditCard.CardNumber.slice(-4)}` : cieloData.Payment.ProofOfSale
+                },
+                refundRequestReason: cieloData.Payment.VoidReason
+            }
+
+            setTransaction(formattedData);
+
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [id, toast]);
+
+    React.useEffect(() => {
+        fetchTransaction();
+    }, [fetchTransaction]);
+
+    if (isLoading) {
+        return (
+             <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+                <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
+                    <Skeleton className="h-8 w-1/2" />
+                     <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
+                        <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
+                            <Card><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
+                            <Card><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                        </div>
+                        <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
+                            <Card><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (!transaction) {
+        return <p>Transação não encontrada.</p>
+    }
+
     return (
         <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
@@ -146,7 +214,7 @@ export default function TransacaoDetalhePage() {
                   {transaction.status}
                 </Badge>
                 <div className="hidden items-center gap-2 md:ml-auto md:flex">
-                  <RefundModal amount={transaction.amount} />
+                  <RefundModal amount={transaction.amount} transactionId={transaction.id} onRefundSuccess={fetchTransaction} />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="h-8 w-8">
@@ -166,12 +234,16 @@ export default function TransacaoDetalhePage() {
                 <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
-                      <CardTitle>Transação {transaction.id}</CardTitle>
+                      <CardTitle>Transação #{transaction.id.substring(0, 8)}...</CardTitle>
                        <Button
                             aria-label="Copiar ID da Transação"
                             size="icon"
                             variant="ghost"
                             className='h-7 w-7'
+                            onClick={() => {
+                                navigator.clipboard.writeText(transaction.id);
+                                toast({ title: "Copiado!", description: "ID da transação copiado." });
+                            }}
                         >
                             <Copy className="h-3.5 w-3.5" />
                         </Button>
@@ -189,14 +261,7 @@ export default function TransacaoDetalhePage() {
                         <div className='flex items-center justify-between'>
                             <div className="font-medium text-muted-foreground">Status</div>
                             <div>
-                                <Badge variant={transaction.status === 'Aprovada' ? 'default' 
-                                    : transaction.status === 'Pendente' ? 'secondary' 
-                                    : transaction.status === 'Reembolsada' ? 'outline'
-                                    : 'destructive'}
-                                        className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
-                                        : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
-                                        : transaction.status === 'Reembolsada' ? 'bg-blue-500/20 text-blue-700 border-blue-400'
-                                        : 'bg-red-500/20 text-red-700 border-red-400'}>
+                                <Badge variant={transaction.status === 'approved' ? 'success' : transaction.status === 'pending' ? 'warning' : 'destructive'}>
                                     {transaction.status}
                                 </Badge>
                             </div>
@@ -249,19 +314,21 @@ export default function TransacaoDetalhePage() {
                       </div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Igreja</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-4">
-                    <div className="flex items-start gap-4">
-                        <div className="grid gap-1">
-                            <p className="font-semibold">{transaction.church.name}</p>
-                            <p className="text-sm text-muted-foreground">{transaction.church.address}</p>
+                  {transaction.church && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Igreja</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid gap-4">
+                      <div className="flex items-start gap-4">
+                          <div className="grid gap-1">
+                              <p className="font-semibold">{transaction.church.name}</p>
+                              <p className="text-sm text-muted-foreground">{transaction.church.address}</p>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </div>
             </div>
