@@ -61,6 +61,21 @@ function mapCieloStatusToDbStatus(cieloStatus: number): TransactionStatus {
     }
 }
 
+async function getContributorProfile(userId: string, role: string) {
+    switch (role) {
+        case 'manager':
+            return await db.select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName, cpf: managerProfiles.cpf, address: managerProfiles.address, neighborhood: managerProfiles.neighborhood, city: managerProfiles.city, state: managerProfiles.state, cep: managerProfiles.cep }).from(managerProfiles).where(eq(managerProfiles.userId, userId)).limit(1);
+        case 'supervisor':
+            return await db.select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName, cpf: supervisorProfiles.cpf, address: supervisorProfiles.address, neighborhood: supervisorProfiles.neighborhood, city: supervisorProfiles.city, state: supervisorProfiles.state, cep: supervisorProfiles.cep }).from(supervisorProfiles).where(eq(supervisorProfiles.userId, userId)).limit(1);
+        case 'pastor':
+            return await db.select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName, cpf: pastorProfiles.cpf, address: pastorProfiles.address, neighborhood: pastorProfiles.neighborhood, city: pastorProfiles.city, state: pastorProfiles.state, cep: pastorProfiles.cep }).from(pastorProfiles).where(eq(pastorProfiles.userId, userId)).limit(1);
+        case 'church_account':
+            return await db.select({ firstName: churchProfiles.nomeFantasia, lastName: sql<string>`''`, cpf: churchProfiles.cnpj, address: churchProfiles.address, neighborhood: churchProfiles.neighborhood, city: churchProfiles.city, state: churchProfiles.state, cep: churchProfiles.cep }).from(churchProfiles).where(eq(churchProfiles.userId, userId)).limit(1);
+        default:
+            return [];
+    }
+}
+
 export async function POST(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
@@ -71,10 +86,9 @@ export async function POST(request: Request) {
              return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
         }
 
-        const [contributorProfile] = await db.select().from(users).where(eq(users.id, sessionUser.id)).limit(1);
-        
-        const [gerenteProfile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, sessionUser.id));
-        if (!contributorProfile || !gerenteProfile) {
+        const [contributorProfile] = await getContributorProfile(sessionUser.id, sessionUser.role);
+
+        if (!contributorProfile) {
             return NextResponse.json({ error: "Perfil do contribuinte não encontrado." }, { status: 404 });
         }
         
@@ -84,10 +98,12 @@ export async function POST(request: Request) {
         
         const merchantOrderId = `vinha-${Date.now()}`;
         
+        const originChurchId = sessionUser.role === 'church_account' ? sessionUser.id : null;
+
         let cieloPayload: any = {
             MerchantOrderId: merchantOrderId,
             Customer: {
-                Name: `${gerenteProfile?.firstName || 'Usuário'} ${gerenteProfile?.lastName || 'Teste'}`
+                Name: `${contributorProfile.firstName || 'Usuário'} ${contributorProfile.lastName || ''}`.trim()
             },
             Payment: {
                 Type: '',
@@ -115,20 +131,20 @@ export async function POST(request: Request) {
                 }
                 break;
             case 'boleto':
-                if (!gerenteProfile.cpf || !gerenteProfile.address || !gerenteProfile.neighborhood || !gerenteProfile.city || !gerenteProfile.state || !gerenteProfile.cep) {
+                if (!contributorProfile.cpf || !contributorProfile.address || !contributorProfile.neighborhood || !contributorProfile.city || !contributorProfile.state || !contributorProfile.cep) {
                     return NextResponse.json({ error: "Endereço ou CPF incompletos. Por favor, complete seu perfil antes de gerar um boleto." }, { status: 400 });
                 }
                 cieloPayload.Payment.Type = 'Boleto';
                 cieloPayload.Payment.Provider = 'Bradesco2';
-                cieloPayload.Customer.Identity = gerenteProfile.cpf.replace(/\D/g, '');
-                cieloPayload.Customer.IdentityType = 'CPF';
+                cieloPayload.Customer.Identity = contributorProfile.cpf.replace(/\D/g, '');
+                cieloPayload.Customer.IdentityType = contributorProfile.cpf.replace(/\D/g, '').length === 11 ? 'CPF' : 'CNPJ';
                 cieloPayload.Customer.Address = {
-                    "Street": gerenteProfile.address,
-                    "Number": "123",
-                    "District": gerenteProfile.neighborhood,
-                    "ZipCode": gerenteProfile.cep.replace(/\D/g, ''),
-                    "City": gerenteProfile.city,
-                    "State": gerenteProfile.state,
+                    "Street": contributorProfile.address,
+                    "Number": "123", // Número é obrigatório, mas pode ser um valor padrão
+                    "District": contributorProfile.neighborhood,
+                    "ZipCode": contributorProfile.cep.replace(/\D/g, ''),
+                    "City": contributorProfile.city,
+                    "State": contributorProfile.state,
                     "Country": "BRA"
                 }
                 break;
@@ -155,7 +171,8 @@ export async function POST(request: Request) {
 
         await db.insert(transactionsTable).values({
             companyId: COMPANY_ID,
-            contributorId: contributorProfile.id,
+            contributorId: sessionUser.id,
+            originChurchId: originChurchId,
             amount: String(validatedData.amount),
             status: dbStatus,
             paymentMethod: validatedData.paymentMethod,
