@@ -2,6 +2,26 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.7] - 2024-08-05
+
+### Adicionado
+*   **Segurança de API com API Key:**
+    *   Adicionada a tabela `api_keys` ao banco de dados para armazenar chaves de API seguras.
+    *   Implementado um middleware de autenticação (`src/lib/api-auth.ts`) para proteger todos os endpoints da API. Requisições sem uma chave válida no cabeçalho `Authorization` são bloqueadas.
+    *   Criada a página e as rotas da API (`/api/v1/api-keys`) para o gerenciamento completo (CRUD) de chaves de API pelo painel de administrador.
+*   **Conexão de Dados Reais (Admin):**
+    *   Os KPIs e gráficos do dashboard do administrador (`/admin/dashboard`) agora consomem dados reais da API, incluindo o cálculo de variação percentual em relação ao mês anterior.
+    *   A página de transações do administrador (`/admin/transacoes`) foi conectada ao backend, exibindo a lista de todas as transações reais do sistema.
+    *   A aba "Transações" dentro do perfil de cada usuário (gerente, pastor, etc.) agora exibe o histórico de transações real e específico daquele usuário.
+*   **Melhorias na Interface (Admin):**
+    *   Adicionada uma nova aba "Configurações" no perfil de cada tipo de usuário (Gerente, Supervisor, Pastor, Igreja) dentro do painel do admin, preparando o local para o gerenciamento de notificações.
+
+### Corrigido
+*   **Redirecionamento de Login do Gerente:** Corrigido o mapeamento de rota pós-login para o perfil de `manager`, que agora redireciona corretamente para `/manager` em vez de `/gerente`.
+
+### Melhorias
+*   **Organização de Rotas da API:** As rotas de API para cada perfil foram organizadas em subdiretórios (`/api/v1/admin`, `/api/v1/manager`), melhorando a estrutura e clareza do backend.
+
 ## [1.0.6] - 2024-08-02
 
 ### Adicionado
