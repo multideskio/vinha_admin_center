@@ -94,7 +94,7 @@ export default function LoginPage() {
 
         const roleToPathMap: { [key: string]: string } = {
             admin: '/admin',
-            manager: '/gerente',
+            manager: '/manager',
             supervisor: '/supervisor',
             pastor: '/pastor',
             church_account: '/igreja'
