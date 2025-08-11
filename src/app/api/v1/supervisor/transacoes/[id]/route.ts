@@ -5,11 +5,8 @@ import { transactions as transactionsTable, gatewayConfigurations, users, superv
 import { eq, and, inArray } from 'drizzle-orm';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { format, parseISO } from 'date-fns';
+import { validateRequest } from '@/lib/auth';
 
-const SUPERVISOR_INIT_ID = process.env.SUPERVISOR_INIT;
-if (!SUPERVISOR_INIT_ID) {
-    throw new Error("A variável de ambiente SUPERVISOR_INIT não está definida.");
-}
 
 async function getCieloCredentials() {
     const [config] = await db.select()
@@ -27,7 +24,7 @@ async function getCieloCredentials() {
     };
 }
 
-async function verifyTransactionOwnership(transactionId: string) {
+async function verifyTransactionOwnership(transactionId: string, supervisorId: string) {
     const [transaction] = await db.select({ contributorId: transactionsTable.contributorId })
         .from(transactionsTable)
         .where(eq(transactionsTable.gatewayTransactionId, transactionId))
@@ -37,13 +34,13 @@ async function verifyTransactionOwnership(transactionId: string) {
 
     const contributorId = transaction.contributorId;
     
-    if (contributorId === SUPERVISOR_INIT_ID) return true;
+    if (contributorId === supervisorId) return true;
 
-    const pastorIdsResult = await db.select({ id: pastorProfiles.userId }).from(pastorProfiles).where(eq(pastorProfiles.supervisorId, SUPERVISOR_INIT_ID));
+    const pastorIdsResult = await db.select({ id: pastorProfiles.userId }).from(pastorProfiles).where(eq(pastorProfiles.supervisorId, supervisorId));
     const pastorIds = pastorIdsResult.map(p => p.id);
     if (pastorIds.includes(contributorId)) return true;
 
-    const churchIdsResult = await db.select({ id: churchProfiles.userId }).from(churchProfiles).where(eq(churchProfiles.supervisorId, SUPERVISOR_INIT_ID));
+    const churchIdsResult = await db.select({ id: churchProfiles.userId }).from(churchProfiles).where(eq(churchProfiles.supervisorId, supervisorId));
     const churchIds = churchIdsResult.map(c => c.id);
     if (churchIds.includes(contributorId)) return true;
     
@@ -55,6 +52,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id: gatewayTransactionId } = params;
 
     if (!gatewayTransactionId) {
@@ -62,7 +64,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     try {
-        const isAuthorized = await verifyTransactionOwnership(gatewayTransactionId);
+        const isAuthorized = await verifyTransactionOwnership(gatewayTransactionId, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Transação não encontrada ou você não tem permissão para visualizá-la." }, { status: 404 });
         }

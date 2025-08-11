@@ -6,11 +6,7 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
-
-const SUPERVISOR_INIT_ID = process.env.SUPERVISOR_INIT;
-if (!SUPERVISOR_INIT_ID) {
-    throw new Error("A variável de ambiente SUPERVISOR_INIT não está definida.");
-}
+import { validateRequest } from '@/lib/auth';
 
 const pastorUpdateSchema = z.object({
   firstName: z.string().min(1).optional(),
@@ -30,9 +26,9 @@ const pastorUpdateSchema = z.object({
   newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-async function verifyPastor(pastorId: string) {
+async function verifyPastor(pastorId: string, supervisorId: string) {
     const [pastor] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, pastorId));
-    if (!pastor || pastor.supervisorId !== SUPERVISOR_INIT_ID) return false;
+    if (!pastor || pastor.supervisorId !== supervisorId) return false;
     return true;
 }
 
@@ -40,10 +36,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
 
     try {
-        const isAuthorized = await verifyPastor(id);
+        const isAuthorized = await verifyPastor(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Pastor não encontrado ou não pertence a esta supervisão." }, { status: 404 });
         }
@@ -95,13 +96,18 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
   
     try {
-        const isAuthorized = await verifyPastor(id);
-        if (!isAuthorized) {
-            return NextResponse.json({ error: "Não autorizado a modificar este pastor." }, { status: 403 });
-        }
+      const isAuthorized = await verifyPastor(id, sessionUser.id);
+      if (!isAuthorized) {
+          return NextResponse.json({ error: "Não autorizado a modificar este pastor." }, { status: 403 });
+      }
 
       const body = await request.json();
       const validatedData = pastorUpdateSchema.parse({
@@ -157,10 +163,15 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
 
     try {
-        const isAuthorized = await verifyPastor(id);
+        const isAuthorized = await verifyPastor(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Não autorizado a excluir este pastor." }, { status: 403 });
         }

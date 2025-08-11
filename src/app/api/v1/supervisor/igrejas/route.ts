@@ -2,20 +2,15 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, churchProfiles, supervisorProfiles } from '@/db/schema';
-import { eq, and, isNull, desc } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
-
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
     throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
-}
-
-const SUPERVISOR_INIT_ID = process.env.SUPERVISOR_INIT;
-if (!SUPERVISOR_INIT_ID) {
-    throw new Error("A variável de ambiente SUPERVISOR_INIT não está definida.");
 }
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
@@ -42,6 +37,11 @@ export async function GET(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     try {
         const result = await db.select({
             id: users.id,
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
           .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
           .where(and(
               eq(users.role, 'church_account'), 
-              eq(churchProfiles.supervisorId, SUPERVISOR_INIT_ID), 
+              eq(churchProfiles.supervisorId, sessionUser.id), 
               isNull(users.deletedAt))
             )
           .orderBy(desc(users.createdAt));
@@ -73,6 +73,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
+
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
     
     try {
       const body = await request.json();
@@ -96,7 +101,7 @@ export async function POST(request: Request) {
 
         const [newProfile] = await tx.insert(churchProfiles).values({
             userId: newUser.id,
-            supervisorId: SUPERVISOR_INIT_ID,
+            supervisorId: sessionUser.id,
             cnpj: validatedData.cnpj,
             razaoSocial: validatedData.razaoSocial,
             nomeFantasia: validatedData.nomeFantasia,

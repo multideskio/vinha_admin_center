@@ -5,8 +5,7 @@ import { users, regions, transactions, pastorProfiles, supervisorProfiles, churc
 import { count, sum, eq, isNull, and, desc, sql, inArray, gte, lt } from 'drizzle-orm';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { authenticateApiKey } from '@/lib/api-auth';
-
-const SUPERVISOR_INIT_ID = process.env.SUPERVISOR_INIT;
+import { validateRequest } from '@/lib/auth';
 
 const calculateChange = (current: number, previous: number): string => {
     if (previous === 0) {
@@ -22,38 +21,40 @@ export async function GET(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
     
-    if (!SUPERVISOR_INIT_ID) {
-        return NextResponse.json({ error: "ID do Supervisor não configurado no ambiente." }, { status: 500 });
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
+    const supervisorId = sessionUser.id;
 
     try {
         const now = new Date();
         const startOfCurrentMonth = startOfMonth(now);
         const startOfPreviousMonth = startOfMonth(subMonths(now, 1));
 
-        const pastorsResult = await db.select({ id: pastorProfiles.userId }).from(pastorProfiles).where(and(eq(pastorProfiles.supervisorId, SUPERVISOR_INIT_ID), isNull(users.deletedAt))).leftJoin(users, eq(pastorProfiles.userId, users.id));
+        const pastorsResult = await db.select({ id: pastorProfiles.userId }).from(pastorProfiles).where(and(eq(pastorProfiles.supervisorId, supervisorId), isNull(users.deletedAt))).leftJoin(users, eq(pastorProfiles.userId, users.id));
         const pastorIds = pastorsResult.map(p => p.id);
         
-        const churchesResult = await db.select({ id: churchProfiles.userId }).from(churchProfiles).where(and(eq(churchProfiles.supervisorId, SUPERVISOR_INIT_ID), isNull(users.deletedAt))).leftJoin(users, eq(churchProfiles.userId, users.id));
+        const churchesResult = await db.select({ id: churchProfiles.userId }).from(churchProfiles).where(and(eq(churchProfiles.supervisorId, supervisorId), isNull(users.deletedAt))).leftJoin(users, eq(churchProfiles.userId, users.id));
         const churchIds = churchesResult.map(c => c.id);
 
-        const networkUserIds = [SUPERVISOR_INIT_ID, ...pastorIds, ...churchIds];
+        const networkUserIds = [supervisorId, ...pastorIds, ...churchIds];
         
         const totalPastors = pastorIds.length;
         const totalChurches = churchIds.length;
         const totalMembers = 1 + totalPastors + totalChurches;
         
         // KPI Calculations
-        const revenueCurrentMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds)));
-        const revenuePreviousMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds)));
+        const revenueCurrentMonthResult = networkUserIds.length > 0 ? await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: '0'}];
+        const revenuePreviousMonthResult = networkUserIds.length > 0 ? await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: '0'}];
         const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0].value || '0');
         const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0].value || '0');
 
-        const newMembersThisMonthResult = await db.select({ value: count() }).from(users).where(and(gte(users.createdAt, startOfCurrentMonth), inArray(users.id, networkUserIds)));
+        const newMembersThisMonthResult = networkUserIds.length > 0 ? await db.select({ value: count() }).from(users).where(and(gte(users.createdAt, startOfCurrentMonth), inArray(users.id, networkUserIds))) : [{value: 0}];
         const newMembersThisMonth = newMembersThisMonthResult[0].value;
 
-        const newTransactionsThisMonthResult = await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds)));
-        const newTransactionsLastMonthResult = await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds)));
+        const newTransactionsThisMonthResult = networkUserIds.length > 0 ? await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: 0}];
+        const newTransactionsLastMonthResult = networkUserIds.length > 0 ? await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: 0}];
         const totalTransactionsThisMonth = newTransactionsThisMonthResult[0].value;
         const totalTransactionsLastMonth = newTransactionsLastMonthResult[0].value;
 
@@ -121,7 +122,7 @@ export async function GET(request: Request) {
             fill: item.method === 'pix' ? '#10b981' : item.method === 'credit_card' ? '#3b82f6' : '#f59e0b'
         }));
         
-        const revenueByChurchData = await db
+        const revenueByChurchData = churchIds.length > 0 ? await db
             .select({
                 name: churchProfiles.nomeFantasia,
                 revenue: sum(transactions.amount).mapWith(Number)
@@ -129,9 +130,9 @@ export async function GET(request: Request) {
             .from(transactions)
             .innerJoin(churchProfiles, eq(transactions.contributorId, churchProfiles.userId))
             .where(inArray(transactions.contributorId, churchIds))
-            .groupBy(churchProfiles.nomeFantasia);
+            .groupBy(churchProfiles.nomeFantasia) : [];
 
-        const membersByChurchData = await db
+        const membersByChurchData = churchIds.length > 0 ? await db
             .select({
                 name: churchProfiles.nomeFantasia,
                 count: count(pastorProfiles.userId)
@@ -139,7 +140,7 @@ export async function GET(request: Request) {
             .from(churchProfiles)
             .leftJoin(pastorProfiles, eq(churchProfiles.supervisorId, pastorProfiles.supervisorId))
             .where(inArray(churchProfiles.userId, churchIds))
-            .groupBy(churchProfiles.nomeFantasia);
+            .groupBy(churchProfiles.nomeFantasia) : [];
 
         const colors = ['#16a34a', '#3b82f6', '#f97316', '#ef4444', '#8b5cf6'];
         const revenueByChurch = revenueByChurchData.map((d, i) => ({ ...d, fill: colors[i % colors.length] }));

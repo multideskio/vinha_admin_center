@@ -5,29 +5,30 @@ import { transactions as transactionsTable, users, churchProfiles, pastorProfile
 import { eq, desc, and, isNull, inArray } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
-const SUPERVISOR_INIT_ID = process.env.SUPERVISOR_INIT;
 
 export async function GET(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
-
-    if (!SUPERVISOR_INIT_ID) {
-        return NextResponse.json({ error: "ID do Supervisor não configurado no ambiente." }, { status: 500 });
+    
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
     try {
         const pastorIdsResult = await db.select({ id: pastorProfiles.userId })
             .from(pastorProfiles)
-            .where(eq(pastorProfiles.supervisorId, SUPERVISOR_INIT_ID));
+            .where(eq(pastorProfiles.supervisorId, sessionUser.id));
         const pastorIds = pastorIdsResult.map(p => p.id);
         
         const churchIdsResult = await db.select({ id: churchProfiles.userId })
             .from(churchProfiles)
-            .where(eq(churchProfiles.supervisorId, SUPERVISOR_INIT_ID));
+            .where(eq(churchProfiles.supervisorId, sessionUser.id));
         const churchIds = churchIdsResult.map(c => c.id);
 
-        const networkUserIds = [SUPERVISOR_INIT_ID, ...pastorIds, ...churchIds];
+        const networkUserIds = [sessionUser.id, ...pastorIds, ...churchIds];
         if (networkUserIds.length === 0) {
             return NextResponse.json({ transactions: [] });
         }

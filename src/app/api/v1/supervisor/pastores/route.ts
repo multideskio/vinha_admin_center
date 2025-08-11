@@ -6,15 +6,11 @@ import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
     throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
-}
-
-const SUPERVISOR_INIT_ID = process.env.SUPERVISOR_INIT;
-if (!SUPERVISOR_INIT_ID) {
-    throw new Error("A variável de ambiente SUPERVISOR_INIT não está definida.");
 }
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
@@ -39,6 +35,11 @@ export async function GET(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     try {
         const result = await db.select({
             id: users.id,
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
           .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
           .where(and(
               eq(users.role, 'pastor'), 
-              eq(pastorProfiles.supervisorId, SUPERVISOR_INIT_ID),
+              eq(pastorProfiles.supervisorId, sessionUser.id),
               isNull(users.deletedAt)
             ))
           .orderBy(desc(users.createdAt));
@@ -64,13 +65,18 @@ export async function GET(request: Request) {
 
     } catch (error: any) {
         console.error("Erro ao buscar pastores:", error);
-        return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
 
 export async function POST(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
+
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'supervisor') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
     
     try {
       const body = await request.json();
@@ -94,7 +100,7 @@ export async function POST(request: Request) {
 
         const [newProfile] = await tx.insert(pastorProfiles).values({
             userId: newUser.id,
-            supervisorId: SUPERVISOR_INIT_ID,
+            supervisorId: sessionUser.id,
             firstName: validatedData.firstName,
             lastName: validatedData.lastName,
             cpf: validatedData.cpf,
@@ -120,6 +126,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Email ou CPF já cadastrado." }, { status: 409 });
       }
 
-      return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
