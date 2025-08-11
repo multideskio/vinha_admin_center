@@ -148,7 +148,7 @@ export default function ContribuicoesPage() {
         formattedValue = value
             .replace(/\D/g, '')
             .replace(/(\d{2})(\d)/, '$1/$2')
-            .slice(0, 7); // MM/YYYY
+            .slice(0, 5); // MM/YY
     } else if (name === 'cvc') {
         formattedValue = value.replace(/\D/g, '').slice(0, 4);
     }
@@ -268,7 +268,7 @@ export default function ContribuicoesPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <div className="space-y-6">
+                 <div className="space-y-6">
                     <FormField
                         control={form.control}
                         name="amount"
@@ -410,7 +410,7 @@ export default function ContribuicoesPage() {
                                     <Input
                                         type="text"
                                         name="expiry"
-                                        placeholder="Validade (MM/AAAA)"
+                                        placeholder="Validade (MM/AA)"
                                         value={cardState.expiry}
                                         onChange={handleInputChange}
                                         onFocus={handleInputFocus}

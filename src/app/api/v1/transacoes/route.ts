@@ -1,22 +1,18 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { gatewayConfigurations, transactions as transactionsTable, users, churchProfiles, type TransactionStatus } from '@/db/schema';
-import { eq, desc, and, isNull } from 'drizzle-orm';
+import { gatewayConfigurations, transactions as transactionsTable, users, churchProfiles, pastorProfiles, supervisorProfiles, managerProfiles, type TransactionStatus } from '@/db/schema';
+import { eq, desc, and, isNull, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { format } from 'date-fns';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
     throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
-}
-
-const GERENTE_INIT_ID = process.env.GERENTE_INIT;
-if (!GERENTE_INIT_ID) {
-    throw new Error("A variável de ambiente GERENTE_INIT não está definida.");
 }
 
 const transactionSchema = z.object({
@@ -66,10 +62,20 @@ function mapCieloStatusToDbStatus(cieloStatus: number): TransactionStatus {
 }
 
 export async function POST(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+    
     try {
-        const [gerenteUser] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, GERENTE_INIT_ID)).limit(1);
-        if (!gerenteUser) {
-            return NextResponse.json({ error: "Usuário gerente de teste não encontrado." }, { status: 404 });
+        const { user: sessionUser } = await validateRequest();
+        if(!sessionUser) {
+             return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+        }
+
+        const [contributorProfile] = await db.select().from(users).where(eq(users.id, sessionUser.id)).limit(1);
+        
+        const [gerenteProfile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, sessionUser.id));
+        if (!contributorProfile || !gerenteProfile) {
+            return NextResponse.json({ error: "Perfil do contribuinte não encontrado." }, { status: 404 });
         }
         
         const body = await request.json();
@@ -78,11 +84,6 @@ export async function POST(request: Request) {
         
         const merchantOrderId = `vinha-${Date.now()}`;
         
-        const [gerenteProfile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, gerenteUser.id));
-        if (!gerenteProfile) {
-            return NextResponse.json({ error: "Perfil do gerente de teste não encontrado." }, { status: 404 });
-        }
-
         let cieloPayload: any = {
             MerchantOrderId: merchantOrderId,
             Customer: {
@@ -154,7 +155,7 @@ export async function POST(request: Request) {
 
         await db.insert(transactionsTable).values({
             companyId: COMPANY_ID,
-            contributorId: gerenteUser.id,
+            contributorId: contributorProfile.id,
             amount: String(validatedData.amount),
             status: dbStatus,
             paymentMethod: validatedData.paymentMethod,
@@ -174,6 +175,9 @@ export async function POST(request: Request) {
 
 
 export async function GET(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
         const url = new URL(request.url);
         const userId = url.searchParams.get('userId');
