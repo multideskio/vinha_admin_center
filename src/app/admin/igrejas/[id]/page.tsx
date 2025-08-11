@@ -15,6 +15,9 @@ import {
   Lock,
   Calendar as CalendarIcon,
   Loader2,
+  Bell,
+  Mail,
+  Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -54,6 +57,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 const churchProfileSchema = z.object({
     supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
@@ -302,6 +306,7 @@ export default function IgrejaProfilePage() {
           <TabsList>
             <TabsTrigger value="profile">Dados da Igreja</TabsTrigger>
             <TabsTrigger value="transactions">Transações</TabsTrigger>
+            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
             <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
@@ -483,7 +488,7 @@ export default function IgrejaProfilePage() {
                             <FormItem>
                                 <FormLabel>Celular</FormLabel>
                                 <FormControl>
-                                <Input {...field} value={field.value ?? ''}/>
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -563,6 +568,67 @@ export default function IgrejaProfilePage() {
                 <p>O histórico de transações aparecerá aqui.</p>
               </CardContent>
             </Card>
+          </TabsContent>
+           <TabsContent value="configuracoes">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Configurações de Notificação</CardTitle>
+                      <CardDescription>Gerencie quais notificações esta igreja receberá.</CardDescription>
+                  </CardHeader>
+                  <CardContent className='space-y-6'>
+                      <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Notificações de Pagamento</p>
+                              <p className='text-sm text-muted-foreground'>Receber avisos sobre pagamentos recebidos, recusados, etc.</p>
+                          </div>
+                          <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                          </div>
+                      </div>
+                       <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Lembretes de Vencimento</p>
+                              <p className='text-sm text-muted-foreground'>Receber lembretes sobre pagamentos próximos do vencimento.</p>
+                          </div>
+                          <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                          </div>
+                      </div>
+                       <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Novos Cadastros na Supervisão</p>
+                              <p className='text-sm text-muted-foreground'>Receber notificações sobre novos pastores ou igrejas em sua supervisão.</p>
+                          </div>
+                           <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                          </div>
+                      </div>
+                      <div className='flex justify-end'>
+                        <Button>Salvar Configurações</Button>
+                      </div>
+                  </CardContent>
+              </Card>
           </TabsContent>
           <TabsContent value="delete">
           <Card className="border-destructive">

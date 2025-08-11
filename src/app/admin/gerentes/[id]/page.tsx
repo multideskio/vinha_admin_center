@@ -14,6 +14,9 @@ import {
   Info,
   Lock,
   Loader2,
+  Bell,
+  Mail,
+  Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -42,6 +45,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 type ManagerProfile = {
     firstName: string;
@@ -291,6 +295,7 @@ export default function GerenteProfilePage() {
             <TabsList>
                 <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
                 <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
+                <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
                 <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
@@ -477,6 +482,67 @@ export default function GerenteProfilePage() {
                 </CardContent>
                 </Card>
             </TabsContent>
+             <TabsContent value="configuracoes">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Configurações de Notificação</CardTitle>
+                      <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+                  </CardHeader>
+                  <CardContent className='space-y-6'>
+                      <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Notificações de Pagamento</p>
+                              <p className='text-sm text-muted-foreground'>Receber avisos sobre pagamentos recebidos, recusados, etc.</p>
+                          </div>
+                          <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                          </div>
+                      </div>
+                       <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Lembretes de Vencimento</p>
+                              <p className='text-sm text-muted-foreground'>Receber lembretes sobre pagamentos próximos do vencimento.</p>
+                          </div>
+                          <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                          </div>
+                      </div>
+                       <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Relatórios da Rede</p>
+                              <p className='text-sm text-muted-foreground'>Receber relatórios semanais sobre a performance da sua rede.</p>
+                          </div>
+                           <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                          </div>
+                      </div>
+                      <div className='flex justify-end'>
+                        <Button>Salvar Configurações</Button>
+                      </div>
+                  </CardContent>
+              </Card>
+          </TabsContent>
             <TabsContent value="delete">
             <Card className="border-destructive">
                 <CardHeader>

@@ -14,6 +14,9 @@ import {
   Info,
   Lock,
   Loader2,
+  Bell,
+  Mail,
+  Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -49,27 +52,28 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 const supervisorProfileSchema = z.object({
-  firstName: z.string().min(1, 'O nome é obrigatório.'),
-  lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
-  phone: z.string().nullable(),
-  landline: z.string().nullable(),
-  email: z.string().email('E-mail inválido.'),
-  cep: z.string().nullable(),
-  state: z.string().nullable(),
-  city: z.string().nullable(),
-  neighborhood: z.string().nullable(),
-  address: z.string().nullable(),
-  number: z.string().nullable(),
-  complement: z.string().nullable(),
-  titheDay: z.coerce.number().nullable(),
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().nullable().optional(),
+  landline: z.string().nullable().optional(),
+  cep: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  neighborhood: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  number: z.string().nullable().optional(),
+  complement: z.string().nullable().optional(),
+  titheDay: z.number().nullable().optional(),
+  managerId: z.string().uuid().nullable().optional(),
+  regionId: z.string().uuid().nullable().optional(),
+  facebook: z.string().url().or(z.literal('')).nullable().optional(),
+  instagram: z.string().url().or(z.literal('')).nullable().optional(),
+  website: z.string().url().or(z.literal('')).nullable().optional(),
   newPassword: z.string().optional().or(z.literal('')),
-  facebook: z.string().url().or(z.literal('')).nullable(),
-  instagram: z.string().url().or(z.literal('')).nullable(),
-  website: z.string().url().or(z.literal('')).nullable(),
-  managerId: z.string().nullable(),
-  regionId: z.string().nullable(),
 }).partial();
 
 type SupervisorProfile = z.infer<typeof supervisorProfileSchema> & {
@@ -304,6 +308,7 @@ export default function SupervisorProfilePage() {
           <TabsList>
             <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
             <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
+            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
             <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
@@ -403,13 +408,18 @@ export default function SupervisorProfilePage() {
                         control={form.control}
                         name="phone"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Celular</FormLabel>
+                            <FormItem>
+                            <FormLabel>Celular/WhatsApp</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value ?? ''}/>
+                                <div className="flex items-center">
+                                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
+                                    🇧🇷 +55
+                                    </span>
+                                    <Input {...field} value={field.value ?? ''} className="rounded-l-none"/>
+                                </div>
                             </FormControl>
                             <FormMessage />
-                          </FormItem>
+                            </FormItem>
                         )}
                       />
                       <FormField
@@ -544,6 +554,67 @@ export default function SupervisorProfilePage() {
                 <p>O histórico de transações aparecerá aqui.</p>
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="configuracoes">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Configurações de Notificação</CardTitle>
+                      <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+                  </CardHeader>
+                  <CardContent className='space-y-6'>
+                      <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Notificações de Pagamento</p>
+                              <p className='text-sm text-muted-foreground'>Receber avisos sobre pagamentos recebidos, recusados, etc.</p>
+                          </div>
+                          <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                          </div>
+                      </div>
+                       <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Lembretes de Vencimento</p>
+                              <p className='text-sm text-muted-foreground'>Receber lembretes sobre pagamentos próximos do vencimento.</p>
+                          </div>
+                          <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                          </div>
+                      </div>
+                       <div className='flex items-center justify-between rounded-lg border p-4'>
+                          <div>
+                              <p className='font-medium'>Novos Cadastros na Rede</p>
+                              <p className='text-sm text-muted-foreground'>Receber notificações sobre novos pastores ou igrejas na sua supervisão.</p>
+                          </div>
+                           <div className='flex items-center gap-4'>
+                            <div className='flex items-center gap-2' title="Notificar por Email">
+                                <Mail className='h-4 w-4 text-muted-foreground' />
+                                <Switch defaultChecked />
+                            </div>
+                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                                <Smartphone className='h-4 w-4 text-muted-foreground' />
+                                <Switch />
+                            </div>
+                          </div>
+                      </div>
+                      <div className='flex justify-end'>
+                        <Button>Salvar Configurações</Button>
+                      </div>
+                  </CardContent>
+              </Card>
           </TabsContent>
           <TabsContent value="delete">
           <Card className="border-destructive">
