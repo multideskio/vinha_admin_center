@@ -5,9 +5,9 @@ import { users, managerProfiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { validateRequest } from '@/lib/auth';
 import { authenticateApiKey } from '@/lib/api-auth';
 
-const GERENTE_INIT_ID = process.env.GERENTE_INIT;
 
 const managerUpdateSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
@@ -32,8 +32,9 @@ export async function GET(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
-    if (!GERENTE_INIT_ID) {
-        return NextResponse.json({ error: "Usuário gerente não configurado." }, { status: 500 });
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+        return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
     try {
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
         })
         .from(users)
         .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-        .where(eq(users.id, GERENTE_INIT_ID))
+        .where(eq(users.id, sessionUser.id))
         .limit(1);
 
         if (result.length === 0) {
@@ -84,9 +85,10 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
-
-    if (!GERENTE_INIT_ID) {
-        return NextResponse.json({ error: "Usuário gerente não configurado." }, { status: 500 });
+    
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+        return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
   
     try {
@@ -105,7 +107,7 @@ export async function PUT(request: Request) {
 
         if (Object.keys(userUpdateData).length > 0) {
             userUpdateData.updatedAt = new Date();
-            await tx.update(users).set(userUpdateData).where(eq(users.id, GERENTE_INIT_ID));
+            await tx.update(users).set(userUpdateData).where(eq(users.id, sessionUser.id));
         }
   
         const profileUpdateData: Partial<typeof managerProfiles.$inferInsert> = {};
@@ -122,7 +124,7 @@ export async function PUT(request: Request) {
         if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website;
         
         if (Object.keys(profileUpdateData).length > 0) {
-            await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, GERENTE_INIT_ID));
+            await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, sessionUser.id));
         }
       });
   

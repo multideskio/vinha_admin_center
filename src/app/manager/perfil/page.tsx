@@ -16,13 +16,12 @@ import {
   Loader2,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -75,8 +74,8 @@ export default function GerenteProfilePage() {
     const [isSaving, setIsSaving] = React.useState(false);
     const [previewImage, setPreviewImage] = React.useState<string | null>(null);
     const { toast } = useToast();
+    const router = useRouter();
 
-    const gerenteUserId = process.env.NEXT_PUBLIC_GERENTE_INIT;
 
     const form = useForm<ManagerProfile>({
         resolver: zodResolver(managerProfileSchema),
@@ -84,36 +83,36 @@ export default function GerenteProfilePage() {
     });
 
     const fetchManager = React.useCallback(async () => {
-      if (!gerenteUserId) {
-        toast({ title: 'Erro de Configuração', description: 'ID do gerente não encontrado no ambiente.', variant: 'destructive'});
-        setIsLoading(false);
-        return;
-      }
-      
       setIsLoading(true);
       try {
-          const response = await fetch(`/api/v1/gerentes/${gerenteUserId}`);
-          if (!response.ok) throw new Error('Falha ao carregar dados do gerente');
+          const response = await fetch(`/api/v1/manager/perfil`);
+          if (!response.ok) {
+            if (response.status === 401) {
+                toast({ title: 'Sessão Expirada', description: 'Por favor, faça login novamente.', variant: 'destructive'});
+                router.push('/auth/login');
+                return;
+            }
+            throw new Error('Falha ao carregar dados do gerente');
+          }
           const data = await response.json();
           
-          setManager(data);
-          form.reset(data);
+          setManager(data.manager);
+          form.reset(data.manager);
       } catch (error: any) {
           toast({ title: 'Erro', description: error.message, variant: 'destructive' });
       } finally {
           setIsLoading(false);
       }
-    }, [form, toast, gerenteUserId]);
+    }, [form, toast, router]);
 
     React.useEffect(() => {
         fetchManager();
     }, [fetchManager]);
 
     const onSubmit = async (data: Partial<ManagerProfile>) => {
-        if (!gerenteUserId) return;
         setIsSaving(true);
         try {
-            const response = await fetch(`/api/v1/gerentes/${gerenteUserId}`, {
+            const response = await fetch(`/api/v1/manager/perfil`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
