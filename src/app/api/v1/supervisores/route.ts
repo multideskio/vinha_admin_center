@@ -54,6 +54,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ supervisors: result });
     }
 
+
     const result = await db.select({
         id: users.id,
         firstName: supervisorProfiles.firstName,
