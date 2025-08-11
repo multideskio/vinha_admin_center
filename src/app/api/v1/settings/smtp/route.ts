@@ -4,6 +4,7 @@ import { db } from '@/db/drizzle';
 import { otherSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -18,7 +19,10 @@ const smtpSettingsSchema = z.object({
   from: z.string().email('E-mail de envio inválido.').optional().nullable(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
         const [config] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, COMPANY_ID)).limit(1);
         
@@ -43,6 +47,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
         const body = await request.json();
         const validatedData = smtpSettingsSchema.parse(body);

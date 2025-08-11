@@ -4,6 +4,7 @@ import { db } from '@/db/drizzle';
 import { notificationRules } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -20,7 +21,10 @@ const notificationRuleSchema = z.object({
     isActive: z.boolean().default(true),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
   try {
     const allRules = await db
       .select()
@@ -36,6 +40,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
       const body = await request.json();
       const validatedData = notificationRuleSchema.parse(body);

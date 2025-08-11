@@ -5,6 +5,7 @@ import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema
 import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -31,6 +32,9 @@ const supervisorSchema = z.object({
 
 
 export async function GET(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
   try {
     const url = new URL(request.url);
     const minimal = url.searchParams.get('minimal') === 'true';
@@ -75,6 +79,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
       const body = await request.json();
       const validatedData = supervisorSchema.parse(body);

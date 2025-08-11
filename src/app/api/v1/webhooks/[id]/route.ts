@@ -4,6 +4,7 @@ import { db } from '@/db/drizzle';
 import { webhooks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const webhookSchema = z.object({
     url: z.string().url().optional(),
@@ -13,6 +14,9 @@ const webhookSchema = z.object({
 });
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
     try {
         const body = await request.json();
@@ -38,6 +42,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+    
     const { id } = params;
     try {
         const [deletedWebhook] = await db.delete(webhooks)

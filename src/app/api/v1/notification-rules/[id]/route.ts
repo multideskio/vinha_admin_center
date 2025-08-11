@@ -4,6 +4,7 @@ import { db } from '@/db/drizzle';
 import { notificationRules } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const notificationRuleSchema = z.object({
     name: z.string().min(1, "O nome da automação é obrigatório.").optional(),
@@ -16,6 +17,9 @@ const notificationRuleSchema = z.object({
 });
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
     try {
         const body = await request.json();
@@ -41,6 +45,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+    
     const { id } = params;
     try {
         const [deletedRule] = await db.delete(notificationRules)

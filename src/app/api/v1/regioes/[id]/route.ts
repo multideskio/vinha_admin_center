@@ -4,8 +4,7 @@ import { db } from '@/db/drizzle';
 import { regions } from '@/db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
-
-const MOCK_USER_ID = 'e7a5c32c-15a5-4482-9a60-281b24385348';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const regionSchema = z.object({
     name: z.string().min(1, 'O nome é obrigatório.'),
@@ -18,6 +17,9 @@ const regionSchema = z.object({
   });
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+  const authResponse = await authenticateApiKey(request);
+  if (authResponse) return authResponse;
+
   const { id } = params;
 
   try {
@@ -49,6 +51,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+    
     const { id } = params;
   
     try {

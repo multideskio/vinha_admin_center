@@ -5,6 +5,7 @@ import { users, supervisorProfiles } from '@/db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const supervisorUpdateSchema = z.object({
     firstName: z.string().min(1).optional(),
@@ -29,6 +30,9 @@ const supervisorUpdateSchema = z.object({
 }).partial();
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
 
     try {
@@ -79,6 +83,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
   
     try {
@@ -135,6 +142,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
 
     try {
@@ -148,7 +158,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
         return NextResponse.json({ success: true, message: "Supervisor excluído com sucesso." });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao excluir supervisor:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }

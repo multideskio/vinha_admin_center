@@ -4,6 +4,7 @@ import { db } from '@/db/drizzle';
 import { regions } from '@/db/schema';
 import { eq, and, isNull, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -15,7 +16,10 @@ const regionSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
   try {
     const allRegions = await db
       .select()
@@ -32,6 +36,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
       const body = await request.json();
       const validatedData = regionSchema.parse(body);

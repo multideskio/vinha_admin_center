@@ -5,6 +5,7 @@ import { users, adminProfiles } from '@/db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -24,7 +25,10 @@ const adminSchema = z.object({
   }),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
   try {
     const result = await db.select({
         id: users.id,
@@ -52,6 +56,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
       const body = await request.json();
       const validatedData = adminSchema.parse(body);

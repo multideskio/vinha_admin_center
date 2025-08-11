@@ -5,6 +5,7 @@ import { users, adminProfiles } from '@/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { authenticateApiKey } from '@/lib/api-auth';
 
 const adminUpdateSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
@@ -24,6 +25,9 @@ const adminUpdateSchema = z.object({
 }).partial();
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
 
     try {
@@ -68,6 +72,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
   
     try {
@@ -118,6 +125,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
 
     try {
