@@ -5,12 +5,7 @@ import { users, supervisorProfiles } from '@/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
-
-const GERENTE_INIT_ID = process.env.GERENTE_INIT;
-if (!GERENTE_INIT_ID) {
-    throw new Error("A variável de ambiente GERENTE_INIT não está definida.");
-}
+import { validateRequest } from '@/lib/auth';
 
 const supervisorUpdateSchema = z.object({
   firstName: z.string().min(1).optional(),
@@ -31,8 +26,10 @@ const supervisorUpdateSchema = z.object({
 }).partial();
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 
@@ -43,7 +40,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         })
         .from(users)
         .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-        .where(and(eq(users.id, id), eq(users.role, 'supervisor'), eq(supervisorProfiles.managerId, GERENTE_INIT_ID), isNull(users.deletedAt)))
+        .where(and(eq(users.id, id), eq(users.role, 'supervisor'), eq(supervisorProfiles.managerId, sessionUser.id), isNull(users.deletedAt)))
         .limit(1);
 
         if (result.length === 0) {
@@ -80,8 +77,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
     
     const { id } = params;
   
@@ -90,6 +89,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       const validatedData = supervisorUpdateSchema.parse(body);
   
       await db.transaction(async (tx) => {
+        
         const userUpdateData: Partial<typeof users.$inferInsert> = {};
         if (validatedData.email) userUpdateData.email = validatedData.email;
         if (validatedData.phone) userUpdateData.phone = validatedData.phone;
@@ -134,8 +134,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 
@@ -150,7 +152,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
         return NextResponse.json({ success: true, message: "Supervisor excluído com sucesso." });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao excluir supervisor:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
