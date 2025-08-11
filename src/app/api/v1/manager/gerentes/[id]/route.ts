@@ -7,6 +7,7 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 
+
 const managerUpdateSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
     lastName: z.string().min(1, 'O sobrenome é obrigatório.').optional(),
@@ -78,7 +79,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
-    
+
     const { id } = params;
   
     try {
@@ -135,7 +136,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
-
+    
     const { id } = params;
 
     try {

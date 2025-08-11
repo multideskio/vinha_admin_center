@@ -2,10 +2,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, managerProfiles } from '@/db/schema';
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
+
+const GERENTE_INIT_ID = process.env.GERENTE_INIT;
 
 const managerUpdateSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
@@ -26,11 +28,13 @@ const managerUpdateSchema = z.object({
 }).partial();
   
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
-    const { id } = params;
+    if (!GERENTE_INIT_ID) {
+        return NextResponse.json({ error: "Usuário gerente não configurado." }, { status: 500 });
+    }
 
     try {
         const result = await db.select({
@@ -39,16 +43,16 @@ export async function GET(request: Request, { params }: { params: { id: string }
         })
         .from(users)
         .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-        .where(and(eq(users.id, id), eq(users.role, 'manager'), isNull(users.deletedAt)))
+        .where(eq(users.id, GERENTE_INIT_ID))
         .limit(1);
 
         if (result.length === 0) {
-            return NextResponse.json({ error: "Gerente não encontrado." }, { status: 404 });
+            return NextResponse.json({ error: "Perfil do gerente não encontrado." }, { status: 404 });
         }
 
         const { user, profile } = result[0];
 
-        return NextResponse.json({ 
+        const managerData = { 
             id: user.id,
             firstName: profile?.firstName,
             lastName: profile?.lastName,
@@ -66,27 +70,30 @@ export async function GET(request: Request, { params }: { params: { id: string }
             instagram: profile?.instagram,
             website: profile?.website,
             status: user.status
-        });
+        };
+
+        return NextResponse.json({ manager: managerData });
 
     } catch (error: any) {
-        console.error("Erro ao buscar gerente:", error);
-        return NextResponse.json({ error: "Erro ao buscar gerente", details: error.message }, { status: 500 });
+        console.error("Erro ao buscar perfil do gerente:", error);
+        return NextResponse.json({ error: "Erro ao buscar perfil do gerente", details: error.message }, { status: 500 });
     }
 }
 
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request) {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
-    
-    const { id } = params;
+
+    if (!GERENTE_INIT_ID) {
+        return NextResponse.json({ error: "Usuário gerente não configurado." }, { status: 500 });
+    }
   
     try {
       const body = await request.json();
       const validatedData = managerUpdateSchema.parse(body);
   
-      const result = await db.transaction(async (tx) => {
-        
+      await db.transaction(async (tx) => {
         const userUpdateData: Partial<typeof users.$inferInsert> = {};
         if (validatedData.email) userUpdateData.email = validatedData.email;
         if (validatedData.phone) userUpdateData.phone = validatedData.phone;
@@ -98,7 +105,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
         if (Object.keys(userUpdateData).length > 0) {
             userUpdateData.updatedAt = new Date();
-            await tx.update(users).set(userUpdateData).where(eq(users.id, id));
+            await tx.update(users).set(userUpdateData).where(eq(users.id, GERENTE_INIT_ID));
         }
   
         const profileUpdateData: Partial<typeof managerProfiles.$inferInsert> = {};
@@ -115,47 +122,17 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website;
         
         if (Object.keys(profileUpdateData).length > 0) {
-            await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, id));
+            await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, GERENTE_INIT_ID));
         }
-        
-        return { success: true };
       });
   
-      return NextResponse.json({ success: true, manager: result });
+      return NextResponse.json({ success: true });
   
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
-      console.error("Erro ao atualizar gerente:", error);
-      return NextResponse.json({ error: "Erro ao atualizar gerente", details: error.message }, { status: 500 });
-    }
-  }
-
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
-    const { id } = params;
-
-    try {
-        const [deletedUser] = await db
-        .update(users)
-        .set({
-            deletedAt: new Date(),
-            status: 'inactive'
-        })
-        .where(eq(users.id, id))
-        .returning();
-        
-        if (!deletedUser) {
-            return NextResponse.json({ error: "Gerente não encontrado." }, { status: 404 });
-        }
-
-        return NextResponse.json({ success: true, message: "Gerente excluído com sucesso." });
-
-    } catch (error: any) {
-        console.error("Erro ao excluir gerente:", error);
-        return NextResponse.json({ error: "Erro ao excluir gerente", details: error.message }, { status: 500 });
+      console.error("Erro ao atualizar perfil do gerente:", error);
+      return NextResponse.json({ error: "Erro ao atualizar perfil do gerente", details: error.message }, { status: 500 });
     }
 }

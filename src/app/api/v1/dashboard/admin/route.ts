@@ -4,8 +4,12 @@ import { db } from '@/db/drizzle';
 import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles, managerProfiles } from '@/db/schema';
 import { count, sum, eq, isNull, and, desc, sql } from 'drizzle-orm';
 import { format } from 'date-fns';
+import { authenticateApiKey } from '@/lib/api-auth';
 
-export async function GET() {
+export async function GET(request: Request) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     try {
         const totalManagers = await db.select({ value: count() }).from(users).where(and(eq(users.role, 'manager'), isNull(users.deletedAt)));
         const totalSupervisors = await db.select({ value: count() }).from(users).where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)));

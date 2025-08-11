@@ -7,6 +7,7 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 
+
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
     throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
