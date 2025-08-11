@@ -1,9 +1,12 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { gatewayConfigurations, transactions as transactionsTable, users, managerProfiles, type TransactionStatus } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { gatewayConfigurations, transactions as transactionsTable, users, managerProfiles, churchProfiles, type TransactionStatus } from '@/db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
+import * as bcrypt from 'bcrypt';
+import { format } from 'date-fns';
+
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -170,6 +173,31 @@ export async function POST(request: Request) {
 
 
 export async function GET(request: Request) {
-    // Adicionar lógica para listar transações do banco de dados local
-    return NextResponse.json({ message: "Endpoint para listar transações" }, { status: 200 });
+    try {
+        const results = await db.select({
+            id: transactionsTable.id,
+            contributor: users.email,
+            church: churchProfiles.nomeFantasia,
+            amount: transactionsTable.amount,
+            method: transactionsTable.paymentMethod,
+            status: transactionsTable.status,
+            date: transactionsTable.createdAt,
+            refundRequestReason: transactionsTable.refundRequestReason,
+        })
+        .from(transactionsTable)
+        .leftJoin(users, eq(transactionsTable.contributorId, users.id))
+        .leftJoin(churchProfiles, eq(transactionsTable.originChurchId, churchProfiles.userId))
+        .orderBy(desc(transactionsTable.createdAt));
+        
+        const formattedTransactions = results.map(t => ({
+            ...t,
+            amount: Number(t.amount),
+            date: format(new Date(t.date), 'dd/MM/yyyy')
+        }));
+
+        return NextResponse.json({ transactions: formattedTransactions });
+    } catch (error: any) {
+        console.error("Erro ao buscar transações:", error);
+        return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
+    }
 }
