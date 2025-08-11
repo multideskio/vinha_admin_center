@@ -33,30 +33,52 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 type Transaction = {
   id: string;
+  contributor: string;
   amount: number;
-  type: 'Dízimo' | 'Oferta';
   description?: string;
   method: 'Pix' | 'Cartão de Crédito' | 'Boleto';
-  status: 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada';
+  status: 'approved' | 'pending' | 'refused' | 'refunded';
   date: string;
 };
 
-const transactions: Transaction[] = [
-    { id: 'TRN-001', amount: 150.00, type: 'Dízimo', method: 'Pix', status: 'Aprovada', date: '28/07/2024' },
-    { id: 'TRN-002', amount: 75.50, type: 'Oferta', description: 'Oferta para o dia das mães', method: 'Cartão de Crédito', status: 'Aprovada', date: '28/07/2024' },
-    { id: 'TRN-003', amount: 200.00, type: 'Dízimo', method: 'Boleto', status: 'Pendente', date: '27/07/2024' },
-    { id: 'TRN-004', amount: 50.00, type: 'Oferta', method: 'Pix', status: 'Aprovada', date: '27/07/2024' },
-    { id: 'TRN-005', amount: 300.00, type: 'Dízimo', method: 'Cartão de Crédito', status: 'Recusada', date: '26/07/2024' },
-    { id: 'TRN-006', amount: 120.00, type: 'Oferta', description: 'Construção do templo', method: 'Pix', status: 'Aprovada', date: '26/07/2024' },
-];
-
 export default function TransacoesPage() {
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+
+    const fetchTransactions = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/v1/igreja/transacoes');
+            if (!response.ok) throw new Error('Falha ao carregar transações.');
+            const data = await response.json();
+            setTransactions(data.transactions);
+        } catch (error: any) {
+            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    React.useEffect(() => {
+        fetchTransactions();
+    }, [fetchTransactions]);
+
+    const statusMap: { [key: string]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+        approved: { text: "Aprovada", variant: "success" },
+        pending: { text: "Pendente", variant: "warning" },
+        refused: { text: "Recusada", variant: "destructive" },
+        refunded: { text: "Reembolsada", variant: "outline" },
+    };
+
   return (
     <div className="flex flex-col gap-8">
        <div>
@@ -95,7 +117,7 @@ export default function TransacoesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
+                <TableHead>Contribuinte</TableHead>
                 <TableHead className="hidden md:table-cell">Descrição</TableHead>
                 <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
@@ -106,9 +128,24 @@ export default function TransacoesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
+              {isLoading ? (
+                Array.from({length: 5}).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                ))
+              ) : transactions.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">Nenhuma transação encontrada.</TableCell>
+                </TableRow>
+              ) : transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">{transaction.type}</TableCell>
+                  <TableCell className="font-medium">{transaction.contributor}</TableCell>
                    <TableCell className="hidden md:table-cell text-muted-foreground">
                     {transaction.description ? (
                          <TooltipProvider>
@@ -127,15 +164,8 @@ export default function TransacoesPage() {
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                  <Badge variant={transaction.status === 'Aprovada' ? 'default' 
-                      : transaction.status === 'Pendente' ? 'secondary' 
-                      : transaction.status === 'Reembolsada' ? 'outline'
-                      : 'destructive'}
-                        className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
-                        : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
-                        : transaction.status === 'Reembolsada' ? 'bg-blue-500/20 text-blue-700 border-blue-400'
-                        : 'bg-red-500/20 text-red-700 border-red-400'}>
-                        {transaction.status}
+                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                        {statusMap[transaction.status]?.text || transaction.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{transaction.date}</TableCell>
@@ -152,7 +182,6 @@ export default function TransacoesPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/igreja/transacoes/${transaction.id}`}>Ver Detalhes</Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Reenviar Comprovante</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

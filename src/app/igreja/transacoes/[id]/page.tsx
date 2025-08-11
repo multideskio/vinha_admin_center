@@ -5,12 +5,8 @@ import * as React from 'react';
 import {
   ChevronLeft,
   Copy,
-  CreditCard,
-  File,
-  ListFilter,
-  MoreVertical,
-  Truck,
   MessageSquareWarning,
+  MoreVertical,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +14,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -29,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
 import {
     Dialog,
     DialogContent,
@@ -44,24 +38,79 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useParams } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format, parseISO } from 'date-fns';
 
-
-const transaction = {
-    id: 'TRN-004',
-    date: '27 de Julho, 2024',
-    amount: 50.00,
-    status: 'Aprovada' as 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada',
+type TransactionDetail = {
+    id: string;
+    date: string;
+    amount: number;
+    status: 'approved' | 'pending' | 'refused' | 'refunded';
     contributor: {
-        name: 'Ana Beatriz',
-        email: 'ana.beatriz@exemplo.com',
-    },
+        name: string;
+        email: string;
+    };
+    church: {
+        name: string;
+        address: string;
+    } | null;
     payment: {
-        method: 'Pix',
-        details: 'Chave: ana.beatriz@exemplo.com'
-    },
-}
+        method: string;
+        details: string;
+    };
+    refundRequestReason?: string | null;
+};
 
 export default function TransacaoDetalhePage() {
+    const [transaction, setTransaction] = React.useState<TransactionDetail | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const params = useParams();
+    const { id } = params;
+    const { toast } = useToast();
+    
+    React.useEffect(() => {
+        const fetchTransaction = async () => {
+            if (!id) return;
+            setIsLoading(true);
+            try {
+                const response = await fetch(`/api/v1/igreja/transacoes/${id}`);
+                if (!response.ok) throw new Error('Falha ao carregar detalhes da transação');
+                const data = await response.json();
+                setTransaction(data.transaction);
+            } catch (error: any) {
+                toast({ title: "Erro", description: error.message, variant: 'destructive'});
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchTransaction();
+    }, [id, toast]);
+
+    if (isLoading) {
+        return (
+             <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+                <div className="mx-auto grid max-w-3xl flex-1 auto-rows-max gap-4">
+                    <Skeleton className="h-8 w-1/2" />
+                     <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-2 lg:gap-8">
+                        <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
+                            <Card><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
+                            <Card><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                        </div>
+                        <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
+                            <Card><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (!transaction) {
+        return <p>Transação não encontrada.</p>
+    }
+
     return (
         <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             <div className="mx-auto grid max-w-3xl flex-1 auto-rows-max gap-4">
@@ -88,7 +137,7 @@ export default function TransacaoDetalhePage() {
                 <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
-                      <CardTitle>Transação {transaction.id}</CardTitle>
+                      <CardTitle>Transação #{transaction.id.substring(0, 8)}...</CardTitle>
                        <Button
                             aria-label="Copiar ID da Transação"
                             size="icon"
@@ -111,14 +160,7 @@ export default function TransacaoDetalhePage() {
                         <div className='flex items-center justify-between'>
                             <div className="font-medium text-muted-foreground">Status</div>
                             <div>
-                                <Badge variant={transaction.status === 'Aprovada' ? 'default' 
-                                    : transaction.status === 'Pendente' ? 'secondary' 
-                                    : transaction.status === 'Reembolsada' ? 'outline'
-                                    : 'destructive'}
-                                        className={transaction.status === 'Aprovada' ? 'bg-green-500/20 text-green-700 border-green-400'
-                                        : transaction.status === 'Pendente' ? 'bg-amber-500/20 text-amber-700 border-amber-400'
-                                        : transaction.status === 'Reembolsada' ? 'bg-blue-500/20 text-blue-700 border-blue-400'
-                                        : 'bg-red-500/20 text-red-700 border-red-400'}>
+                                <Badge variant={transaction.status === 'approved' ? 'success' : transaction.status === 'pending' ? 'warning' : 'destructive'}>
                                     {transaction.status}
                                 </Badge>
                             </div>
@@ -156,6 +198,21 @@ export default function TransacaoDetalhePage() {
                       </div>
                     </CardContent>
                   </Card>
+                  {transaction.church &&
+                    <Card>
+                        <CardHeader>
+                        <CardTitle>Igreja de Origem</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                        <div className="flex items-start gap-4">
+                            <div className="grid gap-1">
+                                <p className="font-semibold">{transaction.church.name}</p>
+                                <p className="text-sm text-muted-foreground">{transaction.church.address}</p>
+                            </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                  }
                 </div>
               </div>
             </div>
