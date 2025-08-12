@@ -70,6 +70,7 @@ const RefundModal = ({ amount, transactionId, onRefundSuccess }: { amount: numbe
 
     const handleRefund = async () => {
         toast({ title: 'Processando', description: 'Enviando solicitação de reembolso...'});
+        // Simulação de chamada de API
         await new Promise(resolve => setTimeout(resolve, 2000));
         console.log(`Reembolsando: ${refundAmount} para a transação ${transactionId}. Motivo: ${reason}`);
         toast({ title: 'Sucesso!', description: `Reembolso de R$ ${refundAmount} solicitado com sucesso.`, variant: 'success' });

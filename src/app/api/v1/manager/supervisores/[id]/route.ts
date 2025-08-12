@@ -5,6 +5,7 @@ import { users, supervisorProfiles } from '@/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
 
 const supervisorUpdateSchema = z.object({
@@ -25,7 +26,16 @@ const supervisorUpdateSchema = z.object({
   newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
+async function verifySupervisor(supervisorId: string, managerId: string) {
+    const [supervisor] = await db.select().from(supervisorProfiles).where(eq(supervisorProfiles.userId, supervisorId));
+    if (!supervisor || supervisor.managerId !== managerId) return false;
+    return true;
+}
+
 export async function GET(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -34,17 +44,22 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const { id } = params;
 
     try {
+        const isAuthorized = await verifySupervisor(id, sessionUser.id);
+        if (!isAuthorized) {
+            return NextResponse.json({ error: "Supervisor não encontrado ou não pertence a este gerente." }, { status: 404 });
+        }
+
         const result = await db.select({
             user: users,
             profile: supervisorProfiles,
         })
         .from(users)
         .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-        .where(and(eq(users.id, id), eq(users.role, 'supervisor'), eq(supervisorProfiles.managerId, sessionUser.id), isNull(users.deletedAt)))
+        .where(and(eq(users.id, id), eq(users.role, 'supervisor'), isNull(users.deletedAt)))
         .limit(1);
 
         if (result.length === 0) {
-            return NextResponse.json({ error: "Supervisor não encontrado ou não pertence a este gerente." }, { status: 404 });
+            return NextResponse.json({ error: "Supervisor não encontrado." }, { status: 404 });
         }
 
         const { user, profile } = result[0];
@@ -77,6 +92,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -85,6 +103,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const { id } = params;
   
     try {
+        const isAuthorized = await verifySupervisor(id, sessionUser.id);
+        if (!isAuthorized) {
+            return NextResponse.json({ error: "Não autorizado a modificar este supervisor." }, { status: 403 });
+        }
+
       const body = await request.json();
       const validatedData = supervisorUpdateSchema.parse(body);
   
@@ -134,6 +157,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -142,6 +168,10 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const { id } = params;
 
     try {
+        const isAuthorized = await verifySupervisor(id, sessionUser.id);
+        if (!isAuthorized) {
+            return NextResponse.json({ error: "Não autorizado a excluir este supervisor." }, { status: 403 });
+        }
         await db
         .update(users)
         .set({

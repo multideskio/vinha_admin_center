@@ -2,15 +2,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, churchProfiles, supervisorProfiles } from '@/db/schema';
-import { eq, and, isNull, inArray } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
-const GERENTE_INIT_ID = process.env.GERENTE_INIT;
-if (!GERENTE_INIT_ID) {
-    throw new Error("A variável de ambiente GERENTE_INIT não está definida.");
-}
 
 const churchUpdateSchema = z.object({
     supervisorId: z.string().uuid().optional(),
@@ -31,8 +28,8 @@ const churchUpdateSchema = z.object({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-async function verifyChurch(churchId: string) {
-    const supervisorIdsManagedByGerente = await db.select({ id: supervisorProfiles.userId }).from(supervisorProfiles).where(eq(supervisorProfiles.managerId, GERENTE_INIT_ID!));
+async function verifyChurch(churchId: string, managerId: string) {
+    const supervisorIdsManagedByGerente = await db.select({ id: supervisorProfiles.userId }).from(supervisorProfiles).where(eq(supervisorProfiles.managerId, managerId));
     if (supervisorIdsManagedByGerente.length === 0) return false;
 
     const [church] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, churchId));
@@ -45,10 +42,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
 
     try {
-        const isAuthorized = await verifyChurch(id);
+        const isAuthorized = await verifyChurch(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Igreja não encontrada ou não pertence a esta rede." }, { status: 404 });
         }
@@ -100,10 +102,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+     const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+    
     const { id } = params;
   
     try {
-      const isAuthorized = await verifyChurch(id);
+      const isAuthorized = await verifyChurch(id, sessionUser.id);
       if (!isAuthorized) {
           return NextResponse.json({ error: "Não autorizado a modificar esta igreja." }, { status: 403 });
       }
@@ -163,10 +170,15 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+     const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
 
     try {
-        const isAuthorized = await verifyChurch(id);
+        const isAuthorized = await verifyChurch(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Não autorizado a excluir esta igreja." }, { status: 403 });
         }

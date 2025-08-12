@@ -39,6 +39,9 @@ async function verifyPastor(pastorId: string, managerId: string) {
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -96,6 +99,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -161,6 +167,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });

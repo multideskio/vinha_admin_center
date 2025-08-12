@@ -139,7 +139,7 @@ export default function TransacaoDetalhePage() {
         if (!id) return;
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/v1/transacoes/${id}`);
+            const response = await fetch(`/api/v1/manager/transacoes/${id}`);
             if (!response.ok) throw new Error('Falha ao carregar detalhes da transação');
             const data = await response.json();
             

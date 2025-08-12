@@ -27,7 +27,7 @@ async function getCieloCredentials() {
 async function verifyTransactionOwnership(transactionId: string, supervisorId: string) {
     const [transaction] = await db.select({ contributorId: transactionsTable.contributorId })
         .from(transactionsTable)
-        .where(eq(transactionsTable.gatewayTransactionId, transactionId))
+        .where(eq(transactionsTable.id, transactionId))
         .limit(1);
 
     if (!transaction) return false;
@@ -57,21 +57,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
-    const { id: gatewayTransactionId } = params;
+    const { id } = params;
 
-    if (!gatewayTransactionId) {
+    if (!id) {
         return NextResponse.json({ error: "ID da transação não fornecido." }, { status: 400 });
     }
 
     try {
-        const isAuthorized = await verifyTransactionOwnership(gatewayTransactionId, sessionUser.id);
+        const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Transação não encontrada ou você não tem permissão para visualizá-la." }, { status: 404 });
         }
 
-        const [transaction] = await db.select().from(transactionsTable).where(eq(transactionsTable.gatewayTransactionId, gatewayTransactionId));
-        if(!transaction) {
-            return NextResponse.json({ error: "Transação não encontrada no banco de dados local." }, { status: 404 });
+        const [transaction] = await db.select().from(transactionsTable).where(eq(transactionsTable.id, id));
+        if(!transaction || !transaction.gatewayTransactionId) {
+            return NextResponse.json({ error: "Transação não encontrada no banco de dados local ou não possui ID de gateway." }, { status: 404 });
         }
         
         const credentials = await getCieloCredentials();
