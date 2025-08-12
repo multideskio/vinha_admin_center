@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, pastorProfiles, supervisorProfiles } from '@/db/schema';
@@ -6,11 +7,7 @@ import { eq, and, isNull, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
-
-const GERENTE_INIT_ID = process.env.GERENTE_INIT;
-if (!GERENTE_INIT_ID) {
-    throw new Error("A variável de ambiente GERENTE_INIT não está definida.");
-}
+import { validateRequest } from '@/lib/auth';
 
 const pastorUpdateSchema = z.object({
   firstName: z.string().min(1).optional(),
@@ -31,8 +28,8 @@ const pastorUpdateSchema = z.object({
   newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-async function verifySupervisor(pastorId: string) {
-    const supervisorIdsManagedByGerente = await db.select({ id: supervisorProfiles.userId }).from(supervisorProfiles).where(eq(supervisorProfiles.managerId, GERENTE_INIT_ID!));
+async function verifyPastor(pastorId: string, managerId: string) {
+    const supervisorIdsManagedByGerente = await db.select({ id: supervisorProfiles.userId }).from(supervisorProfiles).where(eq(supervisorProfiles.managerId, managerId));
     if (supervisorIdsManagedByGerente.length === 0) return false;
 
     const [pastor] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, pastorId));
@@ -42,13 +39,15 @@ async function verifySupervisor(pastorId: string) {
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 
     try {
-        const isAuthorized = await verifySupervisor(id);
+        const isAuthorized = await verifyPastor(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Pastor não encontrado ou não pertence a esta rede." }, { status: 404 });
         }
@@ -97,13 +96,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
   
     try {
-      const isAuthorized = await verifySupervisor(id);
+      const isAuthorized = await verifyPastor(id, sessionUser.id);
       if (!isAuthorized) {
           return NextResponse.json({ error: "Não autorizado a modificar este pastor." }, { status: 403 });
       }
@@ -160,13 +161,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 
     try {
-        const isAuthorized = await verifySupervisor(id);
+        const isAuthorized = await verifyPastor(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Não autorizado a excluir este pastor." }, { status: 403 });
         }

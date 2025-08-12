@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, pastorProfiles, supervisorProfiles } from '@/db/schema';
@@ -25,7 +26,7 @@ const pastorSchema = z.object({
   city: z.string().nullable(),
   neighborhood: z.string().nullable(),
   address: z.string().nullable(),
-  birthDate: z.date().nullable(),
+  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}).nullable(),
   titheDay: z.coerce.number().min(1).max(31).nullable(),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
 });
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
 
     } catch (error: any) {
         console.error("Erro ao buscar pastores:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
     }
 }
 

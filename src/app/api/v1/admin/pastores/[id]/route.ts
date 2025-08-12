@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, pastorProfiles } from '@/db/schema';
@@ -17,7 +18,7 @@ const pastorUpdateSchema = z.object({
   state: z.string().nullable().optional(),
   city: z.string().nullable().optional(),
   neighborhood: z.string().nullable().optional(),
-  street: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
   number: z.string().nullable().optional(),
   complement: z.string().nullable().optional(),
   birthDate: z.date().nullable().optional(),
@@ -63,7 +64,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
             state: profile?.state,
             city: profile?.city,
             neighborhood: profile?.neighborhood,
-            street: profile?.street,
+            address: profile?.address,
             number: profile?.number,
             complement: profile?.complement,
             birthDate: profile?.birthDate,
@@ -118,7 +119,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.state !== undefined) profileUpdateData.state = validatedData.state;
         if (validatedData.city !== undefined) profileUpdateData.city = validatedData.city;
         if (validatedData.neighborhood !== undefined) profileUpdateData.neighborhood = validatedData.neighborhood;
-        if (validatedData.street !== undefined) profileUpdateData.street = validatedData.street;
+        if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address;
         if (validatedData.number !== undefined) profileUpdateData.number = validatedData.number;
         if (validatedData.complement !== undefined) profileUpdateData.complement = validatedData.complement;
         if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate;

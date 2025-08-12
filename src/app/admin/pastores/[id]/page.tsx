@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -75,7 +76,7 @@ const pastorProfileSchema = z.object({
   state: z.string().nullable().optional(),
   city: z.string().nullable().optional(),
   neighborhood: z.string().nullable().optional(),
-  street: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
   number: z.string().nullable().optional(),
   complement: z.string().nullable().optional(),
   birthDate: z.date().nullable().optional(),
@@ -228,7 +229,7 @@ export default function PastorProfilePage() {
         state: '',
         city: '',
         neighborhood: '',
-        street: '',
+        address: '',
         number: '',
         complement: '',
         birthDate: null,
@@ -580,7 +581,7 @@ export default function PastorProfilePage() {
                                 <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                         <FormField control={form.control} name="street" render={({ field }) => (
+                         <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Rua</FormLabel>
                                 <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>

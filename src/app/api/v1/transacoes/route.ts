@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { gatewayConfigurations, transactions as transactionsTable, users, churchProfiles, pastorProfiles, supervisorProfiles, managerProfiles, type TransactionStatus } from '@/db/schema';
