@@ -3,14 +3,22 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
+  Facebook,
+  Instagram,
+  Globe,
   AlertTriangle,
+  Info,
   Lock,
   Calendar as CalendarIcon,
   Loader2,
+  Bell,
+  Mail,
+  Smartphone,
+  MoreHorizontal,
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -35,6 +43,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -43,26 +58,34 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
 const churchProfileSchema = z.object({
-    razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
-    nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
-    email: z.string().email({ message: 'E-mail inválido.' }),
-    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-    city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-    address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
+    supervisorId: z.string({ required_error: 'Selecione um supervisor.' }).optional(),
+    razaoSocial: z.string().min(1, 'A razão social é obrigatória.').optional(),
+    nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.').optional(),
+    email: z.string().email({ message: 'E-mail inválido.' }).optional(),
+    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }).optional(),
+    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }).optional(),
+    city: z.string().min(1, { message: 'A cidade é obrigatória.' }).optional(),
+    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }).optional(),
+    address: z.string().min(1, { message: 'O endereço é obrigatório.' }).optional(),
     foundationDate: z.date({
       required_error: 'A data de fundação é obrigatória.',
-    }),
-    titheDay: z.coerce.number().min(1).max(31).nullable(),
-    phone: z.string().min(1, { message: 'O celular é obrigatório.' }).nullable(),
-    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable(),
-    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable(),
-    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable(),
+    }).optional(),
+    titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
+    phone: z.string().min(1, { message: 'O celular é obrigatório.' }).nullable().optional(),
+    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable().optional(),
+    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable().optional(),
+    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable().optional(),
     newPassword: z.string().optional().or(z.literal('')),
+    facebook: z.string().url().or(z.literal('')).nullable().optional(),
+    instagram: z.string().url().or(z.literal('')).nullable().optional(),
+    website: z.string().url().or(z.literal('')).nullable().optional(),
 }).partial();
 
 type ChurchProfile = z.infer<typeof churchProfileSchema> & {
@@ -71,6 +94,19 @@ type ChurchProfile = z.infer<typeof churchProfileSchema> & {
     status: string;
     avatarUrl?: string;
 };
+
+type Supervisor = {
+    id: string;
+    firstName: string;
+    lastName: string;
+}
+
+type Transaction = {
+    id: string;
+    amount: number;
+    status: 'approved' | 'pending' | 'refused' | 'refunded';
+    date: string;
+  };
 
 
 export default function IgrejaProfilePage() {
@@ -132,7 +168,7 @@ export default function IgrejaProfilePage() {
         setIsSaving(false);
     }
   };
-  
+    
     const handleDelete = async () => {
         try {
             const response = await fetch(`/api/v1/supervisor/igrejas/${id}`, { method: 'DELETE' });
@@ -170,10 +206,11 @@ export default function IgrejaProfilePage() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      {/* Left Column: Profile Card */}
       <div className="lg:col-span-1">
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
+          <div className="relative">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={previewImage || church.avatarUrl || "https://placehold.co/96x96.png"} alt={church.nomeFantasia ?? ''} data-ai-hint="church building" />
                 <AvatarFallback>{church.nomeFantasia?.[0]}</AvatarFallback>
@@ -191,9 +228,37 @@ export default function IgrejaProfilePage() {
             </h2>
             <p className="text-muted-foreground">Igreja</p>
           </CardContent>
+          <Separator />
+          <CardContent className="pt-6">
+            <h3 className="mb-4 font-semibold">Redes sociais</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Facebook className="h-5 w-5 text-muted-foreground" />
+                <Input
+                  defaultValue={church.facebook ?? ''}
+                  placeholder="https://facebook.com/..."
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <Instagram className="h-5 w-5 text-muted-foreground" />
+                <Input
+                  defaultValue={church.instagram ?? ''}
+                  placeholder="https://instagram.com/..."
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <Globe className="h-5 w-5 text-muted-foreground" />
+                <Input
+                  defaultValue={church.website ?? ''}
+                  placeholder="https://website.com/..."
+                />
+              </div>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
+      {/* Right Column: Tabs and Form */}
       <div className="lg:col-span-2">
         <Tabs defaultValue="profile">
           <TabsList>
@@ -344,7 +409,7 @@ export default function IgrejaProfilePage() {
                         <FormField control={form.control} name="titheDay" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Dia do dízimo</FormLabel>
-                                <FormControl><Input type="number" {...field} value={field.value ?? ''}/></FormControl>
+                                <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
                             </FormItem>
                         )} />
                          <FormField
