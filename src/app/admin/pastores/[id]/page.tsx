@@ -66,25 +66,25 @@ import Link from 'next/link';
 
 
 const pastorProfileSchema = z.object({
-  firstName: z.string().min(1, 'O nome é obrigatório.'),
-  lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
-  phone: z.string().nullable(),
-  landline: z.string().nullable(),
-  email: z.string().email('E-mail inválido.'),
-  cep: z.string().nullable(),
-  state: z.string().nullable(),
-  city: z.string().nullable(),
-  neighborhood: z.string().nullable(),
-  address: z.string().nullable(),
-  number: z.string().nullable(),
-  complement: z.string().nullable(),
-  birthDate: z.date().nullable(),
-  titheDay: z.coerce.number().nullable(),
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().nullable().optional(),
+  landline: z.string().nullable().optional(),
+  cep: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  neighborhood: z.string().nullable().optional(),
+  street: z.string().nullable().optional(),
+  number: z.string().nullable().optional(),
+  complement: z.string().nullable().optional(),
+  birthDate: z.date().nullable().optional(),
+  titheDay: z.coerce.number().nullable().optional(),
   newPassword: z.string().optional().or(z.literal('')),
-  facebook: z.string().url().or(z.literal('')).nullable(),
-  instagram: z.string().url().or(z.literal('')).nullable(),
-  website: z.string().url().or(z.literal('')).nullable(),
-  supervisorId: z.string().nullable(),
+  facebook: z.string().url().or(z.literal('')).nullable().optional(),
+  instagram: z.string().url().or(z.literal('')).nullable().optional(),
+  website: z.string().url().or(z.literal('')).nullable().optional(),
+  supervisorId: z.string().uuid().nullable().optional(),
 }).partial();
 
 type PastorProfile = z.infer<typeof pastorProfileSchema> & {
@@ -228,7 +228,7 @@ export default function PastorProfilePage() {
         state: '',
         city: '',
         neighborhood: '',
-        address: '',
+        street: '',
         number: '',
         complement: '',
         birthDate: null,
@@ -246,8 +246,8 @@ export default function PastorProfilePage() {
     setIsLoading(true);
     try {
         const [pastorRes, supervisorsRes] = await Promise.all([
-            fetch(`/api/v1/pastores/${id}`),
-            fetch('/api/v1/supervisores?minimal=true'),
+            fetch(`/api/v1/admin/pastores/${id}`),
+            fetch('/api/v1/admin/supervisores?minimal=true'),
         ]);
 
         if (!pastorRes.ok) throw new Error('Falha ao carregar dados do pastor.');
@@ -258,25 +258,7 @@ export default function PastorProfilePage() {
         
         const sanitizedData = {
             ...pastorData,
-            firstName: pastorData.firstName ?? '',
-            lastName: pastorData.lastName ?? '',
-            phone: pastorData.phone ?? '',
-            landline: pastorData.landline ?? '',
-            email: pastorData.email ?? '',
-            cep: pastorData.cep ?? '',
-            state: pastorData.state ?? '',
-            city: pastorData.city ?? '',
-            neighborhood: pastorData.neighborhood ?? '',
-            address: pastorData.address ?? '',
-            number: pastorData.number ?? '',
-            complement: pastorData.complement ?? '',
             birthDate: pastorData.birthDate ? new Date(pastorData.birthDate) : null,
-            titheDay: pastorData.titheDay ?? 1,
-            newPassword: '',
-            facebook: pastorData.facebook ?? '',
-            instagram: pastorData.instagram ?? '',
-            website: pastorData.website ?? '',
-            supervisorId: pastorData.supervisorId ?? '',
         };
 
         setPastor(sanitizedData);
@@ -296,7 +278,7 @@ export default function PastorProfilePage() {
   const onSubmit = async (data: Partial<PastorProfile>) => {
     setIsSaving(true);
     try {
-        const response = await fetch(`/api/v1/pastores/${id}`, {
+        const response = await fetch(`/api/v1/admin/pastores/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -312,7 +294,7 @@ export default function PastorProfilePage() {
 
   const handleDelete = async () => {
     try {
-        const response = await fetch(`/api/v1/pastores/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/v1/admin/pastores/${id}`, { method: 'DELETE' });
         if(!response.ok) throw new Error('Falha ao excluir o pastor.');
         toast({ title: "Sucesso!", description: 'Pastor excluído com sucesso.', variant: 'success' });
         router.push('/admin/pastores');
@@ -355,7 +337,6 @@ export default function PastorProfilePage() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Left Column: Profile Card */}
       <div className="lg:col-span-1">
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
@@ -407,7 +388,6 @@ export default function PastorProfilePage() {
         </Card>
       </div>
 
-      {/* Right Column: Tabs and Form */}
       <div className="lg:col-span-2">
         <Tabs defaultValue="profile">
           <TabsList>
@@ -600,7 +580,7 @@ export default function PastorProfilePage() {
                                 <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                         <FormField control={form.control} name="address" render={({ field }) => (
+                         <FormField control={form.control} name="street" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Rua</FormLabel>
                                 <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
