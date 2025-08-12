@@ -1,5 +1,4 @@
 
-
 import {
   pgTable,
   text,
@@ -13,34 +12,28 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
+import { 
+    USER_ROLES, 
+    USER_STATUSES, 
+    PERMISSION_LEVELS, 
+    TRANSACTION_STATUSES, 
+    PAYMENT_METHODS, 
+    NOTIFICATION_EVENT_TRIGGERS,
+    WEBHOOK_EVENTS,
+    API_KEY_STATUSES
+} from '@/lib/types';
 
 // Enums
-
-export const userRoleEnum = pgEnum('user_role', ['admin', 'manager', 'supervisor', 'pastor', 'church_account']);
-export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'pending_approval']);
-export const permissionLevelEnum = pgEnum('permission_level', ['admin', 'superadmin']);
-export const transactionStatusEnum = pgEnum('transaction_status', ['approved', 'pending', 'refused', 'refunded']);
-export const paymentMethodEnum = pgEnum('payment_method', ['pix', 'credit_card', 'boleto']);
-export const notificationEventTriggerEnum = pgEnum('notification_event_trigger', [
-    'user_registered', 
-    'payment_received', 
-    'payment_due_reminder', 
-    'payment_overdue'
-]);
-
-export const webhookEventEnum = pgEnum('webhook_event', [
-    'transacao_criada',
-    'transacao_recusada',
-    'usuario_atualizado',
-    'transacao_aprovada',
-    'usuario_criado'
-]);
-
-export const apiKeyStatusEnum = pgEnum('api_key_status', ['active', 'inactive']);
-
+export const userRoleEnum = pgEnum('user_role', USER_ROLES);
+export const userStatusEnum = pgEnum('user_status', USER_STATUSES);
+export const permissionLevelEnum = pgEnum('permission_level', PERMISSION_LEVELS);
+export const transactionStatusEnum = pgEnum('transaction_status', TRANSACTION_STATUSES);
+export const paymentMethodEnum = pgEnum('payment_method', PAYMENT_METHODS);
+export const notificationEventTriggerEnum = pgEnum('notification_event_trigger', NOTIFICATION_EVENT_TRIGGERS);
+export const webhookEventEnum = pgEnum('webhook_event', WEBHOOK_EVENTS);
+export const apiKeyStatusEnum = pgEnum('api_key_status', API_KEY_STATUSES);
 
 // Tabelas Principais
-
 export const companies = pgTable('companies', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     name: varchar('name', { length: 255 }).notNull(),
@@ -63,7 +56,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow(),
   deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by').references((): any => users.id, { onDelete: 'set null' }),
+  deletedBy: uuid('deleted_by'), // Removida FK para quebrar ciclo
   deletionReason: text('deletion_reason'),
 });
 
@@ -86,12 +79,11 @@ export const regions = pgTable('regions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow(),
   deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by').references(() => users.id, { onDelete: 'set null' }),
+  deletedBy: uuid('deleted_by'), // Removida FK para quebrar ciclo
   deletionReason: text('deletion_reason'),
 });
 
 // Tabelas de Perfis
-
 export const adminProfiles = pgTable('admin_profiles', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
@@ -104,9 +96,6 @@ export const adminProfiles = pgTable('admin_profiles', {
   city: varchar('city', { length: 100 }),
   neighborhood: varchar('neighborhood', { length: 100 }),
   address: varchar('address', { length: 255 }),
-  facebook: varchar('facebook', { length: 255 }),
-  instagram: varchar('instagram', { length: 255 }),
-  website: varchar('website', { length: 255 }),
 });
 
 export const managerProfiles = pgTable('manager_profiles', {
@@ -121,9 +110,6 @@ export const managerProfiles = pgTable('manager_profiles', {
     city: varchar('city', { length: 100 }),
     neighborhood: varchar('neighborhood', { length: 100 }),
     address: varchar('address', { length: 255 }),
-    facebook: varchar('facebook', { length: 255 }),
-    instagram: varchar('instagram', { length: 255 }),
-    website: varchar('website', { length: 255 }),
 });
 
 export const supervisorProfiles = pgTable('supervisor_profiles', {
@@ -142,9 +128,6 @@ export const supervisorProfiles = pgTable('supervisor_profiles', {
     address: varchar('address', { length: 255 }),
     number: varchar('number', { length: 20 }),
     complement: varchar('complement', { length: 100 }),
-    facebook: varchar('facebook', { length: 255 }),
-    instagram: varchar('instagram', { length: 255 }),
-    website: varchar('website', { length: 255 }),
 });
 
 export const pastorProfiles = pgTable('pastor_profiles', {
@@ -163,9 +146,6 @@ export const pastorProfiles = pgTable('pastor_profiles', {
     address: varchar('address', { length: 255 }),
     number: varchar('number', { length: 20 }),
     complement: varchar('complement', { length: 100 }),
-    facebook: varchar('facebook', { length: 255 }),
-    instagram: varchar('instagram', { length: 255 }),
-    website: varchar('website', { length: 255 }),
 });
 
 export const churchProfiles = pgTable('church_profiles', {
@@ -184,9 +164,6 @@ export const churchProfiles = pgTable('church_profiles', {
     treasurerFirstName: varchar('treasurer_first_name', { length: 100 }),
     treasurerLastName: varchar('treasurer_last_name', { length: 100 }),
     treasurerCpf: varchar('treasurer_cpf', { length: 14 }),
-    facebook: varchar('facebook', { length: 255 }),
-    instagram: varchar('instagram', { length: 255 }),
-    website: varchar('website', { length: 255 }),
 });
 
 // Tabela de Transações
@@ -202,7 +179,7 @@ export const transactions = pgTable('transactions', {
   refundRequestReason: text('refund_request_reason'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by').references(() => users.id, { onDelete: 'set null' }),
+  deletedBy: uuid('deleted_by'), // Removida FK para quebrar ciclo
   deletionReason: text('deletion_reason'),
 });
 

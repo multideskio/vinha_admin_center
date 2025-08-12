@@ -16,17 +16,12 @@ import {
   User,
   Map,
   Calendar as CalendarIcon,
-  Search,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
-
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -97,35 +92,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { pastorProfileSchema, SupervisorProfile, User } from '@/lib/types';
+import { z } from 'zod';
 
-const pastorSchema = z.object({
-  supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
-  firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
-  lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
-  cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-  email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-  state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-  city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-  neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-  street: z.string().min(1, { message: 'A rua é obrigatória.' }),
-  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}).nullable(),
-  titheDay: z.coerce.number().min(1).max(31).nullable(),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-});
-
-type Pastor = z.infer<typeof pastorSchema> & {
-    id: string;
-    status: 'active' | 'inactive';
-    supervisorName?: string;
-}
-
-type Supervisor = {
-    id: string;
-    firstName: string;
-    lastName: string;
-}
-
+type Pastor = z.infer<typeof pastorProfileSchema> & { id: string; status: User['status'], supervisorName?: string, email: string, phone: string | null };
+type Supervisor = SupervisorProfile & { id: string; };
 
 const PastorFormModal = ({
   onSave,
@@ -140,18 +112,17 @@ const PastorFormModal = ({
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof pastorSchema>>({
-    resolver: zodResolver(pastorSchema),
+  const form = useForm<z.infer<typeof pastorProfileSchema>>({
+    resolver: zodResolver(pastorProfileSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
       cpf: '',
-      email: '',
       cep: '',
       state: '',
       city: '',
       neighborhood: '',
-      street: '',
+      address: '',
       titheDay: 1,
       phone: '',
     },
@@ -163,9 +134,9 @@ const PastorFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = async (data: z.infer<typeof pastorSchema>) => {
+  const handleSave = async (data: z.infer<typeof pastorProfileSchema>) => {
     try {
-        const response = await fetch('/api/v1/pastores', {
+        const response = await fetch('/api/v1/admin/pastores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -222,7 +193,7 @@ const PastorFormModal = ({
       const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
       const data = await response.json();
       if (!data.erro) {
-        form.setValue('street', data.logradouro);
+        form.setValue('address', data.logradouro);
         form.setValue('neighborhood', data.bairro);
         form.setValue('city', data.localidade);
         form.setValue('state', data.uf);
@@ -242,7 +213,7 @@ const PastorFormModal = ({
           <DialogTitle>Cadastro de pastores</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4 overflow-y-auto max-h-[80vh]">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-2 overflow-y-auto max-h-[80vh]">
             <Alert
               variant="default"
               className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
@@ -260,7 +231,7 @@ const PastorFormModal = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Selecione um supervisor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um supervisor" />
@@ -348,6 +319,7 @@ const PastorFormModal = ({
                       <Input
                         placeholder="00000-000"
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(formatCEP(e.target.value))}
                         onBlur={handleCepBlur}
                         disabled={isFetchingCep}
@@ -364,7 +336,7 @@ const PastorFormModal = ({
                   <FormItem>
                     <FormLabel>Estado</FormLabel>
                     <FormControl>
-                      <Input placeholder="UF" {...field} disabled={isFetchingCep} />
+                      <Input placeholder="UF" {...field} value={field.value ?? ''} disabled={isFetchingCep} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -380,6 +352,7 @@ const PastorFormModal = ({
                       <Input
                         placeholder="Nome da cidade"
                         {...field}
+                        value={field.value ?? ''}
                         disabled={isFetchingCep}
                       />
                     </FormControl>
@@ -397,6 +370,7 @@ const PastorFormModal = ({
                       <Input
                         placeholder="Nome do bairro"
                         {...field}
+                        value={field.value ?? ''}
                         disabled={isFetchingCep}
                       />
                     </FormControl>
@@ -407,7 +381,7 @@ const PastorFormModal = ({
             </div>
             <FormField
               control={form.control}
-              name="street"
+              name="address"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Endereço</FormLabel>
@@ -415,6 +389,7 @@ const PastorFormModal = ({
                     <Input
                       placeholder="O restante do endereço"
                       {...field}
+                      value={field.value ?? ''}
                       disabled={isFetchingCep}
                     />
                   </FormControl>
@@ -499,9 +474,9 @@ const PastorFormModal = ({
                         <Input
                           placeholder="(00) 00000-0000"
                           {...field}
+                          value={field.value ?? ''}
                           className="rounded-l-none"
                           onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                          value={field.value ?? ''}
                         />
                       </div>
                     </FormControl>
@@ -655,7 +630,7 @@ export default function PastoresPage() {
                     </DropdownMenu>
                     </TableCell>
                 </TableRow>
-                ))
+              ))
             ) : (
                 <TableRow><TableCell colSpan={5} className="text-center">Nenhum pastor encontrado.</TableCell></TableRow>
             )}
@@ -669,52 +644,52 @@ export default function PastoresPage() {
   const CardView = () => (
     <>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
-            ))
-        ) : paginatedPastors.length > 0 ? (
-            paginatedPastors.map((pastor, index) => {
-                return (
-                    <Card key={pastor.id}>
-                        <CardContent className="pt-6">
-                        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                            <Image
-                            src="https://placehold.co/96x96.png"
-                            alt={`Foto de ${pastor.firstName}`}
-                            width={96}
-                            height={96}
-                            className="rounded-lg object-cover w-24 h-24"
-                            data-ai-hint="male person"
-                            />
-                            <div className="flex-1 space-y-2 min-w-[200px]">
-                            <h3 className="text-lg font-bold">
-                                #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
-                            </h3>
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                                <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
-                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
+            {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                    <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+                ))
+            ) : paginatedPastors.length > 0 ? (
+                paginatedPastors.map((pastor, index) => {
+                    return (
+                        <Card key={pastor.id}>
+                            <CardContent className="pt-6">
+                            <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                                <Image
+                                src="https://placehold.co/96x96.png"
+                                alt={`Foto de ${pastor.firstName}`}
+                                width={96}
+                                height={96}
+                                className="rounded-lg object-cover w-24 h-24"
+                                data-ai-hint="male person"
+                                />
+                                <div className="flex-1 space-y-2 min-w-[200px]">
+                                <h3 className="text-lg font-bold">
+                                    #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
+                                </h3>
+                                <div className="space-y-1 text-sm text-muted-foreground">
+                                    <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
+                                    <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
+                                    <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
+                                    <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
+                                    <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
+                                </div>
+                                </div>
                             </div>
+                            <div className="flex justify-end mt-4">
+                                <Button variant="outline" size="sm" asChild>
+                                <Link href={`/admin/pastores/${pastor.id}`}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Editar
+                                </Link>
+                                </Button>
                             </div>
-                        </div>
-                        <div className="flex justify-end mt-4">
-                            <Button variant="outline" size="sm" asChild>
-                            <Link href={`/admin/pastores/${pastor.id}`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Editar
-                            </Link>
-                            </Button>
-                        </div>
-                        </CardContent>
-                    </Card>
-                )
-            })
-        ) : (
-            <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
-        )}
+                            </CardContent>
+                        </Card>
+                    )
+                })
+            ) : (
+                <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
+            )}
         </div>
         <PaginationControls />
     </>
@@ -768,3 +743,4 @@ export default function PastoresPage() {
     </div>
   );
 }
+

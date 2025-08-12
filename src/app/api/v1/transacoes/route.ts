@@ -8,6 +8,7 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { format } from 'date-fns';
 import { validateRequest } from '@/lib/auth';
+import { PAYMENT_METHODS } from '@/lib/types';
 
 
 const COMPANY_ID = process.env.COMPANY_INIT;
@@ -17,7 +18,7 @@ if (!COMPANY_ID) {
 
 const transactionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
-  paymentMethod: z.enum(['pix', 'credit_card', 'boleto']),
+  paymentMethod: z.enum(PAYMENT_METHODS),
   contributionType: z.enum(['dizimo', 'oferta'], { required_error: "O tipo de contribuição é obrigatório." }),
   description: z.string().optional(),
   card: z.object({
