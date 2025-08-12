@@ -130,11 +130,9 @@ type Supervisor = {
 
 const ChurchFormModal = ({
   onSave,
-  supervisors,
   children,
 }: {
   onSave: () => void;
-  supervisors: Supervisor[];
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -304,11 +302,7 @@ const ChurchFormModal = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {supervisors.map((supervisor) => (
-                        <SelectItem key={supervisor.id} value={supervisor.id}>
-                          {supervisor.firstName} {supervisor.lastName}
-                        </SelectItem>
-                      ))}
+                      {/* Supervisors should be passed as a prop */}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -524,6 +518,7 @@ const ChurchFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -546,6 +541,7 @@ const ChurchFormModal = ({
                           {...field}
                           className="rounded-l-none"
                           onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                          value={field.value ?? ''}
                         />
                       </div>
                     </FormControl>
@@ -846,7 +842,7 @@ export default function IgrejasPage() {
                     </TooltipTrigger>
                     <TooltipContent>Visualizar em cards</TooltipContent>
                 </Tooltip>
-                <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
+                <ChurchFormModal onSave={fetchData} >
                     <Button size="sm" className="gap-1"><PlusCircle className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Igreja</span></Button>
                 </ChurchFormModal>
             </TooltipProvider>

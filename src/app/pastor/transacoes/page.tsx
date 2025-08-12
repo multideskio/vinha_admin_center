@@ -43,7 +43,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 type Transaction = {
   id: string;
   amount: number;
-  type?: 'Dízimo' | 'Oferta';
   description?: string;
   method: 'Pix' | 'Cartão de Crédito' | 'Boleto';
   status: 'approved' | 'pending' | 'refused' | 'refunded';
@@ -118,7 +117,7 @@ export default function TransacoesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead className="hidden md:table-cell">Descrição</TableHead>
                 <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
@@ -132,7 +131,7 @@ export default function TransacoesPage() {
               {isLoading ? (
                 Array.from({length: 5}).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
@@ -146,7 +145,7 @@ export default function TransacoesPage() {
                 </TableRow>
               ) : transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">{transaction.type || 'N/A'}</TableCell>
+                  <TableCell className="font-medium font-mono text-xs">{transaction.id.substring(0,8)}...</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {transaction.description ? (
                          <TooltipProvider>
