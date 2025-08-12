@@ -33,7 +33,7 @@ const supervisorSchema = z.object({
 
 export async function GET(request: Request) {
     const { user } = await validateRequest();
-    if (!user) {
+    if (!user || user.role !== 'admin') {
         return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         })
         .from(supervisorProfiles)
         .innerJoin(users, eq(users.id, supervisorProfiles.userId))
-        .where(isNull(users.deletedAt))
+        .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
         .orderBy(desc(users.createdAt));
         return NextResponse.json({ supervisors: result });
     }
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     const { user } = await validateRequest();
-    if (!user) {
+    if (!user || user.role !== 'admin') {
         return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 

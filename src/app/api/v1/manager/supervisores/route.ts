@@ -1,5 +1,4 @@
 
-
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema';
@@ -50,9 +49,10 @@ export async function GET(request: Request) {
         .from(supervisorProfiles)
         .innerJoin(users, eq(users.id, supervisorProfiles.userId))
         .where(and(
+            eq(users.role, 'supervisor'), 
             eq(supervisorProfiles.managerId, user.id),
             isNull(users.deletedAt)
-        ))
+          ))
         .orderBy(desc(users.createdAt));
         return NextResponse.json({ supervisors: result });
     }
