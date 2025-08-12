@@ -1,49 +1,52 @@
 
-
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { users, pastorProfiles } from '@/db/schema';
+import { users, supervisorProfiles } from '@/db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { authenticateApiKey } from '@/lib/api-auth';
 
-const pastorUpdateSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  birthDate: z.date().nullable().optional(),
-  titheDay: z.number().nullable().optional(),
-  supervisorId: z.string().uuid().nullable().optional(),
-  facebook: z.string().url().or(z.literal('')).nullable().optional(),
-  instagram: z.string().url().or(z.literal('')).nullable().optional(),
-  website: z.string().url().or(z.literal('')).nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
+const supervisorUpdateSchema = z.object({
+    firstName: z.string().min(1).optional(),
+    lastName: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().nullable().optional(),
+    landline: z.string().nullable().optional(),
+    cep: z.string().nullable().optional(),
+    state: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+    neighborhood: z.string().nullable().optional(),
+    address: z.string().nullable().optional(),
+    number: z.string().nullable().optional(),
+    complement: z.string().nullable().optional(),
+    titheDay: z.number().nullable().optional(),
+    managerId: z.string().uuid().nullable().optional(),
+    regionId: z.string().uuid().nullable().optional(),
+    facebook: z.string().url().or(z.literal('')).nullable().optional(),
+    instagram: z.string().url().or(z.literal('')).nullable().optional(),
+    website: z.string().url().or(z.literal('')).nullable().optional(),
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
 
     try {
         const result = await db.select({
             user: users,
-            profile: pastorProfiles,
+            profile: supervisorProfiles,
         })
         .from(users)
-        .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-        .where(and(eq(users.id, id), eq(users.role, 'pastor'), isNull(users.deletedAt)))
+        .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
+        .where(and(eq(users.id, id), eq(users.role, 'supervisor'), isNull(users.deletedAt)))
         .limit(1);
 
         if (result.length === 0) {
-            return NextResponse.json({ error: "Pastor não encontrado." }, { status: 404 });
+            return NextResponse.json({ error: "Supervisor não encontrado." }, { status: 404 });
         }
 
         const { user, profile } = result[0];
@@ -63,9 +66,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
             address: profile?.address,
             number: profile?.number,
             complement: profile?.complement,
-            birthDate: profile?.birthDate,
             titheDay: user.titheDay,
-            supervisorId: profile?.supervisorId,
+            managerId: profile?.managerId,
+            regionId: profile?.regionId,
             facebook: profile?.facebook,
             instagram: profile?.instagram,
             website: profile?.website,
@@ -73,23 +76,24 @@ export async function GET(request: Request, { params }: { params: { id: string }
         });
 
     } catch (error) {
-        console.error("Erro ao buscar pastor:", error);
+        console.error("Erro ao buscar supervisor:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
   
     try {
       const body = await request.json();
-      const validatedData = pastorUpdateSchema.parse({
-        ...body,
-        birthDate: body.birthDate ? new Date(body.birthDate) : undefined,
-      });
+      const validatedData = supervisorUpdateSchema.parse(body);
   
       await db.transaction(async (tx) => {
+        
         const userUpdateData: Partial<typeof users.$inferInsert> = {};
         if (validatedData.email) userUpdateData.email = validatedData.email;
         if (validatedData.phone) userUpdateData.phone = validatedData.phone;
@@ -104,7 +108,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             await tx.update(users).set(userUpdateData).where(eq(users.id, id));
         }
   
-        const profileUpdateData: Partial<typeof pastorProfiles.$inferInsert> = {};
+        const profileUpdateData: Partial<typeof supervisorProfiles.$inferInsert> = {};
         if (validatedData.firstName) profileUpdateData.firstName = validatedData.firstName;
         if (validatedData.lastName) profileUpdateData.lastName = validatedData.lastName;
         if (validatedData.landline !== undefined) profileUpdateData.landline = validatedData.landline;
@@ -115,14 +119,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address;
         if (validatedData.number !== undefined) profileUpdateData.number = validatedData.number;
         if (validatedData.complement !== undefined) profileUpdateData.complement = validatedData.complement;
-        if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate;
-        if (validatedData.supervisorId) profileUpdateData.supervisorId = validatedData.supervisorId;
+        if (validatedData.managerId) profileUpdateData.managerId = validatedData.managerId;
+        if (validatedData.regionId) profileUpdateData.regionId = validatedData.regionId;
         if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook;
         if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram;
         if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website;
         
         if (Object.keys(profileUpdateData).length > 0) {
-            await tx.update(pastorProfiles).set(profileUpdateData).where(eq(pastorProfiles.userId, id));
+            await tx.update(supervisorProfiles).set(profileUpdateData).where(eq(supervisorProfiles.userId, id));
         }
       });
   
@@ -132,12 +136,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
-      console.error("Erro ao atualizar pastor:", error);
+      console.error("Erro ao atualizar supervisor:", error);
       return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    const authResponse = await authenticateApiKey(request);
+    if (authResponse) return authResponse;
+
     const { id } = params;
 
     try {
@@ -149,10 +156,10 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         })
         .where(eq(users.id, id));
 
-        return NextResponse.json({ success: true, message: "Pastor excluído com sucesso." });
+        return NextResponse.json({ success: true, message: "Supervisor excluído com sucesso." });
 
-    } catch (error) {
-        console.error("Erro ao excluir pastor:", error);
+    } catch (error: any) {
+        console.error("Erro ao excluir supervisor:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }

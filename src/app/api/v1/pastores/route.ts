@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, pastorProfiles, supervisorProfiles } from '@/db/schema';
@@ -24,6 +25,7 @@ const pastorSchema = z.object({
   state: z.string().nullable(),
   city: z.string().nullable(),
   neighborhood: z.string().nullable(),
+  address: z.string().nullable(),
   birthDate: z.date().nullable(),
   titheDay: z.number().nullable(),
   phone: z.string().nullable(),
@@ -110,6 +112,7 @@ export async function POST(request: Request) {
             state: validatedData.state,
             city: validatedData.city,
             neighborhood: validatedData.neighborhood,
+            address: validatedData.address
         }).returning();
 
         return { ...newUser, ...newProfile };

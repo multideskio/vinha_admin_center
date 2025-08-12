@@ -276,6 +276,7 @@ export const apiKeys = pgTable('api_keys', {
     lastUsedAt: timestamp('last_used_at'),
 });
 
+export type TransactionStatus = (typeof transactionStatusEnum.enumValues)[number];
 
 // Relações
 
