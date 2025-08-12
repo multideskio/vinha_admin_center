@@ -28,12 +28,10 @@ export async function authenticateApiKey(request: Request) {
             return NextResponse.json({ error: 'Invalid or inactive API Key' }, { status: 403 });
         }
 
-        // Se a chave for válida, atualiza o último uso
         await db.update(apiKeys)
             .set({ lastUsedAt: new Date() })
             .where(eq(apiKeys.id, apiKey.id));
 
-        // Retorna null para indicar sucesso na autenticação
         return null;
 
     } catch (error) {

@@ -260,25 +260,7 @@ export default function IgrejaProfilePage() {
         
         const sanitizedData = {
             ...churchData,
-            supervisorId: churchData.supervisorId ?? '',
-            razaoSocial: churchData.razaoSocial ?? '',
-            nomeFantasia: churchData.nomeFantasia ?? '',
-            email: churchData.email ?? '',
-            phone: churchData.phone ?? '',
-            cep: churchData.cep ?? '',
-            state: churchData.state ?? '',
-            city: churchData.city ?? '',
-            neighborhood: churchData.neighborhood ?? '',
-            address: churchData.address ?? '',
             foundationDate: churchData.foundationDate ? new Date(churchData.foundationDate) : new Date(),
-            titheDay: churchData.titheDay ?? 1,
-            treasurerFirstName: churchData.treasurerFirstName ?? '',
-            treasurerLastName: churchData.treasurerLastName ?? '',
-            treasurerCpf: churchData.treasurerCpf ?? '',
-            newPassword: '',
-            facebook: churchData.facebook ?? '',
-            instagram: churchData.instagram ?? '',
-            website: churchData.website ?? '',
         };
 
         setChurch(sanitizedData);
