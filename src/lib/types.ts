@@ -1,5 +1,4 @@
 
-
 import { z } from 'zod';
 
 // =============================================================================
@@ -73,8 +72,8 @@ export const adminProfileSchema = z.object({
 });
 
 export const managerProfileSchema = z.object({
-    id: z.string().uuid(),
-    userId: z.string().uuid(),
+    id: z.string().uuid().optional(),
+    userId: z.string().uuid().optional(),
     firstName: z.string(),
     lastName: z.string(),
     cpf: z.string(),
@@ -84,6 +83,9 @@ export const managerProfileSchema = z.object({
     city: z.string().nullable(),
     neighborhood: z.string().nullable(),
     address: z.string().nullable(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    titheDay: z.number().nullable(),
 });
 
 export const supervisorProfileSchema = z.object({

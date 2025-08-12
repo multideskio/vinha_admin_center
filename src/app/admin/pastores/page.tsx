@@ -18,6 +18,7 @@ import {
   Map,
   Calendar as CalendarIcon,
 } from 'lucide-react';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -29,6 +30,8 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -95,7 +98,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { pastorProfileSchema, SupervisorProfile, User } from '@/lib/types';
-import { z } from 'zod';
 
 type Pastor = z.infer<typeof pastorProfileSchema> & { id: string; status: User['status'], supervisorName?: string, email: string, phone: string | null };
 type Supervisor = SupervisorProfile & { id: string; };
@@ -567,18 +569,18 @@ export default function PastoresPage() {
   
   const TableView = () => (
     <Card>
-        <CardContent className="pt-6">
+      <CardContent className="pt-6">
         <Table>
-            <TableHeader>
+          <TableHeader>
             <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
-                <TableHead className="hidden md:table-cell">Celular</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead><span className="sr-only">Ações</span></TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Celular</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead><span className="sr-only">Ações</span></TableHead>
             </TableRow>
-            </TableHeader>
-            <TableBody>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
@@ -592,54 +594,54 @@ export default function PastoresPage() {
             ) : paginatedPastors.length > 0 ? (
                 paginatedPastors.map((pastor) => (
                 <TableRow key={pastor.id}>
-                    <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.email}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.phone}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                  <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.email}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.phone}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
-                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                      {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
-                    </TableCell>
-                    <TableCell>
+                  </TableCell>
+                  <TableCell>
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
                         </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
-                            <Link href={`/admin/pastores/${pastor.id}`}>Editar</Link>
+                          <Link href={`/admin/pastores/${pastor.id}`}>Editar</Link>
                         </DropdownMenuItem>
                         <AlertDialog>
-                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                                Excluir
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
+                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                              Excluir
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                <AlertDialogDescription>Essa ação não pode ser desfeita. Isso excluirá permanentemente o pastor.</AlertDialogDescription>
+                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                              <AlertDialogDescription>Essa ação não pode ser desfeita. Isso excluirá permanentemente o pastor.</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(pastor.id!)}>Continuar</AlertDialogAction>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(pastor.id!)}>Continuar</AlertDialogAction>
                             </AlertDialogFooter>
-                            </AlertDialogContent>
+                          </AlertDialogContent>
                         </AlertDialog>
-                        </DropdownMenuContent>
+                      </DropdownMenuContent>
                     </DropdownMenu>
-                    </TableCell>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
                 <TableRow><TableCell colSpan={5} className="text-center">Nenhum pastor encontrado.</TableCell></TableRow>
             )}
-            </TableBody>
+          </TableBody>
         </Table>
         <PaginationControls />
-        </CardContent>
+      </CardContent>
     </Card>
   );
 
@@ -705,7 +707,7 @@ export default function PastoresPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Pastores

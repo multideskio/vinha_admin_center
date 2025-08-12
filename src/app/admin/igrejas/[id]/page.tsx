@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react';
@@ -56,34 +57,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { churchProfileSchema } from '@/lib/types';
 
-const churchProfileSchema = z.object({
-    supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
-    razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
-    nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
-    email: z.string().email({ message: 'E-mail inválido.' }),
-    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-    city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-    address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-    foundationDate: z.date({
-      required_error: 'A data de fundação é obrigatória.',
-    }),
-    titheDay: z.coerce.number().min(1).max(31).nullable(),
-    phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable(),
-    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable(),
-    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable(),
-    newPassword: z.string().optional().or(z.literal('')),
-    facebook: z.string().url().or(z.literal('')).nullable(),
-    instagram: z.string().url().or(z.literal('')).nullable(),
-    website: z.string().url().or(z.literal('')).nullable(),
-}).partial();
 
 type ChurchProfile = z.infer<typeof churchProfileSchema> & {
     id: string;
@@ -104,7 +84,6 @@ type Transaction = {
     status: 'approved' | 'pending' | 'refused' | 'refunded';
     date: string;
   };
-
 
 export default function IgrejaProfilePage() {
   const [church, setChurch] = React.useState<ChurchProfile | null>(null);
@@ -136,10 +115,6 @@ export default function IgrejaProfilePage() {
         treasurerFirstName: '',
         treasurerLastName: '',
         treasurerCpf: '',
-        newPassword: '',
-        facebook: '',
-        instagram: '',
-        website: '',
     },
   });
 
@@ -264,21 +239,21 @@ export default function IgrejaProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={church.facebook ?? ''}
+                  defaultValue={''}
                   placeholder="https://facebook.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={church.instagram ?? ''}
+                  defaultValue={''}
                   placeholder="https://instagram.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={church.website ?? ''}
+                  defaultValue={''}
                   placeholder="https://website.com/..."
                 />
               </div>
@@ -534,7 +509,7 @@ export default function IgrejaProfilePage() {
                       <Button type="submit" disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Alterar cadastro
-                        </Button>
+                      </Button>
                     </div>
                   </form>
                 </Form>

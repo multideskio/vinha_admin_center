@@ -69,6 +69,7 @@ type PastorProfile = z.infer<typeof pastorProfileSchema> & {
     cpf?: string;
     status: string;
     avatarUrl?: string;
+    newPassword?: string;
 };
 
 type Supervisor = {
@@ -526,7 +527,7 @@ export default function PastorProfilePage() {
                         )} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <FormField control={form.control} name="city" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Cidade</FormLabel>
@@ -539,21 +540,33 @@ export default function PastorProfilePage() {
                                 <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                    </div>
-
-                    <FormField control={form.control} name="address" render={({ field }) => (
+                         <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Endereço</FormLabel>
+                                <FormLabel>Rua</FormLabel>
+                                <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
+                            </FormItem>
+                        )} />
+                    </div>
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField control={form.control} name="number" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Número</FormLabel>
+                                <FormControl><Input placeholder='Número da casa...' {...field} value={field.value ?? ''}/></FormControl>
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="complement" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Complemento</FormLabel>
                                 <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                     
-                     <FormField control={form.control} name="titheDay" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Dia do dízimo</FormLabel>
-                            <FormControl><Input type="number" {...field} value={field.value ?? ''}/></FormControl>
-                        </FormItem>
-                    )} />
+                         <FormField control={form.control} name="titheDay" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Dia do dízimo</FormLabel>
+                                <FormControl><Input type="number" {...field} value={field.value ?? ''}/></FormControl>
+                            </FormItem>
+                        )} />
+                    </div>
 
                     <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
                       <AlertTriangle className="h-4 w-4 text-yellow-500" />
@@ -591,7 +604,7 @@ export default function PastorProfilePage() {
             </Card>
           </TabsContent>
           <TabsContent value="transactions">
-                <TransactionsTab userId={id as string} />
+            <TransactionsTab userId={id as string} />
           </TabsContent>
           <TabsContent value="configuracoes">
               <Card>

@@ -343,3 +343,4 @@ export const otherSettingsRelations = relations(otherSettings, ({ one }) => ({
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
     company: one(companies, { fields: [apiKeys.companyId], references: [companies.id] }),
 }));
+

@@ -6,26 +6,9 @@ import { eq, and, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { supervisorProfileSchema } from '@/lib/types';
 
-const supervisorUpdateSchema = z.object({
-    firstName: z.string().min(1).optional(),
-    lastName: z.string().min(1).optional(),
-    email: z.string().email().optional(),
-    phone: z.string().nullable().optional(),
-    landline: z.string().nullable().optional(),
-    cep: z.string().nullable().optional(),
-    state: z.string().nullable().optional(),
-    city: z.string().nullable().optional(),
-    neighborhood: z.string().nullable().optional(),
-    address: z.string().nullable().optional(),
-    number: z.string().nullable().optional(),
-    complement: z.string().nullable().optional(),
-    titheDay: z.number().nullable().optional(),
-    managerId: z.string().uuid().nullable().optional(),
-    regionId: z.string().uuid().nullable().optional(),
-    facebook: z.string().url().or(z.literal('')).nullable().optional(),
-    instagram: z.string().url().or(z.literal('')).nullable().optional(),
-    website: z.string().url().or(z.literal('')).nullable().optional(),
+const supervisorUpdateSchema = supervisorProfileSchema.extend({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
@@ -69,9 +52,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
             titheDay: user.titheDay,
             managerId: profile?.managerId,
             regionId: profile?.regionId,
-            facebook: profile?.facebook,
-            instagram: profile?.instagram,
-            website: profile?.website,
+            facebook: '', // Assuming these are not in supervisorProfiles
+            instagram: '',
+            website: '',
             status: user.status
         });
 
@@ -121,9 +104,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.complement !== undefined) profileUpdateData.complement = validatedData.complement;
         if (validatedData.managerId) profileUpdateData.managerId = validatedData.managerId;
         if (validatedData.regionId) profileUpdateData.regionId = validatedData.regionId;
-        if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook;
-        if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram;
-        if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website;
         
         if (Object.keys(profileUpdateData).length > 0) {
             await tx.update(supervisorProfiles).set(profileUpdateData).where(eq(supervisorProfiles.userId, id));

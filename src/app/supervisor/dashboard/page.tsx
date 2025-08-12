@@ -75,7 +75,7 @@ export default function SupervisorDashboardPage() {
             if (!response.ok) {
                 throw new Error('Falha ao carregar os dados do dashboard.');
             }
-            const dashboardData = await response.json();
+            const dashboardData: DashboardData = await response.json();
             setData(dashboardData);
 
         } catch (error: any) {
@@ -229,7 +229,7 @@ export default function SupervisorDashboardPage() {
                 <ChartContainer config={{
                      value: { label: "Valor" },
                      pix: { label: "Pix", color: "#10b981"},
-                     credito: { label: "Crédito", color: "#3b82f6"},
+                     credit_card: { label: "Crédito", color: "#3b82f6"},
                      boleto: { label: "Boleto", color: "#f59e0b"},
                 }} className="h-[300px] w-full">
                     <PieChart>

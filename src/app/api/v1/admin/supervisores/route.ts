@@ -6,6 +6,7 @@ import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { validateRequest } from '@/lib/auth';
+import { supervisorProfileSchema } from '@/lib/types';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -13,23 +14,6 @@ if (!COMPANY_ID) {
 }
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
-
-const supervisorSchema = z.object({
-  managerId: z.string().uuid(),
-  regionId: z.string().uuid(),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  cpf: z.string().min(1),
-  email: z.string().email(),
-  cep: z.string().nullable(),
-  state: z.string().nullable(),
-  city: z.string().nullable(),
-  neighborhood: z.string().nullable(),
-  address: z.string().nullable(),
-  titheDay: z.number().nullable(),
-  phone: z.string().nullable(),
-});
-
 
 export async function GET(request: Request) {
     const { user } = await validateRequest();
@@ -68,6 +52,7 @@ export async function GET(request: Request) {
       })
       .from(users)
       .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
+      .leftJoin(users as any, eq(supervisorProfiles.managerId, users.id))
       .leftJoin(managerProfiles, eq(supervisorProfiles.managerId, managerProfiles.userId))
       .leftJoin(regions, eq(supervisorProfiles.regionId, regions.id))
       .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
@@ -75,7 +60,7 @@ export async function GET(request: Request) {
       
     return NextResponse.json({ supervisors: result });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar supervisores:", error);
     return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
   }
@@ -89,7 +74,7 @@ export async function POST(request: Request) {
 
     try {
       const body = await request.json();
-      const validatedData = supervisorSchema.parse(body);
+      const validatedData = supervisorProfileSchema.omit({id: true, userId: true}).parse(body);
       
       const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 

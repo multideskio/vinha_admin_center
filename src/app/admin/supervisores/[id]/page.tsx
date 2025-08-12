@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -58,33 +59,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { supervisorProfileSchema } from '@/lib/types';
 
-const supervisorProfileSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  titheDay: z.number().nullable().optional(),
-  managerId: z.string().uuid().nullable().optional(),
-  regionId: z.string().uuid().nullable().optional(),
-  facebook: z.string().url().or(z.literal('')).nullable().optional(),
-  instagram: z.string().url().or(z.literal('')).nullable().optional(),
-  website: z.string().url().or(z.literal('')).nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
+const supervisorUpdateSchema = supervisorProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-type SupervisorProfile = z.infer<typeof supervisorProfileSchema> & {
-    id: string;
+type SupervisorProfile = z.infer<typeof supervisorUpdateSchema> & {
+    id?: string;
     cpf?: string;
-    status: string;
+    status?: string;
     avatarUrl?: string;
 };
 
@@ -217,7 +201,7 @@ export default function SupervisorProfilePage() {
   const { toast } = useToast();
 
   const form = useForm<SupervisorProfile>({
-    resolver: zodResolver(supervisorProfileSchema),
+    resolver: zodResolver(supervisorUpdateSchema),
     defaultValues: {
         firstName: '',
         lastName: '',
@@ -246,8 +230,8 @@ export default function SupervisorProfilePage() {
     setIsLoading(true);
     try {
         const [supervisorRes, managersRes, regionsRes] = await Promise.all([
-            fetch(`/api/v1/supervisores/${id}`),
-            fetch('/api/v1/gerentes?minimal=true'),
+            fetch(`/api/v1/admin/supervisores/${id}`),
+            fetch('/api/v1/admin/gerentes?minimal=true'),
             fetch('/api/v1/regioes?minimal=true'),
         ]);
 
@@ -259,33 +243,10 @@ export default function SupervisorProfilePage() {
         const managersData = await managersRes.json();
         const regionsData = await regionsRes.json();
         
-        const sanitizedData = {
-            ...supervisorData,
-            firstName: supervisorData.firstName ?? '',
-            lastName: supervisorData.lastName ?? '',
-            phone: supervisorData.phone ?? '',
-            landline: supervisorData.landline ?? '',
-            email: supervisorData.email ?? '',
-            cep: supervisorData.cep ?? '',
-            state: supervisorData.state ?? '',
-            city: supervisorData.city ?? '',
-            neighborhood: supervisorData.neighborhood ?? '',
-            address: supervisorData.address ?? '',
-            number: supervisorData.number ?? '',
-            complement: supervisorData.complement ?? '',
-            titheDay: supervisorData.titheDay ?? 1,
-            newPassword: '',
-            facebook: supervisorData.facebook ?? '',
-            instagram: supervisorData.instagram ?? '',
-            website: supervisorData.website ?? '',
-            managerId: supervisorData.managerId ?? '',
-            regionId: supervisorData.regionId ?? '',
-        };
-
-        setSupervisor(sanitizedData);
+        setSupervisor(supervisorData);
         setManagers(managersData.managers);
         setRegions(regionsData.regions);
-        form.reset(sanitizedData);
+        form.reset(supervisorData);
     } catch (error: any) {
         toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     } finally {
@@ -300,13 +261,14 @@ export default function SupervisorProfilePage() {
   const onSubmit = async (data: Partial<SupervisorProfile>) => {
     setIsSaving(true);
     try {
-        const response = await fetch(`/api/v1/supervisores/${id}`, {
+        const response = await fetch(`/api/v1/admin/supervisores/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
         if (!response.ok) throw new Error('Falha ao atualizar o supervisor.');
         toast({ title: 'Sucesso', description: 'Supervisor atualizado com sucesso.', variant: 'success' });
+        fetchData();
     } catch (error: any) {
         toast({ title: 'Erro', description: error.message, variant: 'destructive'});
     } finally {
@@ -316,7 +278,7 @@ export default function SupervisorProfilePage() {
 
   const handleDelete = async () => {
     try {
-        const response = await fetch(`/api/v1/supervisores/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/v1/admin/supervisores/${id}`, { method: 'DELETE' });
         if(!response.ok) throw new Error('Falha ao excluir o supervisor.');
         toast({ title: "Sucesso!", description: 'Supervisor excluído com sucesso.', variant: 'success' });
         router.push('/admin/supervisores');
@@ -416,7 +378,7 @@ export default function SupervisorProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-            <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
+            <TabsTrigger value="transactions">Transações</TabsTrigger>
             <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
             <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
           </TabsList>
@@ -589,8 +551,8 @@ export default function SupervisorProfilePage() {
                         )} />
                          <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Rua</FormLabel>
-                                <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
+                                <FormLabel>Endereço</FormLabel>
+                                <FormControl><Input placeholder='Endereço...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                          <FormField control={form.control} name="number" render={({ field }) => (

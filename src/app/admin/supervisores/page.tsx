@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -91,24 +92,10 @@ import {
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supervisorProfileSchema } from '@/lib/types';
 
-const supervisorSchema = z.object({
-  managerId: z.string({ required_error: 'Selecione um gerente.' }),
-  regionId: z.string({ required_error: 'Selecione uma região.' }),
-  firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
-  lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
-  cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-  email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-  state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-  city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-  neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-  address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  titheDay: z.coerce.number().min(1).max(31).nullable(),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-});
 
-type Supervisor = z.infer<typeof supervisorSchema> & {
+type Supervisor = z.infer<typeof supervisorProfileSchema> & {
     id: string;
     status: 'active' | 'inactive';
     managerName?: string;
@@ -141,8 +128,8 @@ const SupervisorFormModal = ({
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof supervisorSchema>>({
-    resolver: zodResolver(supervisorSchema),
+  const form = useForm<z.infer<typeof supervisorProfileSchema>>({
+    resolver: zodResolver(supervisorProfileSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -164,9 +151,9 @@ const SupervisorFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = async (data: z.infer<typeof supervisorSchema>) => {
+  const handleSave = async (data: z.infer<typeof supervisorProfileSchema>) => {
     try {
-        const response = await fetch('/api/v1/supervisores', {
+        const response = await fetch('/api/v1/admin/supervisores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -261,7 +248,7 @@ const SupervisorFormModal = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Selecione um gerente</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um gerente" />
@@ -283,7 +270,7 @@ const SupervisorFormModal = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Selecione uma região</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma região" />
@@ -518,8 +505,8 @@ export default function SupervisoresPage() {
     setIsLoading(true);
     try {
         const [supervisorsRes, managersRes, regionsRes] = await Promise.all([
-            fetch('/api/v1/supervisores'),
-            fetch('/api/v1/gerentes?minimal=true'),
+            fetch('/api/v1/admin/supervisores'),
+            fetch('/api/v1/admin/gerentes?minimal=true'),
             fetch('/api/v1/regioes?minimal=true'),
         ]);
 
@@ -547,7 +534,7 @@ export default function SupervisoresPage() {
 
   const handleDelete = async (supervisorId: string) => {
     try {
-        const response = await fetch(`/api/v1/supervisores/${supervisorId}`, { method: 'DELETE' });
+        const response = await fetch(`/api/v1/admin/supervisores/${supervisorId}`, { method: 'DELETE' });
         if(!response.ok) throw new Error('Falha ao excluir o supervisor.');
         toast({ title: "Sucesso!", description: 'Supervisor excluído com sucesso.', variant: 'success' });
         fetchData();

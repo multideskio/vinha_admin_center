@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, regions, transactions, pastorProfiles, supervisorProfiles, churchProfiles } from '@/db/schema';
@@ -128,8 +129,8 @@ export async function GET(request: Request) {
                 revenue: sum(transactions.amount).mapWith(Number)
             })
             .from(transactions)
-            .innerJoin(churchProfiles, eq(transactions.contributorId, churchProfiles.userId))
-            .where(inArray(transactions.contributorId, churchIds))
+            .innerJoin(churchProfiles, eq(transactions.originChurchId, churchProfiles.userId))
+            .where(and(inArray(transactions.originChurchId, churchIds), eq(transactions.status, 'approved')))
             .groupBy(churchProfiles.nomeFantasia) : [];
 
         const membersByChurchData = churchIds.length > 0 ? await db
@@ -143,7 +144,7 @@ export async function GET(request: Request) {
             .groupBy(churchProfiles.nomeFantasia) : [];
 
         const colors = ['#16a34a', '#3b82f6', '#f97316', '#ef4444', '#8b5cf6'];
-        const revenueByChurch = revenueByChurchData.map((d, i) => ({ ...d, fill: colors[i % colors.length] }));
+        const revenueByChurch = revenueByChurchData.map((d, i) => ({ ...d, revenue: Number(d.revenue), fill: colors[i % colors.length] }));
         const membersByChurch = membersByChurchData.map((d, i) => ({ ...d, fill: colors[i % colors.length] }));
 
         return NextResponse.json({

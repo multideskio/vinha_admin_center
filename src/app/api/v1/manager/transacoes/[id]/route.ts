@@ -1,14 +1,12 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { transactions as transactionsTable, gatewayConfigurations, users, supervisorProfiles, pastorProfiles, churchProfiles } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { authenticateApiKey } from '@/lib/api-auth';
-
-const GERENTE_INIT_ID = process.env.GERENTE_INIT;
-if (!GERENTE_INIT_ID) {
-    throw new Error("A variável de ambiente GERENTE_INIT não está definida.");
-}
+import { format, parseISO } from 'date-fns';
+import { validateRequest } from '@/lib/auth';
 
 
 async function getCieloCredentials() {
@@ -27,10 +25,10 @@ async function getCieloCredentials() {
     };
 }
 
-async function verifyTransactionOwnership(transactionId: string) {
+async function verifyTransactionOwnership(transactionId: string, managerId: string) {
     const [transaction] = await db.select({ contributorId: transactionsTable.contributorId })
         .from(transactionsTable)
-        .where(eq(transactionsTable.id, transactionId))
+        .where(eq(transactionsTable.gatewayTransactionId, transactionId))
         .limit(1);
 
     if (!transaction) return false;
@@ -38,10 +36,10 @@ async function verifyTransactionOwnership(transactionId: string) {
     const contributorId = transaction.contributorId;
     
     // Check if the contributor is the manager himself
-    if (contributorId === GERENTE_INIT_ID) return true;
+    if (contributorId === managerId) return true;
 
     // Check if the contributor is in the manager's network
-    const supervisorsResult = await db.select({ id: supervisorProfiles.userId }).from(supervisorProfiles).where(eq(supervisorProfiles.managerId, GERENTE_INIT_ID));
+    const supervisorsResult = await db.select({ id: supervisorProfiles.userId }).from(supervisorProfiles).where(eq(supervisorProfiles.managerId, managerId));
     const supervisorIds = supervisorsResult.map(s => s.id);
     if (supervisorIds.includes(contributorId)) return true;
 
@@ -63,6 +61,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
 
     if (!id) {
@@ -70,12 +73,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     try {
-        const isAuthorized = await verifyTransactionOwnership(id);
+        const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id);
         if (!isAuthorized) {
             return NextResponse.json({ error: "Transação não encontrada ou você não tem permissão para visualizá-la." }, { status: 404 });
         }
 
-        const [transaction] = await db.select().from(transactionsTable).where(eq(transactionsTable.id, id));
+        const [transaction] = await db.select().from(transactionsTable).where(eq(transactionsTable.gatewayTransactionId, id));
 
         const credentials = await getCieloCredentials();
 
