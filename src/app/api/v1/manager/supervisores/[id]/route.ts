@@ -5,25 +5,11 @@ import { users, supervisorProfiles } from '@/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { supervisorProfileSchema } from '@/lib/types';
 
-const supervisorUpdateSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  titheDay: z.number().nullable().optional(),
-  regionId: z.string().uuid().nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
+const supervisorUpdateSchema = supervisorProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
 async function verifySupervisor(supervisorId: string, managerId: string) {
@@ -33,9 +19,6 @@ async function verifySupervisor(supervisorId: string, managerId: string) {
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -63,26 +46,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
         }
 
         const { user, profile } = result[0];
+        const { password, ...userWithoutPassword } = user;
 
-        return NextResponse.json({ 
-            id: user.id,
-            firstName: profile?.firstName,
-            lastName: profile?.lastName,
-            cpf: profile?.cpf,
-            email: user.email,
-            phone: user.phone,
-            landline: profile?.landline,
-            cep: profile?.cep,
-            state: profile?.state,
-            city: profile?.city,
-            neighborhood: profile?.neighborhood,
-            address: profile?.address,
-            number: profile?.number,
-            complement: profile?.complement,
-            titheDay: user.titheDay,
-            regionId: profile?.regionId,
-            status: user.status
-        });
+        return NextResponse.json({ ...userWithoutPassword, ...profile});
 
     } catch (error) {
         console.error("Erro ao buscar supervisor:", error);
@@ -92,9 +58,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -157,9 +120,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });

@@ -1,11 +1,9 @@
 
-
 'use client';
 
 import * as React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
   Facebook,
@@ -40,11 +38,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { managerProfileSchema, User } from '@/lib/types';
+import { managerProfileSchema } from '@/lib/types';
 
 
-type ManagerProfile = z.infer<typeof managerProfileSchema> & Partial<User> & {
-    newPassword?: string;
+const managerUpdateSchema = managerProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
+}).partial();
+
+type ManagerProfile = z.infer<typeof managerUpdateSchema> & {
+    id?: string;
     avatarUrl?: string;
 };
 
@@ -58,7 +60,7 @@ export default function GerenteProfilePage() {
 
 
     const form = useForm<ManagerProfile>({
-        resolver: zodResolver(managerProfileSchema),
+        resolver: zodResolver(managerUpdateSchema),
         defaultValues: {},
     });
 

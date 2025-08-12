@@ -6,6 +6,7 @@ import { eq, and, isNull, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { validateRequest } from '@/lib/auth';
+import { managerProfileSchema } from '@/lib/types';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -13,21 +14,6 @@ if (!COMPANY_ID) {
 }
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
-
-const managerSchema = z.object({
-  firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
-  lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
-  cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-  email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-  state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-  city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-  neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-  address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  titheDay: z.coerce.number().min(1).max(31),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-});
-
 
 export async function GET(request: Request) {
     const { user } = await validateRequest();
@@ -53,26 +39,15 @@ export async function GET(request: Request) {
     }
 
     const result = await db.select({
-        id: users.id,
-        firstName: managerProfiles.firstName,
-        lastName: managerProfiles.lastName,
-        email: users.email,
-        phone: users.phone,
-        status: users.status,
-        cpf: managerProfiles.cpf,
-        cep: managerProfiles.cep,
-        state: managerProfiles.state,
-        city: managerProfiles.city,
-        neighborhood: managerProfiles.neighborhood,
-        address: managerProfiles.address,
-        titheDay: users.titheDay,
+        user: users,
+        profile: managerProfiles,
       })
       .from(users)
       .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
       .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt));
       
-    return NextResponse.json({ managers: result });
+    return NextResponse.json({ managers: result.map(r => ({...r.user, ...r.profile})) });
 
   } catch (error: any) {
     console.error("Erro ao buscar gerentes:", error);
@@ -88,7 +63,7 @@ export async function POST(request: Request) {
     
     try {
       const body = await request.json();
-      const validatedData = managerSchema.parse(body);
+      const validatedData = managerProfileSchema.omit({id: true, userId: true}).parse(body);
       
       const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 

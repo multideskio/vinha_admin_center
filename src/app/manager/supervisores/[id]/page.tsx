@@ -7,17 +7,9 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
-  Facebook,
-  Instagram,
-  Globe,
   AlertTriangle,
-  Info,
   Lock,
   Loader2,
-  Bell,
-  Mail,
-  Smartphone,
-  MoreHorizontal,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -53,34 +45,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import Link from 'next/link';
+import { supervisorProfileSchema } from '@/lib/types';
 
-const supervisorProfileSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  titheDay: z.number().nullable().optional(),
-  regionId: z.string().uuid().nullable().optional(),
+
+const supervisorUpdateSchema = supervisorProfileSchema.extend({
   newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-type SupervisorProfile = z.infer<typeof supervisorProfileSchema> & {
-    id: string;
+type SupervisorProfile = z.infer<typeof supervisorUpdateSchema> & {
+    id?: string;
     cpf?: string;
-    status: string;
+    status?: string;
     avatarUrl?: string;
 };
 
@@ -102,24 +77,8 @@ export default function SupervisorProfilePage() {
   const { toast } = useToast();
 
   const form = useForm<SupervisorProfile>({
-    resolver: zodResolver(supervisorProfileSchema),
-    defaultValues: {
-        firstName: '',
-        lastName: '',
-        phone: '',
-        landline: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        number: '',
-        complement: '',
-        titheDay: 1,
-        newPassword: '',
-        regionId: '',
-    },
+    resolver: zodResolver(supervisorUpdateSchema),
+    defaultValues: {},
   });
 
   const fetchData = React.useCallback(async () => {
@@ -214,6 +173,7 @@ export default function SupervisorProfilePage() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      {/* Left Column: Profile Card */}
       <div className="lg:col-span-1">
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
@@ -239,6 +199,7 @@ export default function SupervisorProfilePage() {
         </Card>
       </div>
 
+      {/* Right Column: Tabs and Form */}
       <div className="lg:col-span-2">
         <Tabs defaultValue="profile">
           <TabsList>
@@ -250,8 +211,6 @@ export default function SupervisorProfilePage() {
               <CardContent className="pt-6">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      
                        <FormField
                         control={form.control}
                         name="regionId"
@@ -274,7 +233,6 @@ export default function SupervisorProfilePage() {
                           </FormItem>
                         )}
                       />
-                    </div>
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <FormField
                         control={form.control}
@@ -392,20 +350,19 @@ export default function SupervisorProfilePage() {
                             </FormItem>
                         )} />
                          <FormField control={form.control} name="address" render={({ field }) => (
-                            <FormItem>
+                            <FormItem className='sm:col-span-2'>
                                 <FormLabel>Rua</FormLabel>
-                                <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
+                                <FormControl><Input placeholder='Endereço completo...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                         <FormField control={form.control} name="number" render={({ field }) => (
+                    </div>
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField control={form.control} name="number" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Número</FormLabel>
                                 <FormControl><Input placeholder='Número da casa...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                    </div>
-                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                       
                         <FormField control={form.control} name="complement" render={({ field }) => (
                             <FormItem className='sm:col-span-2'>
                                 <FormLabel>Complemento</FormLabel>
