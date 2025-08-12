@@ -108,103 +108,6 @@ type Transaction = {
     date: string;
   };
 
-const TransactionsTab = ({ userId }: { userId: string }) => {
-    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
-    const { toast } = useToast();
-  
-    React.useEffect(() => {
-      const fetchTransactions = async () => {
-        setIsLoading(true);
-        try {
-          const response = await fetch(`/api/v1/transacoes?userId=${userId}`);
-          if (!response.ok) throw new Error('Falha ao carregar transações.');
-          const data = await response.json();
-          setTransactions(data.transactions);
-        } catch (error: any) {
-          toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchTransactions();
-    }, [userId, toast]);
-  
-    const statusMap: { [key: string]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
-        approved: { text: "Aprovada", variant: "success" },
-        pending: { text: "Pendente", variant: "warning" },
-        refused: { text: "Recusada", variant: "destructive" },
-        refunded: { text: "Reembolsada", variant: "outline" },
-    };
-  
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Transações do Usuário</CardTitle>
-          <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead>ID da Transação</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead><span className="sr-only">Ações</span></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                {isLoading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                    </TableRow>
-                    ))
-                ) : transactions.length > 0 ? (
-                    transactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                        <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
-                        <TableCell>
-                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                            {statusMap[transaction.status]?.text || transaction.status}
-                        </Badge>
-                        </TableCell>
-                        <TableCell>{transaction.date}</TableCell>
-                        <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
-                        <TableCell className='text-right'>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                <DropdownMenuItem asChild>
-                                    <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                                </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                    ))
-                ) : (
-                    <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24">Nenhuma transação encontrada para este usuário.</TableCell>
-                    </TableRow>
-                )}
-                </TableBody>
-            </Table>
-        </CardContent>
-      </Card>
-    );
-  };
-
 
 export default function IgrejaProfilePage() {
   const [church, setChurch] = React.useState<ChurchProfile | null>(null);
@@ -311,10 +214,6 @@ export default function IgrejaProfilePage() {
         const reader = new FileReader();
         reader.onloadend = () => {
             setPreviewImage(reader.result as string);
-            toast({
-                title: 'Preview da Imagem',
-                description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
-            });
         };
         reader.readAsDataURL(file);
     }
@@ -396,7 +295,6 @@ export default function IgrejaProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Dados da Igreja</TabsTrigger>
-            <TabsTrigger value="transactions">Transações</TabsTrigger>
             <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
             <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
           </TabsList>
@@ -619,7 +517,7 @@ export default function IgrejaProfilePage() {
                     </Alert>
 
                      <FormField
-                      control={form.control}
+                      control={form.control}                      
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
@@ -627,7 +525,7 @@ export default function IgrejaProfilePage() {
                            <FormControl>
                             <div className="relative mt-1">
                                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} />
+                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} /> 
                             </div>
                            </FormControl>
                           <FormMessage />
@@ -640,15 +538,12 @@ export default function IgrejaProfilePage() {
                       <Button type="submit" disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Alterar cadastro
-                      </Button>
+                        </Button>
                     </div>
                   </form>
                 </Form>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="transactions">
-                <TransactionsTab userId={id as string} />
           </TabsContent>
            <TabsContent value="configuracoes">
               <Card>
@@ -720,7 +615,7 @@ export default function IgrejaProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button>
+                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button> 
               </CardContent>
             </Card>
           </TabsContent>

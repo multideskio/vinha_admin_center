@@ -6,7 +6,7 @@ import { PlusCircle, MoreHorizontal, Copy, Trash2, Loader2, KeyRound } from 'luc
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import {
@@ -330,4 +330,3 @@ export default function ApiKeysPage() {
     </div>
   );
 }
-

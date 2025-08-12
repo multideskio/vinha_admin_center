@@ -161,8 +161,6 @@ export const pastorProfiles = pgTable('pastor_profiles', {
     city: varchar('city', { length: 100 }),
     neighborhood: varchar('neighborhood', { length: 100 }),
     address: varchar('address', { length: 255 }),
-    number: varchar('number', { length: 20 }),
-    complement: varchar('complement', { length: 100 }),
     facebook: varchar('facebook', { length: 255 }),
     instagram: varchar('instagram', { length: 255 }),
     website: varchar('website', { length: 255 }),

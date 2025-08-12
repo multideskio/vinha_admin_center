@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema';
