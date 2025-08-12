@@ -10,7 +10,6 @@ import {
   decimal,
   pgEnum,
   uuid,
-  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -140,8 +139,6 @@ export const supervisorProfiles = pgTable('supervisor_profiles', {
     city: varchar('city', { length: 100 }),
     neighborhood: varchar('neighborhood', { length: 100 }),
     address: varchar('address', { length: 255 }),
-    number: varchar('number', { length: 20 }),
-    complement: varchar('complement', { length: 100 }),
     facebook: varchar('facebook', { length: 255 }),
     instagram: varchar('instagram', { length: 255 }),
     website: varchar('website', { length: 255 }),
@@ -160,7 +157,9 @@ export const pastorProfiles = pgTable('pastor_profiles', {
     state: varchar('state', { length: 2 }),
     city: varchar('city', { length: 100 }),
     neighborhood: varchar('neighborhood', { length: 100 }),
-    address: varchar('address', { length: 255 }),
+    street: varchar('street', { length: 255 }),
+    number: varchar('number', { length: 20 }),
+    complement: varchar('complement', { length: 100 }),
     facebook: varchar('facebook', { length: 255 }),
     instagram: varchar('instagram', { length: 255 }),
     website: varchar('website', { length: 255 }),
