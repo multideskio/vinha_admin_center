@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import * as React from 'react';
-import { DollarSign, Users, Church, User, RefreshCw } from 'lucide-react';
+import { DollarSign, Users, Church, User, RefreshCw, ArrowRightLeft } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -74,7 +75,7 @@ export default function SupervisorDashboardPage() {
             if (!response.ok) {
                 throw new Error('Falha ao carregar os dados do dashboard.');
             }
-            const dashboardData: DashboardData = await response.json();
+            const dashboardData = await response.json();
             setData(dashboardData);
 
         } catch (error: any) {

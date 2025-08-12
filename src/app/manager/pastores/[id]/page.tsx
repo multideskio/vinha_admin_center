@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -51,31 +50,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { pastorProfileSchema } from '@/lib/types';
 
-const pastorProfileSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  birthDate: z.date().nullable().optional(),
-  titheDay: z.coerce.number().nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
-  supervisorId: z.string().uuid().nullable().optional(),
-}).partial();
 
 type PastorProfile = z.infer<typeof pastorProfileSchema> & {
     id: string;
     cpf?: string;
     status: string;
     avatarUrl?: string;
+    newPassword?: string;
 };
 
 type Supervisor = {
@@ -99,22 +82,6 @@ export default function PastorProfilePage() {
   const form = useForm<PastorProfile>({
     resolver: zodResolver(pastorProfileSchema),
     defaultValues: {
-        firstName: '',
-        lastName: '',
-        phone: '',
-        landline: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        number: '',
-        complement: '',
-        birthDate: null,
-        titheDay: 1,
-        newPassword: '',
-        supervisorId: '',
     },
   });
 
@@ -124,7 +91,7 @@ export default function PastorProfilePage() {
     try {
         const [pastorRes, supervisorsRes] = await Promise.all([
             fetch(`/api/v1/manager/pastores/${id}`),
-            fetch('/api/v1/manager/supervisores'),
+            fetch('/api/v1/manager/supervisores?minimal=true'),
         ]);
 
         if (!pastorRes.ok) throw new Error('Falha ao carregar dados do pastor.');
@@ -136,6 +103,7 @@ export default function PastorProfilePage() {
         const sanitizedData = {
             ...pastorData,
             birthDate: pastorData.birthDate ? new Date(pastorData.birthDate) : null,
+            newPassword: '',
         };
 
         setPastor(sanitizedData);
@@ -187,6 +155,10 @@ export default function PastorProfilePage() {
         const reader = new FileReader();
         reader.onloadend = () => {
             setPreviewImage(reader.result as string);
+            toast({
+                title: 'Preview da Imagem',
+                description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+            });
         };
         reader.readAsDataURL(file);
     }

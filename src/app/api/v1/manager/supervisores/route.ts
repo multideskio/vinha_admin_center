@@ -7,6 +7,7 @@ import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { validateRequest } from '@/lib/auth';
+import { supervisorProfileSchema } from '@/lib/types';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -15,27 +16,11 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
-const supervisorSchema = z.object({
-  regionId: z.string({ required_error: 'Selecione uma região.' }),
-  firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
-  lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
-  cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-  email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().nullable(),
-  state: z.string().nullable(),
-  city: z.string().nullable(),
-  neighborhood: z.string().nullable(),
-  address: z.string().nullable(),
-  titheDay: z.coerce.number().min(1).max(31).nullable(),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-});
-
-
 export async function GET(request: Request) {
-  const { user } = await validateRequest();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
-  }
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
   try {
     const url = new URL(request.url);
@@ -94,7 +79,7 @@ export async function POST(request: Request) {
     
     try {
       const body = await request.json();
-      const validatedData = supervisorSchema.parse(body);
+      const validatedData = supervisorProfileSchema.omit({id: true, userId: true, managerId: true}).parse(body);
       
       const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
@@ -137,6 +122,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Email ou CPF já cadastrado." }, { status: 409 });
       }
 
-      return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Erro ao criar supervisor", details: error.message }, { status: 500 });
     }
 }

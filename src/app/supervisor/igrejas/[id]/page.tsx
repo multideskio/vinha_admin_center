@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react';
@@ -63,49 +64,119 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { churchProfileSchema } from '@/lib/types';
 
-const churchProfileSchema = z.object({
-    supervisorId: z.string({ required_error: 'Selecione um supervisor.' }).optional(),
-    razaoSocial: z.string().min(1, 'A razão social é obrigatória.').optional(),
-    nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.').optional(),
-    email: z.string().email({ message: 'E-mail inválido.' }).optional(),
-    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }).optional(),
-    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }).optional(),
-    city: z.string().min(1, { message: 'A cidade é obrigatória.' }).optional(),
-    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }).optional(),
-    address: z.string().min(1, { message: 'O endereço é obrigatório.' }).optional(),
-    foundationDate: z.date({
-      required_error: 'A data de fundação é obrigatória.',
-    }).optional(),
-    titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
-    phone: z.string().min(1, { message: 'O celular é obrigatório.' }).nullable().optional(),
-    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable().optional(),
-    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable().optional(),
-    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable().optional(),
-    newPassword: z.string().optional().or(z.literal('')),
-    facebook: z.string().url().or(z.literal('')).nullable().optional(),
-    instagram: z.string().url().or(z.literal('')).nullable().optional(),
-    website: z.string().url().or(z.literal('')).nullable().optional(),
-}).partial();
 
 type ChurchProfile = z.infer<typeof churchProfileSchema> & {
     id: string;
     cnpj?: string;
     status: string;
     avatarUrl?: string;
+    newPassword?: string;
 };
-
-type Supervisor = {
-    id: string;
-    firstName: string;
-    lastName: string;
-}
 
 type Transaction = {
     id: string;
     amount: number;
     status: 'approved' | 'pending' | 'refused' | 'refunded';
     date: string;
+  };
+
+const TransactionsTab = ({ userId }: { userId: string }) => {
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+  
+    React.useEffect(() => {
+      const fetchTransactions = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/v1/transacoes?userId=${userId}`);
+          if (!response.ok) throw new Error('Falha ao carregar transações.');
+          const data = await response.json();
+          setTransactions(data.transactions);
+        } catch (error: any) {
+          toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTransactions();
+    }, [userId, toast]);
+  
+    const statusMap: { [key: string]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+        approved: { text: "Aprovada", variant: "success" },
+        pending: { text: "Pendente", variant: "warning" },
+        refused: { text: "Recusada", variant: "destructive" },
+        refunded: { text: "Reembolsada", variant: "outline" },
+    };
+  
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Transações do Usuário</CardTitle>
+          <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>ID da Transação</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead><span className="sr-only">Ações</span></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                    ))
+                ) : transactions.length > 0 ? (
+                    transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                        <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                        <TableCell>
+                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                            {statusMap[transaction.status]?.text || transaction.status}
+                        </Badge>
+                        </TableCell>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
+                        <TableCell className='text-right'>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                                </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">Nenhuma transação encontrada para este usuário.</TableCell>
+                    </TableRow>
+                )}
+                </TableBody>
+            </Table>
+        </CardContent>
+      </Card>
+    );
   };
 
 
@@ -122,7 +193,8 @@ export default function IgrejaProfilePage() {
 
   const form = useForm<ChurchProfile>({
     resolver: zodResolver(churchProfileSchema),
-    defaultValues: {},
+    defaultValues: {
+    },
   });
 
   const fetchData = React.useCallback(async () => {
@@ -136,7 +208,7 @@ export default function IgrejaProfilePage() {
         
         const sanitizedData = {
             ...churchData,
-            foundationDate: churchData.foundationDate ? new Date(churchData.foundationDate) : new Date(),
+            foundationDate: churchData.foundationDate ? new Date(churchData.foundationDate) : null,
         };
 
         setChurch(sanitizedData);
@@ -168,17 +240,17 @@ export default function IgrejaProfilePage() {
         setIsSaving(false);
     }
   };
-    
-    const handleDelete = async () => {
-        try {
-            const response = await fetch(`/api/v1/supervisor/igrejas/${id}`, { method: 'DELETE' });
-            if(!response.ok) throw new Error('Falha ao excluir a igreja.');
-            toast({ title: "Sucesso!", description: 'Igreja excluída com sucesso.', variant: 'success' });
-            router.push('/supervisor/igrejas');
-        } catch(error: any) {
-            toast({ title: "Erro", description: error.message, variant: 'destructive'});
-        }
+
+  const handleDelete = async () => {
+    try {
+        const response = await fetch(`/api/v1/supervisor/igrejas/${id}`, { method: 'DELETE' });
+        if(!response.ok) throw new Error('Falha ao excluir a igreja.');
+        toast({ title: "Sucesso!", description: 'Igreja excluída com sucesso.', variant: 'success' });
+        router.push('/supervisor/igrejas');
+    } catch(error: any) {
+        toast({ title: "Erro", description: error.message, variant: 'destructive'});
     }
+  }
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -269,7 +341,8 @@ export default function IgrejaProfilePage() {
             <Card>
               <CardContent className="pt-6">
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">                    
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField
                             control={form.control}
@@ -480,7 +553,7 @@ export default function IgrejaProfilePage() {
                       <Button type="submit" disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Alterar cadastro
-                        </Button>
+                      </Button>
                     </div>
                   </form>
                 </Form>

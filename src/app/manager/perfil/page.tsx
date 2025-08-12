@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -11,11 +12,9 @@ import {
   Instagram,
   Globe,
   AlertTriangle,
-  Info,
   Lock,
   Loader2,
 } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -41,30 +40,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { managerProfileSchema, User } from '@/lib/types';
 
 
-const managerProfileSchema = z.object({
-  firstName: z.string().min(1, 'O nome é obrigatório.'),
-  lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
-  cpf: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  landline: z.string().optional().nullable(),
-  email: z.string().email('E-mail inválido.'),
-  cep: z.string().optional().nullable(),
-  state: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  neighborhood: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-  titheDay: z.coerce.number().optional().nullable(),
-  newPassword: z.string().optional().or(z.literal('')),
-  facebook: z.string().url().or(z.literal('')).optional().nullable(),
-  instagram: z.string().url().or(z.literal('')).optional().nullable(),
-  website: z.string().url().or(z.literal('')).optional().nullable(),
-});
-
-type ManagerProfile = z.infer<typeof managerProfileSchema> & {
-    id: string;
-    status: string;
+type ManagerProfile = z.infer<typeof managerProfileSchema> & Partial<User> & {
+    newPassword?: string;
     avatarUrl?: string;
 };
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, Legend } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +31,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
 
 type InfoItemProps = {
   icon: React.ElementType;
@@ -56,7 +56,7 @@ type PastorProfileData = {
     state: string;
     city: string;
     neighborhood: string;
-    street: string;
+    address: string;
     complement: string;
     number: string;
     titheDay: number;

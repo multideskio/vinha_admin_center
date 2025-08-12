@@ -1,11 +1,12 @@
 
+
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { db } from '@/db/drizzle';
 import { apiKeys } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-export async function authenticateApiKey(request: Request) {
+export async function authenticateApiKey(request: Request): Promise<NextResponse | null> {
     const headersList = headers();
     const authorizationHeader = headersList.get('Authorization');
 

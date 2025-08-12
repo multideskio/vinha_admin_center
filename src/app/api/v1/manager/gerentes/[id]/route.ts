@@ -1,29 +1,16 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, managerProfiles } from '@/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { managerProfileSchema } from '@/lib/types';
 
-const managerUpdateSchema = z.object({
-  firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
-  lastName: z.string().min(1, 'O sobrenome é obrigatório.').optional(),
-  email: z.string().email('E-mail inválido.').optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  titheDay: z.coerce.number().nullable().optional(),
-  facebook: z.string().url().or(z.literal('')).nullable().optional(),
-  instagram: z.string().url().or(z.literal('')).nullable().optional(),
-  website: z.string().url().or(z.literal('')).nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
+const managerUpdateSchema = managerProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
 export async function GET(
@@ -53,26 +40,10 @@ export async function GET(
     }
 
     const { user, profile } = result[0];
+    const { password, ...userWithoutPassword } = user;
 
-    return NextResponse.json({
-      id: user.id,
-      firstName: profile?.firstName,
-      lastName: profile?.lastName,
-      cpf: profile?.cpf,
-      email: user.email,
-      phone: user.phone,
-      landline: profile?.landline,
-      cep: profile?.cep,
-      state: profile?.state,
-      city: profile?.city,
-      neighborhood: profile?.neighborhood,
-      address: profile?.address,
-      titheDay: user.titheDay,
-      facebook: profile?.facebook,
-      instagram: profile?.instagram,
-      website: profile?.website,
-      status: user.status,
-    });
+    return NextResponse.json({ ...userWithoutPassword, ...profile });
+    
   } catch (error: any) {
     console.error('Erro ao buscar gerente:', error);
     return NextResponse.json(
@@ -133,13 +104,7 @@ export async function PUT(
         profileUpdateData.neighborhood = validatedData.neighborhood;
       if (validatedData.address !== undefined)
         profileUpdateData.address = validatedData.address;
-      if (validatedData.facebook !== undefined)
-        profileUpdateData.facebook = validatedData.facebook;
-      if (validatedData.instagram !== undefined)
-        profileUpdateData.instagram = validatedData.instagram;
-      if (validatedData.website !== undefined)
-        profileUpdateData.website = validatedData.website;
-
+      
       if (Object.keys(profileUpdateData).length > 0) {
         await tx
           .update(managerProfiles)

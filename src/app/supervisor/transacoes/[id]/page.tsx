@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -149,7 +150,7 @@ export default function TransacaoDetalhePage() {
                 id: cieloData.Payment.PaymentId,
                 date: format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss'),
                 amount: cieloData.Payment.Amount / 100,
-                status: 'approved',
+                status: 'approved', // Mapear o status da Cielo para o seu
                 contributor: {
                     name: cieloData.Customer.Name,
                     email: 'email@naodisponivel.com'

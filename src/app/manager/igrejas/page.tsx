@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -94,29 +95,10 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { churchProfileSchema } from '@/lib/types';
 
-const churchSchema = z.object({
-  supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
-  cnpj: z.string().min(1, 'O CNPJ/CPF é obrigatório.'),
-  razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
-  nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
-  email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-  state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-  city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-  neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-  address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-  foundationDate: z.date({
-    required_error: 'A data de fundação é obrigatória.',
-  }),
-  titheDay: z.coerce.number().min(1).max(31).nullable(),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-  treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable(),
-  treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable(),
-  treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable(),
-});
 
-type Church = z.infer<typeof churchSchema> & {
+type Church = z.infer<typeof churchProfileSchema> & {
     id: string;
     status: 'active' | 'inactive';
     supervisorName?: string;
@@ -142,8 +124,8 @@ const ChurchFormModal = ({
   const [isFetchingCnpj, setIsFetchingCnpj] = React.useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof churchSchema>>({
-    resolver: zodResolver(churchSchema),
+  const form = useForm<z.infer<typeof churchProfileSchema>>({
+    resolver: zodResolver(churchProfileSchema),
     defaultValues: {
       razaoSocial: '',
       nomeFantasia: '',
@@ -168,7 +150,7 @@ const ChurchFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = async (data: z.infer<typeof churchSchema>) => {
+  const handleSave = async (data: z.infer<typeof churchProfileSchema>) => {
     try {
         const response = await fetch('/api/v1/manager/igrejas', {
             method: 'POST',
@@ -297,7 +279,7 @@ const ChurchFormModal = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Selecione um supervisor</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um supervisor" />
@@ -546,8 +528,8 @@ const ChurchFormModal = ({
                           placeholder="(00) 00000-0000"
                           {...field}
                           className="rounded-l-none"
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
                           value={field.value ?? ''}
+                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
                         />
                       </div>
                     </FormControl>

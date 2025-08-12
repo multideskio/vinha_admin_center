@@ -4,19 +4,16 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import {
   Camera,
   Facebook,
   Instagram,
   Globe,
   AlertTriangle,
-  Info,
   Lock,
   Calendar as CalendarIcon,
   Loader2,
-  Bell,
   Mail,
   Smartphone,
   MoreHorizontal,
@@ -64,29 +61,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { pastorProfileSchema } from '@/lib/types';
 
-
-const pastorProfileSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  birthDate: z.date().nullable().optional(),
-  titheDay: z.coerce.number().nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
-  facebook: z.string().url().or(z.literal('')).nullable().optional(),
-  instagram: z.string().url().or(z.literal('')).nullable().optional(),
-  website: z.string().url().or(z.literal('')).nullable().optional(),
-  supervisorId: z.string().uuid().nullable().optional(),
-}).partial();
 
 type PastorProfile = z.infer<typeof pastorProfileSchema> & {
     id: string;
@@ -217,28 +193,9 @@ export default function PastorProfilePage() {
   const { id } = params;
   const { toast } = useToast();
 
-  const form = useForm<PastorProfile>({
+  const form = useForm<z.infer<typeof pastorProfileSchema>>({
     resolver: zodResolver(pastorProfileSchema),
     defaultValues: {
-        firstName: '',
-        lastName: '',
-        phone: '',
-        landline: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        number: '',
-        complement: '',
-        birthDate: null,
-        titheDay: 1,
-        newPassword: '',
-        facebook: '',
-        instagram: '',
-        website: '',
-        supervisorId: '',
     },
   });
 
@@ -260,6 +217,7 @@ export default function PastorProfilePage() {
         const sanitizedData = {
             ...pastorData,
             birthDate: pastorData.birthDate ? new Date(pastorData.birthDate) : null,
+            newPassword: ''
         };
 
         setPastor(sanitizedData);
@@ -568,7 +526,7 @@ export default function PastorProfilePage() {
                         )} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField control={form.control} name="city" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Cidade</FormLabel>
@@ -581,33 +539,21 @@ export default function PastorProfilePage() {
                                 <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                         <FormField control={form.control} name="address" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Rua</FormLabel>
-                                <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
                     </div>
-                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField control={form.control} name="number" render={({ field }) => (
+
+                    <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Número</FormLabel>
-                                <FormControl><Input placeholder='Número da casa...' {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="complement" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Complemento</FormLabel>
+                                <FormLabel>Endereço</FormLabel>
                                 <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                         <FormField control={form.control} name="titheDay" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Dia do dízimo</FormLabel>
-                                <FormControl><Input type="number" {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                    </div>
+                     
+                     <FormField control={form.control} name="titheDay" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Dia do dízimo</FormLabel>
+                            <FormControl><Input type="number" {...field} value={field.value ?? ''}/></FormControl>
+                        </FormItem>
+                    )} />
 
                     <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
                       <AlertTriangle className="h-4 w-4 text-yellow-500" />

@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, churchProfiles, supervisorProfiles } from '@/db/schema';
@@ -7,24 +8,10 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { churchProfileSchema } from '@/lib/types';
 
 
-const churchUpdateSchema = z.object({
-    supervisorId: z.string().uuid().optional(),
-    razaoSocial: z.string().min(1).optional(),
-    nomeFantasia: z.string().min(1).optional(),
-    email: z.string().email().optional(),
-    phone: z.string().nullable().optional(),
-    cep: z.string().nullable().optional(),
-    state: z.string().nullable().optional(),
-    city: z.string().nullable().optional(),
-    neighborhood: z.string().nullable().optional(),
-    address: z.string().nullable().optional(),
-    foundationDate: z.date().nullable().optional(),
-    titheDay: z.number().nullable().optional(),
-    treasurerFirstName: z.string().nullable().optional(),
-    treasurerLastName: z.string().nullable().optional(),
-    treasurerCpf: z.string().nullable().optional(),
+const churchUpdateSchema = churchProfileSchema.extend({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
@@ -39,9 +26,6 @@ async function verifyChurch(churchId: string, managerId: string) {
 }
   
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
     const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -69,27 +53,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
         }
 
         const { user, profile } = result[0];
+        const { password, ...userWithoutPassword } = user;
 
-        return NextResponse.json({ 
-            id: user.id,
-            cnpj: profile?.cnpj,
-            razaoSocial: profile?.razaoSocial,
-            nomeFantasia: profile?.nomeFantasia,
-            email: user.email,
-            phone: user.phone,
-            cep: profile?.cep,
-            state: profile?.state,
-            city: profile?.city,
-            neighborhood: profile?.neighborhood,
-            address: profile?.address,
-            foundationDate: profile?.foundationDate,
-            titheDay: user.titheDay,
-            supervisorId: profile?.supervisorId,
-            treasurerFirstName: profile?.treasurerFirstName,
-            treasurerLastName: profile?.treasurerLastName,
-            treasurerCpf: profile?.treasurerCpf,
-            status: user.status
-        });
+
+        return NextResponse.json({ ...userWithoutPassword, ...profile});
 
     } catch (error) {
         console.error("Erro ao buscar igreja:", error);
@@ -99,10 +66,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
-     const { user: sessionUser } = await validateRequest();
+    const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
@@ -167,9 +131,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
      const { user: sessionUser } = await validateRequest();
     if (!sessionUser || sessionUser.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });

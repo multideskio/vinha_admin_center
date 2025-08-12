@@ -18,19 +18,10 @@ import {
 export function DateRangePicker({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
-  const [disabledDates, setDisabledDates] = React.useState<{ after: Date } | undefined>(undefined);
-
-  React.useEffect(() => {
-    // Set initial date range only on the client-side
-    setDate({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
-    setDisabledDates({
-        after: new Date(),
-    })
-  }, []);
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+});
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -67,7 +58,7 @@ export function DateRangePicker({
             selected={date}
             onSelect={setDate}
             numberOfMonths={2}
-            disabled={disabledDates}
+            disabled={{ after: new Date() }}
           />
         </PopoverContent>
       </Popover>

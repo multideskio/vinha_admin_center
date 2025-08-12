@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -118,6 +119,7 @@ const PastorFormModal = ({
       firstName: '',
       lastName: '',
       cpf: '',
+      email: '',
       cep: '',
       state: '',
       city: '',
@@ -474,8 +476,8 @@ const PastorFormModal = ({
                         <Input
                           placeholder="(00) 00000-0000"
                           {...field}
-                          value={field.value ?? ''}
                           className="rounded-l-none"
+                          value={field.value ?? ''}
                           onChange={(e) => field.onChange(formatPhone(e.target.value))}
                         />
                       </div>
@@ -644,52 +646,50 @@ export default function PastoresPage() {
   const CardView = () => (
     <>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
-                ))
-            ) : paginatedPastors.length > 0 ? (
-                paginatedPastors.map((pastor, index) => {
-                    return (
-                        <Card key={pastor.id}>
-                            <CardContent className="pt-6">
-                            <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                                <Image
-                                src="https://placehold.co/96x96.png"
-                                alt={`Foto de ${pastor.firstName}`}
-                                width={96}
-                                height={96}
-                                className="rounded-lg object-cover w-24 h-24"
-                                data-ai-hint="male person"
-                                />
-                                <div className="flex-1 space-y-2 min-w-[200px]">
-                                <h3 className="text-lg font-bold">
-                                    #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
-                                </h3>
-                                <div className="space-y-1 text-sm text-muted-foreground">
-                                    <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
-                                    <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                                    <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                                    <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                                    <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
-                                </div>
-                                </div>
+        {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+            ))
+        ) : paginatedPastors.length > 0 ? (
+            paginatedPastors.map((pastor, index) => (
+                    <Card key={pastor.id}>
+                        <CardContent className="pt-6">
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                            <Image
+                            src="https://placehold.co/96x96.png"
+                            alt={`Foto de ${pastor.firstName}`}
+                            width={96}
+                            height={96}
+                            className="rounded-lg object-cover w-24 h-24"
+                            data-ai-hint="male person"
+                            />
+                            <div className="flex-1 space-y-2 min-w-[200px]">
+                            <h3 className="text-lg font-bold">
+                                #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
+                            </h3>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                                <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
+                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
+                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
+                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
+                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
                             </div>
-                            <div className="flex justify-end mt-4">
-                                <Button variant="outline" size="sm" asChild>
-                                <Link href={`/admin/pastores/${pastor.id}`}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Editar
-                                </Link>
-                                </Button>
                             </div>
-                            </CardContent>
-                        </Card>
-                    )
-                })
-            ) : (
-                <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
-            )}
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <Button variant="outline" size="sm" asChild>
+                            <Link href={`/admin/pastores/${pastor.id}`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Editar
+                            </Link>
+                            </Button>
+                        </div>
+                        </CardContent>
+                    </Card>
+            ))
+        ) : (
+            <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
+        )}
         </div>
         <PaginationControls />
     </>
@@ -705,7 +705,7 @@ export default function PastoresPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Pastores
@@ -719,6 +719,7 @@ export default function PastoresPage() {
                 <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
                 <Input placeholder="Buscar por nome..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
             </div>
+          <DateRangePicker />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -743,4 +744,3 @@ export default function PastoresPage() {
     </div>
   );
 }
-

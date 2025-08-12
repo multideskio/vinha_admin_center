@@ -1,4 +1,5 @@
 
+
 import { z } from 'zod';
 
 // =============================================================================
@@ -101,6 +102,9 @@ export const supervisorProfileSchema = z.object({
     address: z.string().nullable(),
     number: z.string().nullable(),
     complement: z.string().nullable(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    titheDay: z.number().nullable(),
   });
 
 export const pastorProfileSchema = z.object({
@@ -119,6 +123,9 @@ export const pastorProfileSchema = z.object({
     address: z.string().nullable(),
     number: z.string().nullable(),
     complement: z.string().nullable(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    titheDay: z.number().nullable(),
 });
 
 export const churchProfileSchema = z.object({
@@ -137,6 +144,9 @@ export const churchProfileSchema = z.object({
     treasurerFirstName: z.string().nullable(),
     treasurerLastName: z.string().nullable(),
     treasurerCpf: z.string().nullable(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    titheDay: z.number().nullable(),
 });
 
 // =============================================================================
