@@ -20,7 +20,8 @@ import {
     PAYMENT_METHODS, 
     NOTIFICATION_EVENT_TRIGGERS,
     WEBHOOK_EVENTS,
-    API_KEY_STATUSES
+    API_KEY_STATUSES,
+    type TransactionStatus
 } from '@/lib/types';
 
 // Enums
@@ -56,7 +57,7 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow(),
   deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by'), // Removida FK para quebrar ciclo
+  deletedBy: uuid('deleted_by'), 
   deletionReason: text('deletion_reason'),
 });
 
@@ -79,7 +80,7 @@ export const regions = pgTable('regions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow(),
   deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by'), // Removida FK para quebrar ciclo
+  deletedBy: uuid('deleted_by'),
   deletionReason: text('deletion_reason'),
 });
 
@@ -96,6 +97,9 @@ export const adminProfiles = pgTable('admin_profiles', {
   city: varchar('city', { length: 100 }),
   neighborhood: varchar('neighborhood', { length: 100 }),
   address: varchar('address', { length: 255 }),
+  facebook: varchar('facebook', { length: 255 }),
+  instagram: varchar('instagram', { length: 255 }),
+  website: varchar('website', { length: 255 }),
 });
 
 export const managerProfiles = pgTable('manager_profiles', {
@@ -110,6 +114,9 @@ export const managerProfiles = pgTable('manager_profiles', {
     city: varchar('city', { length: 100 }),
     neighborhood: varchar('neighborhood', { length: 100 }),
     address: varchar('address', { length: 255 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
 });
 
 export const supervisorProfiles = pgTable('supervisor_profiles', {
@@ -128,6 +135,9 @@ export const supervisorProfiles = pgTable('supervisor_profiles', {
     address: varchar('address', { length: 255 }),
     number: varchar('number', { length: 20 }),
     complement: varchar('complement', { length: 100 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
 });
 
 export const pastorProfiles = pgTable('pastor_profiles', {
@@ -146,6 +156,9 @@ export const pastorProfiles = pgTable('pastor_profiles', {
     address: varchar('address', { length: 255 }),
     number: varchar('number', { length: 20 }),
     complement: varchar('complement', { length: 100 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
 });
 
 export const churchProfiles = pgTable('church_profiles', {
@@ -164,6 +177,9 @@ export const churchProfiles = pgTable('church_profiles', {
     treasurerFirstName: varchar('treasurer_first_name', { length: 100 }),
     treasurerLastName: varchar('treasurer_last_name', { length: 100 }),
     treasurerCpf: varchar('treasurer_cpf', { length: 14 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
 });
 
 // Tabela de Transações
@@ -179,7 +195,7 @@ export const transactions = pgTable('transactions', {
   refundRequestReason: text('refund_request_reason'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by'), // Removida FK para quebrar ciclo
+  deletedBy: uuid('deleted_by'), 
   deletionReason: text('deletion_reason'),
 });
 
@@ -247,13 +263,12 @@ export const apiKeys = pgTable('api_keys', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     companyId: uuid('company_id').references(() => companies.id).notNull(),
     name: varchar('name', { length: 100 }).notNull(),
-    key: varchar('key', { length: 255 }).unique().notNull(), // Should be hashed in a real app
+    key: varchar('key', { length: 255 }).unique().notNull(),
     status: apiKeyStatusEnum('status').default('active').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     lastUsedAt: timestamp('last_used_at'),
 });
 
-export type TransactionStatus = (typeof transactionStatusEnum.enumValues)[number];
 
 // Relações
 
@@ -343,4 +358,3 @@ export const otherSettingsRelations = relations(otherSettings, ({ one }) => ({
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
     company: one(companies, { fields: [apiKeys.companyId], references: [companies.id] }),
 }));
-
