@@ -1,3 +1,9 @@
+/**
+* @fileoverview Página de edição de perfil do pastor (visão do supervisor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -14,12 +20,14 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -42,26 +50,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { pastorProfileSchema } from '@/lib/types';
 
-const pastorProfileSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  birthDate: z.date().nullable().optional(),
-  titheDay: z.coerce.number().nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
+
+const pastorUpdateSchema = pastorProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-type PastorProfile = z.infer<typeof pastorProfileSchema> & {
+type PastorProfile = z.infer<typeof pastorUpdateSchema> & {
     id: string;
     cpf?: string;
     status: string;
@@ -81,8 +77,9 @@ export default function PastorProfilePage() {
   const { toast } = useToast();
 
   const form = useForm<PastorProfile>({
-    resolver: zodResolver(pastorProfileSchema),
-    defaultValues: {},
+    resolver: zodResolver(pastorUpdateSchema),
+    defaultValues: {
+    },
   });
 
   const fetchData = React.useCallback(async () => {
@@ -122,6 +119,7 @@ export default function PastorProfilePage() {
         });
         if (!response.ok) throw new Error('Falha ao atualizar o pastor.');
         toast({ title: 'Sucesso', description: 'Pastor atualizado com sucesso.', variant: 'success' });
+        fetchData();
     } catch (error: any) {
         toast({ title: 'Erro', description: error.message, variant: 'destructive'});
     } finally {
@@ -266,7 +264,7 @@ export default function PastorProfilePage() {
                                     )}
                                   >
                                     {field.value ? (
-                                      format(new Date(field.value), "dd/MM/yyyy")
+                                      format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
                                     ) : (
                                       <span>dd/mm/aaaa</span>
                                     )}
@@ -283,6 +281,7 @@ export default function PastorProfilePage() {
                                     date > new Date() || date < new Date("1900-01-01")
                                   }
                                   initialFocus
+                                  locale={ptBR}
                                 />
                               </PopoverContent>
                             </Popover>
@@ -351,7 +350,7 @@ export default function PastorProfilePage() {
                         )} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <FormField control={form.control} name="city" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Cidade</FormLabel>

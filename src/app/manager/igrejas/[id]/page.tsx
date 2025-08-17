@@ -1,9 +1,15 @@
+/**
+* @fileoverview Página de edição de perfil da igreja (visão do gerente).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client'
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -18,10 +24,11 @@ import {
   Bell,
   Mail,
   Smartphone,
-  MoreHorizontal
+  MoreHorizontal,
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -63,30 +70,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { churchProfileSchema } from '@/lib/types';
 
-const churchProfileSchema = z.object({
-    supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
-    razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
-    nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
-    email: z.string().email({ message: 'E-mail inválido.' }),
-    cep: z.string().min(9, { message: 'O CEP deve ter 8 dígitos.' }),
-    state: z.string().length(2, { message: 'UF deve ter 2 letras.' }),
-    city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
-    neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
-    address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
-    foundationDate: z.date({
-      required_error: 'A data de fundação é obrigatória.',
-    }),
-    titheDay: z.coerce.number().min(1).max(31).nullable(),
-    phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable(),
-    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable(),
-    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable(),
-    newPassword: z.string().optional().or(z.literal('')),
-    facebook: z.string().url().or(z.literal('')).nullable(),
-    instagram: z.string().url().or(z.literal('')).nullable(),
-    website: z.string().url().or(z.literal('')).nullable(),
-}).partial();
 
 type ChurchProfile = z.infer<typeof churchProfileSchema> & {
     id: string;
@@ -218,28 +203,9 @@ export default function IgrejaProfilePage() {
   const { id } = params;
   const { toast } = useToast();
 
-  const form = useForm<ChurchProfile>({
+  const form = useForm<z.infer<typeof churchProfileSchema>>({
     resolver: zodResolver(churchProfileSchema),
     defaultValues: {
-        razaoSocial: '',
-        nomeFantasia: '',
-        email: '',
-        phone: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        foundationDate: new Date(),
-        titheDay: 1,
-        supervisorId: '',
-        treasurerFirstName: '',
-        treasurerLastName: '',
-        treasurerCpf: '',
-        newPassword: '',
-        facebook: '',
-        instagram: '',
-        website: '',
     },
   });
 
@@ -260,7 +226,7 @@ export default function IgrejaProfilePage() {
         
         const sanitizedData = {
             ...churchData,
-            foundationDate: churchData.foundationDate ? new Date(churchData.foundationDate) : new Date(),
+            foundationDate: churchData.foundationDate ? new Date(churchData.foundationDate) : null,
         };
 
         setChurch(sanitizedData);
@@ -316,7 +282,7 @@ export default function IgrejaProfilePage() {
     }
 };
 
-  if (isLoading) {
+  if (isLoading || !church) {
       return (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div className="lg:col-span-1">
@@ -327,10 +293,6 @@ export default function IgrejaProfilePage() {
               </div>
           </div>
       )
-  }
-
-  if (!church) {
-      return <p>Igreja não encontrada.</p>;
   }
 
   return (
@@ -538,7 +500,7 @@ export default function IgrejaProfilePage() {
                                         )}
                                     >
                                         {field.value ? (
-                                        format(new Date(field.value), "dd/MM/yyyy")
+                                        format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
                                         ) : (
                                         <span>dd/mm/aaaa</span>
                                         )}
@@ -555,6 +517,7 @@ export default function IgrejaProfilePage() {
                                         date > new Date() || date < new Date("1900-01-01")
                                     }
                                     initialFocus
+                                    locale={ptBR}
                                     />
                                 </PopoverContent>
                                 </Popover>
@@ -615,7 +578,7 @@ export default function IgrejaProfilePage() {
                     </Alert>
 
                      <FormField
-                      control={form.control}
+                      control={form.control}                      
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
@@ -623,7 +586,7 @@ export default function IgrejaProfilePage() {
                            <FormControl>
                             <div className="relative mt-1">
                                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} />
+                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} /> 
                             </div>
                            </FormControl>
                           <FormMessage />
@@ -642,70 +605,6 @@ export default function IgrejaProfilePage() {
                 </Form>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="transactions">
-                <TransactionsTab userId={id as string} />
-          </TabsContent>
-           <TabsContent value="configuracoes">
-              <Card>
-                  <CardHeader>
-                      <CardTitle>Configurações de Notificação</CardTitle>
-                      <CardDescription>Gerencie quais notificações esta igreja receberá.</CardDescription>
-                  </CardHeader>
-                  <CardContent className='space-y-6'>
-                      <div className='flex items-center justify-between rounded-lg border p-4'>
-                          <div>
-                              <p className='font-medium'>Notificações de Pagamento</p>
-                              <p className='text-sm text-muted-foreground'>Receber avisos sobre pagamentos recebidos, recusados, etc.</p>
-                          </div>
-                          <div className='flex items-center gap-4'>
-                            <div className='flex items-center gap-2' title="Notificar por Email">
-                                <Mail className='h-4 w-4 text-muted-foreground' />
-                                <Switch />
-                            </div>
-                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
-                                <Smartphone className='h-4 w-4 text-muted-foreground' />
-                                <Switch />
-                            </div>
-                          </div>
-                      </div>
-                       <div className='flex items-center justify-between rounded-lg border p-4'>
-                          <div>
-                              <p className='font-medium'>Lembretes de Vencimento</p>
-                              <p className='text-sm text-muted-foreground'>Receber lembretes sobre pagamentos próximos do vencimento.</p>
-                          </div>
-                          <div className='flex items-center gap-4'>
-                            <div className='flex items-center gap-2' title="Notificar por Email">
-                                <Mail className='h-4 w-4 text-muted-foreground' />
-                                <Switch defaultChecked />
-                            </div>
-                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
-                                <Smartphone className='h-4 w-4 text-muted-foreground' />
-                                <Switch defaultChecked />
-                            </div>
-                          </div>
-                      </div>
-                       <div className='flex items-center justify-between rounded-lg border p-4'>
-                          <div>
-                              <p className='font-medium'>Novos Cadastros na Supervisão</p>
-                              <p className='text-sm text-muted-foreground'>Receber notificações sobre novos pastores ou igrejas em sua supervisão.</p>
-                          </div>
-                           <div className='flex items-center gap-4'>
-                            <div className='flex items-center gap-2' title="Notificar por Email">
-                                <Mail className='h-4 w-4 text-muted-foreground' />
-                                <Switch defaultChecked />
-                            </div>
-                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
-                                <Smartphone className='h-4 w-4 text-muted-foreground' />
-                                <Switch />
-                            </div>
-                          </div>
-                      </div>
-                      <div className='flex justify-end'>
-                        <Button>Salvar Configurações</Button>
-                      </div>
-                  </CardContent>
-              </Card>
           </TabsContent>
           <TabsContent value="delete">
           <Card className="border-destructive">

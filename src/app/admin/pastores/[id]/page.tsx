@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Página de edição de perfil do pastor (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -20,6 +25,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -442,7 +448,7 @@ export default function PastorProfilePage() {
                                     )}
                                   >
                                     {field.value ? (
-                                      format(new Date(field.value), "dd/MM/yyyy")
+                                      format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
                                     ) : (
                                       <span>dd/mm/aaaa</span>
                                     )}
@@ -459,6 +465,7 @@ export default function PastorProfilePage() {
                                     date > new Date() || date < new Date("1900-01-01")
                                   }
                                   initialFocus
+                                  locale={ptBR}
                                 />
                               </PopoverContent>
                             </Popover>

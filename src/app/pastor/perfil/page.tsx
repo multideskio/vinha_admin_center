@@ -1,3 +1,9 @@
+/**
+* @fileoverview Página de edição de perfil do pastor (visão do pastor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -17,6 +23,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -96,6 +103,7 @@ export default function PastorProfilePage() {
 
   const onSubmit = (data: PastorProfile) => {
     console.log(data);
+    // Handle form submission
   };
 
   return (
@@ -221,7 +229,7 @@ export default function PastorProfilePage() {
                                     )}
                                   >
                                     {field.value ? (
-                                      format(field.value, "dd/MM/yyyy")
+                                      format(field.value, "dd/MM/yyyy", { locale: ptBR })
                                     ) : (
                                       <span>dd/mm/aaaa</span>
                                     )}
@@ -238,6 +246,7 @@ export default function PastorProfilePage() {
                                     date > new Date() || date < new Date("1900-01-01")
                                   }
                                   initialFocus
+                                  locale={ptBR}
                                 />
                               </PopoverContent>
                             </Popover>
@@ -306,7 +315,7 @@ export default function PastorProfilePage() {
                         )} />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <FormField control={form.control} name="city" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Cidade</FormLabel>
@@ -350,14 +359,14 @@ export default function PastorProfilePage() {
                     <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
                       <AlertTriangle className="h-4 w-4 text-yellow-500" />
                       <AlertDescription>
-                        <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá acessar usando a senha anterior.
+                        <strong>Importante</strong> - Ao atualizar a senha, você não poderá acessar usando a senha anterior.
                       </AlertDescription>
                     </Alert>
 
                      <Alert variant="default" className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
                         <Info className="h-4 w-4 text-blue-500" />
                         <AlertDescription className="text-blue-700 dark:text-blue-300">
-                            <strong>Informação</strong> - Escolha uma senha adequada para o usuário
+                            <strong>Informação</strong> - Escolha uma senha adequada para você.
                         </AlertDescription>
                     </Alert>
 

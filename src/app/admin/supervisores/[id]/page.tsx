@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Página de edição de perfil do supervisor (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -60,6 +65,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { supervisorProfileSchema } from '@/lib/types';
+
 
 const supervisorUpdateSchema = supervisorProfileSchema.extend({
     newPassword: z.string().optional().or(z.literal('')),
@@ -203,25 +209,6 @@ export default function SupervisorProfilePage() {
   const form = useForm<SupervisorProfile>({
     resolver: zodResolver(supervisorUpdateSchema),
     defaultValues: {
-        firstName: '',
-        lastName: '',
-        phone: '',
-        landline: '',
-        email: '',
-        cep: '',
-        state: '',
-        city: '',
-        neighborhood: '',
-        address: '',
-        number: '',
-        complement: '',
-        titheDay: 1,
-        newPassword: '',
-        facebook: '',
-        instagram: '',
-        website: '',
-        managerId: '',
-        regionId: '',
     },
   });
 
@@ -551,8 +538,8 @@ export default function SupervisorProfilePage() {
                         )} />
                          <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Endereço</FormLabel>
-                                <FormControl><Input placeholder='Endereço...' {...field} value={field.value ?? ''}/></FormControl>
+                                <FormLabel>Rua</FormLabel>
+                                <FormControl><Input placeholder='Endereço completo...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                          <FormField control={form.control} name="number" render={({ field }) => (

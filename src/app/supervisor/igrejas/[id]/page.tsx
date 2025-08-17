@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Página de edição de perfil da igreja (visão do supervisor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client'
 
@@ -23,6 +28,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useParams, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -191,7 +197,7 @@ export default function IgrejaProfilePage() {
   const { id } = params;
   const { toast } = useToast();
 
-  const form = useForm<ChurchProfile>({
+  const form = useForm<z.infer<typeof churchProfileSchema>>({
     resolver: zodResolver(churchProfileSchema),
     defaultValues: {
     },
@@ -307,21 +313,21 @@ export default function IgrejaProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={church.facebook ?? ''}
+                  defaultValue={''}
                   placeholder="https://facebook.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={church.instagram ?? ''}
+                  defaultValue={''}
                   placeholder="https://instagram.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={church.website ?? ''}
+                  defaultValue={''}
                   placeholder="https://website.com/..."
                 />
               </div>
@@ -335,6 +341,7 @@ export default function IgrejaProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Dados da Igreja</TabsTrigger>
+            <TabsTrigger value="transactions">Transações</TabsTrigger>
             <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
@@ -342,7 +349,6 @@ export default function IgrejaProfilePage() {
               <CardContent className="pt-6">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField
                             control={form.control}
@@ -350,7 +356,7 @@ export default function IgrejaProfilePage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>CNPJ</FormLabel>
-                                <FormControl> 
+                                <FormControl>
                                 <Input {...field} disabled value={church.cnpj ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
@@ -363,8 +369,8 @@ export default function IgrejaProfilePage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
-                                <FormControl> 
-                                <Input type="email" {...field} value={field.value ?? ''} />
+                                <FormControl>
+                                <Input type="email" {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -379,7 +385,7 @@ export default function IgrejaProfilePage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Razão Social</FormLabel>
-                                <FormControl> 
+                                <FormControl>
                                 <Input {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
@@ -392,7 +398,7 @@ export default function IgrejaProfilePage() {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Nome Fantasia</FormLabel>
-                                <FormControl> 
+                                <FormControl>
                                 <Input {...field} value={field.value ?? ''}/>
                                 </FormControl>
                                 <FormMessage />
@@ -405,7 +411,7 @@ export default function IgrejaProfilePage() {
                         <FormField control={form.control} name="cep" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>CEP</FormLabel>
-                                <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="state" render={({ field }) => (
@@ -454,8 +460,8 @@ export default function IgrejaProfilePage() {
                                         !field.value && "text-muted-foreground"
                                         )}
                                     >
-                                        {field.value ? ( 
-                                        format(field.value, "dd/MM/yyyy")
+                                        {field.value ? (
+                                        format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
                                         ) : (
                                         <span>dd/mm/aaaa</span>
                                         )}
@@ -472,6 +478,7 @@ export default function IgrejaProfilePage() {
                                         date > new Date() || date < new Date("1900-01-01")
                                     }
                                     initialFocus
+                                    locale={ptBR}
                                     />
                                 </PopoverContent>
                                 </Popover>
@@ -569,7 +576,7 @@ export default function IgrejaProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button> 
+                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button>
               </CardContent>
             </Card>
           </TabsContent>

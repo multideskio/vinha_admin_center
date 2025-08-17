@@ -1,3 +1,9 @@
+/**
+* @fileoverview Página de listagem e gerenciamento de pastores (visão do supervisor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -14,6 +20,7 @@ import {
   MapPin,
   Pencil,
   User,
+  Map,
   Calendar as CalendarIcon,
   Search,
   ChevronLeft,
@@ -25,6 +32,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,7 +62,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-  DialogFooter,
+  DialogFooter
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -78,6 +86,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -88,6 +103,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 const pastorSchema = z.object({
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
@@ -171,7 +187,7 @@ const PastorFormModal = ({
         });
     }
   };
-
+  
   const formatCPF = (value: string) => {
     return value
       .replace(/\D/g, '')
@@ -180,7 +196,7 @@ const PastorFormModal = ({
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
       .slice(0, 14);
   };
-
+    
   const formatCEP = (value: string) => {
     return value.replace(/\D/g, '').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
   };
@@ -222,7 +238,7 @@ const PastorFormModal = ({
           <DialogTitle>Cadastro de pastores</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4 overflow-y-auto max-h-[80vh]">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-2 overflow-y-auto max-h-[80vh]">
             <Alert
               variant="default"
               className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
@@ -305,6 +321,7 @@ const PastorFormModal = ({
                       <Input
                         placeholder="00000-000"
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(formatCEP(e.target.value))}
                         onBlur={handleCepBlur}
                         disabled={isFetchingCep}
@@ -321,7 +338,7 @@ const PastorFormModal = ({
                   <FormItem>
                     <FormLabel>Estado</FormLabel>
                     <FormControl>
-                      <Input placeholder="UF" {...field} disabled={isFetchingCep} />
+                      <Input placeholder="UF" {...field} value={field.value ?? ''} disabled={isFetchingCep} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -337,6 +354,7 @@ const PastorFormModal = ({
                       <Input
                         placeholder="Nome da cidade"
                         {...field}
+                        value={field.value ?? ''}
                         disabled={isFetchingCep}
                       />
                     </FormControl>
@@ -354,6 +372,7 @@ const PastorFormModal = ({
                       <Input
                         placeholder="Nome do bairro"
                         {...field}
+                        value={field.value ?? ''}
                         disabled={isFetchingCep}
                       />
                     </FormControl>
@@ -372,6 +391,7 @@ const PastorFormModal = ({
                     <Input
                       placeholder="O restante do endereço"
                       {...field}
+                      value={field.value ?? ''}
                       disabled={isFetchingCep}
                     />
                   </FormControl>
@@ -398,7 +418,7 @@ const PastorFormModal = ({
                             )}
                           >
                             {field.value ? (
-                              format(field.value, 'dd/MM/yyyy')
+                              format(field.value, 'dd/MM/yyyy', { locale: ptBR })
                             ) : (
                               <span>dd/mm/aaaa</span>
                             )}
@@ -415,6 +435,7 @@ const PastorFormModal = ({
                             date > new Date() || date < new Date('1900-01-01')
                           }
                           initialFocus
+                          locale={ptBR}
                         />
                       </PopoverContent>
                     </Popover>
@@ -435,6 +456,7 @@ const PastorFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -456,6 +478,7 @@ const PastorFormModal = ({
                           placeholder="(00) 00000-0000"
                           {...field}
                           className="rounded-l-none"
+                          value={field.value ?? ''}
                           onChange={(e) => field.onChange(formatPhone(e.target.value))}
                         />
                       </div>
@@ -533,7 +556,7 @@ export default function PastoresPage() {
   const handlePreviousPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
-
+  
   const TableView = () => (
     <Card>
       <CardContent className="pt-6">

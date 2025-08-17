@@ -1,7 +1,7 @@
 /**
 * @fileoverview Página de criação de nova conta para pastores e igrejas.
-* @version 1.0
-* @date 2024-07-31
+* @version 1.1
+* @date 2024-08-07
 * @author PH
 */
 
@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Calendar as CalendarIcon, Building, User } from 'lucide-react';
 import { format, subYears } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -146,6 +147,7 @@ const PastorForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
                                         disabled={(date) => date > subYears(new Date(), 18) || date < new Date("1900-01-01")} 
                                         defaultMonth={subYears(new Date(), 18)}
                                         initialFocus 
+                                        locale={ptBR}
                                     />
                                 </PopoverContent>
                             </Popover>
