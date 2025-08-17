@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar webhooks.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -5,6 +11,7 @@ import { webhooks, webhookEventEnum } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -17,9 +24,11 @@ const webhookSchema = z.object({
     events: z.array(z.enum(webhookEventEnum.enumValues)).min(1, 'Selecione ao menos um evento.'),
 });
 
-export async function GET(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function GET(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
   try {
     const allWebhooks = await db
@@ -30,15 +39,17 @@ export async function GET(request: Request) {
       
     return NextResponse.json({ webhooks: allWebhooks });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar webhooks:", error);
     return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function POST(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     try {
       const body = await request.json();

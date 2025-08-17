@@ -1,14 +1,18 @@
-
+/**
+* @fileoverview Rota da API para criar e listar transações.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { gatewayConfigurations, transactions as transactionsTable, users, churchProfiles, pastorProfiles, supervisorProfiles, managerProfiles, type TransactionStatus } from '@/db/schema';
-import { eq, desc, and, isNull, inArray } from 'drizzle-orm';
+import { eq, desc, and, isNull, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import * as bcrypt from 'bcrypt';
 import { format } from 'date-fns';
 import { validateRequest } from '@/lib/auth';
-import { PAYMENT_METHODS } from '@/lib/types';
+import { PAYMENT_METHODS, type UserRole } from '@/lib/types';
 
 
 const COMPANY_ID = process.env.COMPANY_INIT;
@@ -62,22 +66,29 @@ function mapCieloStatusToDbStatus(cieloStatus: number): TransactionStatus {
     }
 }
 
-async function getContributorProfile(userId: string, role: string) {
+async function getContributorProfile(userId: string, role: UserRole) {
+    let profileQuery;
     switch (role) {
-        case 'manager':
-            return await db.select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName, cpf: managerProfiles.cpf, address: managerProfiles.address, neighborhood: managerProfiles.neighborhood, city: managerProfiles.city, state: managerProfiles.state, cep: managerProfiles.cep }).from(managerProfiles).where(eq(managerProfiles.userId, userId)).limit(1);
+        case 'manager': 
+            profileQuery = db.select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName, cpf: managerProfiles.cpf, address: managerProfiles.address, neighborhood: managerProfiles.neighborhood, city: managerProfiles.city, state: managerProfiles.state, cep: managerProfiles.cep }).from(managerProfiles).where(eq(managerProfiles.userId, userId)).limit(1);
+            break;
         case 'supervisor':
-            return await db.select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName, cpf: supervisorProfiles.cpf, address: supervisorProfiles.address, neighborhood: supervisorProfiles.neighborhood, city: supervisorProfiles.city, state: supervisorProfiles.state, cep: supervisorProfiles.cep }).from(supervisorProfiles).where(eq(supervisorProfiles.userId, userId)).limit(1);
+            profileQuery = db.select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName, cpf: supervisorProfiles.cpf, address: supervisorProfiles.address, neighborhood: supervisorProfiles.neighborhood, city: supervisorProfiles.city, state: supervisorProfiles.state, cep: supervisorProfiles.cep }).from(supervisorProfiles).where(eq(supervisorProfiles.userId, userId)).limit(1);
+            break;
         case 'pastor':
-            return await db.select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName, cpf: pastorProfiles.cpf, address: pastorProfiles.address, neighborhood: pastorProfiles.neighborhood, city: pastorProfiles.city, state: pastorProfiles.state, cep: pastorProfiles.cep }).from(pastorProfiles).where(eq(pastorProfiles.userId, userId)).limit(1);
+            profileQuery = db.select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName, cpf: pastorProfiles.cpf, address: pastorProfiles.address, neighborhood: pastorProfiles.neighborhood, city: pastorProfiles.city, state: pastorProfiles.state, cep: pastorProfiles.cep }).from(pastorProfiles).where(eq(pastorProfiles.userId, userId)).limit(1);
+            break;
         case 'church_account':
-            return await db.select({ firstName: churchProfiles.nomeFantasia, lastName: sql<string>`''`, cpf: churchProfiles.cnpj, address: churchProfiles.address, neighborhood: churchProfiles.neighborhood, city: churchProfiles.city, state: churchProfiles.state, cep: churchProfiles.cep }).from(churchProfiles).where(eq(churchProfiles.userId, userId)).limit(1);
+            profileQuery = db.select({ firstName: churchProfiles.nomeFantasia, lastName: sql<string>`''`, cpf: churchProfiles.cnpj, address: churchProfiles.address, neighborhood: churchProfiles.neighborhood, city: churchProfiles.city, state: churchProfiles.state, cep: churchProfiles.cep }).from(churchProfiles).where(eq(churchProfiles.userId, userId)).limit(1);
+            break;
         default:
             return [];
     }
+    const profile = await profileQuery;
+    return profile;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const { user: sessionUser } = await validateRequest();
     if(!sessionUser) {
          return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
@@ -189,7 +200,7 @@ export async function POST(request: Request) {
 }
 
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });

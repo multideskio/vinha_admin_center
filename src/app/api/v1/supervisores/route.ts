@@ -1,7 +1,7 @@
 /**
 * @fileoverview API para gerenciamento de supervisores (acesso de administrador).
-* @version 1.0
-* @date 2024-07-31
+* @version 1.2
+* @date 2024-08-07
 * @author PH
 */
 
@@ -37,7 +37,7 @@ const supervisorSchema = z.object({
 });
 
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   const url = new URL(request.url);
   const minimal = url.searchParams.get('minimal') === 'true';
 
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user) {
         return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

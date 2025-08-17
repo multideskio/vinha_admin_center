@@ -1,3 +1,9 @@
+/**
+* @fileoverview Layout principal para o painel do pastor.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import type { Metadata } from 'next';
 import { PastorSidebar } from './_components/sidebar';
@@ -17,7 +23,7 @@ export default async function PastorLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
+}): Promise<JSX.Element> {
   const { user } = await validateRequest();
 
   if (!user || user.role !== 'pastor') {

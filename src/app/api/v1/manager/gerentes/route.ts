@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar gerentes (visão do gerente).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -7,6 +13,8 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { managerProfileSchema } from '@/lib/types';
+import { validateRequest } from '@/lib/auth';
+import type { UserRole } from '@/lib/types';
 
 
 const COMPANY_ID = process.env.COMPANY_INIT;
@@ -16,7 +24,7 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -30,7 +38,8 @@ export async function GET(request: Request) {
       .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt));
       
-    return NextResponse.json({ managers: result.map(r => ({...r.user, ...r.profile})) });
+    const managers = result.map(r => ({...r.user, ...r.profile}))
+    return NextResponse.json({ managers });
 
   } catch (error: any) {
     console.error("Erro ao buscar gerentes:", error);
@@ -38,7 +47,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
     
@@ -58,6 +67,11 @@ export async function POST(request: Request) {
             phone: validatedData.phone,
             titheDay: validatedData.titheDay,
         }).returning();
+
+        if (!newUser) {
+          tx.rollback();
+          throw new Error('Falha ao criar usuário para gerente.')
+        }
 
         const [newProfile] = await tx.insert(managerProfiles).values({
             userId: newUser.id,

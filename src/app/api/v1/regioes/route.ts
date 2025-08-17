@@ -1,8 +1,14 @@
+/**
+* @fileoverview Rota da API para gerenciar regiões.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { regions } from '@/db/schema';
-import { eq, and, isNull, sql, desc } from 'drizzle-orm';
+import { eq, and, isNull, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { validateRequest } from '@/lib/auth';
 
@@ -16,7 +22,7 @@ const regionSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user) {
         return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -49,7 +55,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user) {
         return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -59,12 +65,12 @@ export async function POST(request: Request) {
       const body = await request.json();
       const validatedData = regionSchema.parse(body);
   
-      const newRegion = await db.insert(regions).values({
+      const [newRegion] = await db.insert(regions).values({
         ...validatedData,
         companyId: COMPANY_ID,
       }).returning();
   
-      return NextResponse.json({ success: true, region: newRegion[0] }, { status: 201 });
+      return NextResponse.json({ success: true, region: newRegion }, { status: 201 });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });

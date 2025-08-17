@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Componente de cabeçalho para o painel de administrador.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -80,7 +85,7 @@ type AdminHeaderProps = {
     userFallback: string;
 }
 
-export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderProps) {
+export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderProps): JSX.Element {
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
             <Sheet>
@@ -171,11 +176,11 @@ export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderPr
                         <span>Ajuda</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <form action={logoutUser}>
-                        <button type="submit" className='w-full'>
-                            <DropdownMenuItem>
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Sair</span>
+                    <form action={() => logoutUser()}>
+                        <button type="submit" className='w-full text-left'>
+                            <DropdownMenuItem className="cursor-pointer">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Sair</span>
                             </DropdownMenuItem>
                         </button>
                     </form>

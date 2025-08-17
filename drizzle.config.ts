@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Configuração do Drizzle Kit para geração de migrações.
+* @version 1.1
+* @date 2024-08-07
+* @author PH
+*/
 import { defineConfig } from "drizzle-kit";
 import * as dotenv from 'dotenv';
 

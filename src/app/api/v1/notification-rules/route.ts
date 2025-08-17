@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar regras de notificação.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -5,6 +11,8 @@ import { notificationRules, webhookEventEnum } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
+import { NOTIFICATION_EVENT_TRIGGERS } from '@/lib/types';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -13,7 +21,7 @@ if (!COMPANY_ID) {
 
 const notificationRuleSchema = z.object({
     name: z.string().min(1, "O nome da automação é obrigatório."),
-    eventTrigger: z.enum(['user_registered', 'payment_received', 'payment_due_reminder', 'payment_overdue']),
+    eventTrigger: z.enum(NOTIFICATION_EVENT_TRIGGERS),
     daysOffset: z.coerce.number().int(),
     messageTemplate: z.string().min(1, "O modelo da mensagem é obrigatório."),
     sendViaEmail: z.boolean().default(true),
@@ -21,9 +29,11 @@ const notificationRuleSchema = z.object({
     isActive: z.boolean().default(true),
 });
 
-export async function GET(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function GET(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
   try {
     const allRules = await db
@@ -39,9 +49,11 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function POST(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     try {
       const body = await request.json();

@@ -1,13 +1,19 @@
+/**
+* @fileoverview API para buscar detalhes de uma transação específica (visão do admin).
+* @version 1.1
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { transactions as transactionsTable, gatewayConfigurations, users, churchProfiles } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { format, parseISO } from 'date-fns';
+import { transactions as transactionsTable, gatewayConfigurations } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { validateRequest } from '@/lib/auth';
+import { ApiError } from '@/lib/errors';
 
 
-async function getCieloCredentials() {
+async function getCieloCredentials(): Promise<{ merchantId: string | null; merchantKey: string | null; apiUrl: string; }> {
     const [config] = await db.select()
         .from(gatewayConfigurations)
         .where(eq(gatewayConfigurations.gatewayName, 'Cielo'))
@@ -24,7 +30,7 @@ async function getCieloCredentials() {
 }
 
 
-export async function GET(request: Request, { params }: { params: { id: string }}) {
+export async function GET(request: Request, { params }: { params: { id: string }}): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user) {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -51,20 +57,23 @@ export async function GET(request: Request, { params }: { params: { id: string }
         if (!response.ok) {
             const errorBody = await response.json();
             console.error("Erro ao consultar transação na Cielo:", errorBody);
-            throw new Error('Falha ao consultar o status da transação na Cielo.');
+            throw new ApiError(response.status, 'Falha ao consultar o status da transação na Cielo.');
         }
 
         const cieloData = await response.json();
         
-        // Opcional: Atualizar o banco de dados com o status mais recente da Cielo
         await db.update(transactionsTable)
-          .set({ status: cieloData.Payment?.Status === 2 ? 'approved' : cieloData.Payment?.Status === 10 ? 'refused' : 'pending' }) // Mapear status da Cielo para o seu
+          .set({ status: cieloData.Payment?.Status === 2 ? 'approved' : cieloData.Payment?.Status === 10 ? 'refused' : 'pending' })
           .where(eq(transactionsTable.gatewayTransactionId, paymentId));
 
         return NextResponse.json({ success: true, transaction: cieloData });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         console.error("Erro ao consultar transação:", error);
-        return NextResponse.json({ error: error.message || "Erro interno do servidor." }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+        return NextResponse.json({ error: "Erro interno do servidor.", details: errorMessage }, { status: 500 });
     }
 }

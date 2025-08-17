@@ -1,3 +1,9 @@
+/**
+* @fileoverview Componentes base para criação de gráficos com Recharts.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 "use client"
 
@@ -140,6 +146,10 @@ const ChartTooltipContent = React.forwardRef<
       }
 
       const [item] = payload
+      if (!item) {
+        return null
+      }
+
       const key = `${labelKey || item.dataKey || item.name || "value"}`
       const itemConfig = getPayloadConfigFromPayload(config, item, key)
       const value =
@@ -150,7 +160,7 @@ const ChartTooltipContent = React.forwardRef<
       if (labelFormatter) {
         return (
           <div className={cn("font-medium", labelClassName)}>
-            {labelFormatter(value, payload)}
+            {labelFormatter(value as string, payload)}
           </div>
         )
       }
@@ -292,7 +302,7 @@ const ChartLegendContent = React.forwardRef<
 
           return (
             <div
-              key={item.value}
+              key={item.value as string}
               className={cn(
                 "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
               )}

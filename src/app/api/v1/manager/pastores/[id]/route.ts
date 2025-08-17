@@ -1,34 +1,27 @@
-
+/**
+* @fileoverview API para gerenciamento de pastores específicos (visão do gerente).
+* @version 1.1
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, pastorProfiles, supervisorProfiles } from '@/db/schema';
-import { eq, and, isNull, inArray } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { pastorProfileSchema } from '@/lib/types';
+import { ApiError } from '@/lib/errors';
+import type { UserRole } from '@/lib/types';
 
-const pastorUpdateSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  birthDate: z.date().nullable().optional(),
-  titheDay: z.number().nullable().optional(),
-  supervisorId: z.string().uuid().nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
+
+const pastorUpdateSchema = pastorProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-async function verifyPastor(pastorId: string, managerId: string) {
+async function verifyPastor(pastorId: string, managerId: string): Promise<boolean> {
     const supervisorIdsManagedByGerente = await db.select({ id: supervisorProfiles.userId }).from(supervisorProfiles).where(eq(supervisorProfiles.managerId, managerId));
     if (supervisorIdsManagedByGerente.length === 0) return false;
 
@@ -38,12 +31,9 @@ async function verifyPastor(pastorId: string, managerId: string) {
     return supervisorIdsManagedByGerente.some(s => s.id === pastor.supervisorId);
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
+export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -52,7 +42,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     try {
         const isAuthorized = await verifyPastor(id, sessionUser.id);
         if (!isAuthorized) {
-            return NextResponse.json({ error: "Pastor não encontrado ou não pertence a esta rede." }, { status: 404 });
+            throw new ApiError(404, "Pastor não encontrado ou não pertence a esta rede.");
         }
 
         const result = await db.select({
@@ -64,46 +54,32 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), eq(users.role, 'pastor'), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
-            return NextResponse.json({ error: "Pastor não encontrado." }, { status: 404 });
+        if (result.length === 0 || !result[0]) {
+            throw new ApiError(404, "Pastor não encontrado.");
         }
 
         const { user, profile } = result[0];
+        const { password, ...userWithoutPassword } = user;
+
 
         return NextResponse.json({ 
-            id: user.id,
-            firstName: profile?.firstName,
-            lastName: profile?.lastName,
-            cpf: profile?.cpf,
-            email: user.email,
-            phone: user.phone,
-            landline: profile?.landline,
-            cep: profile?.cep,
-            state: profile?.state,
-            city: profile?.city,
-            neighborhood: profile?.neighborhood,
-            address: profile?.address,
-            number: profile?.number,
-            complement: profile?.complement,
-            birthDate: profile?.birthDate,
-            titheDay: user.titheDay,
-            supervisorId: profile?.supervisorId,
-            status: user.status
+            ...userWithoutPassword, 
+            ...profile,
         });
 
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         console.error("Erro ao buscar pastor:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
 
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
+export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -112,7 +88,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     try {
       const isAuthorized = await verifyPastor(id, sessionUser.id);
       if (!isAuthorized) {
-          return NextResponse.json({ error: "Não autorizado a modificar este pastor." }, { status: 403 });
+          throw new ApiError(403, "Não autorizado a modificar este pastor.");
       }
 
       const body = await request.json();
@@ -147,7 +123,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address;
         if (validatedData.number !== undefined) profileUpdateData.number = validatedData.number;
         if (validatedData.complement !== undefined) profileUpdateData.complement = validatedData.complement;
-        if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate;
+        if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate.toISOString();
         if (validatedData.supervisorId) profileUpdateData.supervisorId = validatedData.supervisorId;
         
         if (Object.keys(profileUpdateData).length > 0) {
@@ -157,21 +133,21 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   
       return NextResponse.json({ success: true });
   
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
-      }
-      console.error("Erro ao atualizar pastor:", error);
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    } catch (error: unknown) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
+        }
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
+        console.error("Erro ao atualizar pastor:", error);
+        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
-  }
+}
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
+export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -180,7 +156,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     try {
         const isAuthorized = await verifyPastor(id, sessionUser.id);
         if (!isAuthorized) {
-            return NextResponse.json({ error: "Não autorizado a excluir este pastor." }, { status: 403 });
+            throw new ApiError(403, "Não autorizado a excluir este pastor.");
         }
 
         await db
@@ -193,7 +169,10 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
         return NextResponse.json({ success: true, message: "Pastor excluído com sucesso." });
 
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         console.error("Erro ao excluir pastor:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }

@@ -1,3 +1,9 @@
+/**
+* @fileoverview API para gerenciamento de supervisores (acesso de administrador).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -15,10 +21,10 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
-export async function GET(request: Request) {
-    const { user } = await validateRequest();
+export async function GET(request: Request): Promise<NextResponse> {
+  const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
-        return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
   try {
@@ -37,7 +43,6 @@ export async function GET(request: Request) {
         .orderBy(desc(users.createdAt));
         return NextResponse.json({ supervisors: result });
     }
-
 
     const result = await db.select({
         id: users.id,
@@ -62,11 +67,11 @@ export async function GET(request: Request) {
 
   } catch (error: any) {
     console.error("Erro ao buscar supervisores:", error);
-    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
         return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -88,6 +93,11 @@ export async function POST(request: Request) {
             phone: validatedData.phone,
             titheDay: validatedData.titheDay,
         }).returning();
+        
+        if (!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário.");
+        }
 
         const [newProfile] = await tx.insert(supervisorProfiles).values({
             userId: newUser.id,

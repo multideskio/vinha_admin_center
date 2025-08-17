@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Rota da API para testar conexão com S3.
+* @version 1.0
+* @date 2024-08-08
+* @author PH
+*/
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3';
@@ -13,7 +18,7 @@ const s3SettingsSchema = z.object({
 });
 
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     try {
         const body = await request.json();
         const validatedData = s3SettingsSchema.parse(body);

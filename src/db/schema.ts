@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Schema do banco de dados Drizzle para a aplicação.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 import {
   pgTable,
   text,
@@ -217,7 +222,7 @@ export const gatewayConfigurations = pgTable('gateway_configurations', {
 
 export const otherSettings = pgTable('other_settings', {
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-    companyId: uuid('company_id').references(() => companies.id, { unique: true }).notNull(),
+    companyId: uuid('company_id').references(() => companies.id, { onDelete: 'no action' }).notNull(),
     smtpHost: varchar('smtp_host'),
     smtpPort: integer('smtp_port'),
     smtpUser: varchar('smtp_user'),
@@ -325,12 +330,12 @@ export const supervisorProfilesRelations = relations(supervisorProfiles, ({ one,
 
 export const pastorProfilesRelations = relations(pastorProfiles, ({ one }) => ({
     user: one(users, { fields: [pastorProfiles.userId], references: [users.id] }),
-    supervisor: one(users, { fields: [pastorProfiles.supervisorId], references: [users.id] }),
+    supervisor: one(users, { fields: [pastorProfiles.supervisorId], references: [users.id], relationName: 'pastor_supervisor'}),
 }));
 
 export const churchProfilesRelations = relations(churchProfiles, ({ one }) => ({
     user: one(users, { fields: [churchProfiles.userId], references: [users.id] }),
-    supervisor: one(users, { fields: [churchProfiles.supervisorId], references: [users.id] }),
+    supervisor: one(users, { fields: [churchProfiles.supervisorId], references: [users.id], relationName: 'church_supervisor' }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({

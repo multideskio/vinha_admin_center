@@ -1,8 +1,14 @@
+/**
+* @fileoverview Rota da API para gerenciamento de chaves de API.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { apiKeys } from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
 import { authenticateApiKey } from '@/lib/api-auth';
@@ -17,7 +23,7 @@ const newKeySchema = z.object({
   name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.'}),
 });
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -43,7 +49,7 @@ export async function GET(request: Request) {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -59,6 +65,10 @@ export async function POST(request: Request) {
             key: newRawKey, // Em um cenário real, você faria o hash disso
             status: 'active',
         }).returning({ id: apiKeys.id });
+
+        if (!newKeyRecord) {
+            throw new Error("Falha ao criar a chave de API.");
+        }
 
         return NextResponse.json({ success: true, key: newRawKey, id: newKeyRecord.id }, { status: 201 });
 

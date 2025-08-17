@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Rota da API para buscar dados para o dashboard do supervisor.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -7,6 +12,7 @@ import { count, sum, eq, isNull, and, desc, sql, inArray, gte, lt } from 'drizzl
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { type UserRole } from '@/lib/types';
 
 const calculateChange = (current: number, previous: number): string => {
     if (previous === 0) {
@@ -18,12 +24,12 @@ const calculateChange = (current: number, previous: number): string => {
     return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`;
 };
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
     
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'supervisor') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'supervisor') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
     const supervisorId = sessionUser.id;
@@ -48,16 +54,16 @@ export async function GET(request: Request) {
         // KPI Calculations
         const revenueCurrentMonthResult = networkUserIds.length > 0 ? await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: '0'}];
         const revenuePreviousMonthResult = networkUserIds.length > 0 ? await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: '0'}];
-        const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0].value || '0');
-        const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0].value || '0');
+        const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0]?.value || '0');
+        const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0]?.value || '0');
 
         const newMembersThisMonthResult = networkUserIds.length > 0 ? await db.select({ value: count() }).from(users).where(and(gte(users.createdAt, startOfCurrentMonth), inArray(users.id, networkUserIds))) : [{value: 0}];
-        const newMembersThisMonth = newMembersThisMonthResult[0].value;
+        const newMembersThisMonth = newMembersThisMonthResult[0]?.value || 0;
 
         const newTransactionsThisMonthResult = networkUserIds.length > 0 ? await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: 0}];
         const newTransactionsLastMonthResult = networkUserIds.length > 0 ? await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth), inArray(transactions.contributorId, networkUserIds))) : [{value: 0}];
-        const totalTransactionsThisMonth = newTransactionsThisMonthResult[0].value;
-        const totalTransactionsLastMonth = newTransactionsLastMonthResult[0].value;
+        const totalTransactionsThisMonth = newTransactionsThisMonthResult[0]?.value || 0;
+        const totalTransactionsLastMonth = newTransactionsLastMonthResult[0]?.value || 0;
 
         const kpis = {
             totalRevenue: { value: `R$ ${totalRevenueCurrentMonth.toFixed(2)}`, change: calculateChange(totalRevenueCurrentMonth, totalRevenuePreviousMonth) },

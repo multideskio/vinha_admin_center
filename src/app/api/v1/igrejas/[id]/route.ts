@@ -1,34 +1,30 @@
+/**
+* @fileoverview Rota da API para gerenciar uma igreja específica.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, churchProfiles } from '@/db/schema';
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { validateRequest } from '@/lib/auth';
+import { churchProfileSchema, type UserRole } from '@/lib/types';
 
-const churchUpdateSchema = z.object({
-    supervisorId: z.string().uuid().optional(),
-    razaoSocial: z.string().min(1).optional(),
-    nomeFantasia: z.string().min(1).optional(),
-    email: z.string().email().optional(),
-    phone: z.string().nullable().optional(),
-    cep: z.string().nullable().optional(),
-    state: z.string().nullable().optional(),
-    city: z.string().nullable().optional(),
-    neighborhood: z.string().nullable().optional(),
-    address: z.string().nullable().optional(),
-    foundationDate: z.date().nullable().optional(),
-    titheDay: z.number().nullable().optional(),
-    treasurerFirstName: z.string().nullable().optional(),
-    treasurerLastName: z.string().nullable().optional(),
-    treasurerCpf: z.string().nullable().optional(),
-    facebook: z.string().url().or(z.literal('')).nullable().optional(),
-    instagram: z.string().url().or(z.literal('')).nullable().optional(),
-    website: z.string().url().or(z.literal('')).nullable().optional(),
+
+const churchUpdateSchema = churchProfileSchema.extend({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
   
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+    
     const { id } = params;
 
     try {
@@ -41,7 +37,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), eq(users.role, 'church_account'), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Igreja não encontrada." }, { status: 404 });
         }
 
@@ -78,7 +74,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || (user.role as UserRole) !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
   
     try {
@@ -112,7 +113,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.city) profileUpdateData.city = validatedData.city;
         if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood;
         if (validatedData.address) profileUpdateData.address = validatedData.address;
-        if (validatedData.foundationDate) profileUpdateData.foundationDate = validatedData.foundationDate;
+        if (validatedData.foundationDate) profileUpdateData.foundationDate = validatedData.foundationDate.toISOString();
         if (validatedData.treasurerFirstName) profileUpdateData.treasurerFirstName = validatedData.treasurerFirstName;
         if (validatedData.treasurerLastName) profileUpdateData.treasurerLastName = validatedData.treasurerLastName;
         if (validatedData.treasurerCpf) profileUpdateData.treasurerCpf = validatedData.treasurerCpf;
@@ -136,7 +137,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
   }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || (user.role as UserRole) !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     const { id } = params;
 
     try {
@@ -150,7 +156,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
         return NextResponse.json({ success: true, message: "Igreja excluída com sucesso." });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao excluir igreja:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }

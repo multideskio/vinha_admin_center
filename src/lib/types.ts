@@ -46,6 +46,12 @@ const socialLinksSchema = {
     website: z.string().url().or(z.literal('')).nullable().optional(),
 };
 
+export const userSchema = z.object({
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    titheDay: z.coerce.number().min(1).max(31).nullable(),
+});
+
 export const adminProfileSchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
@@ -90,11 +96,11 @@ export const supervisorProfileSchema = z.object({
 export const pastorProfileSchema = z.object({
     id: z.string().uuid().optional(),
     userId: z.string().uuid().optional(),
-    supervisorId: z.string().uuid({ message: "Selecione um supervisor." }).nullable(),
+    supervisorId: z.string().uuid({ message: "Selecione um supervisor." }).nullable().optional(),
     firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
     lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
     cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-    birthDate: z.date().nullable(),
+    birthDate: z.date().nullable().optional(),
     email: z.string().email({ message: 'E-mail inválido.' }),
     phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
     landline: z.string().nullable().optional(),
@@ -106,17 +112,17 @@ export const pastorProfileSchema = z.object({
 export const churchProfileSchema = z.object({
     id: z.string().uuid().optional(),
     userId: z.string().uuid().optional(),
-    supervisorId: z.string().uuid({ message: "Selecione um supervisor." }).nullable(),
+    supervisorId: z.string().uuid({ message: "Selecione um supervisor." }).nullable().optional(),
     cnpj: z.string().min(1, 'O CNPJ/CPF é obrigatório.'),
     razaoSocial: z.string().min(1, { message: 'A razão social é obrigatória.' }),
     nomeFantasia: z.string().min(1, { message: 'O nome fantasia é obrigatório.' }),
-    foundationDate: z.date().nullable(),
+    foundationDate: z.date().nullable().optional(),
     email: z.string().email({ message: 'E-mail inválido.' }),
     phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-    titheDay: z.coerce.number().min(1).max(31).nullable(),
-    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable(),
-    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable(),
-    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable(),
+    titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
+    treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.').nullable().optional(),
+    treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.').nullable().optional(),
+    treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.').nullable().optional(),
     ...addressSchema,
     ...socialLinksSchema,
 });
@@ -127,3 +133,4 @@ export type ManagerProfile = z.infer<typeof managerProfileSchema>;
 export type SupervisorProfile = z.infer<typeof supervisorProfileSchema>;
 export type PastorProfile = z.infer<typeof pastorProfileSchema>;
 export type ChurchProfile = z.infer<typeof churchProfileSchema>;
+export type User = z.infer<typeof userSchema>;

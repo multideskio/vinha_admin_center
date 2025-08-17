@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Página de edição de perfil da igreja (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client'
 
@@ -62,7 +67,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { churchProfileSchema } from '@/lib/types';
+import { churchProfileSchema, type TransactionStatus } from '@/lib/types';
 
 
 type ChurchProfile = z.infer<typeof churchProfileSchema> & {
@@ -81,11 +86,109 @@ type Supervisor = {
 type Transaction = {
     id: string;
     amount: number;
-    status: 'approved' | 'pending' | 'refused' | 'refunded';
+    status: TransactionStatus;
     date: string;
   };
 
-export default function IgrejaProfilePage() {
+const TransactionsTab = ({ userId }: { userId: string }) => {
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+  
+    React.useEffect(() => {
+      const fetchTransactions = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/v1/transacoes?userId=${userId}`);
+          if (!response.ok) throw new Error('Falha ao carregar transações.');
+          const data = await response.json();
+          setTransactions(data.transactions);
+        } catch (error: any) {
+          toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTransactions();
+    }, [userId, toast]);
+  
+    const statusMap: { [key in TransactionStatus]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+        approved: { text: "Aprovada", variant: "success" },
+        pending: { text: "Pendente", variant: "warning" },
+        refused: { text: "Recusada", variant: "destructive" },
+        refunded: { text: "Reembolsada", variant: "outline" },
+    };
+  
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Transações do Usuário</CardTitle>
+          <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>ID da Transação</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead><span className="sr-only">Ações</span></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                    </TableRow>
+                    ))
+                ) : transactions.length > 0 ? (
+                    transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                        <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                        <TableCell>
+                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                            {statusMap[transaction.status]?.text || transaction.status}
+                        </Badge>
+                        </TableCell>
+                        <TableCell>{transaction.date}</TableCell>
+                        <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
+                        <TableCell className='text-right'>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                                </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">Nenhuma transação encontrada para este usuário.</TableCell>
+                    </TableRow>
+                )}
+                </TableBody>
+            </Table>
+        </CardContent>
+      </Card>
+    );
+  };
+
+
+export default function IgrejaProfilePage(): JSX.Element {
   const [church, setChurch] = React.useState<ChurchProfile | null>(null);
   const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -422,7 +525,7 @@ export default function IgrejaProfilePage() {
                                 <PopoverContent className="w-auto p-0" align="start">
                                     <Calendar
                                     mode="single"
-                                    selected={field.value}
+                                    selected={field.value ?? undefined}
                                     onSelect={field.onChange}
                                     disabled={(date) =>
                                         date > new Date() || date < new Date("1900-01-01")

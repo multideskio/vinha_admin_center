@@ -1,15 +1,20 @@
-
+/**
+* @fileoverview API para buscar detalhes de uma transação específica (visão do gerente).
+* @version 1.1
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { transactions as transactionsTable, gatewayConfigurations, users, supervisorProfiles, pastorProfiles, churchProfiles } from '@/db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { transactions as transactionsTable, gatewayConfigurations, supervisorProfiles, pastorProfiles, churchProfiles } from '@/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import { authenticateApiKey } from '@/lib/api-auth';
-import { format, parseISO } from 'date-fns';
 import { validateRequest } from '@/lib/auth';
+import { ApiError } from '@/lib/errors';
 
 
-async function getCieloCredentials() {
+async function getCieloCredentials(): Promise<{ merchantId: string | null; merchantKey: string | null; apiUrl: string; }> {
     const [config] = await db.select()
         .from(gatewayConfigurations)
         .where(eq(gatewayConfigurations.gatewayName, 'Cielo'))
@@ -25,13 +30,13 @@ async function getCieloCredentials() {
     };
 }
 
-async function verifyTransactionOwnership(transactionId: string, managerId: string) {
+async function verifyTransactionOwnership(transactionId: string, managerId: string): Promise<boolean> {
     const [transaction] = await db.select({ contributorId: transactionsTable.contributorId })
         .from(transactionsTable)
-        .where(eq(transactionsTable.gatewayTransactionId, transactionId))
+        .where(eq(transactionsTable.id, transactionId))
         .limit(1);
 
-    if (!transaction) return false;
+    if (!transaction || !transaction.contributorId) return false;
 
     const contributorId = transaction.contributorId;
     
@@ -57,7 +62,7 @@ async function verifyTransactionOwnership(transactionId: string, managerId: stri
 }
 
 
-export async function GET(request: Request, { params }: { params: { id: string }}) {
+export async function GET(request: Request, { params }: { params: { id: string }}): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -75,10 +80,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
     try {
         const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id);
         if (!isAuthorized) {
-            return NextResponse.json({ error: "Transação não encontrada ou você não tem permissão para visualizá-la." }, { status: 404 });
+            throw new ApiError(404, "Transação não encontrada ou você não tem permissão para visualizá-la.");
         }
 
         const [transaction] = await db.select().from(transactionsTable).where(eq(transactionsTable.gatewayTransactionId, id));
+
+        if (!transaction || !transaction.gatewayTransactionId) {
+            throw new ApiError(404, "Transação não possui um ID de gateway válido.");
+        }
 
         const credentials = await getCieloCredentials();
 
@@ -101,8 +110,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
         return NextResponse.json({ success: true, transaction: cieloData });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         console.error("Erro ao consultar transação:", error);
-        return NextResponse.json({ error: error.message || "Erro interno do servidor." }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+        return NextResponse.json({ error: "Erro interno do servidor.", details: errorMessage }, { status: 500 });
     }
 }

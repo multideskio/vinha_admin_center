@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -6,7 +7,6 @@ import { Activity, DollarSign, Users, Church, UserCheck, UserCog, Building, User
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,6 +15,7 @@ import {
   PieChart,
   Cell,
   Legend,
+  CartesianGrid,
 } from 'recharts';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { type TransactionStatus } from '@/lib/types';
 
 type KpiData = {
     title: string;
@@ -60,7 +62,7 @@ type DashboardData = {
     revenueByMethod: { method: string; value: number; fill: string; }[];
     revenueByRegion: { name: string; revenue: number; fill: string; }[];
     churchesByRegion: { name: string; count: number; fill: string; }[];
-    recentTransactions: { id: string; name: string; amount: number; date: string; status: string; }[];
+    recentTransactions: { id: string; name: string; amount: number; date: string; status: TransactionStatus; }[];
     recentRegistrations: { id: string; name: string; type: string; date: string; avatar: string; }[];
     newMembers: { month: string; count: number; }[];
 }
@@ -104,6 +106,13 @@ export default function DashboardPage() {
         { title: 'Total de Supervisores', ...data.kpis.totalSupervisors, icon: UserCog },
         { title: 'Total de Gerentes', ...data.kpis.totalManagers, icon: UserCheck },
     ] : [];
+
+    const statusMap: { [key in TransactionStatus]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+        approved: { text: "Aprovada", variant: "success" },
+        pending: { text: "Pendente", variant: "warning" },
+        refused: { text: "Recusada", variant: "destructive" },
+        refunded: { text: "Reembolsada", variant: "outline" },
+    };
 
 
   if (isLoading || !data) {
@@ -189,8 +198,8 @@ export default function DashboardPage() {
                                 <TableCell className='font-medium'>{transaction.name}</TableCell>
                                 <TableCell className='text-right'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
                                 <TableCell className='hidden sm:table-cell'>
-                                     <Badge variant={transaction.status === 'approved' ? 'success' : transaction.status === 'pending' ? 'warning' : 'destructive'}>
-                                        {transaction.status}
+                                     <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                                        {statusMap[transaction.status]?.text || transaction.status}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className='hidden md:table-cell text-muted-foreground'>{transaction.date}</TableCell>

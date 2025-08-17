@@ -1,15 +1,18 @@
+/**
+* @fileoverview Rota da API para gerenciar configurações do WhatsApp.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { otherSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
-if (!COMPANY_ID) {
-    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
-}
 
 const whatsappSettingsSchema = z.object({
     apiUrl: z.string().url(),
@@ -17,9 +20,15 @@ const whatsappSettingsSchema = z.object({
     apiInstance: z.string().min(1),
 });
 
-export async function GET(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function GET(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
+    if (!COMPANY_ID) {
+        return NextResponse.json({ error: "ID da empresa não configurado." }, { status: 500 });
+    }
 
     try {
         const [config] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, COMPANY_ID)).limit(1);
@@ -42,9 +51,15 @@ export async function GET(request: Request) {
     }
 }
 
-export async function PUT(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function PUT(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+    
+    if (!COMPANY_ID) {
+        return NextResponse.json({ error: "ID da empresa não configurado." }, { status: 500 });
+    }
 
     try {
         const body = await request.json();

@@ -7,23 +7,12 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { pastorProfileSchema } from '@/lib/types';
+import { ApiError } from '@/lib/errors';
 
-const pastorUpdateSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
-  landline: z.string().nullable().optional(),
-  cep: z.string().nullable().optional(),
-  state: z.string().nullable().optional(),
-  city: z.string().nullable().optional(),
-  neighborhood: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  number: z.string().nullable().optional(),
-  complement: z.string().nullable().optional(),
-  birthDate: z.date().nullable().optional(),
-  titheDay: z.number().nullable().optional(),
-  newPassword: z.string().optional().or(z.literal('')),
+
+const pastorUpdateSchema = pastorProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
 async function verifyPastor(pastorId: string, supervisorId: string) {
@@ -58,7 +47,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Pastor não encontrado." }, { status: 404 });
         }
 
@@ -106,7 +95,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     try {
       const isAuthorized = await verifyPastor(id, sessionUser.id);
       if (!isAuthorized) {
-          return NextResponse.json({ error: "Não autorizado a modificar este pastor." }, { status: 403 });
+          throw new ApiError(403, "Não autorizado a modificar este pastor.");
       }
 
       const body = await request.json();
@@ -141,7 +130,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address;
         if (validatedData.number !== undefined) profileUpdateData.number = validatedData.number;
         if (validatedData.complement !== undefined) profileUpdateData.complement = validatedData.complement;
-        if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate;
+        if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate.toISOString();
         
         if (Object.keys(profileUpdateData).length > 0) {
             await tx.update(pastorProfiles).set(profileUpdateData).where(eq(pastorProfiles.userId, id));
@@ -150,14 +139,17 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   
       return NextResponse.json({ success: true });
   
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
-      }
-      console.error("Erro ao atualizar pastor:", error);
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    } catch (error: unknown) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
+        }
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
+        console.error("Erro ao atualizar pastor:", error);
+        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
-  }
+}
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
     const authResponse = await authenticateApiKey(request);
@@ -173,7 +165,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     try {
         const isAuthorized = await verifyPastor(id, sessionUser.id);
         if (!isAuthorized) {
-            return NextResponse.json({ error: "Não autorizado a excluir este pastor." }, { status: 403 });
+            throw new ApiError(403, "Não autorizado a excluir este pastor.");
         }
 
         await db
@@ -186,7 +178,10 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
         return NextResponse.json({ success: true, message: "Pastor excluído com sucesso." });
 
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         console.error("Erro ao excluir pastor:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }

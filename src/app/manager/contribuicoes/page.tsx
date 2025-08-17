@@ -1,3 +1,9 @@
+/**
+* @fileoverview Página de contribuições (visão do gerente).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -64,7 +70,7 @@ type CieloPaymentResponse = {
     PaymentId?: string;
 };
 
-export default function ContribuicoesPage() {
+export default function ContribuicoesPage(): JSX.Element {
   const [paymentDetails, setPaymentDetails] = React.useState<CieloPaymentResponse | null>(null);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [pixStatus, setPixStatus] = React.useState<'idle' | 'pending' | 'confirmed'>('idle');
@@ -119,9 +125,10 @@ export default function ContribuicoesPage() {
     if (paymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
         timer = setTimeout(async () => {
             try {
+                if(!paymentDetails.PaymentId) return;
                 const res = await fetch(`/api/v1/transacoes/${paymentDetails.PaymentId}`);
                 const data = await res.json();
-                if(data.transaction?.Payment?.Status === 2){
+                if((data.transaction?.Payment?.Status as number) === 2){
                     setPixStatus('confirmed');
                     toast({
                         title: "Sucesso!",
@@ -220,7 +227,7 @@ export default function ContribuicoesPage() {
             throw new Error(result.error || 'Falha ao processar o pagamento com cartão.');
         }
         toast({ title: "Sucesso!", description: "Pagamento com cartão aprovado.", variant: "success"});
-        form.reset({ amount: 0, paymentMethod: 'pix', contributionType: 'dizimo', description: '' });
+        form.reset({ amount: 0, paymentMethod: 'pix', contributionType: undefined, description: '' });
         setCardState({ number: '', expiry: '', cvc: '', name: '', focus: '' });
         setShowPaymentDetails(false);
         setPaymentDetails(null);
@@ -240,7 +247,7 @@ export default function ContribuicoesPage() {
         default: return 'Continuar';
     }
   }
-
+  
   const getFullQrCodeSrc = () => {
     if (!paymentDetails?.QrCodeBase64Image) {
         return null;
@@ -361,13 +368,14 @@ export default function ContribuicoesPage() {
               </div>
 
              <Separator />
+
               {!showPaymentDetails && (
-                 <div className="flex justify-end">
+                <div className="flex justify-end">
                     <Button type="submit" size="lg" disabled={isProcessing}>
                          {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                          {isProcessing ? "Processando..." : getButtonLabel()}
                      </Button>
-                 </div>
+                </div>
               )}
             </form>
           </Form>
@@ -440,7 +448,7 @@ export default function ContribuicoesPage() {
                         </CardHeader>
                         <CardContent className='flex flex-col items-center'>
                            {qrCodeSrc ? (
-                                <Image src={qrCodeSrc} width={256} height={256} alt="QR Code Pix" />
+                                <Image src={qrCodeSrc} width={256} height={256} alt="QR Code Pix" data-ai-hint="qr code" />
                             ) : (
                                 <Skeleton className="h-[256px] w-[256px]" />
                             )}

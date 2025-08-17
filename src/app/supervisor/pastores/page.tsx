@@ -86,13 +86,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -104,26 +97,10 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { pastorProfileSchema, type UserStatus, type SupervisorProfile } from '@/lib/types';
 
-const pastorSchema = z.object({
-  firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
-  lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
-  cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-  email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().nullable(),
-  state: z.string().nullable(),
-  city: z.string().nullable(),
-  neighborhood: z.string().nullable(),
-  address: z.string().nullable(),
-  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.'}).nullable(),
-  titheDay: z.coerce.number().min(1).max(31).nullable(),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-});
 
-type Pastor = z.infer<typeof pastorSchema> & {
-    id: string;
-    status: 'active' | 'inactive';
-}
+type Pastor = z.infer<typeof pastorProfileSchema> & { id: string; status: UserStatus, supervisorName?: string, email: string, phone: string | null };
 
 const PastorFormModal = ({
   onSave,
@@ -136,8 +113,8 @@ const PastorFormModal = ({
   const [isFetchingCep, setIsFetchingCep] = React.useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof pastorSchema>>({
-    resolver: zodResolver(pastorSchema),
+  const form = useForm<z.infer<typeof pastorProfileSchema>>({
+    resolver: zodResolver(pastorProfileSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -159,7 +136,7 @@ const PastorFormModal = ({
     }
   }, [isOpen, form]);
 
-  const handleSave = async (data: z.infer<typeof pastorSchema>) => {
+  const handleSave = async (data: z.infer<typeof pastorProfileSchema>) => {
     try {
         const response = await fetch('/api/v1/supervisor/pastores', {
             method: 'POST',
@@ -429,7 +406,7 @@ const PastorFormModal = ({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={field.value || undefined}
                           onSelect={field.onChange}
                           disabled={(date) =>
                             date > new Date() || date < new Date('1900-01-01')
@@ -503,7 +480,7 @@ const PastorFormModal = ({
   );
 };
 
-export default function PastoresPage() {
+export default function PastoresPage(): JSX.Element {
   const [pastores, setPastores] = React.useState<Pastor[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table');
@@ -582,7 +559,7 @@ export default function PastoresPage() {
                     </TableRow>
                 ))
             ) : paginatedPastors.length > 0 ? (
-                paginatedPastors.map((pastor) => (
+              paginatedPastors.map((pastor) => (
                 <TableRow key={pastor.id}>
                   <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.email}</TableCell>
@@ -663,7 +640,7 @@ export default function PastoresPage() {
                                 <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
                                 <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
                                 <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
+                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city ?? ''} - {pastor.state ?? ''}</span></p>
                             </div>
                             </div>
                         </div>
@@ -710,6 +687,7 @@ export default function PastoresPage() {
                 <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
                 <Input placeholder="Buscar por nome..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
             </div>
+          <DateRangePicker />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

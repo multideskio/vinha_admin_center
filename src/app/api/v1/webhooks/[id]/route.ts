@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar um webhook específico.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -5,6 +11,7 @@ import { webhooks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const webhookSchema = z.object({
     url: z.string().url().optional(),
@@ -13,9 +20,11 @@ const webhookSchema = z.object({
     isActive: z.boolean().optional(),
 });
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
     try {
@@ -41,9 +50,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
     
     const { id } = params;
     try {
@@ -56,7 +67,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         }
   
         return NextResponse.json({ success: true, message: "Webhook excluído com sucesso." });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao excluir webhook:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }

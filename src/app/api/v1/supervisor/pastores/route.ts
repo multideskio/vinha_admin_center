@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Rota da API para gerenciar pastores (visão do supervisor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -32,7 +37,7 @@ const pastorSchema = z.object({
 });
 
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -64,13 +69,13 @@ export async function GET(request: Request) {
           
         return NextResponse.json({ pastors: result });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error("Erro ao buscar pastores:", error);
-        return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -99,13 +104,18 @@ export async function POST(request: Request) {
             titheDay: validatedData.titheDay,
         }).returning();
 
+        if (!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário para o pastor.");
+        }
+
         const [newProfile] = await tx.insert(pastorProfiles).values({
             userId: newUser.id,
             supervisorId: sessionUser.id,
             firstName: validatedData.firstName,
             lastName: validatedData.lastName,
             cpf: validatedData.cpf,
-            birthDate: validatedData.birthDate,
+            birthDate: validatedData.birthDate ? validatedData.birthDate.toISOString() : null,
             cep: validatedData.cep,
             state: validatedData.state,
             city: validatedData.city,

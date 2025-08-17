@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar administradores.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -6,6 +12,7 @@ import { eq, and, isNull, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -25,9 +32,11 @@ const adminSchema = z.object({
   }),
 });
 
-export async function GET(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function GET(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
   try {
     const result = await db.select({
@@ -55,9 +64,11 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function POST(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     try {
       const body = await request.json();
@@ -74,6 +85,11 @@ export async function POST(request: Request) {
             status: 'active',
             phone: validatedData.phone,
         }).returning();
+
+        if (!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário.");
+        }
 
         const [newProfile] = await tx.insert(adminProfiles).values({
             userId: newUser.id,

@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Página de listagem e gerenciamento de supervisores (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -92,26 +97,20 @@ import {
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supervisorProfileSchema } from '@/lib/types';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { supervisorProfileSchema, type UserStatus, type Region as RegionType, type ManagerProfile } from '@/lib/types';
 
 
 type Supervisor = z.infer<typeof supervisorProfileSchema> & {
     id: string;
-    status: 'active' | 'inactive';
-    managerName?: string;
-    regionName?: string;
+    status: UserStatus;
+    managerName?: string | null;
+    regionName?: string | null;
+    email: string;
+    phone: string | null;
 }
 
-type Manager = {
-    id: string;
-    firstName: string;
-    lastName: string;
-}
-
-type Region = {
-    id: string;
-    name: string;
-}
+type Manager = ManagerProfile & { id: string; };
 
 const SupervisorFormModal = ({
   onSave,
@@ -121,7 +120,7 @@ const SupervisorFormModal = ({
 }: {
   onSave: () => void;
   managers: Manager[];
-  regions: Region[];
+  regions: RegionType[];
   children: React.ReactNode;
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -356,6 +355,7 @@ const SupervisorFormModal = ({
                       <Input
                         placeholder="00000-000"
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(formatCEP(e.target.value))}
                         onBlur={handleCepBlur}
                         disabled={isFetchingCep}
@@ -372,7 +372,7 @@ const SupervisorFormModal = ({
                   <FormItem>
                     <FormLabel>Estado</FormLabel>
                     <FormControl>
-                      <Input placeholder="UF" {...field} disabled={isFetchingCep} />
+                      <Input placeholder="UF" {...field} value={field.value ?? ''} disabled={isFetchingCep} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -388,6 +388,7 @@ const SupervisorFormModal = ({
                       <Input
                         placeholder="Nome da cidade"
                         {...field}
+                        value={field.value ?? ''}
                         disabled={isFetchingCep}
                       />
                     </FormControl>
@@ -405,6 +406,7 @@ const SupervisorFormModal = ({
                       <Input
                         placeholder="Nome do bairro"
                         {...field}
+                        value={field.value ?? ''}
                         disabled={isFetchingCep}
                       />
                     </FormControl>
@@ -423,6 +425,7 @@ const SupervisorFormModal = ({
                     <Input
                       placeholder="O restante do endereço"
                       {...field}
+                      value={field.value ?? ''}
                       disabled={isFetchingCep}
                     />
                   </FormControl>
@@ -445,6 +448,7 @@ const SupervisorFormModal = ({
                         max="31"
                         placeholder="1 a 31"
                         {...field}
+                        value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -465,6 +469,7 @@ const SupervisorFormModal = ({
                         <Input
                           placeholder="(00) 00000-0000"
                           {...field}
+                          value={field.value ?? ''}
                           className="rounded-l-none"
                           onChange={(e) => field.onChange(formatPhone(e.target.value))}
                         />
@@ -566,7 +571,7 @@ export default function SupervisoresPage() {
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Celular</TableHead>
+              <TableHead className="hidden md:table-cell">Região</TableHead>
               <TableHead className="hidden sm:table-cell">Status</TableHead>
               <TableHead><span className="sr-only">Ações</span></TableHead>
             </TableRow>
@@ -577,7 +582,7 @@ export default function SupervisoresPage() {
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-48" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                     </TableRow>
@@ -587,7 +592,7 @@ export default function SupervisoresPage() {
                 <TableRow key={supervisor.id}>
                   <TableCell className="font-medium">{`${supervisor.firstName} ${supervisor.lastName}`}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{supervisor.email}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">{supervisor.phone}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{supervisor.regionName || 'N/A'}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={supervisor.status === 'active' ? 'success' : 'destructive'}>
                       {supervisor.status === 'active' ? 'Ativo' : 'Inativo'}
@@ -638,54 +643,53 @@ export default function SupervisoresPage() {
 
   const CardView = () => (
     <>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
-                ))
-            ) : paginatedSupervisors.length > 0 ? (
-                paginatedSupervisors.map((supervisor, index) => (
-                    <Card key={supervisor.id}>
-                        <CardContent className="pt-6">
-                        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                            <Image
-                            src="https://placehold.co/96x96.png"
-                            alt={`Foto de ${supervisor.firstName}`}
-                            width={96}
-                            height={96}
-                            className="rounded-lg object-cover w-24 h-24"
-                            data-ai-hint="male person"
-                            />
-                            <div className="flex-1 space-y-2 min-w-[200px]">
-                            <h3 className="text-lg font-bold">
-                                #{((currentPage - 1) * itemsPerPage) + index + 1} - {supervisor.firstName} {supervisor.lastName}
-                            </h3>
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                                <p className='flex items-center gap-2'><User size={14} /> <span>Gerente: {supervisor.managerName || 'N/A'}</span></p>
-                                <p className='flex items-center gap-2'><Map size={14} /> <span>Região: {supervisor.regionName || 'N/A'}</span></p>
-                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{supervisor.cpf}</span></p>
-                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{supervisor.phone}</span></p>
-                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{supervisor.email}</span></p>
-                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{supervisor.city} - {supervisor.state}</span></p>
-                            </div>
-                            </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
+            ))
+        ) : paginatedSupervisors.length > 0 ? (
+            paginatedSupervisors.map((supervisor, index) => (
+                <Card key={supervisor.id}>
+                    <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                        <Image
+                        src="https://placehold.co/96x96.png"
+                        alt={`Foto de ${supervisor.firstName}`}
+                        width={96}
+                        height={96}
+                        className="rounded-lg object-cover w-24 h-24"
+                        data-ai-hint="male person"
+                        />
+                        <div className="flex-1 space-y-2 min-w-[200px]">
+                        <h3 className="text-lg font-bold">
+                            #{((currentPage - 1) * itemsPerPage) + index + 1} - {supervisor.firstName} {supervisor.lastName}
+                        </h3>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                            <p className='flex items-center gap-2'><User size={14} /> <span>Gerente: {supervisor.managerName || 'N/A'}</span></p>
+                            <p className='flex items-center gap-2'><Map size={14} /> <span>Região: {supervisor.regionName || 'N/A'}</span></p>
+                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{supervisor.cpf}</span></p>
+                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{supervisor.phone}</span></p>
+                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{supervisor.email}</span></p>
                         </div>
-                        <div className="flex justify-end mt-4">
-                            <Button variant="outline" size="sm" asChild>
-                            <Link href={`/admin/supervisores/${supervisor.id}`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Editar
-                            </Link>
-                            </Button>
                         </div>
-                        </CardContent>
-                    </Card>
-                ))
-            ) : (
-                <div className="col-span-full text-center">Nenhum supervisor encontrado.</div>
-            )}
-        </div>
-        <PaginationControls />
+                    </div>
+                    <div className="flex justify-end mt-4">
+                        <Button variant="outline" size="sm" asChild>
+                        <Link href={`/admin/supervisores/${supervisor.id}`}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
+                        </Link>
+                        </Button>
+                    </div>
+                    </CardContent>
+                </Card>
+            ))
+        ) : (
+            <div className="col-span-full text-center">Nenhum supervisor encontrado.</div>
+        )}
+      </div>
+      <PaginationControls />
     </>
   );
 
@@ -713,6 +717,7 @@ export default function SupervisoresPage() {
                 <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
                 <Input placeholder="Buscar por nome..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
             </div>
+          <DateRangePicker />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -737,3 +742,4 @@ export default function SupervisoresPage() {
     </div>
   );
 }
+

@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para buscar transações da igreja logada.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -7,7 +13,7 @@ import { format } from 'date-fns';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 

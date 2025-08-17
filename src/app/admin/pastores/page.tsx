@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Página de listagem e gerenciamento de pastores (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -14,9 +19,12 @@ import {
   Mail,
   MapPin,
   Pencil,
-  User,
+  User as UserIcon,
   Map,
   Calendar as CalendarIcon,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -24,14 +32,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -97,9 +104,10 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { pastorProfileSchema, SupervisorProfile, User } from '@/lib/types';
+import { pastorProfileSchema, type UserStatus, type SupervisorProfile } from '@/lib/types';
 
-type Pastor = z.infer<typeof pastorProfileSchema> & { id: string; status: User['status'], supervisorName?: string, email: string, phone: string | null };
+
+type Pastor = z.infer<typeof pastorProfileSchema> & { id: string; status: UserStatus, supervisorName?: string, email: string, phone: string | null };
 type Supervisor = SupervisorProfile & { id: string; };
 
 const PastorFormModal = ({
@@ -129,6 +137,11 @@ const PastorFormModal = ({
       address: '',
       titheDay: 1,
       phone: '',
+      supervisorId: undefined,
+      birthDate: undefined,
+      landline: '',
+      number: '',
+      complement: ''
     },
   });
 
@@ -420,7 +433,7 @@ const PastorFormModal = ({
                             )}
                           >
                             {field.value ? (
-                              format(field.value, 'dd/MM/yyyy')
+                              format(field.value, 'dd/MM/yyyy', { locale: ptBR })
                             ) : (
                               <span>dd/mm/aaaa</span>
                             )}
@@ -431,12 +444,13 @@ const PastorFormModal = ({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={field.value || undefined}
                           onSelect={field.onChange}
                           disabled={(date) =>
                             date > new Date() || date < new Date('1900-01-01')
                           }
                           initialFocus
+                          locale={ptBR}
                         />
                       </PopoverContent>
                     </Popover>
@@ -504,7 +518,7 @@ const PastorFormModal = ({
   );
 };
 
-export default function PastoresPage() {
+export default function PastoresPage(): JSX.Element {
   const [pastores, setPastores] = React.useState<Pastor[]>([]);
   const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -552,7 +566,7 @@ export default function PastoresPage() {
     }
   };
 
-  const filteredPastors = pastores.filter(pastor => 
+  const filteredPastores = pastores.filter(pastor => 
     `${pastor.firstName} ${pastor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -592,7 +606,7 @@ export default function PastoresPage() {
                     </TableRow>
                 ))
             ) : paginatedPastors.length > 0 ? (
-                paginatedPastors.map((pastor) => (
+              paginatedPastors.map((pastor) => (
                 <TableRow key={pastor.id}>
                   <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.email}</TableCell>
@@ -647,53 +661,53 @@ export default function PastoresPage() {
 
   const CardView = () => (
     <>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
             ))
         ) : paginatedPastors.length > 0 ? (
             paginatedPastors.map((pastor, index) => (
-                    <Card key={pastor.id}>
-                        <CardContent className="pt-6">
-                        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                            <Image
-                            src="https://placehold.co/96x96.png"
-                            alt={`Foto de ${pastor.firstName}`}
-                            width={96}
-                            height={96}
-                            className="rounded-lg object-cover w-24 h-24"
-                            data-ai-hint="male person"
-                            />
-                            <div className="flex-1 space-y-2 min-w-[200px]">
-                            <h3 className="text-lg font-bold">
-                                #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
-                            </h3>
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                                <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
-                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
-                            </div>
-                            </div>
+                <Card key={pastor.id}>
+                    <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                        <Image
+                        src="https://placehold.co/96x96.png"
+                        alt={`Foto de ${pastor.firstName}`}
+                        width={96}
+                        height={96}
+                        className="rounded-lg object-cover w-24 h-24"
+                        data-ai-hint="male person"
+                        />
+                        <div className="flex-1 space-y-2 min-w-[200px]">
+                        <h3 className="text-lg font-bold">
+                            #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
+                        </h3>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                            <p className='flex items-center gap-2'><UserIcon size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
+                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
+                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
+                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
+                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
                         </div>
-                        <div className="flex justify-end mt-4">
-                            <Button variant="outline" size="sm" asChild>
-                            <Link href={`/admin/pastores/${pastor.id}`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Editar
-                            </Link>
-                            </Button>
                         </div>
-                        </CardContent>
-                    </Card>
+                    </div>
+                    <div className="flex justify-end mt-4">
+                        <Button variant="outline" size="sm" asChild>
+                        <Link href={`/admin/pastores/${pastor.id}`}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
+                        </Link>
+                        </Button>
+                    </div>
+                    </CardContent>
+                </Card>
             ))
         ) : (
             <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
         )}
-        </div>
-        <PaginationControls />
+      </div>
+      <PaginationControls />
     </>
   );
   

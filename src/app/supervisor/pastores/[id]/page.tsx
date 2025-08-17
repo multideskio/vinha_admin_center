@@ -42,6 +42,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -62,11 +69,18 @@ type PastorProfile = z.infer<typeof pastorUpdateSchema> & {
     cpf?: string;
     status: string;
     avatarUrl?: string;
+    newPassword?: string;
 };
 
+type Supervisor = {
+    id: string;
+    firstName: string;
+    lastName: string;
+}
 
 export default function PastorProfilePage() {
   const [pastor, setPastor] = React.useState<PastorProfile | null>(null);
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
@@ -76,8 +90,8 @@ export default function PastorProfilePage() {
   const { id } = params;
   const { toast } = useToast();
 
-  const form = useForm<PastorProfile>({
-    resolver: zodResolver(pastorUpdateSchema),
+  const form = useForm<z.infer<typeof pastorProfileSchema>>({
+    resolver: zodResolver(pastorProfileSchema),
     defaultValues: {
     },
   });
@@ -86,17 +100,25 @@ export default function PastorProfilePage() {
     if (!id) return;
     setIsLoading(true);
     try {
-        const pastorRes = await fetch(`/api/v1/supervisor/pastores/${id}`);
+        const [pastorRes, supervisorsRes] = await Promise.all([
+            fetch(`/api/v1/supervisor/pastores/${id}`),
+            fetch('/api/v1/supervisor/supervisores?minimal=true'),
+        ]);
+
         if (!pastorRes.ok) throw new Error('Falha ao carregar dados do pastor.');
-        
+        if (!supervisorsRes.ok) throw new Error('Falha ao carregar supervisores.');
+
         const pastorData = await pastorRes.json();
+        const supervisorsData = await supervisorsRes.json();
         
         const sanitizedData = {
             ...pastorData,
             birthDate: pastorData.birthDate ? new Date(pastorData.birthDate) : null,
+            newPassword: '',
         };
 
         setPastor(sanitizedData);
+        setSupervisors(supervisorsData.supervisors);
         form.reset(sanitizedData);
     } catch (error: any) {
         toast({ title: 'Erro', description: error.message, variant: 'destructive' });
@@ -144,6 +166,10 @@ export default function PastorProfilePage() {
         const reader = new FileReader();
         reader.onloadend = () => {
             setPreviewImage(reader.result as string);
+            toast({
+                title: 'Preview da Imagem',
+                description: 'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+            });
         };
         reader.readAsDataURL(file);
     }
@@ -205,6 +231,28 @@ export default function PastorProfilePage() {
               <CardContent className="pt-6">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="supervisorId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Selecione um supervisor</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione um supervisor" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {supervisors.map(supervisor => (
+                                    <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.firstName} {supervisor.lastName}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <FormField
                         control={form.control}
@@ -275,7 +323,7 @@ export default function PastorProfilePage() {
                               <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                   mode="single"
-                                  selected={field.value}
+                                  selected={field.value ?? undefined}
                                   onSelect={field.onChange}
                                   disabled={(date) =>
                                     date > new Date() || date < new Date("1900-01-01")
@@ -351,12 +399,6 @@ export default function PastorProfilePage() {
                     </div>
 
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField control={form.control} name="city" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Cidade</FormLabel>
-                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
                         <FormField control={form.control} name="neighborhood" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Bairro</FormLabel>
@@ -369,16 +411,17 @@ export default function PastorProfilePage() {
                                 <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                    </div>
-                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField control={form.control} name="number" render={({ field }) => (
+                         <FormField control={form.control} name="number" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Número</FormLabel>
                                 <FormControl><Input placeholder='Número da casa...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
+                    </div>
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                       
                         <FormField control={form.control} name="complement" render={({ field }) => (
-                            <FormItem>
+                            <FormItem className='sm:col-span-2'>
                                 <FormLabel>Complemento</FormLabel>
                                 <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>

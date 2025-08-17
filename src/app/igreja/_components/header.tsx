@@ -1,3 +1,9 @@
+/**
+* @fileoverview Componente de cabeçalho para o painel da igreja.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -66,7 +72,7 @@ type HeaderProps = {
     userFallback: string;
 }
 
-export function IgrejaHeader({ userName, userEmail, userFallback }: HeaderProps) {
+export function IgrejaHeader({ userName, userEmail, userFallback }: HeaderProps): JSX.Element {
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
             <Sheet>

@@ -1,3 +1,9 @@
+/**
+* @fileoverview Página de detalhes da transação (visão da igreja).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 'use client';
 
@@ -42,12 +48,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
+import { type TransactionStatus } from '@/lib/types';
 
 type TransactionDetail = {
     id: string;
     date: string;
     amount: number;
-    status: 'approved' | 'pending' | 'refused' | 'refunded';
+    status: TransactionStatus;
     contributor: {
         name: string;
         email: string;
@@ -63,35 +70,102 @@ type TransactionDetail = {
     refundRequestReason?: string | null;
 };
 
-export default function TransacaoDetalhePage() {
+const RefundModal = ({ amount, transactionId, onRefundSuccess }: { amount: number, transactionId: string, onRefundSuccess: () => void }) => {
+    const [refundAmount, setRefundAmount] = React.useState(amount.toFixed(2));
+    const [reason, setReason] = React.useState('');
+    const { toast } = useToast();
+
+    const handleRefund = async () => {
+        toast({ title: 'Processando', description: 'Enviando solicitação de reembolso...'});
+        // Simulação de chamada de API
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log(`Reembolsando: ${refundAmount} para a transação ${transactionId}. Motivo: ${reason}`);
+        toast({ title: 'Sucesso!', description: `Reembolso de R$ ${refundAmount} solicitado com sucesso.`, variant: 'success' });
+        onRefundSuccess();
+    }
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={transaction.status !== 'approved'}>
+                    Reembolso
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Reembolsar Transação</DialogTitle>
+                    <DialogDescription>
+                        Você pode reembolsar o valor total ou parcial da transação.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="amount" className="text-right">
+                            Valor (R$)
+                        </Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            value={refundAmount}
+                            onChange={(e) => setRefundAmount(e.target.value)}
+                            className="col-span-3"
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="reason" className="text-right pt-2">
+                            Motivo
+                        </Label>
+                        <Textarea
+                            id="reason"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            className="col-span-3"
+                            placeholder="Digite o motivo do reembolso..."
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button onClick={handleRefund}>Confirmar Reembolso</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+
+export default function TransacaoDetalhePage(): JSX.Element {
     const [transaction, setTransaction] = React.useState<TransactionDetail | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const params = useParams();
     const { id } = params;
     const { toast } = useToast();
     
-    React.useEffect(() => {
-        const fetchTransaction = async () => {
-            if (!id) return;
-            setIsLoading(true);
-            try {
-                const response = await fetch(`/api/v1/igreja/transacoes/${id}`);
-                if (!response.ok) throw new Error('Falha ao carregar detalhes da transação');
-                const data = await response.json();
-                setTransaction(data.transaction);
-            } catch (error: any) {
-                toast({ title: "Erro", description: error.message, variant: 'destructive'});
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchTransaction();
+    const fetchTransaction = React.useCallback(async () => {
+        if (!id) return;
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/v1/igreja/transacoes/${id}`);
+            if (!response.ok) throw new Error('Falha ao carregar detalhes da transação');
+            const data = await response.json();
+            setTransaction(data.transaction);
+        } catch (error: any) {
+            toast({ title: "Erro", description: error.message, variant: 'destructive'});
+        } finally {
+            setIsLoading(false);
+        }
     }, [id, toast]);
+
+    React.useEffect(() => {
+        fetchTransaction();
+    }, [fetchTransaction]);
 
     if (isLoading) {
         return (
              <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-                <div className="mx-auto grid max-w-3xl flex-1 auto-rows-max gap-4">
+                <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
                     <Skeleton className="h-8 w-1/2" />
                      <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-2 lg:gap-8">
                         <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
@@ -111,6 +185,13 @@ export default function TransacaoDetalhePage() {
         return <p>Transação não encontrada.</p>
     }
 
+    const statusMap: { [key in TransactionStatus]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+        approved: { text: "Aprovada", variant: "success" },
+        pending: { text: "Pendente", variant: "warning" },
+        refused: { text: "Recusada", variant: "destructive" },
+        refunded: { text: "Reembolsada", variant: "outline" },
+    };
+
     return (
         <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             <div className="mx-auto grid max-w-3xl flex-1 auto-rows-max gap-4">
@@ -125,7 +206,7 @@ export default function TransacaoDetalhePage() {
                   Detalhes da Transação
                 </h1>
                 <Badge variant="outline" className="ml-auto sm:ml-0">
-                  {transaction.status}
+                  {statusMap[transaction.status].text}
                 </Badge>
                 <div className="hidden items-center gap-2 md:ml-auto md:flex">
                   <Button variant="outline" size="sm">
@@ -160,8 +241,8 @@ export default function TransacaoDetalhePage() {
                         <div className='flex items-center justify-between'>
                             <div className="font-medium text-muted-foreground">Status</div>
                             <div>
-                                <Badge variant={transaction.status === 'approved' ? 'success' : transaction.status === 'pending' ? 'warning' : 'destructive'}>
-                                    {transaction.status}
+                                <Badge variant={statusMap[transaction.status].variant}>
+                                    {statusMap[transaction.status].text}
                                 </Badge>
                             </div>
                         </div>
@@ -205,11 +286,11 @@ export default function TransacaoDetalhePage() {
                         </CardHeader>
                         <CardContent className="grid gap-4">
                         <div className="flex items-start gap-4">
-                            <div className="grid gap-1">
-                                <p className="font-semibold">{transaction.church.name}</p>
-                                <p className="text-sm text-muted-foreground">{transaction.church.address}</p>
-                            </div>
-                            </div>
+                          <div className="grid gap-1">
+                              <p className="font-semibold">{transaction.church.name}</p>
+                              <p className="text-sm text-muted-foreground">{transaction.church.address}</p>
+                          </div>
+                        </div>
                         </CardContent>
                     </Card>
                   }

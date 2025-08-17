@@ -1,7 +1,7 @@
 /**
 * @fileoverview Página de edição de perfil do pastor (visão do admin).
-* @version 1.2
-* @date 2024-08-07
+* @version 1.3
+* @date 2024-08-08
 * @author PH
 */
 
@@ -67,15 +67,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { pastorProfileSchema } from '@/lib/types';
+import { pastorProfileSchema, type TransactionStatus } from '@/lib/types';
 
 
-type PastorProfile = z.infer<typeof pastorProfileSchema> & {
-    id: string;
+const pastorUpdateSchema = pastorProfileSchema.extend({
+    newPassword: z.string().optional().or(z.literal('')),
+}).partial();
+
+type PastorProfile = z.infer<typeof pastorUpdateSchema> & {
+    id?: string;
     cpf?: string;
-    status: string;
+    status?: string;
     avatarUrl?: string;
-    newPassword?: string;
 };
 
 type Supervisor = {
@@ -87,7 +90,7 @@ type Supervisor = {
 type Transaction = {
     id: string;
     amount: number;
-    status: 'approved' | 'pending' | 'refused' | 'refunded';
+    status: TransactionStatus;
     date: string;
 };
 
@@ -113,7 +116,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
       fetchTransactions();
     }, [userId, toast]);
   
-    const statusMap: { [key: string]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+    const statusMap: { [key in TransactionStatus]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
         approved: { text: "Aprovada", variant: "success" },
         pending: { text: "Pendente", variant: "warning" },
         refused: { text: "Recusada", variant: "destructive" },
@@ -188,7 +191,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
     );
   };
 
-export default function PastorProfilePage() {
+export default function PastorProfilePage(): JSX.Element {
   const [pastor, setPastor] = React.useState<PastorProfile | null>(null);
   const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -251,6 +254,7 @@ export default function PastorProfilePage() {
         });
         if (!response.ok) throw new Error('Falha ao atualizar o pastor.');
         toast({ title: 'Sucesso', description: 'Pastor atualizado com sucesso.', variant: 'success' });
+        fetchData();
     } catch (error: any) {
         toast({ title: 'Erro', description: error.message, variant: 'destructive'});
     } finally {

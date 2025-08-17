@@ -8,7 +8,7 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
-import { churchProfileSchema } from '@/lib/types';
+import { churchProfileSchema, type UserRole } from '@/lib/types';
 
 
 const churchUpdateSchema = churchProfileSchema.extend({
@@ -27,7 +27,7 @@ async function verifyChurch(churchId: string, managerId: string) {
   
 export async function GET(request: Request, { params }: { params: { id: string } }) {
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -48,7 +48,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), eq(users.role, 'church_account'), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Igreja não encontrada." }, { status: 404 });
         }
 
@@ -67,7 +67,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
     
@@ -109,7 +109,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.city) profileUpdateData.city = validatedData.city;
         if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood;
         if (validatedData.address) profileUpdateData.address = validatedData.address;
-        if (validatedData.foundationDate) profileUpdateData.foundationDate = validatedData.foundationDate;
+        if (validatedData.foundationDate) profileUpdateData.foundationDate = validatedData.foundationDate.toISOString();
         if (validatedData.treasurerFirstName) profileUpdateData.treasurerFirstName = validatedData.treasurerFirstName;
         if (validatedData.treasurerLastName) profileUpdateData.treasurerLastName = validatedData.treasurerLastName;
         if (validatedData.treasurerCpf) profileUpdateData.treasurerCpf = validatedData.treasurerCpf;
@@ -132,7 +132,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
      const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 

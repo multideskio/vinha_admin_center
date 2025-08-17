@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar os dados da empresa.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -18,7 +24,7 @@ const companyUpdateSchema = z.object({
   maintenanceMode: z.boolean().optional(),
 });
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -37,7 +43,7 @@ export async function GET(request: Request) {
     }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 

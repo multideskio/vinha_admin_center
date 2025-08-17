@@ -16,7 +16,7 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });

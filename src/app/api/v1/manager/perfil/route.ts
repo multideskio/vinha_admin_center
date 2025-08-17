@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar o perfil do gerente logado.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -8,6 +14,7 @@ import * as bcrypt from 'bcrypt';
 import { validateRequest } from '@/lib/auth';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { managerProfileSchema } from '@/lib/types';
+import type { UserRole } from '@/lib/types';
 
 
 const managerUpdateSchema = managerProfileSchema.extend({
@@ -15,12 +22,12 @@ const managerUpdateSchema = managerProfileSchema.extend({
 }).partial();
   
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
         return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
@@ -34,7 +41,7 @@ export async function GET(request: Request) {
         .where(eq(users.id, sessionUser.id))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Perfil do gerente não encontrado." }, { status: 404 });
         }
 
@@ -55,12 +62,12 @@ export async function GET(request: Request) {
 }
 
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
     
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'manager') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
         return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
   

@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para buscar dados para o dashboard da igreja.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -17,7 +23,7 @@ const calculateChange = (current: number, previous: number): string => {
     return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`;
 };
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -35,12 +41,12 @@ export async function GET(request: Request) {
         const [profileData] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, churchId));
 
         const totalContributedResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.originChurchId, churchId), eq(transactions.status, 'approved')));
-        const totalContributed = parseFloat(totalContributedResult[0].value || '0');
+        const totalContributed = parseFloat(totalContributedResult[0]?.value || '0');
 
         const contributionCurrentMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.originChurchId, churchId), eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfCurrentMonth)));
         const contributionPreviousMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.originChurchId, churchId), eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth)));
-        const contributionCurrentMonth = parseFloat(contributionCurrentMonthResult[0].value || '0');
-        const contributionPreviousMonth = parseFloat(contributionPreviousMonthResult[0].value || '0');
+        const contributionCurrentMonth = parseFloat(contributionCurrentMonthResult[0]?.value || '0');
+        const contributionPreviousMonth = parseFloat(contributionPreviousMonthResult[0]?.value || '0');
 
         const totalTransactionsResult = await db.select({ value: count() }).from(transactions).where(eq(transactions.originChurchId, churchId));
         const newTransactionsThisMonthResult = await db.select({ value: count() }).from(transactions).where(and(eq(transactions.originChurchId, churchId), gte(transactions.createdAt, startOfCurrentMonth)));

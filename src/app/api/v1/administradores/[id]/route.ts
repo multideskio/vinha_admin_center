@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar um administrador específico.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -6,6 +12,8 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
+import { validateRequest } from '@/lib/auth';
+import type { UserRole } from '@/lib/types';
 
 const adminUpdateSchema = z.object({
     firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
@@ -24,9 +32,11 @@ const adminUpdateSchema = z.object({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 
@@ -40,10 +50,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), eq(users.role, 'admin'), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Administrador não encontrado." }, { status: 404 });
         }
-
+        
         const { user, profile } = result[0];
 
         return NextResponse.json({ 
@@ -71,9 +81,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || (user.role as UserRole) !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
   
@@ -124,9 +136,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || (user.role as UserRole) !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 

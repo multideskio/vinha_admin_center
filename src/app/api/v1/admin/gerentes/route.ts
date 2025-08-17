@@ -1,3 +1,9 @@
+/**
+* @fileoverview API para gerenciamento de gerentes (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -15,7 +21,7 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -47,7 +53,13 @@ export async function GET(request: Request) {
       .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt));
       
-    return NextResponse.json({ managers: result.map(r => ({...r.user, ...r.profile})) });
+    const managers = result.map(r => ({
+        ...r.user,
+        ...r.profile,
+        id: r.user.id,
+    }))
+
+    return NextResponse.json({ managers: managers });
 
   } catch (error: any) {
     console.error("Erro ao buscar gerentes:", error);
@@ -55,7 +67,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -77,6 +89,11 @@ export async function POST(request: Request) {
             phone: validatedData.phone,
             titheDay: validatedData.titheDay,
         }).returning();
+
+        if (!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário.");
+        }
 
         const [newProfile] = await tx.insert(managerProfiles).values({
             userId: newUser.id,

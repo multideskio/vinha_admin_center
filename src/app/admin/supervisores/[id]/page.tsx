@@ -1,7 +1,7 @@
 /**
 * @fileoverview Página de edição de perfil do supervisor (visão do admin).
-* @version 1.2
-* @date 2024-08-07
+* @version 1.3
+* @date 2024-08-08
 * @author PH
 */
 
@@ -9,7 +9,7 @@
 
 import * as React from 'react';
 import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
@@ -17,10 +17,8 @@ import {
   Instagram,
   Globe,
   AlertTriangle,
-  Info,
   Lock,
   Loader2,
-  Bell,
   Mail,
   Smartphone,
   MoreHorizontal,
@@ -64,7 +62,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { supervisorProfileSchema } from '@/lib/types';
+import { supervisorProfileSchema, type TransactionStatus } from '@/lib/types';
 
 
 const supervisorUpdateSchema = supervisorProfileSchema.extend({
@@ -92,7 +90,7 @@ type Region = {
 type Transaction = {
     id: string;
     amount: number;
-    status: 'approved' | 'pending' | 'refused' | 'refunded';
+    status: TransactionStatus;
     date: string;
 };
 
@@ -118,7 +116,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
       fetchTransactions();
     }, [userId, toast]);
   
-    const statusMap: { [key: string]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+    const statusMap: { [key in TransactionStatus]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
         approved: { text: "Aprovada", variant: "success" },
         pending: { text: "Pendente", variant: "warning" },
         refused: { text: "Recusada", variant: "destructive" },
@@ -193,7 +191,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
     );
   };
 
-export default function SupervisorProfilePage() {
+export default function SupervisorProfilePage(): JSX.Element {
   const [supervisor, setSupervisor] = React.useState<SupervisorProfile | null>(null);
   const [managers, setManagers] = React.useState<Manager[]>([]);
   const [regions, setRegions] = React.useState<Region[]>([]);

@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para buscar transações do pastor logado.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -6,13 +12,14 @@ import { eq, desc, and, isNull } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import type { UserRole } from '@/lib/types';
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'pastor') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'pastor') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -35,6 +42,7 @@ export async function GET(request: Request) {
         
         const formattedTransactions = results.map(t => ({
             ...t,
+            id: t.id ?? '',
             amount: Number(t.amount),
             date: format(new Date(t.date), 'dd/MM/yyyy')
         }));

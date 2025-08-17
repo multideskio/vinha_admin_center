@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar igrejas (visão do supervisor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -7,6 +13,7 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { type UserRole } from '@/lib/types';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -33,12 +40,12 @@ const churchSchema = z.object({
   treasurerCpf: z.string().nullable(),
 });
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'supervisor') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'supervisor') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -64,18 +71,18 @@ export async function GET(request: Request) {
           
         return NextResponse.json({ churches: result });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao buscar igrejas:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'supervisor') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'supervisor') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
     
@@ -99,13 +106,18 @@ export async function POST(request: Request) {
             titheDay: validatedData.titheDay,
         }).returning();
 
+        if (!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário para a igreja.");
+        }
+
         const [newProfile] = await tx.insert(churchProfiles).values({
             userId: newUser.id,
             supervisorId: sessionUser.id,
             cnpj: validatedData.cnpj,
             razaoSocial: validatedData.razaoSocial,
             nomeFantasia: validatedData.nomeFantasia,
-            foundationDate: validatedData.foundationDate,
+            foundationDate: validatedData.foundationDate ? validatedData.foundationDate.toISOString() : null,
             cep: validatedData.cep,
             state: validatedData.state,
             city: validatedData.city,

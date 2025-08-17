@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para gerenciar igrejas.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -5,6 +11,7 @@ import { users, churchProfiles, supervisorProfiles } from '@/db/schema';
 import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { validateRequest } from '@/lib/auth';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -33,14 +40,19 @@ const churchSchema = z.object({
 });
 
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
   try {
     const url = new URL(request.url);
     const minimal = url.searchParams.get('minimal') === 'true';
 
     if (minimal) {
         const result = await db.select({
-            id: churchProfiles.id,
+            id: churchProfiles.userId,
             nomeFantasia: churchProfiles.nomeFantasia,
         })
         .from(churchProfiles)
@@ -74,7 +86,12 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
+
     try {
       const body = await request.json();
       const validatedData = churchSchema.parse({
@@ -95,13 +112,18 @@ export async function POST(request: Request) {
             titheDay: validatedData.titheDay,
         }).returning();
 
+        if(!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário para a igreja.");
+        }
+
         const [newProfile] = await tx.insert(churchProfiles).values({
             userId: newUser.id,
             supervisorId: validatedData.supervisorId,
             cnpj: validatedData.cnpj,
             razaoSocial: validatedData.razaoSocial,
             nomeFantasia: validatedData.nomeFantasia,
-            foundationDate: validatedData.foundationDate,
+            foundationDate: validatedData.foundationDate ? validatedData.foundationDate.toISOString() : null,
             cep: validatedData.cep,
             state: validatedData.state,
             city: validatedData.city,

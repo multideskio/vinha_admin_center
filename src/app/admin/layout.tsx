@@ -1,3 +1,9 @@
+/**
+* @fileoverview Layout principal para o painel de administrador.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import type { Metadata } from 'next';
 import { AppSidebar } from './_components/sidebar';
@@ -18,7 +24,7 @@ export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
+}): Promise<JSX.Element> {
   const { user } = await validateRequest();
 
   if (!user) {
@@ -27,13 +33,12 @@ export default async function AdminLayout({
 
   let userName = 'Admin';
   let userFallback = 'AD';
-  let userEmail = 'admin@vinha.com';
+  let userEmail = user.email;
 
   if (user) {
     const [profile] = await db.select().from(adminProfiles).where(eq(adminProfiles.userId, user.id));
     userName = profile?.firstName || 'Admin';
     userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
-    userEmail = user.email;
   }
   
   return (

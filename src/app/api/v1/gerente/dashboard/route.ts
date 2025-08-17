@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para buscar dados para o dashboard do gerente (legado).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -7,7 +13,7 @@ import { format } from 'date-fns';
 
 const GERENTE_INIT_ID = process.env.GERENTE_INIT;
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
     if (!GERENTE_INIT_ID) {
         return NextResponse.json({ error: "ID do Gerente não configurado no ambiente." }, { status: 500 });
     }
@@ -44,7 +50,7 @@ export async function GET() {
 
         const totalTransactionsResult = await db.select({ value: count() }).from(transactions).where(inArray(transactions.contributorId, networkUserIds));
         const totalRevenueResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), inArray(transactions.contributorId, networkUserIds)));
-        const totalRevenue = parseFloat(totalRevenueResult[0].value || '0');
+        const totalRevenue = parseFloat(totalRevenueResult[0]?.value || '0');
 
         const revenueByMethod = networkUserIds.length > 1 ? await db.select({
             method: transactions.paymentMethod,

@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview Rota da API para testar envio de e-mail SMTP.
+* @version 1.0
+* @date 2024-08-08
+* @author PH
+*/
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import * as nodemailer from 'nodemailer';
@@ -14,7 +19,7 @@ const testEmailSchema = z.object({
     }),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     try {
         const body = await request.json();
         const validatedData = testEmailSchema.parse(body);

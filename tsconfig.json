@@ -10,7 +10,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "target": "es2022",
-    "lib": ["es2022", "dom"],
+    "lib": [
+      "es2022",
+      "dom"
+    ],
     "jsx": "preserve",
     "allowJs": false,
     "esModuleInterop": true,
@@ -32,8 +35,7 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src",
     ".next/types/**/*.ts"
   ],
   "exclude": [

@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para buscar dados para o dashboard do gerente.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -17,7 +23,7 @@ const calculateChange = (current: number, previous: number): string => {
     return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`;
 };
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 

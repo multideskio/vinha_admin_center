@@ -1,14 +1,22 @@
+/**
+* @fileoverview Rota da API para buscar detalhes de uma transação específica (visão do pastor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { transactions as transactionsTable, gatewayConfigurations, users, churchProfiles } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { format, parseISO } from 'date-fns';
 import { validateRequest } from '@/lib/auth';
+import { ApiError } from '@/lib/errors';
+import type { UserRole } from '@/lib/types';
 
 
-async function getCieloCredentials() {
+async function getCieloCredentials(): Promise<{ merchantId: string | null; merchantKey: string | null; apiUrl: string; }> {
     const [config] = await db.select()
         .from(gatewayConfigurations)
         .where(eq(gatewayConfigurations.gatewayName, 'Cielo'))
@@ -24,7 +32,7 @@ async function getCieloCredentials() {
     };
 }
 
-async function verifyTransactionOwnership(transactionId: string, userId: string) {
+async function verifyTransactionOwnership(transactionId: string, userId: string): Promise<boolean> {
     const [transaction] = await db.select({ contributorId: transactionsTable.contributorId })
         .from(transactionsTable)
         .where(eq(transactionsTable.id, transactionId))
@@ -38,12 +46,12 @@ async function verifyTransactionOwnership(transactionId: string, userId: string)
 }
 
 
-export async function GET(request: Request, { params }: { params: { id: string }}) {
+export async function GET(request: Request, { params }: { params: { id: string }}): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
     const { user: sessionUser } = await validateRequest();
-    if (!sessionUser || sessionUser.role !== 'pastor') {
+    if (!sessionUser || (sessionUser.role as UserRole) !== 'pastor') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -56,12 +64,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
     try {
         const isAuthorized = await verifyTransactionOwnership(transactionId, sessionUser.id);
         if (!isAuthorized) {
-            return NextResponse.json({ error: "Transação não encontrada ou você não tem permissão para visualizá-la." }, { status: 404 });
+            throw new ApiError(404, "Transação não encontrada ou você não tem permissão para visualizá-la.");
         }
 
         const [transaction] = await db.select().from(transactionsTable).where(eq(transactionsTable.id, transactionId));
         if(!transaction || !transaction.gatewayTransactionId) {
-            return NextResponse.json({ error: "Transação não encontrada no banco de dados local ou não possui ID de gateway." }, { status: 404 });
+             throw new ApiError(404, "Transação não encontrada no banco de dados local ou não possui ID de gateway.");
         }
         
         const credentials = await getCieloCredentials();
@@ -85,8 +93,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
         return NextResponse.json({ success: true, transaction: cieloData });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        if (error instanceof ApiError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         console.error("Erro ao consultar transação:", error);
-        return NextResponse.json({ error: error.message || "Erro interno do servidor." }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+        return NextResponse.json({ error: "Erro interno do servidor.", details: errorMessage }, { status: 500 });
     }
 }

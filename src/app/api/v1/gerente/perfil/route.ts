@@ -1,3 +1,10 @@
+/**
+* @fileoverview Rota da API para gerenciar o perfil do gerente logado (legado).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, managerProfiles } from '@/db/schema';
@@ -26,7 +33,7 @@ const managerUpdateSchema = z.object({
 }).partial();
   
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
     if (!GERENTE_INIT_ID) {
         return NextResponse.json({ error: "Usuário gerente não configurado." }, { status: 500 });
     }
@@ -76,7 +83,7 @@ export async function GET() {
 }
 
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request): Promise<NextResponse> {
     if (!GERENTE_INIT_ID) {
         return NextResponse.json({ error: "Usuário gerente não configurado." }, { status: 500 });
     }

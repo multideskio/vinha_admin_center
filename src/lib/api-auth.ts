@@ -1,3 +1,9 @@
+/**
+* @fileoverview Middleware para autenticação de chaves de API.
+* @version 1.3
+* @date 2024-08-08
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -7,7 +13,7 @@ import { eq, and } from 'drizzle-orm';
 
 export async function authenticateApiKey(request: Request): Promise<NextResponse | null> {
     const headersList = headers();
-    const authorizationHeader = headersList.get('Authorization');
+    const authorizationHeader = (await headersList).get('Authorization');
 
     if (!authorizationHeader) {
         return NextResponse.json({ error: 'Authorization header is missing' }, { status: 401 });

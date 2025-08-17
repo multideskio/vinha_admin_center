@@ -1,11 +1,17 @@
-
+/**
+ * @fileoverview Configuração do Lucia Auth para gerenciamento de sessão.
+ * @version 1.2
+ * @date 2024-08-08
+ * @author PH
+ */
 import { DrizzlePostgreSQLAdapter } from "@lucia-auth/adapter-drizzle";
 import { Lucia, TimeSpan } from "lucia";
 import { db } from "@/db/drizzle";
-import { sessions, users, userRoleEnum } from "@/db/schema";
+import { sessions, users } from "@/db/schema";
 import { cookies } from "next/headers";
 import type { Session, User } from "lucia";
 import { cache } from "react";
+import type { UserRole } from "./types";
 
 
 const adapter = new DrizzlePostgreSQLAdapter(db, sessions, users);
@@ -14,7 +20,8 @@ export const lucia = new Lucia(adapter, {
 	sessionCookie: {
 		expires: false,
 		attributes: {
-			secure: process.env.NODE_ENV === "production"
+			secure: process.env.NODE_ENV === "production",
+            path: '/',
 		}
 	},
     sessionExpiresIn: new TimeSpan(30, "d"), // 30 days
@@ -27,7 +34,7 @@ export const lucia = new Lucia(adapter, {
 });
 
 export const validateRequest = cache(
-	async (): Promise<{ user: User; session: Session } | { user: null; session: null }> => {
+	async (): Promise<{ user: (User & { role: UserRole }) | null; session: Session | null }> => {
 		const sessionId = (await cookies()).get(lucia.sessionCookieName)?.value ?? null;
 		if (!sessionId) {
 			return {
@@ -48,7 +55,7 @@ export const validateRequest = cache(
 				(await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 			}
 		} catch {}
-		return result;
+		return result as { user: (User & { role: UserRole }) | null; session: Session | null };
 	}
 );
 
@@ -59,7 +66,7 @@ declare module "lucia" {
 		Lucia: typeof lucia;
         DatabaseUserAttributes: {
             email: string;
-            role: typeof userRoleEnum.enumValues[number];
+            role: UserRole;
         }
 	}
 }

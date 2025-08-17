@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview API para gerenciamento de supervisores (visão do gerente).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -6,8 +11,8 @@ import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema
 import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
-import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { supervisorProfileSchema } from '@/lib/types';
 
 const COMPANY_ID = process.env.COMPANY_INIT;
 if (!COMPANY_ID) {
@@ -16,32 +21,33 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
-const supervisorSchema = z.object({
-  regionId: z.string({ required_error: 'Selecione uma região.' }),
-  firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
-  lastName: z.string().min(1, { message: 'O sobrenome é obrigatório.' }),
-  cpf: z.string().min(14, { message: 'O CPF deve ter 11 dígitos.' }),
-  email: z.string().email({ message: 'E-mail inválido.' }),
-  cep: z.string().nullable(),
-  state: z.string().nullable(),
-  city: z.string().nullable(),
-  neighborhood: z.string().nullable(),
-  address: z.string().nullable(),
-  titheDay: z.coerce.number().min(1).max(31).nullable(),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-});
-
-
-export async function GET(request: Request) {
-  const authResponse = await authenticateApiKey(request);
-  if (authResponse) return authResponse;
-
-  const { user } = await validateRequest();
-  if (!user || user.role !== 'manager') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
-  }
+export async function GET(request: Request): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'manager') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
   try {
+    const url = new URL(request.url);
+    const minimal = url.searchParams.get('minimal') === 'true';
+
+    if (minimal) {
+        const result = await db.select({
+            id: users.id,
+            firstName: supervisorProfiles.firstName,
+            lastName: supervisorProfiles.lastName,
+        })
+        .from(supervisorProfiles)
+        .innerJoin(users, eq(users.id, supervisorProfiles.userId))
+        .where(and(
+            eq(users.role, 'supervisor'), 
+            eq(supervisorProfiles.managerId, user.id),
+            isNull(users.deletedAt)
+          ))
+        .orderBy(desc(users.createdAt));
+        return NextResponse.json({ supervisors: result });
+    }
+
     const result = await db.select({
         id: users.id,
         firstName: supervisorProfiles.firstName,
@@ -50,12 +56,10 @@ export async function GET(request: Request) {
         phone: users.phone,
         status: users.status,
         cpf: supervisorProfiles.cpf,
-        managerName: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
         regionName: regions.name,
       })
       .from(users)
       .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-      .leftJoin(managerProfiles, eq(supervisorProfiles.managerId, managerProfiles.userId))
       .leftJoin(regions, eq(supervisorProfiles.regionId, regions.id))
       .where(and(
         eq(users.role, 'supervisor'), 
@@ -72,10 +76,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
-
+export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
     
     try {
       const body = await request.json();
-      const validatedData = supervisorSchema.parse(body);
+      const validatedData = supervisorProfileSchema.omit({id: true, userId: true, managerId: true}).parse(body);
       
       const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 

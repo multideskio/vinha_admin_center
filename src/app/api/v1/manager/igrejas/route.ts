@@ -113,13 +113,18 @@ export async function POST(request: Request) {
             titheDay: validatedData.titheDay,
         }).returning();
 
+        if(!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário para a igreja.");
+        }
+
         const [newProfile] = await tx.insert(churchProfiles).values({
             userId: newUser.id,
             supervisorId: validatedData.supervisorId,
             cnpj: validatedData.cnpj,
             razaoSocial: validatedData.razaoSocial,
             nomeFantasia: validatedData.nomeFantasia,
-            foundationDate: validatedData.foundationDate,
+            foundationDate: validatedData.foundationDate ? validatedData.foundationDate.toISOString() : null,
             cep: validatedData.cep,
             state: validatedData.state,
             city: validatedData.city,

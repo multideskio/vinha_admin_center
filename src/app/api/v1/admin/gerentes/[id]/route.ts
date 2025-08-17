@@ -1,8 +1,14 @@
+/**
+* @fileoverview Rota da API para gerenciar um gerente específico (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, managerProfiles } from '@/db/schema';
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { validateRequest } from '@/lib/auth';
@@ -13,7 +19,7 @@ const managerUpdateSchema = managerProfileSchema.extend({
 }).partial();
   
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -31,7 +37,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), eq(users.role, 'manager'), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Gerente não encontrado." }, { status: 404 });
         }
         
@@ -46,7 +52,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -58,7 +64,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       const body = await request.json();
       const validatedData = managerUpdateSchema.parse(body);
   
-      const result = await db.transaction(async (tx) => {
+      await db.transaction(async (tx) => {
         
         const userUpdateData: Partial<typeof users.$inferInsert> = {};
         if (validatedData.email) userUpdateData.email = validatedData.email;
@@ -87,11 +93,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (Object.keys(profileUpdateData).length > 0) {
             await tx.update(managerProfiles).set(profileUpdateData).where(eq(managerProfiles.userId, id));
         }
-        
-        return { success: true };
       });
   
-      return NextResponse.json({ success: true, manager: result });
+      return NextResponse.json({ success: true });
   
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -102,7 +106,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
   }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });

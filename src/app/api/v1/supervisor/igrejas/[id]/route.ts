@@ -1,3 +1,9 @@
+/**
+* @fileoverview Página de edição de perfil da igreja (visão do supervisor).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -7,32 +13,20 @@ import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
+import { churchProfileSchema } from '@/lib/types';
 
-const churchUpdateSchema = z.object({
-    razaoSocial: z.string().min(1).optional(),
-    nomeFantasia: z.string().min(1).optional(),
-    email: z.string().email().optional(),
-    phone: z.string().nullable().optional(),
-    cep: z.string().nullable().optional(),
-    state: z.string().nullable().optional(),
-    city: z.string().nullable().optional(),
-    neighborhood: z.string().nullable().optional(),
-    address: z.string().nullable().optional(),
-    foundationDate: z.date().nullable().optional(),
-    titheDay: z.number().nullable().optional(),
-    treasurerFirstName: z.string().nullable().optional(),
-    treasurerLastName: z.string().nullable().optional(),
-    treasurerCpf: z.string().nullable().optional(),
+
+const churchUpdateSchema = churchProfileSchema.extend({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
-  
-async function verifyChurch(churchId: string, supervisorId: string) {
+
+async function verifyChurch(churchId: string, supervisorId: string): Promise<boolean> {
     const [church] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, churchId));
     if (!church || church.supervisorId !== supervisorId) return false;
     return true;
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -58,7 +52,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), eq(users.role, 'church_account'), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Igreja não encontrada." }, { status: 404 });
         }
 
@@ -92,7 +86,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 
@@ -138,7 +132,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.city) profileUpdateData.city = validatedData.city;
         if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood;
         if (validatedData.address) profileUpdateData.address = validatedData.address;
-        if (validatedData.foundationDate) profileUpdateData.foundationDate = validatedData.foundationDate;
+        if (validatedData.foundationDate) profileUpdateData.foundationDate = validatedData.foundationDate.toISOString();
         if (validatedData.treasurerFirstName) profileUpdateData.treasurerFirstName = validatedData.treasurerFirstName;
         if (validatedData.treasurerLastName) profileUpdateData.treasurerLastName = validatedData.treasurerLastName;
         if (validatedData.treasurerCpf) profileUpdateData.treasurerCpf = validatedData.treasurerCpf;
@@ -159,7 +153,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
   }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const authResponse = await authenticateApiKey(request);
     if (authResponse) return authResponse;
 

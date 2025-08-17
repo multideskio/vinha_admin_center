@@ -1,20 +1,29 @@
+/**
+* @fileoverview Rota da API para gerenciar um pastor específico (visão do admin).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users, pastorProfiles } from '@/db/schema';
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { authenticateApiKey } from '@/lib/api-auth';
 import { pastorProfileSchema } from '@/lib/types';
+import { validateRequest } from '@/lib/auth';
 
 const pastorUpdateSchema = pastorProfileSchema.extend({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user: sessionUser } = await validateRequest();
+    if (!sessionUser || sessionUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
     
     const { id } = params;
 
@@ -28,7 +37,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         .where(and(eq(users.id, id), eq(users.role, 'pastor'), isNull(users.deletedAt)))
         .limit(1);
 
-        if (result.length === 0) {
+        if (result.length === 0 || !result[0]) {
             return NextResponse.json({ error: "Pastor não encontrado." }, { status: 404 });
         }
 
@@ -52,9 +61,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
             birthDate: profile?.birthDate,
             titheDay: user.titheDay,
             supervisorId: profile?.supervisorId,
-            facebook: '', // Assuming these are not in pastorProfiles
-            instagram: '',
-            website: '',
+            facebook: profile?.facebook,
+            instagram: profile?.instagram,
+            website: profile?.website,
             status: user.status
         });
 
@@ -65,9 +74,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
   
@@ -104,8 +115,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address;
         if (validatedData.number !== undefined) profileUpdateData.number = validatedData.number;
         if (validatedData.complement !== undefined) profileUpdateData.complement = validatedData.complement;
-        if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate;
+        if (validatedData.birthDate) profileUpdateData.birthDate = validatedData.birthDate.toISOString();
         if (validatedData.supervisorId) profileUpdateData.supervisorId = validatedData.supervisorId;
+        if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook;
+        if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram;
+        if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website;
         
         if (Object.keys(profileUpdateData).length > 0) {
             await tx.update(pastorProfiles).set(profileUpdateData).where(eq(pastorProfiles.userId, id));
@@ -123,9 +137,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
   }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const authResponse = await authenticateApiKey(request);
-    if (authResponse) return authResponse;
+export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
+    const { user } = await validateRequest();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
     const { id } = params;
 

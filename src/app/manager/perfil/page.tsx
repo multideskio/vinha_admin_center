@@ -1,9 +1,11 @@
 
+
 'use client';
 
 import * as React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
   Facebook,

@@ -1,4 +1,9 @@
-
+/**
+* @fileoverview API para gerenciamento de pastores (visão do gerente).
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -7,6 +12,7 @@ import { eq, and, isNull, desc, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { validateRequest } from '@/lib/auth';
+import { pastorProfileSchema } from '@/lib/types';
 
 
 const COMPANY_ID = process.env.COMPANY_INIT;
@@ -16,24 +22,7 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
-const pastorSchema = z.object({
-  supervisorId: z.string().uuid(),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  cpf: z.string().min(1),
-  email: z.string().email(),
-  cep: z.string().nullable(),
-  state: z.string().nullable(),
-  city: z.string().nullable(),
-  neighborhood: z.string().nullable(),
-  address: z.string().nullable(),
-  birthDate: z.date().nullable(),
-  titheDay: z.number().nullable(),
-  phone: z.string().nullable(),
-});
-
-
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -76,7 +65,7 @@ export async function GET(request: Request) {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
     if (!user || user.role !== 'manager') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -84,7 +73,7 @@ export async function POST(request: Request) {
     
     try {
       const body = await request.json();
-      const validatedData = pastorSchema.parse({
+      const validatedData = pastorProfileSchema.parse({
         ...body,
         birthDate: body.birthDate ? new Date(body.birthDate) : null,
       });
@@ -92,7 +81,7 @@ export async function POST(request: Request) {
       const [supervisor] = await db.select({id: supervisorProfiles.userId})
         .from(supervisorProfiles)
         .where(and(
-            eq(supervisorProfiles.userId, validatedData.supervisorId),
+            eq(supervisorProfiles.userId, validatedData.supervisorId!),
             eq(supervisorProfiles.managerId, user.id)
         ));
 
@@ -113,13 +102,18 @@ export async function POST(request: Request) {
             titheDay: validatedData.titheDay,
         }).returning();
 
+        if(!newUser) {
+            tx.rollback();
+            throw new Error("Falha ao criar o usuário para o pastor.");
+        }
+
         const [newProfile] = await tx.insert(pastorProfiles).values({
             userId: newUser.id,
             supervisorId: validatedData.supervisorId,
             firstName: validatedData.firstName,
             lastName: validatedData.lastName,
             cpf: validatedData.cpf,
-            birthDate: validatedData.birthDate,
+            birthDate: validatedData.birthDate ? validatedData.birthDate.toISOString() : null,
             cep: validatedData.cep,
             state: validatedData.state,
             city: validatedData.city,
@@ -132,7 +126,7 @@ export async function POST(request: Request) {
   
       return NextResponse.json({ success: true, pastor: newPastor }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }

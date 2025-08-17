@@ -1,3 +1,9 @@
+/**
+* @fileoverview Rota da API para buscar dados para o dashboard do administrador.
+* @version 1.2
+* @date 2024-08-07
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -5,6 +11,7 @@ import { users, regions, transactions, pastorProfiles, supervisorProfiles, churc
 import { count, sum, eq, isNull, and, desc, sql, gte, lt } from 'drizzle-orm';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { validateRequest } from '@/lib/auth';
+import type { UserRole } from '@/lib/types';
 
 const calculateChange = (current: number, previous: number): string => {
     if (previous === 0) {
@@ -17,9 +24,9 @@ const calculateChange = (current: number, previous: number): string => {
 };
 
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role as UserRole) !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -38,22 +45,22 @@ export async function GET(request: Request) {
         // Revenue
         const revenueCurrentMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfCurrentMonth)));
         const revenuePreviousMonthResult = await db.select({ value: sum(transactions.amount) }).from(transactions).where(and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth)));
-        const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0].value || '0');
-        const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0].value || '0');
+        const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0]?.value || '0');
+        const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0]?.value || '0');
 
         // Members
         const totalMembersResult = await db.select({ value: count() }).from(users).where(isNull(users.deletedAt));
         const newMembersThisMonthResult = await db.select({ value: count() }).from(users).where(gte(users.createdAt, startOfCurrentMonth));
-        const totalMembers = totalMembersResult[0].value;
-        const newMembersThisMonth = newMembersThisMonthResult[0].value;
+        const totalMembers = totalMembersResult[0]?.value || 0;
+        const newMembersThisMonth = newMembersThisMonthResult[0]?.value || 0;
 
         // Transactions
         const totalTransactionsResult = await db.select({ value: count() }).from(transactions);
         const newTransactionsThisMonthResult = await db.select({ value: count() }).from(transactions).where(gte(transactions.createdAt, startOfCurrentMonth));
         const newTransactionsLastMonthResult = await db.select({ value: count() }).from(transactions).where(and(gte(transactions.createdAt, startOfPreviousMonth), lt(transactions.createdAt, startOfCurrentMonth)));
-        const totalTransactions = totalTransactionsResult[0].value;
-        const newTransactionsThisMonth = newTransactionsThisMonthResult[0].value;
-        const newTransactionsLastMonth = newTransactionsLastMonthResult[0].value;
+        const totalTransactions = totalTransactionsResult[0]?.value || 0;
+        const newTransactionsThisMonth = newTransactionsThisMonthResult[0]?.value || 0;
+        const newTransactionsLastMonth = newTransactionsLastMonthResult[0]?.value || 0;
 
         const revenueByMethod = await db.select({
             method: transactions.paymentMethod,
@@ -148,10 +155,10 @@ export async function GET(request: Request) {
                 value: `+${totalTransactions}`,
                 change: calculateChange(newTransactionsThisMonth, newTransactionsLastMonth)
             },
-            totalChurches: { value: `${totalChurches[0].value}`, change: '' },
-            totalPastors: { value: `${totalPastors[0].value}`, change: '' },
-            totalSupervisors: { value: `${totalSupervisors[0].value}`, change: '' },
-            totalManagers: { value: `${totalManagers[0].value}`, change: '' }
+            totalChurches: { value: `${totalChurches[0]?.value || 0}`, change: '' },
+            totalPastors: { value: `${totalPastors[0]?.value || 0}`, change: '' },
+            totalSupervisors: { value: `${totalSupervisors[0]?.value || 0}`, change: '' },
+            totalManagers: { value: `${totalManagers[0]?.value || 0}`, change: '' }
         };
 
         const recentTransactions = recentTransactionsData.map(t => ({...t, amount: Number(t.amount), date: format(new Date(t.date), 'dd/MM/yyyy')}));
@@ -160,8 +167,8 @@ export async function GET(request: Request) {
         return NextResponse.json({
             kpis,
             revenueByMethod: formattedRevenueByMethod,
-            revenueByRegion: revenueByRegionData.map(r => ({...r, revenue: Number(r.revenue)})),
-            churchesByRegion: churchesByRegionData,
+            revenueByRegion: revenueByRegionData.map(r => ({...r, revenue: Number(r.revenue), fill: r.color ?? '#000000' })),
+            churchesByRegion: churchesByRegionData.map(r => ({...r, fill: r.color ?? '#000000'})),
             recentTransactions,
             recentRegistrations,
             newMembers: formattedNewMembers
