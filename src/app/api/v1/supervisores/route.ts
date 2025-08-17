@@ -1,3 +1,9 @@
+/**
+* @fileoverview API para gerenciamento de supervisores (acesso de administrador).
+* @version 1.0
+* @date 2024-07-31
+* @author PH
+*/
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
@@ -32,29 +38,28 @@ const supervisorSchema = z.object({
 
 
 export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const minimal = url.searchParams.get('minimal') === 'true';
+
+  if (minimal) {
+      const result = await db.select({
+          id: users.id,
+          firstName: supervisorProfiles.firstName,
+          lastName: supervisorProfiles.lastName,
+      })
+      .from(supervisorProfiles)
+      .innerJoin(users, eq(users.id, supervisorProfiles.userId))
+      .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
+      .orderBy(desc(users.createdAt));
+      return NextResponse.json({ supervisors: result });
+  }
+
     const { user } = await validateRequest();
     if (!user) {
         return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
   try {
-    const url = new URL(request.url);
-    const minimal = url.searchParams.get('minimal') === 'true';
-
-    if (minimal) {
-        const result = await db.select({
-            id: users.id,
-            firstName: supervisorProfiles.firstName,
-            lastName: supervisorProfiles.lastName,
-        })
-        .from(supervisorProfiles)
-        .innerJoin(users, eq(users.id, supervisorProfiles.userId))
-        .where(isNull(users.deletedAt))
-        .orderBy(desc(users.createdAt));
-        return NextResponse.json({ supervisors: result });
-    }
-
-
     const result = await db.select({
         id: users.id,
         firstName: supervisorProfiles.firstName,
@@ -75,7 +80,7 @@ export async function GET(request: Request) {
       
     return NextResponse.json({ supervisors: result });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar supervisores:", error);
     return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
   }
@@ -123,7 +128,7 @@ export async function POST(request: Request) {
   
       return NextResponse.json({ success: true, supervisor: newSupervisor }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }

@@ -1,3 +1,9 @@
+/**
+* @fileoverview Página de criação de nova conta para pastores e igrejas.
+* @version 1.0
+* @date 2024-07-31
+* @author PH
+*/
 
 'use client';
 
@@ -37,6 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const pastorSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -58,15 +65,9 @@ const churchSchema = z.object({
 
 type PastorFormValues = z.infer<typeof pastorSchema>;
 type ChurchFormValues = z.infer<typeof churchSchema>;
+type Supervisor = { id: string; name: string };
 
-// Mock data, should come from an API
-const supervisors = [
-    { id: 'sup-01', name: 'Carlos Andrade' },
-    { id: 'sup-02', name: 'Ana Beatriz' },
-    { id: 'sup-03', name: 'Jabez Henrique' },
-];
-
-const PastorForm = () => {
+const PastorForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
     const form = useForm<PastorFormValues>({
         resolver: zodResolver(pastorSchema),
         defaultValues: {
@@ -181,7 +182,7 @@ const PastorForm = () => {
     )
 }
 
-const ChurchForm = () => {
+const ChurchForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
     const form = useForm<ChurchFormValues>({
         resolver: zodResolver(churchSchema),
         defaultValues: {
@@ -272,6 +273,28 @@ const ChurchForm = () => {
 }
 
 export default function NovaContaPage() {
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchSupervisors() {
+        try {
+            const response = await fetch('/api/v1/supervisores?minimal=true');
+            if(!response.ok) throw new Error('Falha ao carregar supervisores');
+            const data = await response.json();
+            const formattedData = data.supervisors.map((s: {id: string; firstName: string; lastName: string;}) => ({
+                id: s.id,
+                name: `${s.firstName} ${s.lastName}`,
+            }));
+            setSupervisors(formattedData);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchSupervisors();
+  }, []);
 
   return (
     <Card className="w-full max-w-2xl border-none shadow-none">
@@ -279,18 +302,24 @@ export default function NovaContaPage() {
             <CardTitle className="text-2xl">Qual cadastro iremos fazer hoje?</CardTitle>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="pastor">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="pastor" className="gap-2"><User /> Cadastro de Pastor</TabsTrigger>
-                    <TabsTrigger value="igreja" className="gap-2"><Building /> Cadastro de Igreja</TabsTrigger>
-                </TabsList>
-                <TabsContent value="pastor">
-                    <PastorForm />
-                </TabsContent>
-                <TabsContent value="igreja">
-                    <ChurchForm />
-                </TabsContent>
-            </Tabs>
+            {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                    <Skeleton className='h-32 w-full' />
+                </div>
+            ) : (
+                <Tabs defaultValue="pastor">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="pastor" className="gap-2"><User /> Cadastro de Pastor</TabsTrigger>
+                        <TabsTrigger value="igreja" className="gap-2"><Building /> Cadastro de Igreja</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="pastor">
+                        <PastorForm supervisors={supervisors}/>
+                    </TabsContent>
+                    <TabsContent value="igreja">
+                        <ChurchForm supervisors={supervisors}/>
+                    </TabsContent>
+                </Tabs>
+            )}
             <div className="mt-6 text-center text-sm">
                 Já tem uma conta?{' '}
                 <Link href="/auth/login" className="underline">
