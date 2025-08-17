@@ -1,3 +1,4 @@
+
 /**
 * @fileoverview Layout principal para o painel de gerente.
 * @version 1.2
@@ -30,23 +31,14 @@ export default async function ManagerLayout({
     return redirect('/auth/login');
   }
 
-  let userName = 'Gerente';
-  let userFallback = 'GE';
-  let userEmail = user.email;
-  
-  if (user) {
-    const [profile] = await db.select().from(managerProfiles).where(eq(managerProfiles.userId, user.id));
-    if(profile) {
-      userName = profile.firstName || 'Gerente';
-      userFallback = (profile.firstName?.[0] || '') + (profile.lastName?.[0] || '');
-    }
-  }
+  const userName = user.email.split('@')[0];
+  const userFallback = userName.substring(0, 2).toUpperCase();
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <ManagerSidebar />
       <div className="flex flex-col">
-        <ManagerHeader userName={userName} userEmail={userEmail} userFallback={userFallback} />
+        <ManagerHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {children}
         </main>

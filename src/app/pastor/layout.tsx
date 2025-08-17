@@ -1,3 +1,4 @@
+
 /**
 * @fileoverview Layout principal para o painel do pastor.
 * @version 1.2
@@ -30,23 +31,14 @@ export default async function PastorLayout({
     return redirect('/auth/login');
   }
 
-  let userName = 'Pastor';
-  let userFallback = 'PA';
-  let userEmail = user.email;
-  
-  if (user) {
-    const [profile] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, user.id));
-    if(profile) {
-      userName = profile.firstName || 'Pastor';
-      userFallback = (profile.firstName?.[0] || '') + (profile.lastName?.[0] || '');
-    }
-  }
+  const userName = user.email.split('@')[0];
+  const userFallback = userName.substring(0, 2).toUpperCase();
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <PastorSidebar />
       <div className="flex flex-col">
-        <PastorHeader userName={userName} userEmail={userEmail} userFallback={userFallback} />
+        <PastorHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {children}
         </main>

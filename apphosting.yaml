@@ -1,7 +1,28 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
+# The CPU allocated to each server instance.
+# We recommend starting with a lower value and monitoring
+# your app's performance.
+cpu: 0.5
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+secretEnv:
+  - secret: DATABASE_URL
+    env: DATABASE_URL
+  - secret: DEFAULT_PASSWORD
+    env: DEFAULT_PASSWORD
+  - secret: COMPANY_INIT
+    env: COMPANY_INIT
+  - secret: ADMIN_INIT
+    env: ADMIN_INIT
+  - secret: GERENTE_INIT
+    env: GERENTE_INIT
+  - secret: SUPERVISOR_INIT
+    env: SUPERVISOR_INIT
+  - secret: PASTOR_INIT
+    env: PASTOR_INIT
+  - secret: IGREJA_INIT
+    env: IGREJA_INIT

@@ -1,3 +1,4 @@
+
 /**
 * @fileoverview Layout principal para o painel de administrador.
 * @version 1.2
@@ -27,25 +28,18 @@ export default async function AdminLayout({
 }): Promise<JSX.Element> {
   const { user } = await validateRequest();
 
-  if (!user) {
+  if (!user || user.role !== 'admin') {
     return redirect('/auth/login');
   }
 
-  let userName = 'Admin';
-  let userFallback = 'AD';
-  let userEmail = user.email;
-
-  if (user) {
-    const [profile] = await db.select().from(adminProfiles).where(eq(adminProfiles.userId, user.id));
-    userName = profile?.firstName || 'Admin';
-    userFallback = (profile?.firstName?.[0] || '') + (profile?.lastName?.[0] || '');
-  }
+  const userName = user.email.split('@')[0];
+  const userFallback = userName.substring(0, 2).toUpperCase();
   
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <AppSidebar />
       <div className="flex flex-col">
-        <AdminHeader userName={userName} userEmail={userEmail} userFallback={userFallback} />
+        <AdminHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
             {children}
         </main>

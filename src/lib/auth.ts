@@ -1,6 +1,6 @@
 /**
  * @fileoverview Configuração do Lucia Auth para gerenciamento de sessão.
- * @version 1.2
+ * @version 1.3
  * @date 2024-08-08
  * @author PH
  */

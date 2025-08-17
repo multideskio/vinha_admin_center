@@ -1,3 +1,4 @@
+
 /**
 * @fileoverview Layout principal para o painel da igreja.
 * @version 1.2
@@ -25,29 +26,19 @@ export default async function ChurchLayout({
   children: React.ReactNode;
 }): Promise<JSX.Element> {
   const { user } = await validateRequest();
-
-  /*
-  if (!user) {
+  
+  if (!user || user.role !== 'church_account') {
     return redirect('/auth/login');
   }
-  */
 
-  let userName = 'Igreja';
-  let userFallback = 'IG';
-  let userEmail = 'igreja@vinha.com';
-  
-  if (user) {
-    const [profile] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, user.id));
-    userName = profile?.nomeFantasia || 'Igreja';
-    userFallback = profile?.nomeFantasia?.substring(0, 2) || 'IG';
-    userEmail = user.email;
-  }
+  const userName = user.email.split('@')[0];
+  const userFallback = userName.substring(0, 2).toUpperCase();
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <IgrejaSidebar />
       <div className="flex flex-col">
-        <IgrejaHeader userName={userName} userEmail={userEmail} userFallback={userFallback} />
+        <IgrejaHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {children}
         </main>

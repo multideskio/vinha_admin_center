@@ -1,3 +1,4 @@
+
 /**
 * @fileoverview Layout principal para o painel de supervisor.
 * @version 1.2
@@ -29,24 +30,15 @@ export default async function SupervisorLayout({
   if (!user || user.role !== 'supervisor') {
     return redirect('/auth/login');
   }
-
-  let userName = 'Supervisor';
-  let userFallback = 'SU';
-  let userEmail = user.email;
   
-  if (user) {
-    const [profile] = await db.select().from(supervisorProfiles).where(eq(supervisorProfiles.userId, user.id));
-    if (profile) {
-      userName = profile.firstName || 'Supervisor';
-      userFallback = (profile.firstName?.[0] || '') + (profile.lastName?.[0] || '');
-    }
-  }
+  const userName = user.email.split('@')[0];
+  const userFallback = userName.substring(0, 2).toUpperCase();
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <SupervisorSidebar />
       <div className="flex flex-col">
-        <SupervisorHeader userName={userName} userEmail={userEmail} userFallback={userFallback} />
+        <SupervisorHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           {children}
         </main>

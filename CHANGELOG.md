@@ -2,6 +2,14 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.0.8] - 2024-08-08
+
+### Corrigido
+*   **Erro Crítico de Servidor Interno:** Corrigido um erro que causava falha na renderização de todas as páginas autenticadas. A função `validateRequest` não estava sendo exportada corretamente do `lib/auth.ts`, impedindo que os layouts de perfil verificassem a sessão do usuário.
+*   **Tipagem de Formulários e Componentes:** Ajustes finos de tipagem foram feitos para garantir que valores `null` de `react-hook-form` sejam corretamente tratados como `undefined` ou strings vazias antes de serem passados para os componentes de UI, resolvendo os últimos erros de compilação.
+*   **Assinatura de Função de Logout:** A função `logoutUser` foi ajustada para ser compatível com o atributo `action` dos formulários do React.
+*   **Importações Ausentes:** Adicionadas importações que faltavam em diversos componentes, como `zodResolver` e `CartesianGrid`, que causavam falhas no build.
+
 ## [1.0.7] - 2024-08-05
 
 ### Adicionado
