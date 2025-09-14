@@ -14,9 +14,13 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/strict',
   ],
+  ignorePatterns: ['*.md', 'docs/**/*.md'],
   rules: {
-    '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/triple-slash-reference': 'off',
     'unused-imports/no-unused-imports': 'error',
+    'react/no-unescaped-entities': 'error',
   },
 };

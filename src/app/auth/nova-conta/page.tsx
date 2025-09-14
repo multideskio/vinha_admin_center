@@ -1,30 +1,24 @@
 /**
-* @fileoverview Página de criação de nova conta para pastores e igrejas.
-* @version 1.1
-* @date 2024-08-07
-* @author PH
-*/
+ * @fileoverview Página de criação de nova conta para pastores e igrejas.
+ * @version 1.1
+ * @date 2024-08-07
+ * @author PH
+ */
 
-'use client';
+'use client'
 
-import * as React from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar as CalendarIcon, Building, User } from 'lucide-react';
-import { format, subYears } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import Link from 'next/link';
+import * as React from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Calendar as CalendarIcon, Building, User } from 'lucide-react'
+import { format, subYears } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import Link from 'next/link'
 
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
@@ -32,19 +26,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@/components/ui/form'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const pastorSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -53,7 +47,7 @@ const pastorSchema = z.object({
   birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.' }),
   email: z.string().email('E-mail inválido.'),
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
-});
+})
 
 const churchSchema = z.object({
   nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
@@ -61,274 +55,355 @@ const churchSchema = z.object({
   cnpj: z.string().min(18, 'O CNPJ é obrigatório.'),
   email: z.string().email('E-mail inválido.'),
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
-});
+})
 
-
-type PastorFormValues = z.infer<typeof pastorSchema>;
-type ChurchFormValues = z.infer<typeof churchSchema>;
-type Supervisor = { id: string; name: string };
+type PastorFormValues = z.infer<typeof pastorSchema>
+type ChurchFormValues = z.infer<typeof churchSchema>
+type Supervisor = { id: string; name: string }
 
 const PastorForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
-    const form = useForm<PastorFormValues>({
-        resolver: zodResolver(pastorSchema),
-        defaultValues: {
-            firstName: '',
-            lastName: '',
-            cpf: '',
-            email: '',
-        }
-    });
+  const form = useForm<PastorFormValues>({
+    resolver: zodResolver(pastorSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      cpf: '',
+      email: '',
+    },
+  })
 
-    const onSubmit = (data: PastorFormValues) => {
-        console.log("Pastor Data:", data);
-        // Handle pastor registration
-    };
-    
-    const formatCPF = (value: string) => {
-        return value
-        .replace(/\D/g, '')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-        .slice(0, 14);
-    };
+  const onSubmit = (data: PastorFormValues) => {
+    console.log('Pastor Data:', data)
+    // Handle pastor registration
+  }
 
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                 <CardHeader className="px-0">
-                    <CardTitle>Informações Iniciais do Pastor</CardTitle>
-                </CardHeader>
-                <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
-                    <FormField control={form.control} name="firstName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl><Input placeholder="Primeiro nome" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="lastName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Sobrenome</FormLabel>
-                            <FormControl><Input placeholder="Sobrenome" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="cpf" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>CPF</FormLabel>
-                            <FormControl>
-                                <Input 
-                                    placeholder="000.000.000-00" 
-                                    {...field} 
-                                    onChange={(e) => field.onChange(formatCPF(e.target.value))}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="birthDate" render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Data de nascimento</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>dd/mm/aaaa</span>}
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar 
-                                        mode="single" 
-                                        selected={field.value} 
-                                        onSelect={field.onChange} 
-                                        disabled={(date) => date > subYears(new Date(), 18) || date < new Date("1900-01-01")} 
-                                        defaultMonth={subYears(new Date(), 18)}
-                                        initialFocus 
-                                        locale={ptBR}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="email" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>E-mail</FormLabel>
-                            <FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="supervisorId" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Supervisor</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Escolha um supervisor..." />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {supervisors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                </div>
-                <Button type="submit" className="w-full" size="lg">Próximo</Button>
-            </form>
-        </Form>
-    )
+  const formatCPF = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+      .slice(0, 14)
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <CardHeader className="px-0">
+          <CardTitle>Informações Iniciais do Pastor</CardTitle>
+        </CardHeader>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome</FormLabel>
+                <FormControl>
+                  <Input placeholder="Primeiro nome" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sobrenome</FormLabel>
+                <FormControl>
+                  <Input placeholder="Sobrenome" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="cpf"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CPF</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="000.000.000-00"
+                    {...field}
+                    onChange={(e) => field.onChange(formatCPF(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="birthDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Data de nascimento</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !field.value && 'text-muted-foreground',
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value ? format(field.value, 'dd/MM/yyyy') : <span>dd/mm/aaaa</span>}
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > subYears(new Date(), 18) || date < new Date('1900-01-01')
+                      }
+                      defaultMonth={subYears(new Date(), 18)}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="seu@email.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="supervisorId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Supervisor</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Escolha um supervisor..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {supervisors.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <Button type="submit" className="w-full" size="lg">
+          Próximo
+        </Button>
+      </form>
+    </Form>
+  )
 }
 
 const ChurchForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
-    const form = useForm<ChurchFormValues>({
-        resolver: zodResolver(churchSchema),
-        defaultValues: {
-            nomeFantasia: '',
-            razaoSocial: '',
-            cnpj: '',
-            email: '',
-        }
-    });
+  const form = useForm<ChurchFormValues>({
+    resolver: zodResolver(churchSchema),
+    defaultValues: {
+      nomeFantasia: '',
+      razaoSocial: '',
+      cnpj: '',
+      email: '',
+    },
+  })
 
-    const onSubmit = (data: ChurchFormValues) => {
-        console.log("Church Data:", data);
-        // Handle church registration
-    };
-    
-    const formatCNPJ = (value: string) => {
-        return value
-          .replace(/\D/g, '')
-          .replace(/(\d{2})(\d)/, '$1.$2')
-          .replace(/(\d{3})(\d)/, '$1.$2')
-          .replace(/(\d{3})(\d)/, '$1/$2')
-          .replace(/(\d{4})(\d)/, '$1-$2')
-          .slice(0, 18);
-      };
+  const onSubmit = (data: ChurchFormValues) => {
+    console.log('Church Data:', data)
+    // Handle church registration
+  }
 
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                 <CardHeader className="px-0">
-                    <CardTitle>Informações Iniciais da Igreja</CardTitle>
-                </CardHeader>
-                 <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
-                    <FormField control={form.control} name="cnpj" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>CNPJ</FormLabel>
-                            <FormControl>
-                                <Input
-                                placeholder="00.000.000/0000-00" 
-                                {...field}
-                                onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="razaoSocial" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Razão Social</FormLabel>
-                            <FormControl><Input placeholder="Razão social da igreja" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nome Fantasia</FormLabel>
-                            <FormControl><Input placeholder="Nome da sua igreja" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="email" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>E-mail da Igreja</FormLabel>
-                            <FormControl><Input type="email" placeholder="contato@suaigreja.com" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="supervisorId" render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
-                            <FormLabel>Supervisor</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Escolha um supervisor..." />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {supervisors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                </div>
-                <Button type="submit" className="w-full" size="lg">Próximo</Button>
-            </form>
-        </Form>
-    )
+  const formatCNPJ = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2')
+      .slice(0, 18)
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <CardHeader className="px-0">
+          <CardTitle>Informações Iniciais da Igreja</CardTitle>
+        </CardHeader>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="cnpj"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CNPJ</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="00.000.000/0000-00"
+                    {...field}
+                    onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="razaoSocial"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Razão Social</FormLabel>
+                <FormControl>
+                  <Input placeholder="Razão social da igreja" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="nomeFantasia"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome Fantasia</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome da sua igreja" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail da Igreja</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="contato@suaigreja.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="supervisorId"
+            render={({ field }) => (
+              <FormItem className="sm:col-span-2">
+                <FormLabel>Supervisor</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Escolha um supervisor..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {supervisors.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <Button type="submit" className="w-full" size="lg">
+          Próximo
+        </Button>
+      </form>
+    </Form>
+  )
 }
 
 export default function NovaContaPage() {
-  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
 
   React.useEffect(() => {
-    async function fetchSupervisors() {
-        try {
-            const response = await fetch('/api/v1/supervisores?minimal=true');
-            if(!response.ok) throw new Error('Falha ao carregar supervisores');
-            const data = await response.json();
-            const formattedData = data.supervisors.map((s: {id: string; firstName: string; lastName: string;}) => ({
-                id: s.id,
-                name: `${s.firstName} ${s.lastName}`,
-            }));
-            setSupervisors(formattedData);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsLoading(false);
-        }
+    async function fetchSupervisors(): Promise<void> {
+      try {
+        const response = await fetch('/api/v1/supervisores?minimal=true')
+        if (!response.ok) throw new Error('Falha ao carregar supervisores')
+        const data = await response.json()
+        const formattedData = data.supervisors.map(
+          (s: { id: string; firstName: string; lastName: string }) => ({
+            id: s.id,
+            name: `${s.firstName} ${s.lastName}`,
+          }),
+        )
+        setSupervisors(formattedData)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    fetchSupervisors();
-  }, []);
+    fetchSupervisors()
+  }, [])
 
   return (
     <Card className="w-full max-w-2xl border-none shadow-none">
-        <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Qual cadastro iremos fazer hoje?</CardTitle>
-        </CardHeader>
-        <CardContent>
-            {isLoading ? (
-                <div className="flex justify-center items-center h-64">
-                    <Skeleton className='h-32 w-full' />
-                </div>
-            ) : (
-                <Tabs defaultValue="pastor">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="pastor" className="gap-2"><User /> Cadastro de Pastor</TabsTrigger>
-                        <TabsTrigger value="igreja" className="gap-2"><Building /> Cadastro de Igreja</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="pastor">
-                        <PastorForm supervisors={supervisors}/>
-                    </TabsContent>
-                    <TabsContent value="igreja">
-                        <ChurchForm supervisors={supervisors}/>
-                    </TabsContent>
-                </Tabs>
-            )}
-            <div className="mt-6 text-center text-sm">
-                Já tem uma conta?{' '}
-                <Link href="/auth/login" className="underline">
-                    Faça o login
-                </Link>
-            </div>
-        </CardContent>
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl">Qual cadastro iremos fazer hoje?</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Skeleton className="h-32 w-full" />
+          </div>
+        ) : (
+          <Tabs defaultValue="pastor">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="pastor" className="gap-2">
+                <User /> Cadastro de Pastor
+              </TabsTrigger>
+              <TabsTrigger value="igreja" className="gap-2">
+                <Building /> Cadastro de Igreja
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="pastor">
+              <PastorForm supervisors={supervisors} />
+            </TabsContent>
+            <TabsContent value="igreja">
+              <ChurchForm supervisors={supervisors} />
+            </TabsContent>
+          </Tabs>
+        )}
+        <div className="mt-6 text-center text-sm">
+          Já tem uma conta?{' '}
+          <Link href="/auth/login" className="underline">
+            Faça o login
+          </Link>
+        </div>
+      </CardContent>
     </Card>
-  );
+  )
 }

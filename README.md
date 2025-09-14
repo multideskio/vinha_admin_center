@@ -1,36 +1,44 @@
 # Vinha Admin Center
 
-Este é o painel de administração para o sistema Vinha Ministérios.
+> Sistema de Administração para Gestão de Igrejas
 
-## Visão Geral do Projeto
+## 📋 Sobre o Projeto
 
-O Vinha Admin Center é uma aplicação completa construída com Next.js e TypeScript, projetada para gerenciar todos os aspectos do sistema de ministérios, incluindo usuários, igrejas, transações e configurações. A interface é construída com **ShadCN/UI** para componentes modernos e responsivos e **Tailwind CSS** para estilização. O backend utiliza **PostgreSQL** com **Drizzle ORM**, e a autenticação é gerenciada de forma segura com **Lucia Auth**.
+O Vinha Admin Center é um sistema completo de administração desenvolvido para facilitar a gestão de igrejas, oferecendo funcionalidades para diferentes níveis de usuários (Admin, Pastor, Supervisor, Manager).
 
-## Estrutura de Perfis de Usuário
-
-O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel e permissões, garantindo que cada usuário tenha acesso apenas às ferramentas e dados relevantes para sua função:
-
--   **Administrador (`/admin`):** Acesso total a todas as funcionalidades do sistema, incluindo gerenciamento de todos os outros usuários, configurações globais e relatórios.
--   **Gerente (`/manager`):** Visualiza e gerencia uma rede específica de supervisores, pastores e igrejas.
--   **Supervisor (`/supervisor`):** Supervisiona um grupo de pastores e igrejas dentro de uma região.
--   **Pastor (`/pastor`):** Gerencia seu próprio perfil, contribuições e pode estar associado a uma ou mais igrejas.
--   **Igreja (`/igreja`):** Gerencia suas próprias informações, finanças e membros.
-
-## Funcionalidades Principais
-
--   **Autenticação Segura:** Sistema de login robusto com gerenciamento de sessões e hashing de senhas.
--   **Dashboards Interativos:** Cada nível de usuário possui um dashboard customizado com KPIs, gráficos e dados relevantes para suas responsabilidades.
--   **Gerenciamento de Usuários:** CRUD completo para todos os níveis de usuários (Gerentes, Supervisores, Pastores, etc.).
--   **Gestão Financeira:** Acompanhamento de transações, contribuições (dízimos e ofertas) e relatórios financeiros.
--   **Configurações de Gateway:** Integração com gateways de pagamento como Cielo e Bradesco.
--   **Layout Responsivo:** A aplicação é totalmente otimizada para uso em dispositivos móveis e desktops.
-
-## Primeiros Passos
-
-Para iniciar o projeto em ambiente de desenvolvimento, execute o seguinte comando:
+## 🚀 Início Rápido
 
 ```bash
+# Instalar dependências
+npm install
+
+# Executar em modo de desenvolvimento
 npm run dev
 ```
 
-Isso iniciará o servidor de desenvolvimento do Next.js, geralmente na porta `http://localhost:3002`.
+O servidor estará disponível em `http://localhost:9002`
+
+## 📚 Documentação
+
+Toda a documentação do projeto está organizada no diretório `docs/`:
+
+- **[📖 Documentação Completa](docs/README.md)** - Visão geral detalhada do projeto
+- **[🏗️ Frontend](docs/FRONTEND_DOCS.md)** - Arquitetura e componentes do frontend
+- **[⚙️ Backend](docs/BACKEND_DOCS.md)** - APIs e estrutura do backend
+- **[🗄️ Banco de Dados](docs/DB_DOCS.md)** - Schema e migrações
+- **[💳 API Cielo](docs/CIELO_API_GUIDE.md)** - Guia de integração com pagamentos
+- **[🤝 Contribuição](docs/CONTRIBUTING.md)** - Como contribuir para o projeto
+- **[📝 Changelog](docs/CHANGELOG.md)** - Histórico de mudanças
+- **[📋 Notas de Implementação](docs/IMPLEMENTATION_NOTES.md)** - Detalhes técnicos
+
+## 🛠️ Tecnologias
+
+- **Frontend:** Next.js 15.5.3, React 18, TypeScript, Tailwind CSS
+- **Backend:** Next.js API Routes, Drizzle ORM
+- **Banco de Dados:** PostgreSQL
+- **Autenticação:** Lucia Auth
+- **UI:** Radix UI, Shadcn/ui
+
+## 📄 Licença
+
+Este projeto é privado e proprietário.

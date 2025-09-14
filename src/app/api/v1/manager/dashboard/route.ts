@@ -1,25 +1,24 @@
 /**
-* @fileoverview Rota da API para buscar dados para o dashboard do gerente (legado).
-* @version 1.2
-* @date 2024-08-07
-* @author PH
-*/
+ * @fileoverview Rota da API para buscar dados para o dashboard do gerente (legado).
+ * @version 1.2
+ * @date 2024-08-07
+ * @author PH
+ */
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import {
   users,
-  regions,
   transactions,
   pastorProfiles,
   supervisorProfiles,
   churchProfiles,
-  managerProfiles,
 } from '@/db/schema'
 import { count, sum, eq, isNull, and, desc, sql, inArray, gte, lt } from 'drizzle-orm'
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
+import { format, subMonths, startOfMonth } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/auth'
 import { type UserRole } from '@/lib/types'
+import { getErrorMessage } from '@/lib/error-types'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -31,8 +30,8 @@ const calculateChange = (current: number, previous: number): string => {
   return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`
 }
 
-export async function GET(request: Request): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey(request)
+export async function GET(): Promise<NextResponse> {
+  const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 
   const { user } = await validateRequest()
@@ -59,9 +58,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       const pastorsResult = await db
         .select({ id: pastorProfiles.userId })
         .from(pastorProfiles)
-        .where(
-          and(inArray(pastorProfiles.supervisorId, supervisorIds), isNull(users.deletedAt)),
-        )
+        .where(and(inArray(pastorProfiles.supervisorId, supervisorIds), isNull(users.deletedAt)))
         .leftJoin(users, eq(pastorProfiles.userId, users.id))
       pastorIds = pastorsResult.map((p) => p.id)
     }
@@ -71,9 +68,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       const churchesResult = await db
         .select({ id: churchProfiles.userId })
         .from(churchProfiles)
-        .where(
-          and(inArray(churchProfiles.supervisorId, supervisorIds), isNull(users.deletedAt)),
-        )
+        .where(and(inArray(churchProfiles.supervisorId, supervisorIds), isNull(users.deletedAt)))
         .leftJoin(users, eq(churchProfiles.userId, users.id))
       churchIds = churchesResult.map((c) => c.id)
     }
@@ -121,9 +116,11 @@ export async function GET(request: Request): Promise<NextResponse> {
         ? await db
             .select({ value: count() })
             .from(users)
-            .where(and(gte(users.createdAt, startOfCurrentMonth), inArray(users.id, networkUserIds)))
+            .where(
+              and(gte(users.createdAt, startOfCurrentMonth), inArray(users.id, networkUserIds)),
+            )
         : [{ value: 0 }]
-    const newMembersThisMonth = newMembersThisMonthResult[0]?.value ?? 0;
+    const newMembersThisMonth = newMembersThisMonthResult[0]?.value ?? 0
 
     const newTransactionsThisMonthResult =
       networkUserIds.length > 0
@@ -150,8 +147,8 @@ export async function GET(request: Request): Promise<NextResponse> {
               ),
             )
         : [{ value: 0 }]
-    const totalTransactionsThisMonth = newTransactionsThisMonthResult[0]?.value ?? 0;
-    const totalTransactionsLastMonth = newTransactionsLastMonthResult[0]?.value ?? 0;
+    const totalTransactionsThisMonth = newTransactionsThisMonthResult[0]?.value ?? 0
+    const totalTransactionsLastMonth = newTransactionsLastMonthResult[0]?.value ?? 0
 
     const revenueByMethod =
       networkUserIds.length > 1
@@ -211,7 +208,9 @@ export async function GET(request: Request): Promise<NextResponse> {
               count: count(users.id),
             })
             .from(users)
-            .where(and(gte(users.createdAt, startOfSixMonthsAgo), inArray(users.id, networkUserIds)))
+            .where(
+              and(gte(users.createdAt, startOfSixMonthsAgo), inArray(users.id, networkUserIds)),
+            )
             .groupBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
             .orderBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
         : []
@@ -237,7 +236,8 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const formattedRevenueByMethod = revenueByMethod.map((item) => ({
       ...item,
-      fill: item.method === 'pix' ? '#10b981' : item.method === 'credit_card' ? '#3b82f6' : '#f59e0b',
+      fill:
+        item.method === 'pix' ? '#10b981' : item.method === 'credit_card' ? '#3b82f6' : '#f59e0b',
     }))
 
     const kpis = {
@@ -286,10 +286,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       recentRegistrations,
       newMembers: formattedNewMembers,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao buscar dados para o dashboard do gerente:', error)
     return NextResponse.json(
-      { error: 'Erro ao buscar dados do dashboard do gerente', details: error.message },
+      { error: 'Erro ao buscar dados do dashboard do gerente', details: getErrorMessage(error) },
       { status: 500 },
     )
   }

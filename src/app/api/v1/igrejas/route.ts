@@ -1,24 +1,25 @@
 /**
-* @fileoverview Rota da API para gerenciar igrejas.
-* @version 1.2
-* @date 2024-08-07
-* @author PH
-*/
+ * @fileoverview Rota da API para gerenciar igrejas.
+ * @version 1.2
+ * @date 2024-08-07
+ * @author PH
+ */
 
-import { NextResponse } from 'next/server';
-import { db } from '@/db/drizzle';
-import { users, churchProfiles, supervisorProfiles } from '@/db/schema';
-import { eq, and, isNull, desc, sql } from 'drizzle-orm';
-import { z } from 'zod';
-import * as bcrypt from 'bcrypt';
-import { validateRequest } from '@/lib/auth';
+import { NextResponse } from 'next/server'
+import { db } from '@/db/drizzle'
+import { users, churchProfiles, supervisorProfiles } from '@/db/schema'
+import { eq, and, isNull, desc, sql } from 'drizzle-orm'
+import { z } from 'zod'
+import * as bcrypt from 'bcrypt'
+import { validateRequest } from '@/lib/auth'
 
-const COMPANY_ID = process.env.COMPANY_INIT;
+const COMPANY_ID = process.env.COMPANY_INIT
 if (!COMPANY_ID) {
-    throw new Error("A variável de ambiente COMPANY_INIT não está definida.");
+  throw new Error('A variável de ambiente COMPANY_INIT não está definida.')
 }
+const VALIDATED_COMPANY_ID = COMPANY_ID as string
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
 
 const churchSchema = z.object({
   supervisorId: z.string().uuid(),
@@ -37,33 +38,33 @@ const churchSchema = z.object({
   treasurerFirstName: z.string().nullable(),
   treasurerLastName: z.string().nullable(),
   treasurerCpf: z.string().nullable(),
-});
-
+})
 
 export async function GET(request: Request): Promise<NextResponse> {
-    const { user } = await validateRequest();
-    if (!user) {
-      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
-    }
+  const { user } = await validateRequest()
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
 
   try {
-    const url = new URL(request.url);
-    const minimal = url.searchParams.get('minimal') === 'true';
+    const url = new URL(request.url)
+    const minimal = url.searchParams.get('minimal') === 'true'
 
     if (minimal) {
-        const result = await db.select({
-            id: churchProfiles.userId,
-            nomeFantasia: churchProfiles.nomeFantasia,
+      const result = await db
+        .select({
+          id: churchProfiles.userId,
+          nomeFantasia: churchProfiles.nomeFantasia,
         })
         .from(churchProfiles)
         .leftJoin(users, eq(users.id, churchProfiles.userId))
         .where(isNull(users.deletedAt))
-        .orderBy(desc(users.createdAt));
-        return NextResponse.json({ churches: result });
+        .orderBy(desc(users.createdAt))
+      return NextResponse.json({ churches: result })
     }
 
-
-    const result = await db.select({
+    const result = await db
+      .select({
         id: users.id,
         nomeFantasia: churchProfiles.nomeFantasia,
         email: users.email,
@@ -76,78 +77,92 @@ export async function GET(request: Request): Promise<NextResponse> {
       .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
       .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
       .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
-      .orderBy(desc(users.createdAt));
-      
-    return NextResponse.json({ churches: result });
+      .orderBy(desc(users.createdAt))
 
+    return NextResponse.json({ churches: result })
   } catch (error) {
-    console.error("Erro ao buscar igrejas:", error);
-    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    console.error('Erro ao buscar igrejas:', error)
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-    const { user } = await validateRequest();
-    if (!user) {
-      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
-    }
+  const { user } = await validateRequest()
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
 
-    try {
-      const body = await request.json();
-      const validatedData = churchSchema.parse({
-        ...body,
-        foundationDate: body.foundationDate ? new Date(body.foundationDate) : null,
-      });
-      
-      const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  try {
+    const body = await request.json()
+    const validatedData = churchSchema.parse({
+      ...body,
+      foundationDate: body.foundationDate ? new Date(body.foundationDate) : null,
+    })
 
-      const newChurch = await db.transaction(async (tx) => {
-        const [newUser] = await tx.insert(users).values({
-            companyId: COMPANY_ID,
-            email: validatedData.email,
-            password: hashedPassword,
-            role: 'church_account',
-            status: 'active',
-            phone: validatedData.phone,
-            titheDay: validatedData.titheDay,
-        }).returning();
+    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10)
 
-        if(!newUser) {
-            tx.rollback();
-            throw new Error("Falha ao criar o usuário para a igreja.");
-        }
+    const newChurch = await db.transaction(async (tx) => {
+      const [newUser] = await tx
+        .insert(users)
+        .values({
+          companyId: VALIDATED_COMPANY_ID,
+          email: validatedData.email,
+          password: hashedPassword,
+          role: 'church_account',
+          status: 'active',
+          phone: validatedData.phone,
+          titheDay: validatedData.titheDay,
+        })
+        .returning()
 
-        const [newProfile] = await tx.insert(churchProfiles).values({
-            userId: newUser.id,
-            supervisorId: validatedData.supervisorId,
-            cnpj: validatedData.cnpj,
-            razaoSocial: validatedData.razaoSocial,
-            nomeFantasia: validatedData.nomeFantasia,
-            foundationDate: validatedData.foundationDate ? validatedData.foundationDate.toISOString() : null,
-            cep: validatedData.cep,
-            state: validatedData.state,
-            city: validatedData.city,
-            neighborhood: validatedData.neighborhood,
-            address: validatedData.address,
-            treasurerFirstName: validatedData.treasurerFirstName,
-            treasurerLastName: validatedData.treasurerLastName,
-            treasurerCpf: validatedData.treasurerCpf,
-        }).returning();
-
-        return { ...newUser, ...newProfile };
-      });
-  
-      return NextResponse.json({ success: true, church: newChurch }, { status: 201 });
-
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
-      }
-      console.error("Erro ao criar igreja:", error);
-      if (error instanceof Error && 'constraint' in error && ((error as any).constraint === 'users_email_unique' || (error as any).constraint === 'church_profiles_cnpj_unique')) {
-        return NextResponse.json({ error: "Email ou CNPJ já cadastrado." }, { status: 409 });
+      if (!newUser) {
+        tx.rollback()
+        throw new Error('Falha ao criar o usuário para a igreja.')
       }
 
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+      const [newProfile] = await tx
+        .insert(churchProfiles)
+        .values({
+          userId: newUser.id,
+          supervisorId: validatedData.supervisorId,
+          cnpj: validatedData.cnpj,
+          razaoSocial: validatedData.razaoSocial,
+          nomeFantasia: validatedData.nomeFantasia,
+          foundationDate: validatedData.foundationDate
+            ? validatedData.foundationDate.toISOString()
+            : null,
+          cep: validatedData.cep,
+          state: validatedData.state,
+          city: validatedData.city,
+          neighborhood: validatedData.neighborhood,
+          address: validatedData.address,
+          treasurerFirstName: validatedData.treasurerFirstName,
+          treasurerLastName: validatedData.treasurerLastName,
+          treasurerCpf: validatedData.treasurerCpf,
+        })
+        .returning()
+
+      return { ...newUser, ...newProfile }
+    })
+
+    return NextResponse.json({ success: true, church: newChurch }, { status: 201 })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados inválidos.', details: error.errors },
+        { status: 400 },
+      )
     }
+    console.error('Erro ao criar igreja:', error)
+    if (
+      error instanceof Error &&
+      'constraint' in error &&
+      ((error as Record<string, unknown>).constraint === 'users_email_unique' ||
+        (error as Record<string, unknown>).constraint === 'church_profiles_cnpj_unique')
+    ) {
+      return NextResponse.json({ error: 'Email ou CNPJ já cadastrado.' }, { status: 409 })
+    }
+
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
+  }
 }

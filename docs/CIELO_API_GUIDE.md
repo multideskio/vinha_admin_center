@@ -6,15 +6,15 @@ Este documento serve como um guia técnico completo para a integração com a AP
 
 A Cielo oferece dois ambientes distintos: um para testes (Sandbox) e outro para transações reais (Produção).
 
-| Ambiente                  | URL Base da API                               |
-| ------------------------- | --------------------------------------------- |
+| Ambiente                      | URL Base da API                                  |
+| ----------------------------- | ------------------------------------------------ |
 | **Sandbox (Desenvolvimento)** | `https://apisandbox.cieloecommerce.cielo.com.br` |
-| **Produção**                | `https://api.cieloecommerce.cielo.com.br`     |
+| **Produção**                  | `https://api.cieloecommerce.cielo.com.br`        |
 
 **Autenticação:** Todas as requisições devem conter as suas credenciais no cabeçalho (header):
 
--   **MerchantId:** Sua identificação única na Cielo.
--   **MerchantKey:** Sua chave de acesso transacional.
+- **MerchantId:** Sua identificação única na Cielo.
+- **MerchantKey:** Sua chave de acesso transacional.
 
 **Header:**
 
@@ -65,8 +65,8 @@ curl -X POST \
  }'
 ```
 
--   **`"Capture": false` (implícito):** Se você quiser autorizar e capturar no mesmo passo, adicione `"Capture": true` dentro do objeto `Payment`.
--   **`Amount`:** O valor é enviado em centavos (ex: R$ 157,00 = 15700).
+- **`"Capture": false` (implícito):** Se você quiser autorizar e capturar no mesmo passo, adicione `"Capture": true` dentro do objeto `Payment`.
+- **`Amount`:** O valor é enviado em centavos (ex: R$ 157,00 = 15700).
 
 **Resposta (Sucesso):**
 Você receberá um `PaymentId` e o `Status` **1** (Autorizada). Guarde o `PaymentId`.
@@ -220,16 +220,17 @@ curl -X GET \
 **Passo 3: Interpretar o Status**
 Analise o campo `Status` na resposta para dar a baixa no seu sistema.
 
-| Status          | Código | Significado                                          | Ação Recomendada                                  |
-| --------------- | ------ | ---------------------------------------------------- | ------------------------------------------------- |
-| Pendente        | 12     | O PIX/Boleto foi gerado, aguardando pagamento.       | Aguardar.                                         |
-| Autorizada      | 1      | A transação de crédito foi autorizada.               | Capturar a transação para efetivar a cobrança.    |
-| **Pago**        | **2**  | **Pagamento confirmado.**                            | **Dar baixa no pedido. Marcar como pago no sistema.** |
-| Negada          | 3      | A transação de crédito foi negada pelo emissor.      | Informar o usuário e cancelar o pedido.           |
-| Cancelada       | 10     | A transação foi cancelada.                           | Cancelar o pedido no sistema.                     |
-| Não Finalizada  | 0      | A transação não foi finalizada.                      | Tratar como abandonada ou falha inicial.          |
+| Status         | Código | Significado                                     | Ação Recomendada                                      |
+| -------------- | ------ | ----------------------------------------------- | ----------------------------------------------------- |
+| Pendente       | 12     | O PIX/Boleto foi gerado, aguardando pagamento.  | Aguardar.                                             |
+| Autorizada     | 1      | A transação de crédito foi autorizada.          | Capturar a transação para efetivar a cobrança.        |
+| **Pago**       | **2**  | **Pagamento confirmado.**                       | **Dar baixa no pedido. Marcar como pago no sistema.** |
+| Negada         | 3      | A transação de crédito foi negada pelo emissor. | Informar o usuário e cancelar o pedido.               |
+| Cancelada      | 10     | A transação foi cancelada.                      | Cancelar o pedido no sistema.                         |
+| Não Finalizada | 0      | A transação não foi finalizada.                 | Tratar como abandonada ou falha inicial.              |
 
 **Exemplo de Fluxo de Baixa Automática:**
+
 > Notificação da Cielo chega na sua URL -> Seu sistema pega o `PaymentId` -> Seu sistema faz um `GET` na API da Cielo -> Seu sistema lê o campo `"Status"` -> Se `Status == 2` -> `UPDATE pedidos SET status = 'PAGO' WHERE id_pedido = ...`
 
 Este método garante que você sempre trabalhe com a informação mais recente e segura, automatizando completamente o processo de conciliação financeira.
@@ -252,8 +253,8 @@ curl -X GET \
 
 Para cancelar uma transação, você deve fazer uma requisição `PUT` para o endpoint de cancelamento.
 
--   **Se a transação ainda não foi capturada:** A operação é um `void` (anulação).
--   **Se a transação já foi capturada:** A operação é um `refund` (reembolso/estorno).
+- **Se a transação ainda não foi capturada:** A operação é um `void` (anulação).
+- **Se a transação já foi capturada:** A operação é um `refund` (reembolso/estorno).
 
 O endpoint é o mesmo para ambos os casos. Você pode cancelar o valor total ou parcial.
 
@@ -264,7 +265,8 @@ curl -X PUT \
   -H 'MerchantId: SEU_MERCHANT_ID' \
   -H 'MerchantKey: SEU_MERCHANT_KEY'
 ```
--   **`amount` (opcional):** Se não for especificado, o valor total será cancelado. Se for especificado, será um cancelamento parcial. O valor deve ser em centavos.
+
+- **`amount` (opcional):** Se não for especificado, o valor total será cancelado. Se for especificado, será um cancelamento parcial. O valor deve ser em centavos.
 
 **Resposta (Sucesso):**
 O `Status` da transação mudará para **10** (Cancelada).
@@ -276,6 +278,7 @@ O `Status` da transação mudará para **10** (Cancelada).
 Quando uma requisição falha, a API da Cielo retorna um array de erros em formato JSON, o que permite um tratamento detalhado de cada problema.
 
 **Exemplo de Resposta de Erro:**
+
 ```json
 [
   {
