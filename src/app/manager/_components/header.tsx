@@ -27,7 +27,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { logoutUser } from '@/actions/auth'
+import { handleLogout } from '@/actions/logout'
 
 const menuItems = [
   { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -153,12 +153,7 @@ export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps
             <span>Ajuda</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <form
-            action={async () => {
-              'use server'
-              await logoutUser()
-            }}
-          >
+          <form action={handleLogout}>
             <button type="submit" className="w-full">
               <DropdownMenuItem>
                 <LogOut className="mr-2 h-4 w-4" />
