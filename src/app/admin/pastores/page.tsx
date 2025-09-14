@@ -1,7 +1,8 @@
+
 /**
 * @fileoverview Página de listagem e gerenciamento de pastores (visão do admin).
-* @version 1.2
-* @date 2024-08-07
+* @version 1.3
+* @date 2024-08-08
 * @author PH
 */
 
@@ -19,7 +20,7 @@ import {
   Mail,
   MapPin,
   Pencil,
-  User as UserIcon,
+  User,
   Map,
   Calendar as CalendarIcon,
   Search,
@@ -444,7 +445,7 @@ const PastorFormModal = ({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value || undefined}
+                          selected={field.value ?? undefined}
                           onSelect={field.onChange}
                           disabled={(date) =>
                             date > new Date() || date < new Date('1900-01-01')
@@ -570,8 +571,8 @@ export default function PastoresPage(): JSX.Element {
     `${pastor.firstName} ${pastor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredPastors.length / itemsPerPage);
-  const paginatedPastors = filteredPastors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredPastores.length / itemsPerPage);
+  const paginatedPastors = filteredPastores.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -684,11 +685,10 @@ export default function PastoresPage(): JSX.Element {
                             #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
                         </h3>
                         <div className="space-y-1 text-sm text-muted-foreground">
-                            <p className='flex items-center gap-2'><UserIcon size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
+                            <p className='flex items-center gap-2'><User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span></p>
                             <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
                             <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
                             <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
                         </div>
                         </div>
                     </div>
@@ -727,7 +727,7 @@ export default function PastoresPage(): JSX.Element {
             Pastores
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {filteredPastors.length} de {pastores.length} resultados
+            Exibindo {filteredPastores.length} de {pastores.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // =============================================================================
@@ -12,6 +13,8 @@ export const PAYMENT_METHODS = ['pix', 'credit_card', 'boleto'] as const;
 export const NOTIFICATION_EVENT_TRIGGERS = ['user_registered', 'payment_received', 'payment_due_reminder', 'payment_overdue'] as const;
 export const WEBHOOK_EVENTS = ['transacao_criada', 'transacao_recusada', 'usuario_atualizado', 'transacao_aprovada', 'usuario_criado'] as const;
 export const API_KEY_STATUSES = ['active', 'inactive'] as const;
+export const NOTIFICATION_TYPES = ['payment_notifications', 'due_date_reminders', 'network_reports'] as const;
+
 
 // =============================================================================
 // TIPOS INFERIDOS DOS SCHEMAS (para uso em todo o app)
@@ -25,6 +28,7 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export type NotificationEventTrigger = (typeof NOTIFICATION_EVENT_TRIGGERS)[number];
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 export type ApiKeyStatus = (typeof API_KEY_STATUSES)[number];
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 // =============================================================================
 // SCHEMAS ZOD (para validação de I/O na API e Formulários)
@@ -134,3 +138,4 @@ export type SupervisorProfile = z.infer<typeof supervisorProfileSchema>;
 export type PastorProfile = z.infer<typeof pastorProfileSchema>;
 export type ChurchProfile = z.infer<typeof churchProfileSchema>;
 export type User = z.infer<typeof userSchema>;
+

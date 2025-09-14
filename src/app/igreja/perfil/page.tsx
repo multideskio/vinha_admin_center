@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react';
@@ -13,6 +14,8 @@ import {
   AlertTriangle,
   Lock,
   Calendar as CalendarIcon,
+  Mail,
+  Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -21,10 +24,12 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Form,
@@ -40,6 +45,11 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { type NotificationType, type UserNotificationSettings } from '@/lib/types';
+import { NOTIFICATION_TYPES } from '@/lib/types';
+import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 const churchProfileSchema = z.object({
     id: z.string().optional(),
@@ -68,40 +78,139 @@ const churchProfileSchema = z.object({
 
 type ChurchProfile = z.infer<typeof churchProfileSchema>;
 
-
-const churchData: ChurchProfile = {
-  id: 'chu-01',
-  razaoSocial: 'IGREJA EVANGELICA ASSEMBLEIA DE DEUS',
-  nomeFantasia: 'Assembleia de Deus Madureira',
-  email: 'contato@admadureira.com',
-  phone: '(11) 98888-7777',
-  cnpj: '55.343.456/0001-21',
-  cep: '01002-000',
-  state: 'SP',
-  city: 'São Paulo',
-  neighborhood: 'Sé',
-  address: 'Praça da Sé, 100',
-  foundationDate: new Date('1950-01-15T00:00:00'),
-  titheDay: 10,
-  treasurerFirstName: 'José',
-  treasurerLastName: 'Contas',
-  treasurerCpf: '123.456.789-00',
-  facebook: 'https://facebook.com',
-  instagram: 'https://instagram.com',
-  website: 'https://admadureira.com',
+const notificationSettingsConfig = {
+    payment_notifications: "Notificações de Pagamento",
+    due_date_reminders: "Lembretes de Vencimento",
+    network_reports: "Relatórios da Rede",
+  };
+  
+const SettingsTab = ({ userId }: { userId: string }) => {
+    const [settings, setSettings] = React.useState<UserNotificationSettings>({});
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+  
+    const fetchSettings = React.useCallback(async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`);
+        if (!response.ok) throw new Error('Falha ao carregar configurações.');
+        const data = await response.json();
+        setSettings(data);
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    }, [userId, toast]);
+  
+    React.useEffect(() => {
+      fetchSettings();
+    }, [fetchSettings]);
+  
+    const handleSwitchChange = (type: NotificationType, channel: 'email' | 'whatsapp', value: boolean) => {
+      setSettings(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [channel]: value,
+        },
+      }));
+    };
+  
+    const handleSaveSettings = async () => {
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        if (!response.ok) throw new Error('Falha ao salvar configurações.');
+        toast({ title: 'Sucesso', description: 'Configurações de notificação salvas.', variant: 'success' });
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      }
+    };
+  
+    if (isLoading) {
+      return (
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      );
+    }
+  
+    return (
+      <Card>
+        <CardHeader>
+            <CardTitle>Configurações de Notificação</CardTitle>
+            <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          {NOTIFICATION_TYPES.map(type => (
+            <div key={type} className='flex items-center justify-between rounded-lg border p-4'>
+              <div>
+                <p className='font-medium'>{notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}</p>
+              </div>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2' title="Notificar por Email">
+                  <Mail className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.email ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
+                  />
+                </div>
+                <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                  <Smartphone className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.whatsapp ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className='flex justify-end'>
+              <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
 };
 
 
 export default function IgrejaProfilePage() {
+    const [church, setChurch] = React.useState<ChurchProfile | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+
   const form = useForm<ChurchProfile>({
     resolver: zodResolver(churchProfileSchema),
-    defaultValues: churchData,
+    defaultValues: {},
   });
 
   const onSubmit = (data: ChurchProfile) => {
     console.log(data);
-    // Handle form submission
   };
+  
+    if (isLoading || !church) {
+      return (
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-1">
+                <Card><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+            </div>
+            <div className="lg:col-span-2">
+                <Card><CardContent className="pt-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+            </div>
+        </div>
+      )
+  }
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -111,7 +220,7 @@ export default function IgrejaProfilePage() {
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                <AvatarImage src="https://placehold.co/96x96.png" alt={churchData.nomeFantasia} data-ai-hint="church building" />
+                <AvatarImage src="https://placehold.co/96x96.png" alt={church.nomeFantasia} data-ai-hint="church building" />
                 <AvatarFallback>IDM</AvatarFallback>
               </Avatar>
               <Button
@@ -124,7 +233,7 @@ export default function IgrejaProfilePage() {
               </Button>
             </div>
             <h2 className="mt-4 text-xl font-semibold">
-              {churchData.nomeFantasia}
+              {church.nomeFantasia}
             </h2>
             <p className="text-muted-foreground">Igreja</p>
           </CardContent>
@@ -135,21 +244,21 @@ export default function IgrejaProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={churchData.facebook}
+                  defaultValue={church.facebook}
                   placeholder="https://facebook.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={churchData.instagram}
+                  defaultValue={church.instagram}
                   placeholder="https://instagram.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={churchData.website}
+                  defaultValue={church.website}
                   placeholder="https://website.com/..."
                 />
               </div>
@@ -163,6 +272,7 @@ export default function IgrejaProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Dados da Igreja</TabsTrigger>
+            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
             <Card>
@@ -359,7 +469,7 @@ export default function IgrejaProfilePage() {
                     </Alert>
 
                      <FormField
-                      control={form.control}
+                      control={form.control}                      
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
@@ -367,7 +477,7 @@ export default function IgrejaProfilePage() {
                            <FormControl>
                             <div className="relative mt-1">
                                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} />
+                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} /> 
                             </div>
                            </FormControl>
                           <FormMessage />
@@ -384,6 +494,9 @@ export default function IgrejaProfilePage() {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="configuracoes">
+              {church.id && <SettingsTab userId={church.id} />}
+            </TabsContent>
         </Tabs>
       </div>
     </div>

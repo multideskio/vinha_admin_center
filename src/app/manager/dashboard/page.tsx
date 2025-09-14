@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -37,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { type TransactionStatus } from '@/lib/types';
 
 type KpiData = {
     title: string;
@@ -59,7 +61,7 @@ type DashboardData = {
     revenueByMethod: { method: string; value: number; fill: string; }[];
     revenueByChurch: { name: string; revenue: number; fill: string; }[];
     membersByChurch: { name: string; count: number; fill: string; }[];
-    recentTransactions: { id: string; name: string; amount: number; date: string; status: string; }[];
+    recentTransactions: { id: string; name: string; amount: number; date: string; status: TransactionStatus; }[];
     recentRegistrations: { id: string; name: string; type: string; date: string; avatar: string; }[];
     newMembers: { month: string; count: number; }[];
 }
@@ -135,6 +137,13 @@ export default function GerenteDashboardPage() {
     )
   }
 
+  const statusMap: { [key in TransactionStatus]: { text: string; variant: "success" | "warning" | "destructive" | "outline" } } = {
+    approved: { text: "Aprovada", variant: "success" },
+    pending: { text: "Pendente", variant: "warning" },
+    refused: { text: "Recusada", variant: "destructive" },
+    refunded: { text: "Reembolsada", variant: "outline" },
+};
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -186,8 +195,8 @@ export default function GerenteDashboardPage() {
                                 <TableCell className='font-medium'>{transaction.name}</TableCell>
                                 <TableCell className='text-right'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}</TableCell>
                                 <TableCell className='hidden sm:table-cell'>
-                                     <Badge variant={transaction.status === 'approved' ? 'success' : transaction.status === 'pending' ? 'warning' : 'destructive'}>
-                                        {transaction.status}
+                                     <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                                        {statusMap[transaction.status]?.text || transaction.status}
                                     </Badge>
                                 </TableCell>
                             </TableRow>
@@ -231,7 +240,7 @@ export default function GerenteDashboardPage() {
                 <ChartContainer config={{
                      value: { label: "Valor" },
                      pix: { label: "Pix", color: "#10b981"},
-                     credito: { label: "Crédito", color: "#3b82f6"},
+                     credit_card: { label: "Crédito", color: "#3b82f6"},
                      boleto: { label: "Boleto", color: "#f59e0b"},
                 }} className="h-[300px] w-full">
                     <PieChart>

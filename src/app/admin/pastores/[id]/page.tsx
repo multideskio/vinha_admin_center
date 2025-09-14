@@ -1,6 +1,6 @@
 /**
 * @fileoverview Página de edição de perfil do pastor (visão do admin).
-* @version 1.3
+* @version 1.5
 * @date 2024-08-08
 * @author PH
 */
@@ -10,6 +10,7 @@
 import * as React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Camera,
   Facebook,
@@ -67,7 +68,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { pastorProfileSchema, type TransactionStatus } from '@/lib/types';
+import { pastorProfileSchema, type TransactionStatus, type UserNotificationSettings, NOTIFICATION_TYPES } from '@/lib/types';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const pastorUpdateSchema = pastorProfileSchema.extend({
@@ -92,6 +95,30 @@ type Transaction = {
     amount: number;
     status: TransactionStatus;
     date: string;
+};
+
+const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
+    const [reason, setReason] = React.useState('');
+    return (
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir Cadastro</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste perfil para fins de auditoria.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-2">
+                <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+                <Textarea id="deletion-reason" placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc." value={reason} onChange={(e) => setReason(e.target.value)} />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>
+                    Excluir permanentemente
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    );
 };
 
 const TransactionsTab = ({ userId }: { userId: string }) => {
@@ -189,7 +216,114 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
         </CardContent>
       </Card>
     );
+};
+
+const notificationSettingsConfig = {
+    payment_notifications: "Notificações de Pagamento",
+    due_date_reminders: "Lembretes de Vencimento",
+    network_reports: "Relatórios da Rede",
   };
+  
+const SettingsTab = ({ userId }: { userId: string }) => {
+    const [settings, setSettings] = React.useState<UserNotificationSettings>({});
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+  
+    const fetchSettings = React.useCallback(async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`);
+        if (!response.ok) throw new Error('Falha ao carregar configurações.');
+        const data = await response.json();
+        setSettings(data);
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    }, [userId, toast]);
+  
+    React.useEffect(() => {
+      fetchSettings();
+    }, [fetchSettings]);
+  
+    const handleSwitchChange = (type: NotificationType, channel: 'email' | 'whatsapp', value: boolean) => {
+      setSettings(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [channel]: value,
+        },
+      }));
+    };
+  
+    const handleSaveSettings = async () => {
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        if (!response.ok) throw new Error('Falha ao salvar configurações.');
+        toast({ title: 'Sucesso', description: 'Configurações de notificação salvas.', variant: 'success' });
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      }
+    };
+  
+    if (isLoading) {
+      return (
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      );
+    }
+  
+    return (
+      <Card>
+        <CardHeader>
+            <CardTitle>Configurações de Notificação</CardTitle>
+            <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          {NOTIFICATION_TYPES.map(type => (
+            <div key={type} className='flex items-center justify-between rounded-lg border p-4'>
+              <div>
+                <p className='font-medium'>{notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}</p>
+              </div>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2' title="Notificar por Email">
+                  <Mail className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.email ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
+                  />
+                </div>
+                <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                  <Smartphone className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.whatsapp ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className='flex justify-end'>
+              <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+};
 
 export default function PastorProfilePage(): JSX.Element {
   const [pastor, setPastor] = React.useState<PastorProfile | null>(null);
@@ -214,8 +348,8 @@ export default function PastorProfilePage(): JSX.Element {
     setIsLoading(true);
     try {
         const [pastorRes, supervisorsRes] = await Promise.all([
-            fetch(`/api/v1/admin/pastores/${id}`),
-            fetch('/api/v1/admin/supervisores?minimal=true'),
+            fetch(`/api/v1/pastores/${id}`),
+            fetch('/api/v1/supervisores?minimal=true'),
         ]);
 
         if (!pastorRes.ok) throw new Error('Falha ao carregar dados do pastor.');
@@ -247,7 +381,7 @@ export default function PastorProfilePage(): JSX.Element {
   const onSubmit = async (data: Partial<PastorProfile>) => {
     setIsSaving(true);
     try {
-        const response = await fetch(`/api/v1/admin/pastores/${id}`, {
+        const response = await fetch(`/api/v1/pastores/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -262,9 +396,13 @@ export default function PastorProfilePage(): JSX.Element {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (reason: string) => {
     try {
-        const response = await fetch(`/api/v1/admin/pastores/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/v1/pastores/${id}`, { 
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deletionReason: reason }),
+        });
         if(!response.ok) throw new Error('Falha ao excluir o pastor.');
         toast({ title: "Sucesso!", description: 'Pastor excluído com sucesso.', variant: 'success' });
         router.push('/admin/pastores');
@@ -306,393 +444,335 @@ export default function PastorProfilePage(): JSX.Element {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      <div className="lg:col-span-1">
-        <Card>
-          <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={previewImage || pastor.avatarUrl || "https://placehold.co/96x96.png"} alt={pastor.firstName ?? ''} data-ai-hint="male pastor" />
-                <AvatarFallback>{pastor.firstName?.[0]}{pastor.lastName?.[0]}</AvatarFallback>
-              </Avatar>
-              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                        <Camera className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <span className="sr-only">Trocar foto</span>
-                </Label>
-                <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-            </div>
-            <h2 className="mt-4 text-xl font-semibold">
-              {pastor.firstName} {pastor.lastName}
-            </h2>
-            <p className="text-muted-foreground">Pastor</p>
-          </CardContent>
-          <Separator />
-          <CardContent className="pt-6">
-            <h3 className="mb-4 font-semibold">Redes sociais</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Facebook className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={pastor.facebook ?? ''}
-                  placeholder="https://facebook.com/..."
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={pastor.website ?? ''}
-                  placeholder="https://website.com/..."
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={pastor.instagram ?? ''}
-                  placeholder="https://instagram.com/..."
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="lg:col-span-2">
-        <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-            <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
-            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-            <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
+    <AlertDialog>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-1">
             <Card>
-              <CardContent className="pt-6">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <FormField
-                        control={form.control}
-                        name="supervisorId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Selecione um supervisor</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione um supervisor" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {supervisors.map(supervisor => (
-                                    <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.firstName} {supervisor.lastName}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sobre-nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="cpf"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CPF</FormLabel>
-                            <FormControl>
-                              <Input {...field} disabled value={pastor?.cpf ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <FormField
-                        control={form.control}
-                        name="birthDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Data de nascimento</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
-                                    ) : (
-                                      <span>dd/mm/aaaa</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
-                                  }
-                                  initialFocus
-                                  locale={ptBR}
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Celular</FormLabel>
-                            <FormControl>
-                                <div className="flex items-center">
-                                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                    🇧🇷 +55
-                                    </span>
-                                    <Input {...field} value={field.value ?? ''} className="rounded-l-none"/>
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="landline"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Telefone 2</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''}/>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+            <CardContent className="flex flex-col items-center pt-6 text-center">
+                <div className="relative">
+                <Avatar className="h-24 w-24">
+                    <AvatarImage src={previewImage || pastor.avatarUrl || "https://placehold.co/96x96.png"} alt={pastor.firstName ?? ''} data-ai-hint="male pastor" />
+                    <AvatarFallback>{pastor.firstName?.[0]}{pastor.lastName?.[0]}</AvatarFallback>
+                </Avatar>
+                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                            <Camera className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <span className="sr-only">Trocar foto</span>
+                    </Label>
+                    <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                </div>
+                <h2 className="mt-4 text-xl font-semibold">
+                {pastor.firstName} {pastor.lastName}
+                </h2>
+                <p className="text-muted-foreground">Pastor</p>
+            </CardContent>
+            <Separator />
+            <CardContent className="pt-6">
+                <h3 className="mb-4 font-semibold">Redes sociais</h3>
+                <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <Facebook className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                    defaultValue={pastor.facebook ?? ''}
+                    placeholder="https://facebook.com/..."
+                    />
+                </div>
+                <div className="flex items-center gap-3">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                    defaultValue={pastor.website ?? ''}
+                    placeholder="https://website.com/..."
+                    />
+                </div>
+                <div className="flex items-center gap-3">
+                    <Instagram className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                    defaultValue={pastor.instagram ?? ''}
+                    placeholder="https://instagram.com/..."
+                    />
+                </div>
+                </div>
+            </CardContent>
+            </Card>
+        </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="lg:col-span-2">
+            <Tabs defaultValue="profile">
+            <TabsList>
+                <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+                <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
+                <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
+                <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+                <Card>
+                <CardContent className="pt-6">
+                    <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <FormField
                             control={form.control}
-                            name="email"
+                            name="supervisorId"
                             render={({ field }) => (
-                            <FormItem className="sm:col-span-1">
-                                <FormLabel>Email</FormLabel>
+                            <FormItem>
+                                <FormLabel>Selecione um supervisor</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                                 <FormControl>
-                                <Input type="email" {...field} value={field.value ?? ''}/>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um supervisor" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {supervisors.map(supervisor => (
+                                        <SelectItem key={supervisor.id} value={supervisor.id}>{supervisor.firstName} {supervisor.lastName}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                            control={form.control}
+                            name="firstName"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nome</FormLabel>
+                                <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                             )}
                         />
-                        <FormField control={form.control} name="cep" render={({ field }) => (
+                        <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
                             <FormItem>
-                                <FormLabel>CEP</FormLabel>
-                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
+                                <FormLabel>Sobre-nome</FormLabel>
+                                <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
                             </FormItem>
-                        )} />
-                        <FormField control={form.control} name="state" render={({ field }) => (
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="cpf"
+                            render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Estado/UF</FormLabel>
-                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
+                                <FormLabel>CPF</FormLabel>
+                                <FormControl>
+                                <Input {...field} disabled value={pastor?.cpf ?? ''} />
+                                </FormControl>
+                                <FormMessage />
                             </FormItem>
-                        )} />
-                    </div>
+                            )}
+                        />
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                            control={form.control}
+                            name="birthDate"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>Data de nascimento</FormLabel>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                          "w-full pl-3 text-left font-normal",
+                                          !field.value && "text-muted-foreground"
+                                        )}
+                                      >
+                                        {field.value ? (
+                                          format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
+                                        ) : (
+                                          <span>dd/mm/aaaa</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={field.value}
+                                      onSelect={field.onChange}
+                                      disabled={(date) =>
+                                        date > new Date() || date < new Date("1900-01-01")
+                                      }
+                                      initialFocus
+                                      locale={ptBR}
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Celular</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center">
+                                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
+                                        🇧🇷 +55
+                                        </span>
+                                        <Input {...field} value={field.value ?? ''} className="rounded-l-none"/>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="landline"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Telefone 2</FormLabel>
+                                <FormControl>
+                                <Input {...field} value={field.value ?? ''}/>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        </div>
 
-                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField control={form.control} name="city" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Cidade</FormLabel>
-                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="neighborhood" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Bairro</FormLabel>
-                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                         <FormField control={form.control} name="address" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Rua</FormLabel>
-                                <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                    </div>
-                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField control={form.control} name="number" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Número</FormLabel>
-                                <FormControl><Input placeholder='Número da casa...' {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="complement" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Complemento</FormLabel>
-                                <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                         <FormField control={form.control} name="titheDay" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Dia do dízimo</FormLabel>
-                                <FormControl><Input type="number" {...field} value={field.value ?? ''}/></FormControl>
-                            </FormItem>
-                        )} />
-                    </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                <FormItem className="sm:col-span-1">
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                    <Input type="email" {...field} value={field.value ?? ''}/>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField control={form.control} name="cep" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>CEP</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="state" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Estado/UF</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
+                                </FormItem>
+                            )} />
+                        </div>
 
-                    <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                      <AlertDescription>
-                        <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá acessar usando a senha anterior.
-                      </AlertDescription>
-                    </Alert>
-                    
-                    <FormField
-                      control={form.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Label>Atualize a senha do pastor</Label>
-                           <FormControl>
-                            <div className="relative mt-1">
-                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input type="password" placeholder="Nova senha" className="pl-9" {...field} value={field.value ?? ''}/>
-                            </div>
-                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Bairro</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="address" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Rua</FormLabel>
+                                    <FormControl><Input placeholder='Complemento...' {...field} value={field.value ?? ''}/></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="number" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Número</FormLabel>
+                                    <FormControl><Input placeholder='Número da casa...' {...field} value={field.value ?? ''}/></FormControl>
+                                </FormItem>
+                            )} />
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        
+                            <FormField control={form.control} name="complement" render={({ field }) => (
+                                <FormItem className='sm:col-span-2'>
+                                    <FormLabel>Complemento</FormLabel>
+                                    <FormControl><Input {...field} value={field.value ?? ''}/></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="titheDay" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Dia do dízimo</FormLabel>
+                                    <FormControl><Input type="number" {...field} value={field.value ?? ''}/></FormControl>
+                                </FormItem>
+                            )} />
+                        </div>
 
-                    <div className="flex justify-end">
-                      <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Alterar cadastro
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="transactions">
-            <TransactionsTab userId={id as string} />
-          </TabsContent>
-          <TabsContent value="configuracoes">
-              <Card>
-                  <CardHeader>
-                      <CardTitle>Configurações de Notificação</CardTitle>
-                      <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
-                  </CardHeader>
-                  <CardContent className='space-y-6'>
-                      <div className='flex items-center justify-between rounded-lg border p-4'>
-                          <div>
-                              <p className='font-medium'>Notificações de Pagamento</p>
-                              <p className='text-sm text-muted-foreground'>Receber avisos sobre pagamentos recebidos, recusados, etc.</p>
-                          </div>
-                          <div className='flex items-center gap-4'>
-                            <div className='flex items-center gap-2' title="Notificar por Email">
-                                <Mail className='h-4 w-4 text-muted-foreground' />
-                                <Switch />
-                            </div>
-                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
-                                <Smartphone className='h-4 w-4 text-muted-foreground' />
-                                <Switch />
-                            </div>
-                          </div>
-                      </div>
-                       <div className='flex items-center justify-between rounded-lg border p-4'>
-                          <div>
-                              <p className='font-medium'>Lembretes de Vencimento</p>
-                              <p className='text-sm text-muted-foreground'>Receber lembretes sobre pagamentos próximos do vencimento.</p>
-                          </div>
-                          <div className='flex items-center gap-4'>
-                            <div className='flex items-center gap-2' title="Notificar por Email">
-                                <Mail className='h-4 w-4 text-muted-foreground' />
-                                <Switch defaultChecked />
-                            </div>
-                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
-                                <Smartphone className='h-4 w-4 text-muted-foreground' />
-                                <Switch defaultChecked />
-                            </div>
-                          </div>
-                      </div>
-                       <div className='flex items-center justify-between rounded-lg border p-4'>
-                          <div>
-                              <p className='font-medium'>Novos Cadastros na Rede</p>
-                              <p className='text-sm text-muted-foreground'>Receber notificações sobre novos pastores ou igrejas na sua supervisão.</p>
-                          </div>
-                           <div className='flex items-center gap-4'>
-                            <div className='flex items-center gap-2' title="Notificar por Email">
-                                <Mail className='h-4 w-4 text-muted-foreground' />
-                                <Switch defaultChecked />
-                            </div>
-                             <div className='flex items-center gap-2' title="Notificar por WhatsApp">
-                                <Smartphone className='h-4 w-4 text-muted-foreground' />
-                                <Switch />
-                            </div>
-                          </div>
-                      </div>
-                      <div className='flex justify-end'>
-                        <Button>Salvar Configurações</Button>
-                      </div>
-                  </CardContent>
-              </Card>
-          </TabsContent>
-          <TabsContent value="delete">
-          <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
-                <CardDescription>
-                  Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente este cadastro.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+                        <Alert variant="destructive" className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <AlertDescription>
+                            <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá acessar usando a senha anterior.
+                        </AlertDescription>
+                        </Alert>
+                        
+                        <FormField
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                            <Label>Atualize a senha do pastor</Label>
+                            <FormControl>
+                                <div className="relative mt-1">
+                                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input type="password" placeholder="Nova senha" className="pl-9" {...field} value={field.value ?? ''}/>
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+
+                        <div className="flex justify-end">
+                        <Button type="submit" disabled={isSaving}>
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Alterar cadastro
+                        </Button>
+                        </div>
+                    </form>
+                    </Form>
+                </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="transactions">
+                <TransactionsTab userId={id as string} />
+            </TabsContent>
+            <TabsContent value="configuracoes">
+                <SettingsTab userId={id as string} />
+            </TabsContent>
+            <TabsContent value="delete">
+            <Card className="border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
+                    <CardDescription>
+                    Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente este cadastro.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">Excluir permanentemente</Button>
+                    </AlertDialogTrigger>
+                </CardContent>
+                </Card>
+            </TabsContent>
+            </Tabs>
+        </div>
+        <DeleteProfileDialog onConfirm={handleDelete} />
+        </div>
+    </AlertDialog>
   );
 }

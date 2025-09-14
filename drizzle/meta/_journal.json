@@ -113,6 +113,20 @@
       "when": 1754900999663,
       "tag": "0015_open_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1755477787720,
+      "tag": "0016_wise_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1755481750386,
+      "tag": "0017_ambiguous_sumo",
+      "breakpoints": true
     }
   ]
 }

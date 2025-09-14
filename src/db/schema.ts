@@ -1,3 +1,4 @@
+
 /**
 * @fileoverview Schema do banco de dados Drizzle para a aplicação.
 * @version 1.2
@@ -15,6 +16,7 @@ import {
   decimal,
   pgEnum,
   uuid,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { 
@@ -26,7 +28,8 @@ import {
     NOTIFICATION_EVENT_TRIGGERS,
     WEBHOOK_EVENTS,
     API_KEY_STATUSES,
-    type TransactionStatus
+    type TransactionStatus,
+    NOTIFICATION_TYPES
 } from '@/lib/types';
 
 // Enums
@@ -38,6 +41,7 @@ export const paymentMethodEnum = pgEnum('payment_method', PAYMENT_METHODS);
 export const notificationEventTriggerEnum = pgEnum('notification_event_trigger', NOTIFICATION_EVENT_TRIGGERS);
 export const webhookEventEnum = pgEnum('webhook_event', WEBHOOK_EVENTS);
 export const apiKeyStatusEnum = pgEnum('api_key_status', API_KEY_STATUSES);
+export const notificationTypeEnum = pgEnum('notification_type', NOTIFICATION_TYPES);
 
 // Tabelas Principais
 export const companies = pgTable('companies', {
@@ -48,6 +52,9 @@ export const companies = pgTable('companies', {
     maintenanceMode: boolean('maintenance_mode').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow(),
+    deletedAt: timestamp('deleted_at'),
+    deletedBy: uuid('deleted_by'),
+    deletionReason: text('deletion_reason'),
 });
 
 export const users = pgTable('users', {
@@ -274,6 +281,16 @@ export const apiKeys = pgTable('api_keys', {
     lastUsedAt: timestamp('last_used_at'),
 });
 
+export const userNotificationSettings = pgTable('user_notification_settings', {
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    notificationType: notificationTypeEnum('notification_type').notNull(),
+    email: boolean('email').default(true).notNull(),
+    whatsapp: boolean('whatsapp').default(false).notNull(),
+  }, (table) => {
+    return {
+      pk: primaryKey({ columns: [table.userId, table.notificationType] }),
+    };
+});
 
 // Relações
 
@@ -296,7 +313,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     pastorProfile: one(pastorProfiles, { fields: [users.id], references: [pastorProfiles.userId] }),
     churchProfile: one(churchProfiles, { fields: [users.id], references: [churchProfiles.userId] }),
     sessions: many(sessions),
-    transactions: many(transactions, { relationName: 'contributor' })
+    transactions: many(transactions, { relationName: 'contributor' }),
+    notificationSettings: many(userNotificationSettings),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -363,3 +381,11 @@ export const otherSettingsRelations = relations(otherSettings, ({ one }) => ({
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
     company: one(companies, { fields: [apiKeys.companyId], references: [companies.id] }),
 }));
+
+export const userNotificationSettingsRelations = relations(userNotificationSettings, ({ one }) => ({
+    user: one(users, {
+      fields: [userNotificationSettings.userId],
+      references: [users.id],
+    }),
+}));
+

@@ -1,7 +1,7 @@
 /**
 * @fileoverview Rota da API para gerenciar uma igreja específica.
-* @version 1.2
-* @date 2024-08-07
+* @version 1.3
+* @date 2024-08-08
 * @author PH
 */
 
@@ -18,6 +18,10 @@ import { churchProfileSchema, type UserRole } from '@/lib/types';
 const churchUpdateSchema = churchProfileSchema.extend({
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
+
+const deleteSchema = z.object({
+    deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
+});
   
 export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user: sessionUser } = await validateRequest();
@@ -146,17 +150,25 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const { id } = params;
 
     try {
+        const body = await request.json();
+        const { deletionReason } = deleteSchema.parse(body);
+
         await db
         .update(users)
         .set({
             deletedAt: new Date(),
-            status: 'inactive'
+            status: 'inactive',
+            deletedBy: user.id,
+            deletionReason: deletionReason,
         })
         .where(eq(users.id, id));
 
         return NextResponse.json({ success: true, message: "Igreja excluída com sucesso." });
 
     } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json({ error: "Dados de exclusão inválidos.", details: error.errors }, { status: 400 });
+        }
         console.error("Erro ao excluir igreja:", error);
         return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
     }

@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Lock,
   Loader2,
+  Mail,
+  Smartphone,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -21,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -40,7 +43,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { managerProfileSchema } from '@/lib/types';
+import { managerProfileSchema, type NotificationType, type UserNotificationSettings } from '@/lib/types';
+import { NOTIFICATION_TYPES } from '@/lib/types';
+import { Switch } from '@/components/ui/switch';
 
 
 const managerUpdateSchema = managerProfileSchema.extend({
@@ -50,6 +55,113 @@ const managerUpdateSchema = managerProfileSchema.extend({
 type ManagerProfile = z.infer<typeof managerUpdateSchema> & {
     id?: string;
     avatarUrl?: string;
+};
+
+const notificationSettingsConfig = {
+    payment_notifications: "Notificações de Pagamento",
+    due_date_reminders: "Lembretes de Vencimento",
+    network_reports: "Relatórios da Rede",
+  };
+  
+const SettingsTab = ({ userId }: { userId: string }) => {
+    const [settings, setSettings] = React.useState<UserNotificationSettings>({});
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+  
+    const fetchSettings = React.useCallback(async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`);
+        if (!response.ok) throw new Error('Falha ao carregar configurações.');
+        const data = await response.json();
+        setSettings(data);
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    }, [userId, toast]);
+  
+    React.useEffect(() => {
+      fetchSettings();
+    }, [fetchSettings]);
+  
+    const handleSwitchChange = (type: NotificationType, channel: 'email' | 'whatsapp', value: boolean) => {
+      setSettings(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [channel]: value,
+        },
+      }));
+    };
+  
+    const handleSaveSettings = async () => {
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        if (!response.ok) throw new Error('Falha ao salvar configurações.');
+        toast({ title: 'Sucesso', description: 'Configurações de notificação salvas.', variant: 'success' });
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      }
+    };
+  
+    if (isLoading) {
+      return (
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      );
+    }
+  
+    return (
+      <Card>
+        <CardHeader>
+            <CardTitle>Configurações de Notificação</CardTitle>
+            <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          {NOTIFICATION_TYPES.map(type => (
+            <div key={type} className='flex items-center justify-between rounded-lg border p-4'>
+              <div>
+                <p className='font-medium'>{notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}</p>
+              </div>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2' title="Notificar por Email">
+                  <Mail className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.email ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
+                  />
+                </div>
+                <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                  <Smartphone className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.whatsapp ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className='flex justify-end'>
+              <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
 };
 
 export default function GerenteProfilePage() {
@@ -105,7 +217,7 @@ export default function GerenteProfilePage() {
             toast({ title: 'Sucesso', description: 'Perfil atualizado com sucesso.', variant: 'success' });
             fetchManager();
         } catch (error: any) {
-            toast({ title: 'Erro', description: error.message, variant: 'destructive'});
+            toast({ title: 'Erro', description: 'Não foi possível atualizar o gerente.', variant: 'destructive'});
         } finally {
             setIsSaving(false);
         }
@@ -203,6 +315,7 @@ export default function GerenteProfilePage() {
             <Tabs defaultValue="profile">
             <TabsList>
                 <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+                <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
                 <Card>
@@ -369,6 +482,9 @@ export default function GerenteProfilePage() {
                     </Form>
                 </CardContent>
                 </Card>
+            </TabsContent>
+            <TabsContent value="configuracoes">
+                {manager.id && <SettingsTab userId={manager.id} />}
             </TabsContent>
             </Tabs>
         </div>

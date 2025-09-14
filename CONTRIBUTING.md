@@ -51,10 +51,11 @@ A segurança das credenciais é crítica. Siga estritamente as regras abaixo.
 
 *   **Responsabilidade da IA:** A inteligência artificial (IA) é responsável **apenas por editar** o arquivo `src/db/schema.ts` quando for necessário alterar a estrutura do banco de dados.
 *   **Responsabilidade do Desenvolvedor:** O desenvolvedor é responsável por executar os comandos para sincronizar o banco de dados com o schema.
-*   **Gerar Migração:** Para criar um novo arquivo de migração baseado nas alterações do schema, use: `npm run db:generate`.
-*   **Aplicar Migração (Desenvolvimento):** Para aplicar as alterações diretamente no banco de desenvolvimento (sem criar arquivo de migração), use: `npm run db:push`.
-*   **Popular o Banco (Seed):** Para preencher o banco com dados iniciais, execute: `npm run db:seed`.
-*   **Resetar o Banco (Rollback):** Para apagar todas as tabelas e recriá-las a partir do schema (útil em desenvolvimento), use: `npm run db:rollback`. **Atenção: Este comando é destrutivo.**
+*   **Gerar Migração (`db:generate`):** Para criar um novo arquivo de migração baseado nas alterações do schema.
+*   **Aplicar Migração (`db:migrate`):** Para aplicar as alterações diretamente no banco de desenvolvimento.
+*   **Popular o Banco (`db:seed`):** Para preencher o banco com dados iniciais.
+*   **Gerar Rollback (`db:rollback:generate`):** Para criar um arquivo de migração de rollback em branco.
+*   **Apagar o Banco (`db:kill`):** Comando destrutivo para apagar todas as tabelas.
 
 ### Estilo de Código e Linting
 

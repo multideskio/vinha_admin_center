@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -74,3 +75,4 @@ export async function logoutUser() {
     (await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
     return redirect("/auth/login");
 }
+

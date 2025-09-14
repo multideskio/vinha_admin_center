@@ -1,9 +1,4 @@
-/**
-* @fileoverview Página de edição de perfil do pastor (visão do pastor).
-* @version 1.2
-* @date 2024-08-07
-* @author PH
-*/
+
 
 'use client';
 
@@ -20,6 +15,8 @@ import {
   Info,
   Lock,
   Calendar as CalendarIcon,
+  Mail,
+  Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -29,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -49,6 +47,11 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { type UserNotificationSettings, type NotificationType } from '@/lib/types';
+import { NOTIFICATION_TYPES } from '@/lib/types';
+import { Switch } from '@/components/ui/switch';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 const pastorProfileSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -72,39 +75,140 @@ const pastorProfileSchema = z.object({
   website: z.string().url().optional().or(z.literal('')),
 });
 
-type PastorProfile = z.infer<typeof pastorProfileSchema>;
+type PastorProfile = z.infer<typeof pastorProfileSchema> & { id?: string; avatarUrl?: string };
 
-const pastorData: PastorProfile = {
-  firstName: 'Paulo',
-  lastName: 'Ferreira',
-  cpf: '037.628.391-23',
-  birthDate: new Date('2007-02-14T00:00:00'),
-  phone: '5562981154120',
-  landline: '(00) 0000-0000',
-  email: 'pastor@multidesk.io',
-  cep: '75264230',
-  state: 'GO',
-  city: 'Senador Canedo',
-  neighborhood: 'Terrabela Cerrado I',
-  street: 'Rua RP 15',
-  complement: '',
-  number: '',
-  titheDay: 10,
-  facebook: 'https://facebook.com.br',
-  instagram: 'https://instagram.com.br',
-  website: 'https://website.com.br',
+const notificationSettingsConfig = {
+    payment_notifications: "Notificações de Pagamento",
+    due_date_reminders: "Lembretes de Vencimento",
+    network_reports: "Relatórios da Rede",
+  };
+  
+const SettingsTab = ({ userId }: { userId: string }) => {
+    const [settings, setSettings] = React.useState<UserNotificationSettings>({});
+    const [isLoading, setIsLoading] = React.useState(true);
+    const { toast } = useToast();
+  
+    const fetchSettings = React.useCallback(async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`);
+        if (!response.ok) throw new Error('Falha ao carregar configurações.');
+        const data = await response.json();
+        setSettings(data);
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    }, [userId, toast]);
+  
+    React.useEffect(() => {
+      fetchSettings();
+    }, [fetchSettings]);
+  
+    const handleSwitchChange = (type: NotificationType, channel: 'email' | 'whatsapp', value: boolean) => {
+      setSettings(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [channel]: value,
+        },
+      }));
+    };
+  
+    const handleSaveSettings = async () => {
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        if (!response.ok) throw new Error('Falha ao salvar configurações.');
+        toast({ title: 'Sucesso', description: 'Configurações de notificação salvas.', variant: 'success' });
+      } catch (error: any) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      }
+    };
+  
+    if (isLoading) {
+      return (
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      );
+    }
+  
+    return (
+      <Card>
+        <CardHeader>
+            <CardTitle>Configurações de Notificação</CardTitle>
+            <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          {NOTIFICATION_TYPES.map(type => (
+            <div key={type} className='flex items-center justify-between rounded-lg border p-4'>
+              <div>
+                <p className='font-medium'>{notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}</p>
+              </div>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-2' title="Notificar por Email">
+                  <Mail className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.email ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
+                  />
+                </div>
+                <div className='flex items-center gap-2' title="Notificar por WhatsApp">
+                  <Smartphone className='h-4 w-4 text-muted-foreground' />
+                  <Switch
+                    checked={settings[type]?.whatsapp ?? false}
+                    onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className='flex justify-end'>
+              <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
 };
 
 export default function PastorProfilePage() {
-  const form = useForm<PastorProfile>({
-    resolver: zodResolver(pastorProfileSchema),
-    defaultValues: pastorData,
-  });
+    const [pastor, setPastor] = React.useState<PastorProfile | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
 
-  const onSubmit = (data: PastorProfile) => {
-    console.log(data);
-    // Handle form submission
-  };
+    const form = useForm<PastorProfile>({
+        resolver: zodResolver(pastorProfileSchema),
+        defaultValues: {},
+    });
+
+    const onSubmit = (data: PastorProfile) => {
+        console.log(data);
+    };
+
+    if (isLoading || !pastor) {
+        return (
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                  <Card><CardContent className="pt-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+              </div>
+              <div className="lg:col-span-2">
+                  <Card><CardContent className="pt-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+              </div>
+          </div>
+        )
+    }
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -126,7 +230,7 @@ export default function PastorProfilePage() {
               </Button>
             </div>
             <h2 className="mt-4 text-xl font-semibold">
-              {pastorData.firstName} {pastorData.lastName}
+              {pastor.firstName} {pastor.lastName}
             </h2>
             <p className="text-muted-foreground">Pastor</p>
           </CardContent>
@@ -137,21 +241,21 @@ export default function PastorProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={pastorData.facebook}
+                  defaultValue={pastor.facebook ?? ''}
                   placeholder="https://facebook.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={pastorData.website}
+                  defaultValue={pastor.website ?? ''}
                   placeholder="https://website.com/..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={pastorData.instagram}
+                  defaultValue={pastor.instagram ?? ''}
                   placeholder="https://instagram.com/..."
                 />
               </div>
@@ -164,6 +268,7 @@ export default function PastorProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
             <Card>
@@ -189,7 +294,7 @@ export default function PastorProfilePage() {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Sobre-nome</FormLabel>
+                            <FormLabel>Sobrenome</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -261,11 +366,11 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Celular</FormLabel>
                             <FormControl>
-                                <div className="relative">
-                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <span className="text-muted-foreground">🇧🇷 +55</span>
-                                    </div>
-                                    <Input {...field} className="pl-16"/>
+                                <div className="flex items-center">
+                                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
+                                    🇧🇷 +55
+                                    </span>
+                                    <Input {...field} className="rounded-l-none"/>
                                 </div>
                             </FormControl>
                             <FormMessage />
@@ -336,6 +441,7 @@ export default function PastorProfilePage() {
                         )} />
                     </div>
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                       
                         <FormField control={form.control} name="number" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Número</FormLabel>
@@ -395,6 +501,9 @@ export default function PastorProfilePage() {
               </CardContent>
             </Card>
           </TabsContent>
+           <TabsContent value="configuracoes">
+                {pastor.id && <SettingsTab userId={pastor.id} />}
+            </TabsContent>
         </Tabs>
       </div>
     </div>

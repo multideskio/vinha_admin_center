@@ -54,14 +54,16 @@ Os seguintes comandos `npm` foram configurados no `package.json` para facilitar 
 *   **`npm run db:generate`**
     *   **O que faz:** Lê o `schema.ts` e gera um novo arquivo de migração SQL na pasta `drizzle/`. Este comando **não aplica** a migração, apenas a cria. É o método preferido para versionar mudanças no banco de dados.
 
-*   **`npm run db:push`**
+*   **`npm run db:migrate`**
     *   **O que faz:** Compara o `schema.ts` com o estado atual do banco de dados e aplica as diferenças diretamente, sem criar um arquivo de migração. É útil para prototipagem e desenvolvimento rápido.
 
 *   **`npm run db:seed`**
     *   **O que faz:** Executa o script `src/db/seed.ts` para popular o banco de dados com dados de exemplo (um usuário para cada perfil, regiões, etc.). Garante que o banco tenha um estado inicial consistente para testes.
 
-*   **`npm run db:rollback`**
-    *   **O que faz:** **(Comando Destrutivo)** Apaga todas as tabelas do banco de dados e, em seguida, as recria com base no `schema.ts` atual. É um "reset" completo, útil quando há conflitos ou para começar do zero.
+*   **`npm run db:rollback:generate`**
+    *   **O que faz:** Gera um arquivo de migração vazio para que você possa escrever o SQL para reverter uma ou mais migrações manualmente.
+*   **`npm run db:kill`**
+    *   **O que faz:** **(Comando Destrutivo)** Apaga todas as tabelas do banco de dados. É um "reset" completo, útil quando há conflitos ou para começar do zero.
 
 ---
 

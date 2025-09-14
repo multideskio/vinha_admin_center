@@ -65,11 +65,10 @@ const pastorUpdateSchema = pastorProfileSchema.extend({
 }).partial();
 
 type PastorProfile = z.infer<typeof pastorUpdateSchema> & {
-    id: string;
+    id?: string;
     cpf?: string;
-    status: string;
+    status?: string;
     avatarUrl?: string;
-    newPassword?: string;
 };
 
 type Supervisor = {
@@ -101,8 +100,8 @@ export default function PastorProfilePage() {
     setIsLoading(true);
     try {
         const [pastorRes, supervisorsRes] = await Promise.all([
-            fetch(`/api/v1/supervisor/pastores/${id}`),
-            fetch('/api/v1/supervisor/supervisores?minimal=true'),
+            fetch(`/api/v1/manager/pastores/${id}`),
+            fetch('/api/v1/manager/supervisores?minimal=true'),
         ]);
 
         if (!pastorRes.ok) throw new Error('Falha ao carregar dados do pastor.');
@@ -134,7 +133,7 @@ export default function PastorProfilePage() {
   const onSubmit = async (data: Partial<PastorProfile>) => {
     setIsSaving(true);
     try {
-        const response = await fetch(`/api/v1/supervisor/pastores/${id}`, {
+        const response = await fetch(`/api/v1/manager/pastores/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -151,10 +150,10 @@ export default function PastorProfilePage() {
 
   const handleDelete = async () => {
     try {
-        const response = await fetch(`/api/v1/supervisor/pastores/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/v1/manager/pastores/${id}`, { method: 'DELETE' });
         if(!response.ok) throw new Error('Falha ao excluir o pastor.');
         toast({ title: "Sucesso!", description: 'Pastor excluído com sucesso.', variant: 'success' });
-        router.push('/supervisor/pastores');
+        router.push('/manager/pastores');
     } catch(error: any) {
         toast({ title: "Erro", description: error.message, variant: 'destructive'});
     }
@@ -194,7 +193,6 @@ export default function PastorProfilePage() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Left Column: Profile Card */}
       <div className="lg:col-span-1">
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
@@ -219,7 +217,6 @@ export default function PastorProfilePage() {
         </Card>
       </div>
 
-      {/* Right Column: Tabs and Form */}
       <div className="lg:col-span-2">
         <Tabs defaultValue="profile">
           <TabsList>
@@ -299,7 +296,7 @@ export default function PastorProfilePage() {
                         control={form.control}
                         name="birthDate"
                         render={({ field }) => (
-                          <FormItem className="flex flex-col">
+                          <FormItem>
                             <FormLabel>Data de nascimento</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
@@ -323,7 +320,7 @@ export default function PastorProfilePage() {
                               <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                   mode="single"
-                                  selected={field.value ?? undefined}
+                                  selected={field.value}
                                   onSelect={field.onChange}
                                   disabled={(date) =>
                                     date > new Date() || date < new Date("1900-01-01")

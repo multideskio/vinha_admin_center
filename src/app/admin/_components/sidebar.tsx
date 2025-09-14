@@ -48,7 +48,6 @@ const menuItems = [
   { href: '/admin/igrejas', label: 'Igrejas', icon: Church },
   { href: '/admin/administradores', label: 'Administradores', icon: Shield },
   { href: '/admin/relatorios', label: 'Relatórios', icon: FileText },
-  { href: '/admin/gateways', label: 'Gateways', icon: CreditCard },
 ];
 
 const settingsItem = {

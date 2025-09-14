@@ -10,6 +10,7 @@ import {
   Webhook,
   Cloud,
   KeyRound,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -23,6 +24,12 @@ const settingsLinks = [
     icon: Settings,
     title: 'Geral',
     description: 'Nome da aplicação, modo de manutenção e logo.',
+  },
+  {
+    href: '/admin/gateways',
+    icon: CreditCard,
+    title: 'Gateways de Pagamento',
+    description: 'Conecte e gerencie provedores como Cielo e Bradesco.',
   },
   {
     href: '/admin/configuracoes/smtp',

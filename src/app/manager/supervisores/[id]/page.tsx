@@ -46,6 +46,8 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supervisorProfileSchema } from '@/lib/types';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const supervisorUpdateSchema = supervisorProfileSchema.extend({
@@ -63,6 +65,30 @@ type Region = {
     id: string;
     name: string;
 }
+
+const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
+    const [reason, setReason] = React.useState('');
+    return (
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir Cadastro</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste perfil para fins de auditoria.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-2">
+                <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+                <Textarea id="deletion-reason" placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc." value={reason} onChange={(e) => setReason(e.target.value)} />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>
+                    Excluir permanentemente
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    );
+};
 
 export default function SupervisorProfilePage() {
   const [supervisor, setSupervisor] = React.useState<SupervisorProfile | null>(null);
@@ -128,9 +154,13 @@ export default function SupervisorProfilePage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (reason: string) => {
     try {
-        const response = await fetch(`/api/v1/manager/supervisores/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/v1/manager/supervisores/${id}`, { 
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deletionReason: reason }),
+        });
         if(!response.ok) throw new Error('Falha ao excluir o supervisor.');
         toast({ title: "Sucesso!", description: 'Supervisor excluído com sucesso.', variant: 'success' });
         router.push('/manager/supervisores');
@@ -172,45 +202,43 @@ export default function SupervisorProfilePage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Left Column: Profile Card */}
-      <div className="lg:col-span-1">
-        <Card>
-          <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={previewImage || supervisor.avatarUrl || "https://placehold.co/96x96.png"} alt={supervisor.firstName ?? ''} data-ai-hint="male person" />
-                <AvatarFallback>{supervisor.firstName?.[0]}{supervisor.lastName?.[0]}</AvatarFallback>
-              </Avatar>
-              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                        <Camera className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <span className="sr-only">Trocar foto</span>
-                </Label>
-                <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-            </div>
-            <h2 className="mt-4 text-xl font-semibold">
-              {supervisor.firstName} {supervisor.lastName}
-            </h2>
-            <p className="text-muted-foreground">Supervisor</p>
-          </CardContent>
-          <Separator />
-        </Card>
-      </div>
-
-      {/* Right Column: Tabs and Form */}
-      <div className="lg:col-span-2">
-        <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-            <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
+    <AlertDialog>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-1">
             <Card>
-              <CardContent className="pt-6">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <CardContent className="flex flex-col items-center pt-6 text-center">
+                <div className="relative">
+                <Avatar className="h-24 w-24">
+                    <AvatarImage src={previewImage || supervisor.avatarUrl || "https://placehold.co/96x96.png"} alt={supervisor.firstName ?? ''} data-ai-hint="male person" />
+                    <AvatarFallback>{supervisor.firstName?.[0]}{supervisor.lastName?.[0]}</AvatarFallback>
+                </Avatar>
+                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                            <Camera className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <span className="sr-only">Trocar foto</span>
+                    </Label>
+                    <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                </div>
+                <h2 className="mt-4 text-xl font-semibold">
+                {supervisor.firstName} {supervisor.lastName}
+                </h2>
+                <p className="text-muted-foreground">Supervisor</p>
+            </CardContent>
+            </Card>
+        </div>
+
+        <div className="lg:col-span-2">
+            <Tabs defaultValue="profile">
+            <TabsList>
+                <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+                <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+                <Card>
+                <CardContent className="pt-6">
+                    <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                        <FormField
                         control={form.control}
                         name="regionId"
@@ -350,19 +378,20 @@ export default function SupervisorProfilePage() {
                             </FormItem>
                         )} />
                          <FormField control={form.control} name="address" render={({ field }) => (
-                            <FormItem className='sm:col-span-2'>
+                            <FormItem>
                                 <FormLabel>Rua</FormLabel>
                                 <FormControl><Input placeholder='Endereço completo...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
-                    </div>
-                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField control={form.control} name="number" render={({ field }) => (
+                         <FormField control={form.control} name="number" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Número</FormLabel>
                                 <FormControl><Input placeholder='Número da casa...' {...field} value={field.value ?? ''}/></FormControl>
                             </FormItem>
                         )} />
+                    </div>
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                       
                         <FormField control={form.control} name="complement" render={({ field }) => (
                             <FormItem className='sm:col-span-2'>
                                 <FormLabel>Complemento</FormLabel>
@@ -413,20 +442,24 @@ export default function SupervisorProfilePage() {
             </Card>
           </TabsContent>
           <TabsContent value="delete">
-          <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
-                <CardDescription>
-                  Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente este cadastro.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="destructive" onClick={handleDelete}>Excluir permanentemente</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+              <Card className="border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
+                    <CardDescription>
+                    Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente este cadastro.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">Excluir permanentemente</Button>
+                    </AlertDialogTrigger>
+                </CardContent>
+                </Card>
+            </TabsContent>
+            </Tabs>
+        </div>
+        <DeleteProfileDialog onConfirm={handleDelete} />
+        </div>
+    </AlertDialog>
   );
 }

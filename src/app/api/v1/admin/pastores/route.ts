@@ -1,19 +1,18 @@
 /**
-* @fileoverview API para gerenciamento de supervisores (acesso de administrador).
-* @version 1.3
+* @fileoverview Rota da API para gerenciar pastores (visão do admin).
+* @version 1.0
 * @date 2024-08-08
 * @author PH
 */
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema';
+import { users, pastorProfiles, supervisorProfiles } from '@/db/schema';
 import { eq, and, isNull, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
 import { validateRequest } from '@/lib/auth';
-import { supervisorProfileSchema } from '@/lib/types';
-import type { UserRole } from '@/lib/types';
+import { pastorProfileSchema } from '@/lib/types';
 
 
 const COMPANY_ID = process.env.COMPANY_INIT;
@@ -23,9 +22,10 @@ if (!COMPANY_ID) {
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || "123456";
 
+
 export async function GET(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
-    if (!user || (user.role as UserRole) !== 'admin') {
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
@@ -35,96 +35,97 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     if (minimal) {
         const result = await db.select({
-            id: users.id,
-            firstName: supervisorProfiles.firstName,
-            lastName: supervisorProfiles.lastName,
+            id: pastorProfiles.userId,
+            firstName: pastorProfiles.firstName,
+            lastName: pastorProfiles.lastName,
         })
-        .from(supervisorProfiles)
-        .innerJoin(users, eq(users.id, supervisorProfiles.userId))
-        .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
+        .from(pastorProfiles)
+        .leftJoin(users, eq(users.id, pastorProfiles.userId))
+        .where(isNull(users.deletedAt))
         .orderBy(desc(users.createdAt));
-        return NextResponse.json({ supervisors: result });
+        return NextResponse.json({ pastors: result });
     }
 
     const result = await db.select({
         id: users.id,
-        firstName: supervisorProfiles.firstName,
-        lastName: supervisorProfiles.lastName,
+        firstName: pastorProfiles.firstName,
+        lastName: pastorProfiles.lastName,
         email: users.email,
         phone: users.phone,
         status: users.status,
-        cpf: supervisorProfiles.cpf,
-        managerName: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
-        regionName: regions.name,
+        cpf: pastorProfiles.cpf,
+        supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
       })
       .from(users)
-      .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-      .leftJoin(managerProfiles, eq(supervisorProfiles.managerId, managerProfiles.userId))
-      .leftJoin(regions, eq(supervisorProfiles.regionId, regions.id))
-      .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
+      .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+      .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt));
       
-    return NextResponse.json({ supervisors: result });
+    return NextResponse.json({ pastors: result });
 
-  } catch (error: any) {
-    console.error("Erro ao buscar supervisores:", error);
-    return NextResponse.json({ error: "Erro interno do servidor.", details: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("Erro ao buscar pastores:", error);
+    return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
     const { user } = await validateRequest();
-    if (!user || (user.role as UserRole) !== 'admin') {
-        return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
     try {
       const body = await request.json();
-      const validatedData = supervisorProfileSchema.omit({id: true, userId: true}).parse(body);
+      const validatedData = pastorProfileSchema.parse({
+        ...body,
+        birthDate: body.birthDate ? new Date(body.birthDate) : null,
+      });
       
       const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
-      const newSupervisor = await db.transaction(async (tx) => {
+      const newPastor = await db.transaction(async (tx) => {
         const [newUser] = await tx.insert(users).values({
             companyId: COMPANY_ID,
             email: validatedData.email,
             password: hashedPassword,
-            role: 'supervisor',
+            role: 'pastor',
             status: 'active',
             phone: validatedData.phone,
             titheDay: validatedData.titheDay,
         }).returning();
-        
+
         if (!newUser) {
             tx.rollback();
-            throw new Error("Falha ao criar o usuário.");
+            throw new Error("Falha ao criar o usuário para o pastor.");
         }
 
-        const [newProfile] = await tx.insert(supervisorProfiles).values({
+        const [newProfile] = await tx.insert(pastorProfiles).values({
             userId: newUser.id,
-            managerId: validatedData.managerId,
-            regionId: validatedData.regionId,
+            supervisorId: validatedData.supervisorId,
             firstName: validatedData.firstName,
             lastName: validatedData.lastName,
             cpf: validatedData.cpf,
+            birthDate: validatedData.birthDate ? validatedData.birthDate.toISOString() : null,
             cep: validatedData.cep,
             state: validatedData.state,
             city: validatedData.city,
             neighborhood: validatedData.neighborhood,
-            address: validatedData.address,
+            address: validatedData.address
         }).returning();
 
         return { ...newUser, ...newProfile };
       });
   
-      return NextResponse.json({ success: true, supervisor: newSupervisor }, { status: 201 });
+      return NextResponse.json({ success: true, pastor: newPastor }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
-      console.error("Erro ao criar supervisor:", error);
-      if (error instanceof Error && 'constraint' in error && ((error as any).constraint === 'users_email_unique' || (error as any).constraint === 'supervisor_profiles_cpf_unique')) {
+      console.error("Erro ao criar pastor:", error);
+      if (error instanceof Error && 'constraint' in error && ((error as any).constraint === 'users_email_unique' || (error as any).constraint === 'pastor_profiles_cpf_unique')) {
         return NextResponse.json({ error: "Email ou CPF já cadastrado." }, { status: 409 });
       }
 

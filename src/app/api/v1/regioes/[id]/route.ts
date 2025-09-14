@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { regions } from '@/db/schema';
@@ -66,6 +67,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         .update(regions)
         .set({
           deletedAt: new Date(),
+          deletedBy: user.id
         })
         .where(eq(regions.id, id))
         .returning();
@@ -81,3 +83,4 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Erro ao excluir região", details: error.message }, { status: 500 });
     }
   }
+

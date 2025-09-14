@@ -1,5 +1,5 @@
 /**
-* @fileoverview Rota da API para gerenciar um supervisor específico (visão do admin).
+* @fileoverview Rota da API para gerenciar um administrador específico.
 * @version 1.3
 * @date 2024-08-08
 * @author PH
@@ -7,21 +7,35 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
-import { users, supervisorProfiles } from '@/db/schema';
+import { users, adminProfiles } from '@/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import * as bcrypt from 'bcrypt';
+import { authenticateApiKey } from '@/lib/api-auth';
 import { validateRequest } from '@/lib/auth';
-import { supervisorProfileSchema } from '@/lib/types';
 import type { UserRole } from '@/lib/types';
 
-const supervisorUpdateSchema = supervisorProfileSchema.extend({
+const adminUpdateSchema = z.object({
+    firstName: z.string().min(1, 'O nome é obrigatório.').optional(),
+    lastName: z.string().min(1, 'O sobrenome é obrigatório.').optional(),
+    email: z.string().email('E-mail inválido.').optional(),
+    phone: z.string().optional(),
+    cep: z.string().optional(),
+    state: z.string().optional(),
+    city: z.string().optional(),
+    neighborhood: z.string().optional(),
+    address: z.string().optional(),
+    role: z.enum(['admin', 'superadmin']).optional(),
+    facebook: z.string().url().or(z.literal('')).optional(),
+    instagram: z.string().url().or(z.literal('')).optional(),
+    website: z.string().url().or(z.literal('')).optional(),
     newPassword: z.string().optional().or(z.literal('')),
 }).partial();
 
 const deleteSchema = z.object({
     deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
 });
+
 
 export async function GET(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user: sessionUser } = await validateRequest();
@@ -34,17 +48,17 @@ export async function GET(request: Request, { params }: { params: { id: string }
     try {
         const result = await db.select({
             user: users,
-            profile: supervisorProfiles,
+            profile: adminProfiles,
         })
         .from(users)
-        .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-        .where(and(eq(users.id, id), eq(users.role, 'supervisor'), isNull(users.deletedAt)))
+        .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))
+        .where(and(eq(users.id, id), eq(users.role, 'admin'), isNull(users.deletedAt)))
         .limit(1);
 
         if (result.length === 0 || !result[0]) {
-            return NextResponse.json({ error: "Supervisor não encontrado." }, { status: 404 });
+            return NextResponse.json({ error: "Administrador não encontrado." }, { status: 404 });
         }
-
+        
         const { user, profile } = result[0];
 
         return NextResponse.json({ 
@@ -54,29 +68,23 @@ export async function GET(request: Request, { params }: { params: { id: string }
             cpf: profile?.cpf,
             email: user.email,
             phone: user.phone,
-            landline: profile?.landline,
             cep: profile?.cep,
             state: profile?.state,
             city: profile?.city,
             neighborhood: profile?.neighborhood,
             address: profile?.address,
-            number: profile?.number,
-            complement: profile?.complement,
-            titheDay: user.titheDay,
-            managerId: profile?.managerId,
-            regionId: profile?.regionId,
+            permission: profile?.permission,
             facebook: profile?.facebook,
             instagram: profile?.instagram,
             website: profile?.website,
             status: user.status
         });
 
-    } catch (error) {
-        console.error("Erro ao buscar supervisor:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+    } catch (error: any) {
+        console.error("Erro ao buscar administrador:", error);
+        return NextResponse.json({ error: "Erro ao buscar administrador", details: error.message }, { status: 500 });
     }
 }
-
 
 export async function PUT(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user } = await validateRequest();
@@ -88,14 +96,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   
     try {
       const body = await request.json();
-      const validatedData = supervisorUpdateSchema.parse(body);
+      const validatedData = adminUpdateSchema.parse(body);
   
       await db.transaction(async (tx) => {
-        
         const userUpdateData: Partial<typeof users.$inferInsert> = {};
         if (validatedData.email) userUpdateData.email = validatedData.email;
         if (validatedData.phone) userUpdateData.phone = validatedData.phone;
-        if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay;
         
         if (validatedData.newPassword) {
             userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10);
@@ -106,38 +112,34 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             await tx.update(users).set(userUpdateData).where(eq(users.id, id));
         }
   
-        const profileUpdateData: Partial<typeof supervisorProfiles.$inferInsert> = {};
+        const profileUpdateData: Partial<typeof adminProfiles.$inferInsert> = {};
         if (validatedData.firstName) profileUpdateData.firstName = validatedData.firstName;
         if (validatedData.lastName) profileUpdateData.lastName = validatedData.lastName;
-        if (validatedData.landline !== undefined) profileUpdateData.landline = validatedData.landline;
-        if (validatedData.cep !== undefined) profileUpdateData.cep = validatedData.cep;
-        if (validatedData.state !== undefined) profileUpdateData.state = validatedData.state;
-        if (validatedData.city !== undefined) profileUpdateData.city = validatedData.city;
-        if (validatedData.neighborhood !== undefined) profileUpdateData.neighborhood = validatedData.neighborhood;
-        if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address;
-        if (validatedData.number !== undefined) profileUpdateData.number = validatedData.number;
-        if (validatedData.complement !== undefined) profileUpdateData.complement = validatedData.complement;
-        if (validatedData.managerId) profileUpdateData.managerId = validatedData.managerId;
-        if (validatedData.regionId) profileUpdateData.regionId = validatedData.regionId;
-        if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook;
-        if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram;
-        if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website;
+        if (validatedData.cep) profileUpdateData.cep = validatedData.cep;
+        if (validatedData.state) profileUpdateData.state = validatedData.state;
+        if (validatedData.city) profileUpdateData.city = validatedData.city;
+        if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood;
+        if (validatedData.address) profileUpdateData.address = validatedData.address;
+        if (validatedData.role) profileUpdateData.permission = validatedData.role;
+        if (validatedData.facebook) profileUpdateData.facebook = validatedData.facebook;
+        if (validatedData.instagram) profileUpdateData.instagram = validatedData.instagram;
+        if (validatedData.website) profileUpdateData.website = validatedData.website;
         
         if (Object.keys(profileUpdateData).length > 0) {
-            await tx.update(supervisorProfiles).set(profileUpdateData).where(eq(supervisorProfiles.userId, id));
+            await tx.update(adminProfiles).set(profileUpdateData).where(eq(adminProfiles.userId, id));
         }
       });
   
       return NextResponse.json({ success: true });
   
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: "Dados inválidos.", details: error.errors }, { status: 400 });
       }
-      console.error("Erro ao atualizar supervisor:", error);
-      return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+      console.error("Erro ao atualizar administrador:", error);
+      return NextResponse.json({ error: "Erro ao atualizar administrador", details: error.message }, { status: 500 });
     }
-  }
+}
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
     const { user } = await validateRequest();
@@ -150,7 +152,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     try {
         const body = await request.json();
         const { deletionReason } = deleteSchema.parse(body);
-        
+
         await db
         .update(users)
         .set({
@@ -161,13 +163,13 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         })
         .where(eq(users.id, id));
 
-        return NextResponse.json({ success: true, message: "Supervisor excluído com sucesso." });
+        return NextResponse.json({ success: true, message: "Administrador excluído com sucesso." });
 
     } catch (error: any) {
         if (error instanceof z.ZodError) {
             return NextResponse.json({ error: "Dados de exclusão inválidos.", details: error.errors }, { status: 400 });
         }
-        console.error("Erro ao excluir supervisor:", error);
-        return NextResponse.json({ error: "Erro interno do servidor." }, { status: 500 });
+        console.error("Erro ao excluir administrador:", error);
+        return NextResponse.json({ error: "Erro ao excluir administrador", details: error.message }, { status: 500 });
     }
 }

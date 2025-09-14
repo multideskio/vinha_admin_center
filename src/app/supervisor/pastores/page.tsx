@@ -1,7 +1,8 @@
+
 /**
 * @fileoverview Página de listagem e gerenciamento de pastores (visão do supervisor).
-* @version 1.2
-* @date 2024-08-07
+* @version 1.3
+* @date 2024-08-08
 * @author PH
 */
 
@@ -86,6 +87,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -101,6 +109,7 @@ import { pastorProfileSchema, type UserStatus, type SupervisorProfile } from '@/
 
 
 type Pastor = z.infer<typeof pastorProfileSchema> & { id: string; status: UserStatus, supervisorName?: string, email: string, phone: string | null };
+type Supervisor = SupervisorProfile & { id: string; };
 
 const PastorFormModal = ({
   onSave,
@@ -127,6 +136,11 @@ const PastorFormModal = ({
       address: '',
       titheDay: 1,
       phone: '',
+      supervisorId: undefined,
+      birthDate: undefined,
+      landline: '',
+      number: '',
+      complement: ''
     },
   });
 
@@ -406,7 +420,7 @@ const PastorFormModal = ({
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value || undefined}
+                          selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) =>
                             date > new Date() || date < new Date('1900-01-01')
@@ -519,12 +533,12 @@ export default function PastoresPage(): JSX.Element {
     }
   };
 
-  const filteredPastors = pastores.filter(pastor => 
+  const filteredPastores = pastores.filter(pastor => 
     `${pastor.firstName} ${pastor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredPastors.length / itemsPerPage);
-  const paginatedPastors = filteredPastors.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredPastores.length / itemsPerPage);
+  const paginatedPastores = filteredPastores.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -558,8 +572,8 @@ export default function PastoresPage(): JSX.Element {
                         <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                     </TableRow>
                 ))
-            ) : paginatedPastors.length > 0 ? (
-              paginatedPastors.map((pastor) => (
+            ) : paginatedPastores.length > 0 ? (
+              paginatedPastores.map((pastor) => (
                 <TableRow key={pastor.id}>
                   <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{pastor.email}</TableCell>
@@ -614,52 +628,52 @@ export default function PastoresPage(): JSX.Element {
 
   const CardView = () => (
     <>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i}><CardContent className="pt-6"><Skeleton className="h-48 w-full" /></CardContent></Card>
             ))
-        ) : paginatedPastors.length > 0 ? (
-            paginatedPastors.map((pastor, index) => (
-                    <Card key={pastor.id}>
-                        <CardContent className="pt-6">
-                        <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                            <Image
-                            src="https://placehold.co/96x96.png"
-                            alt={`Foto de ${pastor.firstName}`}
-                            width={96}
-                            height={96}
-                            className="rounded-lg object-cover w-24 h-24"
-                            data-ai-hint="male person"
-                            />
-                            <div className="flex-1 space-y-2 min-w-[200px]">
-                            <h3 className="text-lg font-bold">
-                                #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
-                            </h3>
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                                <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
-                                <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
-                                <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
-                                <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city ?? ''} - {pastor.state ?? ''}</span></p>
-                            </div>
-                            </div>
+        ) : paginatedPastores.length > 0 ? (
+            paginatedPastores.map((pastor, index) => (
+                <Card key={pastor.id}>
+                    <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
+                        <Image
+                        src="https://placehold.co/96x96.png"
+                        alt={`Foto de ${pastor.firstName}`}
+                        width={96}
+                        height={96}
+                        className="rounded-lg object-cover w-24 h-24"
+                        data-ai-hint="male person"
+                        />
+                        <div className="flex-1 space-y-2 min-w-[200px]">
+                        <h3 className="text-lg font-bold">
+                            #{((currentPage - 1) * itemsPerPage) + index + 1} - {pastor.firstName} {pastor.lastName}
+                        </h3>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                            <p className='flex items-center gap-2'><FileText size={14} /> <span>{pastor.cpf}</span></p>
+                            <p className='flex items-center gap-2'><Phone size={14} /> <span>{pastor.phone}</span></p>
+                            <p className='flex items-center gap-2'><Mail size={14} /> <span>{pastor.email}</span></p>
+                            <p className='flex items-center gap-2'><MapPin size={14} /> <span>{pastor.city} - {pastor.state}</span></p>
                         </div>
-                        <div className="flex justify-end mt-4">
-                            <Button variant="outline" size="sm" asChild>
-                            <Link href={`/supervisor/pastores/${pastor.id}`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Editar
-                            </Link>
-                            </Button>
                         </div>
-                        </CardContent>
-                    </Card>
+                    </div>
+                    <div className="flex justify-end mt-4">
+                        <Button variant="outline" size="sm" asChild>
+                        <Link href={`/supervisor/pastores/${pastor.id}`}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
+                        </Link>
+                        </Button>
+                    </div>
+                    </CardContent>
+                </Card>
             ))
         ) : (
             <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
         )}
-        </div>
-        <PaginationControls />
+      </div>
+      <PaginationControls />
     </>
   );
   
@@ -679,7 +693,7 @@ export default function PastoresPage(): JSX.Element {
             Pastores da Supervisão
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {filteredPastors.length} de {pastores.length} resultados
+            Exibindo {filteredPastores.length} de {pastores.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -712,3 +726,4 @@ export default function PastoresPage(): JSX.Element {
     </div>
   );
 }
+
