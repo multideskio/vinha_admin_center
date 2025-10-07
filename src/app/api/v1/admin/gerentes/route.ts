@@ -11,7 +11,7 @@ import { users, managerProfiles } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { managerProfileSchema } from '@/lib/types'
 
 const COMPANY_ID = process.env.COMPANY_INIT

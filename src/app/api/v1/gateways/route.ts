@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { gatewayConfigurations } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
 const COMPANY_ID = process.env.COMPANY_INIT

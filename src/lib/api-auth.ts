@@ -12,8 +12,8 @@ import { apiKeys } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export async function authenticateApiKey(): Promise<NextResponse | null> {
-  const headersList = headers()
-  const authorizationHeader = (await headersList).get('Authorization')
+  const headersList = await headers()
+  const authorizationHeader = headersList.get('Authorization')
 
   if (!authorizationHeader) {
     return NextResponse.json({ error: 'Authorization header is missing' }, { status: 401 })

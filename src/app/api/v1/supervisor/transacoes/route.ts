@@ -16,7 +16,7 @@ import {
 import { eq, desc, inArray } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
 export async function GET(): Promise<NextResponse> {

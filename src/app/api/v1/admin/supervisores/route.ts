@@ -11,7 +11,7 @@ import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { supervisorProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 

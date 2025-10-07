@@ -11,7 +11,7 @@ import { users, churchProfiles, supervisorProfiles } from '@/db/schema'
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 
 const COMPANY_ID = process.env.COMPANY_INIT
 if (!COMPANY_ID) {

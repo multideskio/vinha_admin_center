@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { userNotificationSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 
@@ -22,16 +22,14 @@ const settingsSchema = z.record(
   }),
 )
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || sessionUser.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
-  const { id: userId } = params
+  const { id: userId } = await params
 
   try {
     const settings = await db
@@ -61,16 +59,14 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || sessionUser.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
-  const { id: userId } = params
+  const { id: userId } = await params
 
   try {
     const body = await request.json()

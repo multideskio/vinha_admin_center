@@ -11,7 +11,7 @@ import { transactions, churchProfiles } from '@/db/schema'
 import { count, sum, eq, and, gte, lt, sql } from 'drizzle-orm'
 import { subMonths, startOfMonth } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
 const calculateChange = (current: number, previous: number): string => {

@@ -11,7 +11,7 @@ import { users, pastorProfiles } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { pastorProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
@@ -22,10 +22,8 @@ const pastorUpdateSchema = pastorProfileSchema
   })
   .partial()
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -79,10 +77,8 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -150,10 +146,8 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

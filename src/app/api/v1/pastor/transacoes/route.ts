@@ -11,7 +11,7 @@ import { transactions as transactionsTable, users, churchProfiles } from '@/db/s
 import { eq, desc, and, isNull } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 

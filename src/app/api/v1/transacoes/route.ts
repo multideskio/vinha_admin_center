@@ -20,7 +20,7 @@ import {
 import { eq, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { format } from 'date-fns'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { PAYMENT_METHODS, type UserRole } from '@/lib/types'
 
 import { getCompanyId } from '@/lib/utils'

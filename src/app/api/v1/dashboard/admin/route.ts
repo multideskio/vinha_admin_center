@@ -17,7 +17,7 @@ import {
 } from '@/db/schema'
 import { count, sum, eq, isNull, and, desc, sql, gte, lt } from 'drizzle-orm'
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 

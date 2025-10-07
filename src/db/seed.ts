@@ -14,6 +14,7 @@ import {
   churchProfiles,
   regions,
   companies,
+  apiKeys,
 } from './schema'
 
 if (!process.env.DATABASE_URL) {
@@ -228,6 +229,15 @@ async function main(): Promise<void> {
     nomeFantasia: 'Vinha Exemplo',
     treasurerFirstName: 'Maria',
     treasurerLastName: 'Finanças',
+  })
+
+  // Criar chave de API padrão
+  console.log('Seeding API key...')
+  await db.insert(apiKeys).values({
+    companyId: company.id,
+    name: 'Default API Key',
+    key: 'vinha_sk_default123456789abcdef',
+    status: 'active',
   })
 
   console.log('Database seeding complete.')

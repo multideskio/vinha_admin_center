@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { webhooks } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { WEBHOOK_EVENTS } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 
@@ -21,10 +21,8 @@ const webhookSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -58,10 +56,8 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

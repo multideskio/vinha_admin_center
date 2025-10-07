@@ -3,7 +3,7 @@ import { db } from '@/db/drizzle'
 import { regions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
 const regionSchema = z.object({
@@ -16,10 +16,8 @@ const regionSchema = z.object({
     }),
 })
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user } = await validateRequest()
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -61,10 +59,8 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const { user } = await validateRequest()
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })

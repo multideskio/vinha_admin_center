@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 
 const COMPANY_ID = process.env.COMPANY_INIT
 if (!COMPANY_ID) {
