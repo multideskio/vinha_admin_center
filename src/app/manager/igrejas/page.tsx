@@ -92,6 +92,7 @@ type Church = z.infer<typeof churchProfileSchema> & {
   id: string
   status: 'active' | 'inactive'
   supervisorName?: string
+  avatarUrl?: string
 }
 
 type Supervisor = {
@@ -695,7 +696,19 @@ export default function IgrejasPage() {
             ) : paginatedChurches.length > 0 ? (
               paginatedChurches.map((church) => (
                 <TableRow key={church.id}>
-                  <TableCell className="font-medium">{church.nomeFantasia}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={church.avatarUrl || 'https://placehold.co/40x40.png'}
+                        alt={church.nomeFantasia || 'Igreja'}
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover"
+                        data-ai-hint="church building"
+                      />
+                      <span>{church.nomeFantasia}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {church.cnpj}
                   </TableCell>
@@ -779,7 +792,7 @@ export default function IgrejasPage() {
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                     <Image
-                      src="https://placehold.co/96x96.png"
+                      src={church.avatarUrl || 'https://placehold.co/96x96.png'}
                       alt={`Foto da ${church.nomeFantasia}`}
                       width={96}
                       height={96}
