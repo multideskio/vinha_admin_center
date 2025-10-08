@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Skip maintenance check for admin routes, API, and static files
+  // Skip maintenance check for admin, manager, pastor, supervisor routes, API, and static files
   if (
     request.nextUrl.pathname.startsWith('/admin') ||
+    request.nextUrl.pathname.startsWith('/manager') ||
+    request.nextUrl.pathname.startsWith('/pastor') ||
+    request.nextUrl.pathname.startsWith('/supervisor') ||
     request.nextUrl.pathname.startsWith('/api') ||
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname === '/maintenance'
