@@ -184,7 +184,7 @@ export async function validateRequest(): Promise<{
   }
 
   try {
-    const [dbUser] = await db
+    const dbUsers = await db
       .select({
         id: users.id,
         email: users.email,
@@ -194,6 +194,8 @@ export async function validateRequest(): Promise<{
       .from(users)
       .where(eq(users.id, payload.userId))
       .limit(1);
+
+    const dbUser = dbUsers[0];
 
     if (!dbUser) {
       await clearJWTCookie();
@@ -211,7 +213,6 @@ export async function validateRequest(): Promise<{
     };
   } catch (error) {
     console.error('Erro ao validar usuário no banco:', error);
-    await clearJWTCookie();
     return { user: null, session: null };
   }
 }
