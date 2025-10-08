@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/db'
+import { db } from '@/db/drizzle'
 import { notificationRules, users, transactions, notificationLogs } from '@/db/schema'
 import { eq, and, gte } from 'drizzle-orm'
 import { NotificationService } from '@/lib/notifications'
