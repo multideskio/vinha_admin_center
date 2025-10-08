@@ -56,15 +56,13 @@ export async function createPixPayment(amount: number, customerName: string, cus
   const apiUrl = getCieloApiUrl(config.environment)
 
   const payload = {
-    MerchantOrderId: `ORDER-${Date.now()}`,
+    MerchantOrderId: `PIX-${Date.now()}`,
     Customer: {
       Name: customerName,
-      Email: customerEmail,
     },
     Payment: {
       Type: 'Pix',
       Amount: Math.round(amount * 100),
-      QrCodeExpirationDate: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     },
   }
 
