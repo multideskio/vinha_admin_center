@@ -52,17 +52,7 @@ import {
   DialogClose,
   DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+
 import { Input } from '@/components/ui/input'
 import {
   Form,
@@ -85,7 +75,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DateRangePicker } from '@/components/ui/date-range-picker'
+
 import { churchProfileSchema } from '@/lib/types'
 
 type Church = z.infer<typeof churchProfileSchema> & {
@@ -627,17 +617,7 @@ export default function IgrejasPage() {
     fetchData()
   }, [fetchData])
 
-  const handleDelete = async (churchId: string) => {
-    try {
-      const response = await fetch(`/api/v1/manager/igrejas/${churchId}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Falha ao excluir a igreja.')
-      toast({ title: 'Sucesso!', description: 'Igreja excluída com sucesso.', variant: 'success' })
-      fetchData()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
-    }
-  }
+
 
   const filteredChurches = churches.filter((church) =>
     (church.nomeFantasia || '').toLowerCase().includes(searchTerm.toLowerCase()),
@@ -733,28 +713,6 @@ export default function IgrejasPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/manager/igrejas/${church.id}`}>Editar</Link>
                         </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente a
-                                igreja.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => church.id && handleDelete(church.id)}
-                              >
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -890,7 +848,7 @@ export default function IgrejasPage() {
                 className="pl-8"
               />
             </div>
-            <DateRangePicker />
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
