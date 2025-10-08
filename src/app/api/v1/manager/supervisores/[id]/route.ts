@@ -163,6 +163,13 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const { id } = params
 
   try {
+    const body = await request.json()
+    const { deletionReason } = body
+
+    if (!deletionReason?.trim()) {
+      throw new ApiError(400, 'Motivo da exclusão é obrigatório.')
+    }
+
     const isAuthorized = await verifySupervisor(id, sessionUser.id)
     if (!isAuthorized) {
       throw new ApiError(403, 'Não autorizado a excluir este supervisor.')
@@ -172,6 +179,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       .set({
         deletedAt: new Date(),
         status: 'inactive',
+        deletionReason,
       })
       .where(eq(users.id, id))
 
