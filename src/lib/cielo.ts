@@ -66,6 +66,13 @@ export async function createPixPayment(amount: number, customerName: string, cus
     },
   }
 
+  console.log('Cielo PIX Request:', {
+    url: `${apiUrl}/1/sales`,
+    environment: config.environment,
+    merchantId: config.merchantId,
+    payload,
+  })
+
   const response = await fetch(`${apiUrl}/1/sales`, {
     method: 'POST',
     headers: {
@@ -74,6 +81,12 @@ export async function createPixPayment(amount: number, customerName: string, cus
       MerchantKey: config.merchantKey,
     },
     body: JSON.stringify(payload),
+  })
+
+  console.log('Cielo PIX Response:', {
+    status: response.status,
+    statusText: response.statusText,
+    headers: Object.fromEntries(response.headers.entries()),
   })
 
   const responseText = await response.text()
