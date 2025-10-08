@@ -425,9 +425,6 @@ export default function SupervisorProfilePage(): JSX.Element {
         setPreviewImage(result.url)
         setSupervisor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
         
-        // Recarregar dados do servidor para garantir sincronização
-        await fetchData()
-        
         toast({
           title: 'Sucesso',
           description: 'Avatar atualizado com sucesso!',
