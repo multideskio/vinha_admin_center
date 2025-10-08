@@ -10,6 +10,9 @@ import { AppSidebar } from './_components/sidebar'
 import { AdminHeader } from './_components/header'
 import { validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
+import { db } from '@/db'
+import { users, adminProfiles } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 export const metadata: Metadata = {
   title: 'Vinha Admin Center',
@@ -27,14 +30,34 @@ export default async function AdminLayout({
     return redirect('/auth/login')
   }
 
-  const userName = user.email?.split('@')[0] || 'User'
-  const userFallback = userName.substring(0, 2).toUpperCase()
+  const [userData] = await db
+    .select({
+      avatarUrl: users.avatarUrl,
+      firstName: adminProfiles.firstName,
+      lastName: adminProfiles.lastName,
+    })
+    .from(users)
+    .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))
+    .where(eq(users.id, user.id))
+    .limit(1)
+
+  const userName = userData?.firstName
+    ? `${userData.firstName} ${userData.lastName}`
+    : user.email?.split('@')[0] || 'User'
+  const userFallback = userData?.firstName
+    ? `${userData.firstName[0]}${userData.lastName?.[0] || ''}`
+    : userName.substring(0, 2).toUpperCase()
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <AppSidebar />
       <div className="flex flex-col">
-        <AdminHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
+        <AdminHeader
+          userName={userName}
+          userEmail={user.email}
+          userFallback={userFallback}
+          avatarUrl={userData?.avatarUrl || undefined}
+        />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
           {children}
         </main>

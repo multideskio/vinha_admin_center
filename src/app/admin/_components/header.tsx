@@ -23,6 +23,8 @@ import {
   FileText,
   Shield,
   ArrowRightLeft,
+  MapPin,
+  History,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,9 +83,10 @@ type AdminHeaderProps = {
   userName: string
   userEmail: string
   userFallback: string
+  avatarUrl?: string
 }
 
-export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderProps): JSX.Element {
+export function AdminHeader({ userName, userEmail, userFallback, avatarUrl }: AdminHeaderProps): JSX.Element {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       <Sheet>
@@ -137,7 +140,7 @@ export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderPr
           <Button variant="secondary" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage
-                src="https://placehold.co/32x32.png"
+                src={avatarUrl || undefined}
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />
@@ -154,13 +157,29 @@ export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderPr
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/perfil">
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LifeBuoy className="mr-2 h-4 w-4" />
-            <span>Ajuda</span>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/roadmap">
+              <MapPin className="mr-2 h-4 w-4" />
+              <span>Roadmap</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/changelog">
+              <History className="mr-2 h-4 w-4" />
+              <span>Changelog</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/ajuda">
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Ajuda</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <form action={() => logoutUser()}>

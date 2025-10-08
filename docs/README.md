@@ -20,7 +20,11 @@ O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel 
 
 - **Autenticação Segura:** Sistema de login robusto com gerenciamento de sessões e hashing de senhas.
 - **Dashboards Interativos:** Cada nível de usuário possui um dashboard customizado com KPIs, gráficos e dados relevantes para suas responsabilidades.
-- **Gerenciamento de Usuários:** CRUD completo para todos os níveis de usuários (Gerentes, Supervisores, Pastores, etc.).
+- **Gerenciamento de Usuários:** CRUD completo para todos os níveis de usuários (Gerentes, Supervisores, Pastores, etc.) com paridade de features.
+- **Sistema de Notificações:** Envio de mensagens via WhatsApp (Evolution API v2) e Email (AWS SES) com templates personalizáveis.
+- **Upload de Avatares:** Integração com AWS S3 e CloudFront para armazenamento e distribuição de imagens.
+- **Gestão de Redes Sociais:** Gerenciamento de links de Facebook, Instagram e Website com auto-save.
+- **Sistema de Relatórios:** Geração de relatórios em PDF e Excel (Financeiro, Membros, Igrejas, Contribuições) com filtros por período.
 - **Gestão Financeira:** Acompanhamento de transações, contribuições (dízimos e ofertas) e relatórios financeiros.
 - **Configurações de Gateway:** Integração com gateways de pagamento como Cielo e Bradesco.
 - **Layout Responsivo:** A aplicação é totalmente otimizada para uso em dispositivos móveis e desktops.
@@ -33,4 +37,15 @@ Para iniciar o projeto em ambiente de desenvolvimento, execute o seguinte comand
 npm run dev
 ```
 
-Isso iniciará o servidor de desenvolvimento do Next.js, geralmente na porta `http://localhost:3002`.
+Isso iniciará o servidor de desenvolvimento do Next.js na porta `http://localhost:9002`.
+
+## Documentação Adicional
+
+- **[CHANGELOG.md](./CHANGELOG.md)** - Histórico de versões e mudanças
+- **[ROADMAP.md](./ROADMAP.md)** - Planejamento e próximas features
+- **[FRONTEND_DOCS.md](./FRONTEND_DOCS.md)** - Documentação do frontend
+- **[BACKEND_DOCS.md](./BACKEND_DOCS.md)** - Documentação do backend
+- **[DB_DOCS.md](./DB_DOCS.md)** - Documentação do banco de dados
+- **[CIELO_API_GUIDE.md](./CIELO_API_GUIDE.md)** - Guia de integração com Cielo
+- **[IMPLEMENTATION_NOTES.md](./IMPLEMENTATION_NOTES.md)** - Notas técnicas de implementação
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guia de contribuição

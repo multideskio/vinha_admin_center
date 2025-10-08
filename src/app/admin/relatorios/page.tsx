@@ -2,13 +2,18 @@
 'use client';
 
 import * as React from 'react';
-import { Download, FileText, Loader2 } from 'lucide-react';
+import { Download, FileText, Loader2, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { ReportGenerator, ReportData } from '@/lib/report-generator';
+import { DateRange } from 'react-day-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
 
 const reportTypes = [
     { id: 'fin-01', name: 'Relatório Financeiro Completo', description: 'Detalhes de todas as transações, arrecadações e despesas.'},
@@ -27,11 +32,12 @@ type GeneratedReport = {
 
 export default function ReportsPage() {
     const [selectedReport, setSelectedReport] = React.useState<string>('');
-    const [generatedReports, setGeneratedReports] = React.useState<GeneratedReport[]>([]);
+    const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
     const [isGenerating, setIsGenerating] = React.useState(false);
+    const [lastReport, setLastReport] = React.useState<ReportData | null>(null);
     const { toast } = useToast();
 
-    const handleGenerateReport = () => {
+    const handleGenerateReport = async (format: 'pdf' | 'excel') => {
         if (!selectedReport) {
             toast({
                 title: 'Atenção',
@@ -47,26 +53,51 @@ export default function ReportsPage() {
             description: 'Aguarde enquanto processamos os dados.',
         });
 
-        // Simula a geração de um relatório
-        setTimeout(() => {
+        try {
+            const response = await fetch('/api/v1/relatorios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reportType: selectedReport,
+                    startDate: dateRange?.from?.toISOString(),
+                    endDate: dateRange?.to?.toISOString(),
+                }),
+            });
+
+            if (!response.ok) throw new Error('Falha ao gerar relatório');
+
+            const data: ReportData = await response.json();
+            data.period = dateRange?.from && dateRange?.to
+                ? `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`
+                : 'Todos os períodos';
+
+            setLastReport(data);
+
             const reportInfo = reportTypes.find(r => r.id === selectedReport);
-            if(reportInfo) {
-                const newReport: GeneratedReport = {
-                    id: `rep-${Date.now()}`,
-                    name: reportInfo.name,
-                    description: reportInfo.description,
-                    generatedAt: new Date(),
-                    period: '01/07/2024 - 31/07/2024' // Placeholder
-                }
-                setGeneratedReports(prev => [newReport, ...prev]);
-                toast({
-                    title: 'Relatório Gerado!',
-                    description: `${reportInfo.name} está pronto para download.`,
-                    variant: 'success'
-                });
+            const filename = `${reportInfo?.name.replace(/\s+/g, '_')}_${format(new Date(), 'dd-MM-yyyy')}`;
+
+            if (format === 'pdf') {
+                const blob = ReportGenerator.generatePDF(data);
+                ReportGenerator.downloadFile(blob, `${filename}.pdf`);
+            } else {
+                const blob = ReportGenerator.generateExcel(data);
+                ReportGenerator.downloadFile(blob, `${filename}.xlsx`);
             }
+
+            toast({
+                title: 'Relatório Gerado!',
+                description: `${reportInfo?.name} foi baixado com sucesso.`,
+                variant: 'success',
+            });
+        } catch (error) {
+            toast({
+                title: 'Erro',
+                description: 'Não foi possível gerar o relatório.',
+                variant: 'destructive',
+            });
+        } finally {
             setIsGenerating(false);
-        }, 2000);
+        }
     };
 
   return (
@@ -100,50 +131,80 @@ export default function ReportsPage() {
                     </SelectContent>
                 </Select>
             </div>
-             <div className="grid gap-2">
-                <DateRangePicker />
+            <div className="grid gap-2">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn('justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange?.from ? (
+                                dateRange.to ? (
+                                    <>
+                                        {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
+                                    </>
+                                ) : (
+                                    format(dateRange.from, 'dd/MM/yyyy')
+                                )
+                            ) : (
+                                <span>Selecione o período</span>
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                            mode="range"
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                            numberOfMonths={2}
+                        />
+                    </PopoverContent>
+                </Popover>
             </div>
-            <Button className='gap-2' onClick={handleGenerateReport} disabled={isGenerating}>
-                {isGenerating ? <Loader2 className='h-4 w-4 animate-spin' /> : <Download className='h-4 w-4' />}
-                {isGenerating ? 'Gerando...' : 'Gerar Relatório'}
-            </Button>
+            <div className="flex gap-2">
+                <Button className='gap-2' onClick={() => handleGenerateReport('pdf')} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className='h-4 w-4 animate-spin' /> : <FileText className='h-4 w-4' />}
+                    PDF
+                </Button>
+                <Button className='gap-2' variant="outline" onClick={() => handleGenerateReport('excel')} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className='h-4 w-4 animate-spin' /> : <FileSpreadsheet className='h-4 w-4' />}
+                    Excel
+                </Button>
+            </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-            <CardTitle>Relatórios Gerados</CardTitle>
-            <CardDescription>Histórico de relatórios gerados anteriormente.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            {generatedReports.length > 0 ? (
-                 <ul className='space-y-4'>
-                    {generatedReports.map(report => (
-                        <li key={report.id} className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4'>
-                            <div className='flex items-center gap-4'>
-                                <FileText className='h-6 w-6 text-muted-foreground flex-shrink-0' />
-                                <div>
-                                    <p className='font-semibold'>{report.name}</p>
-                                    <p className='text-sm text-muted-foreground'>
-                                        Período: {report.period} - Gerado em: {format(report.generatedAt, 'dd/MM/yyyy HH:mm')}
-                                    </p>
-                                </div>
-                            </div>
-                            <Button variant="outline" size="sm" className='w-full sm:w-auto'>
-                                <Download className='h-4 w-4 mr-2' />
-                                Baixar Novamente
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <div className="text-center text-muted-foreground p-12">
-                    <h3 className="text-lg font-semibold">Nenhum relatório gerado</h3>
-                    <p>Use a seção acima para gerar seu primeiro relatório.</p>
+      {lastReport && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Último Relatório Gerado</CardTitle>
+            <CardDescription>{lastReport.title} - {lastReport.period}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Resumo:</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {lastReport.summary?.map((item, index) => (
+                    <div key={index} className="p-3 border rounded-lg">
+                      <p className="text-sm text-muted-foreground">{item.label}</p>
+                      <p className="text-lg font-semibold">{item.value}</p>
+                    </div>
+                  ))}
                 </div>
-            )}
-        </CardContent>
-      </Card>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleGenerateReport('pdf')} disabled={isGenerating}>
+                  <FileText className='h-4 w-4 mr-2' />
+                  Baixar PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleGenerateReport('excel')} disabled={isGenerating}>
+                  <FileSpreadsheet className='h-4 w-4 mr-2' />
+                  Baixar Excel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
