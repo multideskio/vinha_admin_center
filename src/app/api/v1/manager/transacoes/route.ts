@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions, users, churchProfiles, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
-import { eq, and, isNull, inArray } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 
 export async function GET() {
   try {
@@ -20,12 +20,7 @@ export async function GET() {
     const supervisors = await db
       .select({ id: supervisorProfiles.id })
       .from(supervisorProfiles)
-      .where(
-        and(
-          eq(supervisorProfiles.managerId, user.id),
-          isNull(supervisorProfiles.deletedAt)
-        )
-      )
+      .where(eq(supervisorProfiles.managerId, user.id))
 
     const supervisorIds = supervisors.map((s) => s.id)
 
@@ -37,12 +32,7 @@ export async function GET() {
     const churches = await db
       .select({ userId: churchProfiles.userId })
       .from(churchProfiles)
-      .where(
-        and(
-          inArray(churchProfiles.supervisorId, supervisorIds),
-          isNull(churchProfiles.deletedAt)
-        )
-      )
+      .where(inArray(churchProfiles.supervisorId, supervisorIds))
 
     const churchUserIds = churches.map((c) => c.userId)
 

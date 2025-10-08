@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions, users, churchProfiles, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
-import { eq, and, isNull, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 export async function GET(
   request: Request,
@@ -34,12 +34,7 @@ export async function GET(
     const [church] = await db
       .select({ supervisorId: churchProfiles.supervisorId })
       .from(churchProfiles)
-      .where(
-        and(
-          eq(churchProfiles.userId, transaction.churchId),
-          isNull(churchProfiles.deletedAt)
-        )
-      )
+      .where(eq(churchProfiles.userId, transaction.churchId))
       .limit(1)
 
     if (!church) {
@@ -49,12 +44,7 @@ export async function GET(
     const [supervisor] = await db
       .select({ managerId: supervisorProfiles.managerId })
       .from(supervisorProfiles)
-      .where(
-        and(
-          eq(supervisorProfiles.id, church.supervisorId),
-          isNull(supervisorProfiles.deletedAt)
-        )
-      )
+      .where(eq(supervisorProfiles.id, church.supervisorId))
       .limit(1)
 
     if (!supervisor || supervisor.managerId !== user.id) {
