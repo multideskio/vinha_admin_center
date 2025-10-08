@@ -9,11 +9,16 @@ export async function getCompanySettings() {
     return null
   }
 
-  const [company] = await db
-    .select()
-    .from(companies)
-    .where(eq(companies.id, COMPANY_ID))
-    .limit(1)
+  try {
+    const [company] = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.id, COMPANY_ID))
+      .limit(1)
 
-  return company || null
+    return company || null
+  } catch (error) {
+    console.error('Failed to fetch company settings:', error)
+    return null
+  }
 }
