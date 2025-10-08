@@ -208,14 +208,14 @@ const SupervisorFormModal = ({
 
     setIsFetchingCep(true)
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const response = await fetch(`/api/v1/cep?cep=${cep}`)
+      if (!response.ok) return
+      
       const data = await response.json()
-      if (!data.erro) {
-        form.setValue('address', data.logradouro)
-        form.setValue('neighborhood', data.bairro)
-        form.setValue('city', data.localidade)
-        form.setValue('state', data.uf)
-      }
+      form.setValue('address', data.address || '')
+      form.setValue('neighborhood', data.neighborhood || '')
+      form.setValue('city', data.city || '')
+      form.setValue('state', data.state || '')
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
     } finally {
@@ -447,17 +447,11 @@ const SupervisorFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <Input
+                        placeholder="(00) 00000-0000"
+                        {...field}
+                        onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
