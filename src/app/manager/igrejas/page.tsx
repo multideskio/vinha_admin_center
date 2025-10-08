@@ -23,8 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import Image from 'next/image'
 import { format } from 'date-fns'
-import PhoneInput from 'react-phone-input-2'
-import 'react-phone-input-2/lib/style.css'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -97,8 +96,7 @@ type Church = z.infer<typeof churchProfileSchema> & {
 
 type Supervisor = {
   id: string
-  firstName: string
-  lastName: string
+  name: string
 }
 
 const ChurchFormModal = ({
@@ -205,28 +203,20 @@ const ChurchFormModal = ({
       .slice(0, 9)
   }
 
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15)
-  }
-
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value.replace(/\D/g, '')
     if (cep.length !== 8) return
 
     setIsFetchingCep(true)
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const response = await fetch(`/api/v1/cep?cep=${cep}`)
+      if (!response.ok) return
+      
       const data = await response.json()
-      if (!data.erro) {
-        form.setValue('address', data.logradouro)
-        form.setValue('neighborhood', data.bairro)
-        form.setValue('city', data.localidade)
-        form.setValue('state', data.uf)
-      }
+      form.setValue('address', data.address || '')
+      form.setValue('neighborhood', data.neighborhood || '')
+      form.setValue('city', data.city || '')
+      form.setValue('state', data.state || '')
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
     } finally {
@@ -285,7 +275,7 @@ const ChurchFormModal = ({
                     <SelectContent>
                       {supervisors.map((supervisor) => (
                         <SelectItem key={supervisor.id} value={supervisor.id}>
-                          {supervisor.firstName} {supervisor.lastName}
+                          {supervisor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -522,35 +512,12 @@ const ChurchFormModal = ({
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Celular *</FormLabel>
+                    <FormLabel>Celular/WhatsApp</FormLabel>
                     <FormControl>
                       <PhoneInput
-                        country={'br'}
-                        value={field.value}
+                        value={field.value || ''}
                         onChange={field.onChange}
-                        inputClass="!w-full"
-                        containerClass="phone-input-wrapper"
-                        inputStyle={{
-                          width: '100%',
-                          height: '40px',
-                          fontSize: '14px',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 'calc(var(--radius) - 2px)',
-                          backgroundColor: 'hsl(var(--background))',
-                          color: 'hsl(var(--foreground))',
-                        }}
-                        buttonStyle={{
-                          border: '1px solid hsl(var(--border))',
-                          borderRight: 'none',
-                          backgroundColor: 'hsl(var(--background))',
-                          borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                        }}
-                        dropdownStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 'calc(var(--radius) - 2px)',
-                          color: 'hsl(var(--foreground))',
-                        }}
+                        type="mobile"
                       />
                     </FormControl>
                     <FormMessage />
