@@ -84,6 +84,7 @@ export async function PUT(
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -104,6 +105,9 @@ export async function PUT(
       if (validatedData.neighborhood !== undefined)
         profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address
+      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
+      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx
@@ -113,7 +117,26 @@ export async function PUT(
       }
     })
 
-    return NextResponse.json({ success: true })
+    // Buscar dados atualizados para retornar
+    const result = await db
+      .select({
+        user: users,
+        profile: managerProfiles,
+      })
+      .from(users)
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+      .where(and(eq(users.id, id), eq(users.role, 'manager'), isNull(users.deletedAt)))
+      .limit(1)
+
+    if (result.length === 0 || !result[0]) {
+      return NextResponse.json({ error: 'Gerente não encontrado.' }, { status: 404 })
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _password, ...userWithoutPassword } = result[0].user
+    const updatedManager = { ...userWithoutPassword, ...result[0].profile }
+
+    return NextResponse.json({ success: true, manager: updatedManager })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

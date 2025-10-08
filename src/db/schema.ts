@@ -73,6 +73,8 @@ export const users = pgTable('users', {
   status: userStatusEnum('status').default('active').notNull(),
   phone: varchar('phone', { length: 20 }),
   titheDay: integer('tithe_day'),
+  avatarUrl: text('avatar_url'),
+  welcomeSent: boolean('welcome_sent').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow(),
   deletedAt: timestamp('deleted_at'),
@@ -289,6 +291,7 @@ export const otherSettings = pgTable('other_settings', {
   s3AccessKeyId: text('s3_access_key_id'),
   s3SecretAccessKey: text('s3_secret_access_key'),
   s3ForcePathStyle: boolean('s3_force_path_style').default(false),
+  s3CloudfrontUrl: text('s3_cloudfront_url'),
 })
 
 export const notificationRules = pgTable('notification_rules', {
@@ -354,6 +357,41 @@ export const userNotificationSettings = pgTable(
     }
   },
 )
+
+export const messageTemplates = pgTable('message_templates', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  companyId: uuid('company_id')
+    .references(() => companies.id, { onDelete: 'cascade' })
+    .notNull(),
+  templateType: varchar('template_type', { length: 50 }).notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  whatsappTemplate: text('whatsapp_template'),
+  emailSubjectTemplate: varchar('email_subject_template', { length: 255 }),
+  emailHtmlTemplate: text('email_html_template'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+})
+
+export const notificationLogs = pgTable('notification_logs', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  companyId: uuid('company_id')
+    .references(() => companies.id, { onDelete: 'cascade' })
+    .notNull(),
+  userId: uuid('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  notificationType: varchar('notification_type', { length: 50 }).notNull(),
+  channel: varchar('channel', { length: 20 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull(),
+  messageContent: text('message_content'),
+  errorMessage: text('error_message'),
+  sentAt: timestamp('sent_at').defaultNow().notNull(),
+})
 
 // Relações
 
@@ -471,3 +509,14 @@ export const userNotificationSettingsRelations = relations(userNotificationSetti
     references: [users.id],
   }),
 }))
+
+export const messageTemplatesRelations = relations(messageTemplates, ({ one }) => ({
+  company: one(companies, { fields: [messageTemplates.companyId], references: [companies.id] }),
+}))
+
+export const notificationLogsRelations = relations(notificationLogs, ({ one }) => ({
+  company: one(companies, { fields: [notificationLogs.companyId], references: [companies.id] }),
+  user: one(users, { fields: [notificationLogs.userId], references: [users.id] }),
+}))
+
+

@@ -23,7 +23,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Form,
   FormControl,
@@ -32,17 +33,20 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { useToast } from '@/hooks/use-toast'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Loader2, User, Phone, MapPin, Shield, Save } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { type UserNotificationSettings, type NotificationType } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 import { Switch } from '@/components/ui/switch'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-toast'
 
 const pastorProfileSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -238,14 +242,12 @@ export default function PastorProfilePage() {
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage
-                  src="https://placehold.co/96x96.png"
-                  alt="Paulo"
-                  data-ai-hint="male pastor"
-                />
-                <AvatarFallback>PF</AvatarFallback>
-              </Avatar>
+              <ClickableAvatar
+                src={pastor.avatarUrl || "https://placehold.co/96x96.png"}
+                alt={`${pastor.firstName} ${pastor.lastName}`}
+                fallback={`${pastor.firstName?.[0] || ''}${pastor.lastName?.[0] || ''}`}
+                className="h-24 w-24"
+              />
               <Button
                 variant="outline"
                 size="icon"

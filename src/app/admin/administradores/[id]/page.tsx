@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
@@ -49,6 +50,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 
 const adminProfileSchema = z
   .object({
@@ -256,17 +258,12 @@ export default function AdminProfilePage() {
           <Card>
             <CardContent className="flex flex-col items-center pt-6 text-center">
               <div className="relative">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={previewImage || admin.avatarUrl || 'https://placehold.co/96x96.png'}
-                    alt={admin.firstName ?? ''}
-                    data-ai-hint="person shield"
-                  />
-                  <AvatarFallback>
-                    {admin.firstName?.[0]}
-                    {admin.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
+                <ClickableAvatar
+                  src={previewImage || admin.avatarUrl || 'https://placehold.co/96x96.png'}
+                  alt={admin.firstName ?? ''}
+                  fallback={`${admin.firstName?.[0] || ''}${admin.lastName?.[0] || ''}`}
+                  className="h-24 w-24"
+                />
                 <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
                   <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
                     <Camera className="h-4 w-4 text-muted-foreground" />

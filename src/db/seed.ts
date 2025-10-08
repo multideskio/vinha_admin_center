@@ -50,13 +50,30 @@ async function main(): Promise<void> {
   console.log('Seeding database...')
 
   // Limpa as tabelas na ordem correta para evitar erros de chave estrangeira
+  console.log('Cleaning existing data...')
+  
+  // Primeiro deletar todas as tabelas dependentes
+  await db.delete(schema.apiKeys)
+  await db.delete(schema.notificationLogs)
+  await db.delete(schema.messageTemplates)
+  await db.delete(schema.userNotificationSettings)
+  await db.delete(schema.webhooks)
+  await db.delete(schema.notificationRules)
+  await db.delete(schema.otherSettings)
+  await db.delete(schema.gatewayConfigurations)
+  await db.delete(schema.transactions)
+  await db.delete(schema.sessions)
+  
+  // Depois deletar perfis
   await db.delete(adminProfiles)
   await db.delete(pastorProfiles)
   await db.delete(churchProfiles)
   await db.delete(supervisorProfiles)
   await db.delete(managerProfiles)
-  await db.delete(regions)
+  
+  // Por último, usuários, regiões e empresas
   await db.delete(users)
+  await db.delete(regions)
   await db.delete(companies)
 
   // Criar Empresa

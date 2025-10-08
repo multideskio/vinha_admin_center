@@ -139,14 +139,52 @@ export default function IgrejaProfilePage() {
     }
   }
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'avatars')
+        formData.append('filename', `igreja-${id}-${file.name}`)
+
+        const response = await fetch('/api/v1/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem')
+        }
+
+        const result = await response.json()
+        
+        // Atualizar avatar no banco
+        const updateResponse = await fetch(`/api/v1/igrejas/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: result.url }),
+        })
+
+        if (!updateResponse.ok) {
+          throw new Error('Falha ao atualizar avatar')
+        }
+
+        setPreviewImage(result.url)
+        setChurch(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
+        toast({
+          title: 'Sucesso',
+          description: 'Avatar atualizado com sucesso!',
+          variant: 'success',
+        })
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Falha ao fazer upload da imagem.',
+          variant: 'destructive',
+        })
       }
-      reader.readAsDataURL(file)
     }
   }
 

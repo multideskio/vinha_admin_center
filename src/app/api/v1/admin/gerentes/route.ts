@@ -113,11 +113,15 @@ export async function POST(request: Request): Promise<NextResponse> {
           firstName: validatedData.firstName,
           lastName: validatedData.lastName,
           cpf: validatedData.cpf,
+          landline: validatedData.landline,
           cep: validatedData.cep,
           state: validatedData.state,
           city: validatedData.city,
           neighborhood: validatedData.neighborhood,
           address: validatedData.address,
+          facebook: validatedData.facebook,
+          instagram: validatedData.instagram,
+          website: validatedData.website,
         })
         .returning()
 

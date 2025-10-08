@@ -74,6 +74,50 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import PhoneInput from 'react-phone-input-2'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+
+const DeleteManagerDialog = ({ managerId, onConfirm }: { managerId: string; onConfirm: (id: string, reason: string) => void }) => {
+  const [reason, setReason] = React.useState('')
+  const [isOpen, setIsOpen] = React.useState(false)
+  
+  const handleConfirm = () => {
+    onConfirm(managerId, reason)
+    setIsOpen(false)
+    setReason('')
+  }
+  
+  return (
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+        Excluir
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir Gerente</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste gerente para fins de auditoria.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+          <Textarea
+            id="deletion-reason"
+            placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm} disabled={!reason.trim()}>
+            Excluir permanentemente
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 
 const managerSchema = z.object({
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
@@ -87,11 +131,13 @@ const managerSchema = z.object({
   address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
   titheDay: z.coerce.number().min(1).max(31),
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
+  landline: z.string().optional(),
 })
 
 export type Manager = z.infer<typeof managerSchema> & {
   id: string
   status: 'active' | 'inactive'
+  avatarUrl?: string
 }
 
 const GerenteFormModal = ({
@@ -119,6 +165,7 @@ const GerenteFormModal = ({
       address: '',
       titheDay: 1,
       phone: '',
+      landline: '',
     },
   })
 
@@ -353,7 +400,7 @@ const GerenteFormModal = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="phone"
@@ -367,6 +414,19 @@ const GerenteFormModal = ({
                         onChange={field.onChange}
                         inputClass="!w-full"
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="landline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone Fixo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(11) 1234-5678" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -433,9 +493,13 @@ export default function GerentesPage() {
     fetchManagers()
   }, [fetchManagers])
 
-  const handleDelete = async (managerId: string) => {
+  const handleDelete = async (managerId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/v1/admin/gerentes/${managerId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/v1/admin/gerentes/${managerId}`, { 
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletionReason: reason })
+      })
       if (!response.ok) throw new Error('Failed to delete manager')
       toast({ title: 'Sucesso!', description: 'Gerente excluído com sucesso.', variant: 'success' })
       fetchManagers()
@@ -506,7 +570,18 @@ export default function GerentesPage() {
             ) : paginatedManagers.length > 0 ? (
               paginatedManagers.map((manager) => (
                 <TableRow key={manager.id}>
-                  <TableCell className="font-medium">{`${manager.firstName} ${manager.lastName}`}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={manager.avatarUrl || 'https://placehold.co/32x32.png'}
+                        alt={`${manager.firstName} ${manager.lastName}`}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover"
+                      />
+                      {`${manager.firstName} ${manager.lastName}`}
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {manager.email}
                   </TableCell>
@@ -531,26 +606,7 @@ export default function GerentesPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/gerentes/${manager.id}`}>Editar</Link>
                         </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o
-                                gerente.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(manager.id)}>
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <DeleteManagerDialog managerId={manager.id} onConfirm={handleDelete} />
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -587,7 +643,7 @@ export default function GerentesPage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Image
-                    src="https://placehold.co/128x128.png"
+                    src={manager.avatarUrl || 'https://placehold.co/128x128.png'}
                     alt={`Foto de ${manager.firstName}`}
                     width={128}
                     height={128}

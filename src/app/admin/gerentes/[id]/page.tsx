@@ -2,6 +2,9 @@
 
 import * as React from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { managerProfileSchema } from '@/lib/types'
 import {
   Camera,
   Facebook,
@@ -20,7 +23,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Form,
   FormControl,
@@ -29,11 +33,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { User, Phone, MapPin, Calendar, Shield, Trash2, Save, ArrowLeft, MessageSquare } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
+import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { Switch } from '@/components/ui/switch'
 import {
   Table,
@@ -43,7 +51,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,30 +70,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Textarea } from '@/components/ui/textarea'
-import type { NotificationType, UserNotificationSettings } from '@/lib/types'
+import type { NotificationType, UserNotificationSettings, ManagerProfile as ManagerProfileType } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 
-type ManagerProfile = {
-  firstName: string
-  lastName: string
-  cpf?: string | null
-  phone: string
-  landline?: string | null
-  email: string
-  cep?: string | null
-  state?: string | null
-  city?: string | null
-  neighborhood?: string | null
-  address?: string | null
-  titheDay?: number | null
-  newPassword?: string
-  facebook?: string | null
-  instagram?: string | null
-  website?: string | null
+type ManagerProfile = ManagerProfileType & {
   id: string
   status: string
   avatarUrl?: string
+  newPassword?: string
 }
 
 type Transaction = {
@@ -95,6 +86,8 @@ type Transaction = {
   status: 'approved' | 'pending' | 'refused' | 'refunded'
   date: string
 }
+
+type FormData = Partial<z.infer<typeof managerProfileSchema>> & { newPassword?: string }
 
 const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
   const [reason, setReason] = React.useState('')
@@ -376,7 +369,8 @@ export default function GerenteProfilePage() {
   const { id } = params
   const { toast } = useToast()
 
-  const form = useForm<ManagerProfile>({
+  const form = useForm<FormData>({
+    resolver: zodResolver(managerProfileSchema.extend({ newPassword: z.string().optional() }).partial()),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -442,7 +436,7 @@ export default function GerenteProfilePage() {
     fetchManager()
   }, [fetchManager])
 
-  const onSubmit = async (data: Partial<ManagerProfile>) => {
+  const onSubmit = async (data: FormData) => {
     try {
       const response = await fetch(`/api/v1/admin/gerentes/${id}`, {
         method: 'PUT',
@@ -489,7 +483,11 @@ export default function GerenteProfilePage() {
         description: `Link do ${fieldName} atualizado.`,
         variant: 'success',
       })
-      setManager((prev) => (prev ? { ...prev, ...updatedData.manager } : null))
+      if (updatedData.manager) {
+        setManager(updatedData.manager)
+      } else {
+        setManager((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
@@ -500,19 +498,56 @@ export default function GerenteProfilePage() {
     }
   }
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'avatars')
+        formData.append('filename', `manager-${id}-${file.name}`)
+
+        const response = await fetch('/api/v1/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem')
+        }
+
+        const result = await response.json()
+        
+        // Atualizar avatar no banco
+        const updateResponse = await fetch(`/api/v1/admin/gerentes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: result.url }),
+        })
+
+        if (!updateResponse.ok) {
+          throw new Error('Falha ao atualizar avatar')
+        }
+
+        await updateResponse.json()
+        setPreviewImage(result.url)
+        setManager(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
+        // Recarregar dados do servidor para garantir sincronização
+        await fetchManager()
+        
         toast({
-          title: 'Preview da Imagem',
-          description:
-            'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+          title: 'Sucesso',
+          description: 'Avatar atualizado com sucesso!',
+          variant: 'success',
+        })
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Falha ao fazer upload da imagem.',
+          variant: 'destructive',
         })
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -564,17 +599,12 @@ export default function GerenteProfilePage() {
           <Card>
             <CardContent className="flex flex-col items-center pt-6 text-center">
               <div className="relative">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={previewImage || manager.avatarUrl || 'https://placehold.co/96x96.png'}
-                    alt={manager.firstName ?? ''}
-                    data-ai-hint="male person"
-                  />
-                  <AvatarFallback>
-                    {manager.firstName?.[0]}
-                    {manager.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
+                <ClickableAvatar
+                  src={previewImage || manager.avatarUrl || 'https://placehold.co/96x96.png'}
+                  alt={`${manager.firstName} ${manager.lastName}`}
+                  fallback={`${manager.firstName?.[0] || ''}${manager.lastName?.[0] || ''}`}
+                  className="h-24 w-24"
+                />
                 <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
                   <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
                     <Camera className="h-4 w-4 text-muted-foreground" />
@@ -593,6 +623,31 @@ export default function GerenteProfilePage() {
                 {manager.firstName} {manager.lastName}
               </h2>
               <p className="text-muted-foreground">Gerente</p>
+              <div className="flex gap-2 mt-3">
+                <SendMessageDialog
+                  recipientName={`${manager.firstName} ${manager.lastName}`}
+                  recipientEmail={manager.email}
+                  recipientPhone={manager.phone || ''}
+                >
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                  >
+                    <Mail className="h-3 w-3" />
+                    Mensagem
+                  </Button>
+                </SendMessageDialog>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(`https://wa.me/55${manager.phone?.replace(/\D/g, '')}`, '_blank')}
+                  className="flex items-center gap-1"
+                >
+                  <Smartphone className="h-3 w-3" />
+                  WhatsApp
+                </Button>
+              </div>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">

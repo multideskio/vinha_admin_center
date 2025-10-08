@@ -360,19 +360,52 @@ export default function SupervisorProfilePage(): JSX.Element {
     }
   }
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'avatars')
+        formData.append('filename', `supervisor-${id}-${file.name}`)
+
+        const response = await fetch('/api/v1/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem')
+        }
+
+        const result = await response.json()
+        
+        // Atualizar avatar no banco
+        const updateResponse = await fetch(`/api/v1/supervisores/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: result.url }),
+        })
+
+        if (!updateResponse.ok) {
+          throw new Error('Falha ao atualizar avatar')
+        }
+
+        setPreviewImage(result.url)
+        setSupervisor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
         toast({
-          title: 'Preview da Imagem',
-          description:
-            'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+          title: 'Sucesso',
+          description: 'Avatar atualizado com sucesso!',
+          variant: 'success',
+        })
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Falha ao fazer upload da imagem.',
+          variant: 'destructive',
         })
       }
-      reader.readAsDataURL(file)
     }
   }
 

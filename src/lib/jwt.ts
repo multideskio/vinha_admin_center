@@ -44,7 +44,25 @@ export async function createJWT(user: { id: string; email: string; role: UserRol
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as JWTPayload;
+    
+    // Validate that the payload has the required properties
+    if (
+      typeof payload.userId === 'string' &&
+      typeof payload.email === 'string' &&
+      typeof payload.role === 'string' &&
+      typeof payload.iat === 'number' &&
+      typeof payload.exp === 'number'
+    ) {
+      return {
+        userId: payload.userId,
+        email: payload.email,
+        role: payload.role as UserRole,
+        iat: payload.iat,
+        exp: payload.exp
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error('Erro ao verificar JWT:', error);
     return null;

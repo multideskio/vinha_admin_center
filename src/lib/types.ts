@@ -90,6 +90,7 @@ export const managerProfileSchema = z.object({
   phone: z.string().nullable().optional(),
   email: z.string().email('E-mail inválido.'),
   titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
   ...addressSchema,
   ...socialLinksSchema,
 })
