@@ -182,7 +182,7 @@ export default function WhatsappSettingsPage() {
       })
       
       if (!response.ok) {
-        console.error('Erro ao verificar status da instância')
+        // Silently handle - instance not configured yet
         if (!isConnecting) {
           setConnectionStatus('disconnected')
           setInstanceInfo(null)

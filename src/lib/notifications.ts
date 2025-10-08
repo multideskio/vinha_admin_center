@@ -185,6 +185,14 @@ export class NotificationService {
     this.companyId = config.companyId
   }
 
+  async sendWhatsApp({ phone, message }: { phone: string; message: string }): Promise<boolean> {
+    return await this.whatsapp.sendMessage({ number: phone, text: message })
+  }
+
+  async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
+    return await this.email.sendEmail({ to, subject, html })
+  }
+
   async sendWelcome(
     userId: string,
     name: string,

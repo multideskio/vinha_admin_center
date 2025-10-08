@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 import { ReportGenerator, ReportData } from '@/lib/report-generator';
 import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
@@ -68,13 +68,13 @@ export default function ReportsPage() {
 
             const data: ReportData = await response.json();
             data.period = dateRange?.from && dateRange?.to
-                ? `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`
+                ? `${formatDate(dateRange.from, 'dd/MM/yyyy')} - ${formatDate(dateRange.to, 'dd/MM/yyyy')}`
                 : 'Todos os períodos';
 
             setLastReport(data);
 
             const reportInfo = reportTypes.find(r => r.id === selectedReport);
-            const filename = `${reportInfo?.name.replace(/\s+/g, '_')}_${format(new Date(), 'dd-MM-yyyy')}`;
+            const filename = `${reportInfo?.name.replace(/\s+/g, '_')}_${formatDate(new Date(), 'dd-MM-yyyy')}`;
 
             if (format === 'pdf') {
                 const blob = ReportGenerator.generatePDF(data);
@@ -139,10 +139,10 @@ export default function ReportsPage() {
                             {dateRange?.from ? (
                                 dateRange.to ? (
                                     <>
-                                        {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
+                                        {formatDate(dateRange.from, 'dd/MM/yyyy')} - {formatDate(dateRange.to, 'dd/MM/yyyy')}
                                     </>
                                 ) : (
-                                    format(dateRange.from, 'dd/MM/yyyy')
+                                    formatDate(dateRange.from, 'dd/MM/yyyy')
                                 )
                             ) : (
                                 <span>Selecione o período</span>

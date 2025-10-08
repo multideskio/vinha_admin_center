@@ -34,6 +34,8 @@ export default function GeneralSettingsPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
+  const [isUploading, setIsUploading] = React.useState(false)
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null)
 
   const form = useForm<GeneralSettingsValues>({
     resolver: zodResolver(generalSettingsSchema),
@@ -63,6 +65,39 @@ export default function GeneralSettingsPage() {
   React.useEffect(() => {
     fetchSettings()
   }, [fetchSettings])
+
+  React.useEffect(() => {
+    const logoUrl = form.watch('logoUrl')
+    if (logoUrl) setLogoPreview(logoUrl)
+  }, [form])
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error('Falha ao fazer upload da logo.')
+
+      const { url } = await response.json()
+      form.setValue('logoUrl', url)
+      setLogoPreview(url)
+      toast({ title: 'Sucesso!', description: 'Logo enviada com sucesso.', variant: 'success' })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   const onSubmit = async (data: GeneralSettingsValues) => {
     setIsSaving(true)
@@ -140,13 +175,22 @@ export default function GeneralSettingsPage() {
               />
               <div className="space-y-2">
                 <Label>Logo da Aplicação</Label>
+                {logoPreview && (
+                  <div className="mb-4">
+                    <img src={logoPreview} alt="Logo preview" className="h-20 object-contain" />
+                  </div>
+                )}
                 <div className="flex items-center justify-center w-full">
                   <Label
                     htmlFor="logo-upload"
                     className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/50"
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                      {isUploading ? (
+                        <Loader2 className="w-8 h-8 mb-4 text-muted-foreground animate-spin" />
+                      ) : (
+                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                      )}
                       <p className="mb-2 text-sm text-muted-foreground">
                         <span className="font-semibold">Clique para enviar</span> ou arraste e solte
                       </p>
@@ -154,7 +198,14 @@ export default function GeneralSettingsPage() {
                         PNG, JPG ou SVG (max. 800x400px)
                       </p>
                     </div>
-                    <Input id="logo-upload" type="file" className="hidden" />
+                    <Input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                      disabled={isUploading}
+                    />
                   </Label>
                 </div>
               </div>

@@ -7,9 +7,11 @@
 - [x] 4 tipos de relatórios: Financeiro, Membros, Igrejas, Contribuições
 - [x] Filtros por período (data início/fim)
 - [x] Download direto de arquivos
+- [x] Preview do último relatório gerado
+- [x] API endpoint `/api/v1/relatorios`
 
 ### 🔄 Próximas Melhorias
-- [ ] **Armazenamento de Relatórios**
+- [ ] **Armazenamento de Relatórios** (Alta Prioridade)
   - Criar tabela `reports` no banco de dados
   - Salvar arquivos PDF/Excel no S3
   - Metadados: tipo, período, usuário, data de geração, parâmetros
@@ -46,11 +48,29 @@
 - [x] Integração com Evolution API v2 (WhatsApp)
 - [x] Integração com AWS SES (Email)
 - [x] Templates personalizáveis no banco de dados
-- [x] Notificações de boas-vindas
-- [x] Lembretes de pagamento
+- [x] Interface de gerenciamento (`/admin/configuracoes/mensagens`)
+- [x] 4 tipos de eventos: boas-vindas, pagamento recebido, lembretes, atrasos
 - [x] Logs de notificações enviadas
+- [x] **Sistema de Processamento Automático**
+  - Endpoint cron `/api/v1/cron/notifications`
+  - Controle de duplicação (não envia 2x)
+  - Proteção com `CRON_SECRET`
+  - Suporte a cron externo (cron-job.org, EasyCron, Vercel)
+  - Documentação completa em `docs/CRON_SETUP.md`
 
 ### 🔄 Próximas Melhorias
+- [ ] **Monitoramento e Alertas** (Alta Prioridade)
+  - Dashboard de métricas de envio
+  - Alertas se cron falhar
+  - Taxa de entrega/abertura
+  - Relatório de efetividade
+
+- [ ] **Escalabilidade** (Alta Prioridade)
+  - Migrar para fila (BullMQ + Redis)
+  - Otimizar queries (evitar N+1)
+  - Processamento em lote
+  - Rate limiting
+
 - [ ] **Notificações em Massa**
   - Enviar para grupos (todos pastores, todas igrejas, etc)
   - Agendamento de envios
@@ -62,10 +82,9 @@
   - Variáveis dinâmicas adicionais
   - Suporte a anexos
 
-- [ ] **Automações**
+- [ ] **Automações Adicionais**
   - Notificação automática de aniversário
   - Lembrete de renovação de cadastro
-  - Alertas de inadimplência
   - Confirmação de eventos
 
 ## 📁 Sistema de Arquivos
@@ -162,6 +181,23 @@
   - Manutenções programadas
   - Controle de chaves
 
+## ⚙️ Configurações da Empresa
+
+### ✅ Concluído
+- [x] Upload de logo da empresa (S3)
+- [x] Nome da aplicação customizável
+- [x] Email de suporte configurável
+- [x] Modo de manutenção
+- [x] Logo exibido em header e sidebar
+- [x] Página de manutenção customizada
+- [x] Metadata dinâmica (SEO)
+
+### 🔄 Próximas Melhorias
+- [ ] **Temas Customizáveis**
+  - Cores primárias/secundárias
+  - Fontes personalizadas
+  - Modo claro/escuro forçado
+
 ## 📱 Mobile & PWA
 
 ### 🔄 Futuro
@@ -230,16 +266,18 @@
 ## 🎯 Prioridades
 
 ### Alta Prioridade
-1. Armazenamento de Relatórios
-2. Notificações em Massa
-3. Permissões Granulares
+1. **Monitoramento de Notificações** - Dashboard e alertas
+2. **Escalabilidade de Notificações** - Fila com Redis
+3. **Armazenamento de Relatórios** - Histórico no S3
+4. **Permissões Granulares** - Sistema de roles customizável
 
 ### Média Prioridade
-4. Relatórios Adicionais
-5. Gestão de Eventos
-6. Two-Factor Authentication
+5. Relatórios Adicionais (Eventos, Frequência)
+6. Gestão de Eventos (Calendário, Inscrições)
+7. Two-Factor Authentication (2FA)
+8. Notificações em Massa
 
 ### Baixa Prioridade
-7. App Mobile
-8. Analytics Avançado
-9. Múltiplos Gateways de Pagamento
+9. App Mobile (PWA/React Native)
+10. Analytics Avançado (BI)
+11. Múltiplos Gateways de Pagamento

@@ -6,6 +6,13 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ### Adicionado
 
+- **Sistema de Notificações Automáticas:**
+  - Endpoint cron `/api/v1/cron/notifications` para processamento automático
+  - Controle de duplicação usando `notification_logs`
+  - 4 tipos de eventos: boas-vindas, pagamento recebido, lembretes, atrasos
+  - Proteção com `CRON_SECRET` para segurança
+  - Documentação completa em `docs/CRON_SETUP.md`
+  - Suporte a cron externo (cron-job.org, EasyCron, Vercel Cron)
 - **Sistema de Relatórios Completo:**
   - Geração de relatórios em tempo real com exportação para PDF e Excel
   - 4 tipos de relatórios: Financeiro, Membros, Igrejas e Contribuições
@@ -14,6 +21,13 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
   - Consultas otimizadas ao banco de dados para agregação de dados
   - Bibliotecas integradas: jsPDF, jsPDF-AutoTable e XLSX
   - API endpoint `/api/v1/relatorios` para geração de relatórios
+- **Configurações da Empresa:**
+  - Upload de logo da empresa (integrado com S3)
+  - Nome da aplicação customizável
+  - Email de suporte configurável
+  - Modo de manutenção com middleware
+  - Logo e nome exibidos em header, sidebar e página de manutenção
+  - Metadata dinâmica baseada nas configurações
 - **Páginas de Documentação Dinâmicas:**
   - Página `/admin/roadmap` renderizando `docs/ROADMAP.md` dinamicamente
   - Página `/admin/changelog` renderizando `docs/CHANGELOG.md` dinamicamente
@@ -31,16 +45,24 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - **Organização de Código:**
   - Criado arquivo `src/db/index.ts` para centralizar exports do banco de dados
   - Criado `src/lib/report-generator.ts` para geração de relatórios
+  - Criado `src/lib/company.ts` para buscar configurações da empresa
   - Melhorias na estrutura de queries do banco de dados
+  - Adicionado `companyId` ao retorno de `validateRequest()`
 - **Interface do Usuário:**
   - Menu dropdown do perfil reorganizado com novos links
   - Ícones atualizados (MapPin para Roadmap, History para Changelog)
   - Páginas de documentação agora leem diretamente de `docs/` (fonte única de verdade)
   - Suporte a dark mode nas páginas de documentação
+- **Performance:**
+  - Otimização de imports com `optimizePackageImports` no Next.js config
+  - Redução de bundle size para Radix UI, lucide-react, recharts e date-fns
 
 ### Corrigido
 
 - **Erro de Build:** Resolvido erro "Module not found: Can't resolve '@/db'" criando arquivo de índice na pasta db
+- **Middleware Edge Runtime:** Removida query de banco do middleware, usando API call para verificar modo manutenção
+- **TypeScript Errors:** Corrigidos todos os erros de tipagem em cron, relatórios e validação de usuário
+- **NotificationService:** Adicionados métodos `sendWhatsApp` e `sendEmail` para uso direto no cron
 
 ## [1.5.0] - 2024-12-20
 

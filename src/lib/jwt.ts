@@ -167,13 +167,51 @@ export async function validateJWTRequest(): Promise<{
  * Substitui a validateRequest do Lucia
  */
 export async function validateRequest(): Promise<{
-  user: { id: string; email: string; role: UserRole } | null;
+  user: { id: string; email: string; role: UserRole; companyId: string } | null;
   session: { id: string } | null;
 }> {
-  const { user, token } = await validateJWTRequest();
+  const token = await getJWTFromCookie();
   
-  return {
-    user,
-    session: token ? { id: token } : null,
-  };
+  if (!token) {
+    return { user: null, session: null };
+  }
+
+  const payload = await verifyJWT(token);
+  
+  if (!payload) {
+    await clearJWTCookie();
+    return { user: null, session: null };
+  }
+
+  try {
+    const [dbUser] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        role: users.role,
+        companyId: users.companyId,
+      })
+      .from(users)
+      .where(eq(users.id, payload.userId))
+      .limit(1);
+
+    if (!dbUser) {
+      await clearJWTCookie();
+      return { user: null, session: null };
+    }
+
+    return {
+      user: {
+        id: dbUser.id,
+        email: dbUser.email,
+        role: dbUser.role as UserRole,
+        companyId: dbUser.companyId,
+      },
+      session: { id: token },
+    };
+  } catch (error) {
+    console.error('Erro ao validar usuário no banco:', error);
+    await clearJWTCookie();
+    return { user: null, session: null };
+  }
 }

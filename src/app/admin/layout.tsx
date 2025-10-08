@@ -13,10 +13,14 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { users, adminProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { getCompanySettings } from '@/lib/company'
 
-export const metadata: Metadata = {
-  title: 'Vinha Admin Center',
-  description: 'Painel de administração para Vinha Ministérios',
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompanySettings()
+  return {
+    title: company?.name || 'Vinha Admin Center',
+    description: `Painel de administração para ${company?.name || 'Vinha Ministérios'}`,
+  }
 }
 
 export default async function AdminLayout({
@@ -30,16 +34,20 @@ export default async function AdminLayout({
     return redirect('/auth/login')
   }
 
-  const [userData] = await db
-    .select({
-      avatarUrl: users.avatarUrl,
-      firstName: adminProfiles.firstName,
-      lastName: adminProfiles.lastName,
-    })
-    .from(users)
-    .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))
-    .where(eq(users.id, user.id))
-    .limit(1)
+  const [userData, company] = await Promise.all([
+    db
+      .select({
+        avatarUrl: users.avatarUrl,
+        firstName: adminProfiles.firstName,
+        lastName: adminProfiles.lastName,
+      })
+      .from(users)
+      .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))
+      .where(eq(users.id, user.id))
+      .limit(1)
+      .then((res) => res[0]),
+    getCompanySettings(),
+  ])
 
   const userName = userData?.firstName
     ? `${userData.firstName} ${userData.lastName}`
@@ -50,13 +58,15 @@ export default async function AdminLayout({
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <AppSidebar />
+      <AppSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
       <div className="flex flex-col">
         <AdminHeader
           userName={userName}
           userEmail={user.email}
           userFallback={userFallback}
           avatarUrl={userData?.avatarUrl || undefined}
+          companyLogo={company?.logoUrl || undefined}
+          companyName={company?.name || undefined}
         />
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
           {children}

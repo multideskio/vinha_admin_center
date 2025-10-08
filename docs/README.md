@@ -18,11 +18,20 @@ O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel 
 
 ## Funcionalidades Principais
 
-- **Autenticação Segura:** Sistema de login robusto com gerenciamento de sessões e hashing de senhas.
+- **Autenticação Segura:** Sistema de login robusto com gerenciamento de sessões JWT e hashing de senhas.
 - **Dashboards Interativos:** Cada nível de usuário possui um dashboard customizado com KPIs, gráficos e dados relevantes para suas responsabilidades.
 - **Gerenciamento de Usuários:** CRUD completo para todos os níveis de usuários (Gerentes, Supervisores, Pastores, etc.) com paridade de features.
-- **Sistema de Notificações:** Envio de mensagens via WhatsApp (Evolution API v2) e Email (AWS SES) com templates personalizáveis.
+- **Sistema de Notificações Automáticas:** 
+  - Envio via WhatsApp (Evolution API v2) e Email (AWS SES)
+  - Templates personalizáveis com variáveis dinâmicas
+  - Processamento automático via cron jobs
+  - 4 tipos de eventos: boas-vindas, pagamentos, lembretes, atrasos
+  - Controle de duplicação e logs de auditoria
 - **Upload de Avatares:** Integração com AWS S3 e CloudFront para armazenamento e distribuição de imagens.
+- **Configurações da Empresa:**
+  - Logo customizável exibido em todo o sistema
+  - Nome da aplicação e email de suporte
+  - Modo de manutenção com página customizada
 - **Gestão de Redes Sociais:** Gerenciamento de links de Facebook, Instagram e Website com auto-save.
 - **Sistema de Relatórios:** Geração de relatórios em PDF e Excel (Financeiro, Membros, Igrejas, Contribuições) com filtros por período.
 - **Gestão Financeira:** Acompanhamento de transações, contribuições (dízimos e ofertas) e relatórios financeiros.
@@ -41,11 +50,17 @@ Isso iniciará o servidor de desenvolvimento do Next.js na porta `http://localho
 
 ## Documentação Adicional
 
+### Geral
 - **[CHANGELOG.md](./CHANGELOG.md)** - Histórico de versões e mudanças
 - **[ROADMAP.md](./ROADMAP.md)** - Planejamento e próximas features
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guia de contribuição
+
+### Técnica
 - **[FRONTEND_DOCS.md](./FRONTEND_DOCS.md)** - Documentação do frontend
 - **[BACKEND_DOCS.md](./BACKEND_DOCS.md)** - Documentação do backend
 - **[DB_DOCS.md](./DB_DOCS.md)** - Documentação do banco de dados
-- **[CIELO_API_GUIDE.md](./CIELO_API_GUIDE.md)** - Guia de integração com Cielo
 - **[IMPLEMENTATION_NOTES.md](./IMPLEMENTATION_NOTES.md)** - Notas técnicas de implementação
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guia de contribuição
+
+### Integrações
+- **[CIELO_API_GUIDE.md](./CIELO_API_GUIDE.md)** - Guia de integração com Cielo
+- **[CRON_SETUP.md](./CRON_SETUP.md)** - Configuração do sistema de notificações automáticas
