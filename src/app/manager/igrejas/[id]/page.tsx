@@ -37,6 +37,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MoreHorizontal, Mail, Smartphone } from 'lucide-react'
+import Link from 'next/link'
+import type { TransactionStatus } from '@/lib/types'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -82,6 +102,293 @@ type ChurchProfile = z.infer<typeof churchUpdateSchema> & {
 type Supervisor = {
   id: string
   name: string
+}
+
+type Transaction = {
+  id: string
+  amount: number
+  status: 'approved' | 'pending' | 'refused' | 'refunded'
+  date: string
+}
+
+const SettingsTab = ({ userId }: { userId: string }) => {
+  const [settings, setSettings] = React.useState({
+    payment_notifications: { email: false, whatsapp: false },
+    due_date_reminders: { email: false, whatsapp: false },
+    network_reports: { email: false, whatsapp: false },
+  })
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSaving, setIsSaving] = React.useState(false)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`)
+        if (!response.ok) throw new Error('Falha ao carregar configurações.')
+        const data = await response.json()
+        setSettings(data)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchSettings()
+  }, [userId, toast])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+      toast({
+        title: 'Sucesso',
+        description: 'Configurações salvas com sucesso.',
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const updateSetting = (type: string, channel: 'email' | 'whatsapp', value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [type]: { ...prev[type as keyof typeof prev], [channel]: value }
+    }))
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <Skeleton className="h-64 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardDescription>
+          Gerencie quais notificações este usuário receberá.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Notificações de Pagamento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber avisos sobre pagamentos recebidos, recusados, etc.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.payment_notifications.email}
+                onCheckedChange={(v) => updateSetting('payment_notifications', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.payment_notifications.whatsapp}
+                onCheckedChange={(v) => updateSetting('payment_notifications', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Lembretes de Vencimento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber lembretes sobre pagamentos próximos do vencimento.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.due_date_reminders.email}
+                onCheckedChange={(v) => updateSetting('due_date_reminders', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.due_date_reminders.whatsapp}
+                onCheckedChange={(v) => updateSetting('due_date_reminders', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Relatórios da Rede</p>
+            <p className="text-sm text-muted-foreground">
+              Receber relatórios sobre a rede de supervisão.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.network_reports.email}
+                onCheckedChange={(v) => updateSetting('network_reports', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.network_reports.whatsapp}
+                onCheckedChange={(v) => updateSetting('network_reports', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar Configurações
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+const TransactionsTab = ({ userId }: { userId: string }) => {
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/manager/transacoes?userId=${userId}`)
+        if (!response.ok) throw new Error('Falha ao carregar transações.')
+        const data = await response.json()
+        setTransactions(data.transactions)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTransactions()
+  }, [userId, toast])
+
+  const statusMap: {
+    [key in TransactionStatus]: {
+      text: string
+      variant: 'success' | 'warning' | 'destructive' | 'outline'
+    }
+  } = {
+    approved: { text: 'Aprovada', variant: 'success' },
+    pending: { text: 'Pendente', variant: 'warning' },
+    refused: { text: 'Recusada', variant: 'destructive' },
+    refunded: { text: 'Reembolsada', variant: 'outline' },
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Transações do Usuário</CardTitle>
+        <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID da Transação</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : transactions.length > 0 ? (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                      {statusMap[transaction.status]?.text || transaction.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{transaction.date}</TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      transaction.amount,
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/manager/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24">
+                  Nenhuma transação encontrada para este usuário.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
 }
 
 const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
@@ -700,6 +1007,12 @@ export default function IgrejaProfilePage() {
                 </Form>
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="transactions">
+            <TransactionsTab userId={id as string} />
+          </TabsContent>
+          <TabsContent value="configuracoes">
+            <SettingsTab userId={id as string} />
           </TabsContent>
           <TabsContent value="delete">
             <Card className="border-destructive">
