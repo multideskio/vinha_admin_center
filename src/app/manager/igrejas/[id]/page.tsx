@@ -24,8 +24,19 @@ import {
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useParams, useRouter } from 'next/navigation'
-import PhoneInput from 'react-phone-input-2'
-import 'react-phone-input-2/lib/style.css'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -70,8 +81,37 @@ type ChurchProfile = z.infer<typeof churchUpdateSchema> & {
 
 type Supervisor = {
   id: string
-  firstName: string
-  lastName: string
+  name: string
+}
+
+const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
+  const [reason, setReason] = React.useState('')
+  return (
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Excluir Cadastro</AlertDialogTitle>
+        <AlertDialogDescription>
+          Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste perfil para
+          fins de auditoria.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <div className="space-y-2">
+        <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+        <Textarea
+          id="deletion-reason"
+          placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+      </div>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+        <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>
+          Excluir permanentemente
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  )
 }
 
 // TransactionsTab component removed as it was unused
@@ -146,15 +186,56 @@ export default function IgrejaProfilePage() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = async (reason: string) => {
     try {
-      const response = await fetch(`/api/v1/manager/igrejas/${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/v1/manager/igrejas/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletionReason: reason }),
+      })
       if (!response.ok) throw new Error('Falha ao excluir a igreja.')
       toast({ title: 'Sucesso!', description: 'Igreja excluída com sucesso.', variant: 'success' })
       router.push('/manager/igrejas')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    }
+  }
+
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string | null,
+  ) => {
+    try {
+      const response = await fetch(`/api/v1/manager/igrejas/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [fieldName]: value }),
+      })
+      if (!response.ok) throw new Error(`Falha ao atualizar ${fieldName}.`)
+      toast({ title: 'Sucesso!', description: `Link do ${fieldName} atualizado.`, variant: 'success' })
+      setChurch((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    }
+  }
+
+  const handleCepBlur = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '')
+    if (cleanCep.length !== 8) return
+
+    try {
+      const response = await fetch(`/api/v1/cep?cep=${cleanCep}`)
+      if (!response.ok) return
+      
+      const data = await response.json()
+      form.setValue('address', data.address || '')
+      form.setValue('neighborhood', data.neighborhood || '')
+      form.setValue('city', data.city || '')
+      form.setValue('state', data.state || '')
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
     }
   }
 
@@ -179,7 +260,7 @@ export default function IgrejaProfilePage() {
         const result = await response.json()
         
         // Atualizar avatar no banco
-        const updateResponse = await fetch(`/api/v1/igrejas/${id}`, {
+        const updateResponse = await fetch(`/api/v1/manager/igrejas/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ avatarUrl: result.url }),
@@ -269,6 +350,7 @@ export default function IgrejaProfilePage() {
                 <Input
                   defaultValue={church.facebook ?? ''}
                   placeholder="https://facebook.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -276,11 +358,16 @@ export default function IgrejaProfilePage() {
                 <Input
                   defaultValue={church.instagram ?? ''}
                   placeholder="https://instagram.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input defaultValue={church.website ?? ''} placeholder="https://website.com/..." />
+                <Input
+                  defaultValue={church.website ?? ''}
+                  placeholder="https://website.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                />
               </div>
             </div>
           </CardContent>
@@ -316,7 +403,7 @@ export default function IgrejaProfilePage() {
                             <SelectContent>
                               {supervisors.map((supervisor) => (
                                 <SelectItem key={supervisor.id} value={supervisor.id}>
-                                  {supervisor.firstName} {supervisor.lastName}
+                                  {supervisor.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -392,7 +479,11 @@ export default function IgrejaProfilePage() {
                           <FormItem>
                             <FormLabel>CEP</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
+                              <Input
+                                {...field}
+                                value={field.value ?? ''}
+                                onBlur={(e) => handleCepBlur(e.target.value)}
+                              />
                             </FormControl>
                           </FormItem>
                         )}
@@ -510,35 +601,12 @@ export default function IgrejaProfilePage() {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Celular</FormLabel>
+                            <FormLabel>Celular/WhatsApp</FormLabel>
                             <FormControl>
                               <PhoneInput
-                                country={'br'}
-                                value={field.value}
+                                value={field.value || ''}
                                 onChange={field.onChange}
-                                inputClass="!w-full"
-                                containerClass="phone-input-wrapper"
-                                inputStyle={{
-                                  width: '100%',
-                                  height: '40px',
-                                  fontSize: '14px',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  color: 'hsl(var(--foreground))',
-                                }}
-                                buttonStyle={{
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRight: 'none',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                                }}
-                                dropdownStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  color: 'hsl(var(--foreground))',
-                                }}
+                                type="mobile"
                               />
                             </FormControl>
                             <FormMessage />
@@ -643,9 +711,12 @@ export default function IgrejaProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" onClick={handleDelete}>
-                  Excluir permanentemente
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">Excluir permanentemente</Button>
+                  </AlertDialogTrigger>
+                  <DeleteProfileDialog onConfirm={handleDelete} />
+                </AlertDialog>
               </CardContent>
             </Card>
           </TabsContent>
