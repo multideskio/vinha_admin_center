@@ -63,17 +63,18 @@ export async function createPixPayment(amount: number, customerName: string, cus
     Payment: {
       Type: 'Pix',
       Amount: Math.round(amount * 100),
+      ExpirationDate: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     },
   }
 
   console.log('Cielo PIX Request:', {
-    url: `${apiUrl}/1/sales`,
+    url: `${apiUrl}/1/pix/payments`,
     environment: config.environment,
     merchantId: config.merchantId,
     payload,
   })
 
-  const response = await fetch(`${apiUrl}/1/sales`, {
+  const response = await fetch(`${apiUrl}/1/pix/payments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
