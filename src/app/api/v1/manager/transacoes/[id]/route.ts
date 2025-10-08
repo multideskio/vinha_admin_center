@@ -1,164 +1,123 @@
-/**
- * @fileoverview API para buscar detalhes de uma transação específica (visão do gerente).
- * @version 1.1
- * @date 2024-08-07
- * @author PH
- */
-
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import {
-  transactions as transactionsTable,
-  gatewayConfigurations,
-  supervisorProfiles,
-  pastorProfiles,
-  churchProfiles,
-} from '@/db/schema'
-import { eq, and, inArray } from 'drizzle-orm'
+import { transactions, users, churchProfiles, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
-import { ApiError } from '@/lib/errors'
+import { eq, and, isNull, inArray } from 'drizzle-orm'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
-
-async function getCieloCredentials(): Promise<{
-  merchantId: string | null
-  merchantKey: string | null
-  apiUrl: string
-}> {
-  const [config] = await db
-    .select()
-    .from(gatewayConfigurations)
-    .where(eq(gatewayConfigurations.gatewayName, 'Cielo'))
-    .limit(1)
-
-  if (!config) throw new Error('Configuração do gateway Cielo não encontrada.')
-
-  const isProduction = config.environment === 'production'
-  return {
-    merchantId: isProduction ? config.prodClientId : config.devClientId,
-    merchantKey: isProduction ? config.prodClientSecret : config.devClientSecret,
-    apiUrl: isProduction
-      ? 'https://api.cieloecommerce.cielo.com.br'
-      : 'https://apisandbox.cieloecommerce.cielo.com.br',
-  }
-}
-
-async function verifyTransactionOwnership(
-  transactionId: string,
-  managerId: string,
-): Promise<boolean> {
-  const [transaction] = await db
-    .select({ contributorId: transactionsTable.contributorId })
-    .from(transactionsTable)
-    .where(
-      and(
-        eq(transactionsTable.id, transactionId),
-        eq(transactionsTable.companyId, VALIDATED_COMPANY_ID),
-      ),
-    )
-    .limit(1)
-
-  if (!transaction || !transaction.contributorId) return false
-
-  const contributorId = transaction.contributorId
-
-  // Check if the contributor is the manager himself
-  if (contributorId === managerId) return true
-
-  // Check if the contributor is in the manager's network
-  const supervisorsResult = await db
-    .select({ id: supervisorProfiles.userId })
-    .from(supervisorProfiles)
-    .where(eq(supervisorProfiles.managerId, managerId))
-  const supervisorIds = supervisorsResult.map((s) => s.id)
-  if (supervisorIds.includes(contributorId)) return true
-
-  if (supervisorIds.length > 0) {
-    const pastorsResult = await db
-      .select({ id: pastorProfiles.userId })
-      .from(pastorProfiles)
-      .where(inArray(pastorProfiles.supervisorId, supervisorIds))
-    const pastorIds = pastorsResult.map((p) => p.id)
-    if (pastorIds.includes(contributorId)) return true
-
-    const churchesResult = await db
-      .select({ id: churchProfiles.userId })
-      .from(churchProfiles)
-      .where(inArray(churchProfiles.supervisorId, supervisorIds))
-    const churchIds = churchesResult.map((c) => c.id)
-    if (churchIds.includes(contributorId)) return true
-  }
-
-  return false
-}
-
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
-  const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'manager') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  const { id } = params
-
-  if (!id) {
-    return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
-  }
-
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
-    if (!isAuthorized) {
-      throw new ApiError(
-        404,
-        'Transação não encontrada ou você não tem permissão para visualizá-la.',
-      )
+    const { user } = await validateRequest()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    if (user.role !== 'manager') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
+
+    // Get transaction
     const [transaction] = await db
       .select()
-      .from(transactionsTable)
-      .where(eq(transactionsTable.gatewayTransactionId, id))
+      .from(transactions)
+      .where(eq(transactions.id, params.id))
+      .limit(1)
 
-    if (!transaction || !transaction.gatewayTransactionId) {
-      throw new ApiError(404, 'Transação não possui um ID de gateway válido.')
+    if (!transaction) {
+      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    const credentials = await getCieloCredentials()
+    // Verify transaction belongs to manager's network
+    const [church] = await db
+      .select({ supervisorId: churchProfiles.supervisorId })
+      .from(churchProfiles)
+      .where(
+        and(
+          eq(churchProfiles.userId, transaction.churchId),
+          isNull(churchProfiles.deletedAt)
+        )
+      )
+      .limit(1)
 
-    const response = await fetch(
-      `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          MerchantId: credentials.merchantId || '',
-          MerchantKey: credentials.merchantKey || '',
-        },
+    if (!church) {
+      return NextResponse.json({ error: 'Igreja não encontrada' }, { status: 404 })
+    }
+
+    const [supervisor] = await db
+      .select({ managerId: supervisorProfiles.managerId })
+      .from(supervisorProfiles)
+      .where(
+        and(
+          eq(supervisorProfiles.id, church.supervisorId),
+          isNull(supervisorProfiles.deletedAt)
+        )
+      )
+      .limit(1)
+
+    if (!supervisor || supervisor.managerId !== user.id) {
+      return NextResponse.json({ error: 'Acesso negado a esta transação' }, { status: 403 })
+    }
+
+    // Get contributor details
+    const [contributor] = await db
+      .select({
+        name: users.name,
+        email: users.email,
+      })
+      .from(users)
+      .where(eq(users.id, transaction.contributorId))
+      .limit(1)
+
+    // Get church details
+    const [churchUser] = await db
+      .select({
+        name: users.name,
+      })
+      .from(users)
+      .where(eq(users.id, transaction.churchId))
+      .limit(1)
+
+    const [churchProfile] = await db
+      .select({
+        address: churchProfiles.address,
+        city: churchProfiles.city,
+        state: churchProfiles.state,
+      })
+      .from(churchProfiles)
+      .where(eq(churchProfiles.userId, transaction.churchId))
+      .limit(1)
+
+    const formattedTransaction = {
+      id: transaction.id,
+      date: transaction.createdAt,
+      amount: Number(transaction.amount),
+      status: transaction.status,
+      contributor: {
+        name: contributor?.name || 'Desconhecido',
+        email: contributor?.email || 'N/A',
       },
-    )
-
-    if (!response.ok) {
-      const errorBody = await response.json()
-      console.error('Erro ao consultar transação na Cielo:', errorBody)
-      throw new Error('Falha ao consultar o status da transação na Cielo.')
+      church: {
+        name: churchUser?.name || 'Desconhecida',
+        address: churchProfile
+          ? `${churchProfile.address}, ${churchProfile.city}, ${churchProfile.state}`
+          : 'N/A',
+      },
+      payment: {
+        method: transaction.method,
+        details: transaction.paymentDetails || 'N/A',
+      },
+      refundRequestReason: transaction.refundRequestReason,
     }
 
-    const cieloData = await response.json()
-
-    return NextResponse.json({ success: true, transaction: cieloData })
-  } catch (error: unknown) {
-    if (error instanceof ApiError) {
-      return NextResponse.json({ error: error.message }, { status: error.status })
-    }
-    console.error('Erro ao consultar transação:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    return NextResponse.json({ transaction: formattedTransaction })
+  } catch (error) {
+    console.error('Error fetching manager transaction:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor.', details: errorMessage },
-      { status: 500 },
+      { error: 'Erro ao buscar transação' },
+      { status: 500 }
     )
   }
 }

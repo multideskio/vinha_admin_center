@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Eye,
 } from 'lucide-react'
+import Link from 'next/link'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,13 +35,6 @@ import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 type Transaction = {
   id: string
@@ -59,7 +53,6 @@ export default function TransacoesPage() {
   const [searchTerm, setSearchTerm] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string[]>([])
   const [currentPage, setCurrentPage] = React.useState(1)
-  const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction | null>(null)
   const itemsPerPage = 10
   const { toast } = useToast()
 
@@ -242,10 +235,12 @@ export default function TransacoesPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => setSelectedTransaction(transaction)}
+                          asChild
                         >
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">Ver detalhes</span>
+                          <Link href={`/manager/transacoes/${transaction.id}`}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">Ver detalhes</span>
+                          </Link>
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -285,66 +280,6 @@ export default function TransacoesPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Dialog open={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Detalhes da Transação</DialogTitle>
-            <DialogDescription>
-              Informações completas da transação (somente leitura).
-            </DialogDescription>
-          </DialogHeader>
-          {selectedTransaction && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Contribuinte</p>
-                  <p className="text-sm">{selectedTransaction.contributor}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Igreja</p>
-                  <p className="text-sm">{selectedTransaction.church || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Valor</p>
-                  <p className="text-sm font-semibold">
-                    {new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(selectedTransaction.amount)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Método</p>
-                  <p className="text-sm">{methodMap[selectedTransaction.method]}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <Badge variant={statusMap[selectedTransaction.status]?.variant || 'default'}>
-                    {statusMap[selectedTransaction.status]?.text || selectedTransaction.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Data</p>
-                  <p className="text-sm">
-                    {new Date(selectedTransaction.date).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </p>
-                </div>
-              </div>
-              {selectedTransaction.refundRequestReason && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Motivo da Solicitação</p>
-                  <p className="text-sm mt-1">{selectedTransaction.refundRequestReason}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   )
 }
