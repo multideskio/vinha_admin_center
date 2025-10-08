@@ -12,7 +12,7 @@ import {
   Mail,
   MapPin,
   Pencil,
-  Map,
+  User,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -101,9 +101,7 @@ const pastorSchema = z.object({
 type Pastor = z.infer<typeof pastorSchema> & {
   id: string
   status: 'active' | 'inactive'
-  managerName?: string
   supervisorName?: string
-  supervisorColor?: string
   avatarUrl?: string
   createdAt?: string
 }
@@ -159,7 +157,7 @@ const PastorFormModal = ({
 
       if (!response.ok) {
         const result = await response.json()
-        throw new Error(result.error || 'Falha ao cadastrar Pastor.')
+        throw new Error(result.error || 'Falha ao cadastrar pastor.')
       }
 
       toast({
@@ -194,8 +192,6 @@ const PastorFormModal = ({
       .replace(/(\d{5})(\d)/, '$1-$2')
       .slice(0, 9)
   }
-
-
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value.replace(/\D/g, '')
@@ -253,9 +249,9 @@ const PastorFormModal = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {supervisors.map((Supervisor) => (
-                          <SelectItem key={Supervisor.id} value={Supervisor.id}>
-                            {Supervisor.name}
+                        {supervisors.map((supervisor) => (
+                          <SelectItem key={supervisor.id} value={supervisor.id}>
+                            {supervisor.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -469,8 +465,8 @@ const PastorFormModal = ({
 }
 
 export default function PastoresPage() {
-  const [Pastors, setPastors] = React.useState<Pastor[]>([])
-  const [supervisors, setsupervisors] = React.useState<Supervisor[]>([])
+  const [pastors, setPastors] = React.useState<Pastor[]>([])
+  const [supervisors, setSupervisors] = React.useState<Supervisor[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table')
   const [searchTerm, setSearchTerm] = React.useState('')
@@ -481,19 +477,19 @@ export default function PastoresPage() {
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
     try {
-      const [PastorsRes, supervisorsRes] = await Promise.all([
+      const [pastorsRes, supervisorsRes] = await Promise.all([
         fetch('/api/v1/manager/pastores'),
         fetch('/api/v1/manager/supervisores?minimal=true'),
       ])
 
-      if (!PastorsRes.ok) throw new Error('Falha ao carregar Pastores.')
-      if (!supervisorsRes.ok) throw new Error('Falha ao carregar regiões.')
+      if (!pastorsRes.ok) throw new Error('Falha ao carregar pastores.')
+      if (!supervisorsRes.ok) throw new Error('Falha ao carregar supervisores.')
 
-      const PastorsData = await PastorsRes.json()
+      const pastorsData = await pastorsRes.json()
       const supervisorsData = await supervisorsRes.json()
 
-      setPastors(PastorsData.Pastors)
-      setsupervisors(supervisorsData.supervisors)
+      setPastors(pastorsData.pastors || [])
+      setSupervisors(supervisorsData.supervisors || [])
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -506,12 +502,12 @@ export default function PastoresPage() {
     fetchData()
   }, [fetchData])
 
-  const handleDelete = async (PastorId: string) => {
+  const handleDelete = async (pastorId: string) => {
     try {
-      const response = await fetch(`/api/v1/manager/pastores/${PastorId}`, {
+      const response = await fetch(`/api/v1/manager/pastores/${pastorId}`, {
         method: 'DELETE',
       })
-      if (!response.ok) throw new Error('Falha ao excluir o Pastor.')
+      if (!response.ok) throw new Error('Falha ao excluir o pastor.')
       toast({
         title: 'Sucesso!',
         description: 'Pastor excluído com sucesso.',
@@ -524,8 +520,8 @@ export default function PastoresPage() {
     }
   }
 
-  const filteredPastors = (Pastors || []).filter((Pastor) =>
-    `${Pastor.firstName} ${Pastor.lastName}`
+  const filteredPastors = pastors.filter((pastor) =>
+    `${pastor.firstName} ${pastor.lastName}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase()),
   )
@@ -552,7 +548,7 @@ export default function PastoresPage() {
             <TableRow>
               <TableHead>Pastor</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Região</TableHead>
+              <TableHead className="hidden md:table-cell">Supervisor</TableHead>
               <TableHead className="hidden sm:table-cell">Status</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
@@ -581,30 +577,30 @@ export default function PastoresPage() {
                 </TableRow>
               ))
             ) : paginatedPastors.length > 0 ? (
-              paginatedPastors.map((Pastor) => (
-                <TableRow key={Pastor.id}>
+              paginatedPastors.map((pastor) => (
+                <TableRow key={pastor.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Image
-                        src={Pastor.avatarUrl || 'https://placehold.co/40x40.png'}
-                        alt={`${Pastor.firstName} ${Pastor.lastName}`}
+                        src={pastor.avatarUrl || 'https://placehold.co/40x40.png'}
+                        alt={`${pastor.firstName} ${pastor.lastName}`}
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
                         data-ai-hint="person"
                       />
-                      <span>{`${Pastor.firstName} ${Pastor.lastName}`}</span>
+                      <span>{`${pastor.firstName} ${pastor.lastName}`}</span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {Pastor.email}
+                    {pastor.email}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {Pastor.supervisorName || 'N/A'}
+                    {pastor.supervisorName || 'N/A'}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    <Badge variant={Pastor.status === 'active' ? 'success' : 'destructive'}>
-                      {Pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                    <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
+                      {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -618,7 +614,7 @@ export default function PastoresPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
-                          <Link href={`/manager/pastores/${Pastor.id}`}>Editar</Link>
+                          <Link href={`/manager/pastores/${pastor.id}`}>Editar</Link>
                         </DropdownMenuItem>
                         <AlertDialog>
                           <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
@@ -629,13 +625,13 @@ export default function PastoresPage() {
                               <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Essa ação não pode ser desfeita. Isso excluirá permanentemente o
-                                Pastor.
+                                pastor.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => Pastor.id && handleDelete(Pastor.id)}
+                                onClick={() => pastor.id && handleDelete(pastor.id)}
                               >
                                 Continuar
                               </AlertDialogAction>
@@ -650,7 +646,7 @@ export default function PastoresPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
-                  Nenhum Pastor encontrado.
+                  Nenhum pastor encontrado.
                 </TableCell>
               </TableRow>
             )}
@@ -673,13 +669,13 @@ export default function PastoresPage() {
             </Card>
           ))
         ) : paginatedPastors.length > 0 ? (
-          paginatedPastors.map((Pastor, index) => (
-            <Card key={Pastor.id}>
+          paginatedPastors.map((pastor, index) => (
+            <Card key={pastor.id}>
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <Image
-                    src={Pastor.avatarUrl || 'https://placehold.co/96x96.png'}
-                    alt={`Foto de ${Pastor.firstName}`}
+                    src={pastor.avatarUrl || 'https://placehold.co/96x96.png'}
+                    alt={`Foto de ${pastor.firstName}`}
                     width={96}
                     height={96}
                     className="rounded-lg object-cover w-24 h-24"
@@ -687,26 +683,26 @@ export default function PastoresPage() {
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
-                      #{(currentPage - 1) * itemsPerPage + index + 1} - {Pastor.firstName}{' '}
-                      {Pastor.lastName}
+                      #{(currentPage - 1) * itemsPerPage + index + 1} - {pastor.firstName}{' '}
+                      {pastor.lastName}
                     </h3>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p className="flex items-center gap-2">
-                        <Map size={14} /> <span>Supervisor: {Pastor.supervisorName || 'N/A'}</span>
+                        <User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <FileText size={14} /> <span>{Pastor.cpf}</span>
+                        <FileText size={14} /> <span>{pastor.cpf}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Phone size={14} /> <span>{Pastor.phone}</span>
+                        <Phone size={14} /> <span>{pastor.phone}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Mail size={14} /> <span>{Pastor.email}</span>
+                        <Mail size={14} /> <span>{pastor.email}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <MapPin size={14} />{' '}
                         <span>
-                          {Pastor.city} - {Pastor.state}
+                          {pastor.city} - {pastor.state}
                         </span>
                       </p>
                     </div>
@@ -714,7 +710,7 @@ export default function PastoresPage() {
                 </div>
                 <div className="flex justify-end mt-4">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/manager/pastores/${Pastor.id}`}>
+                    <Link href={`/manager/pastores/${pastor.id}`}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar
                     </Link>
@@ -724,7 +720,7 @@ export default function PastoresPage() {
             </Card>
           ))
         ) : (
-          <div className="col-span-full text-center">Nenhum Pastor encontrado.</div>
+          <div className="col-span-full text-center">Nenhum pastor encontrado.</div>
         )}
       </div>
       <PaginationControls />
@@ -742,7 +738,7 @@ export default function PastoresPage() {
         <ChevronLeft className="h-4 w-4" /> Anterior
       </Button>
       <span className="text-sm text-muted-foreground">
-        Página {currentPage} de {totalPages}
+        Página {currentPage} de {totalPages || 1}
       </span>
       <Button
         variant="outline"
@@ -763,7 +759,7 @@ export default function PastoresPage() {
             Pastores da Rede
           </h1>
           <p className="text-sm text-muted-foreground">
-            Exibindo {filteredPastors.length} de {Pastors.length} resultados
+            Exibindo {filteredPastors.length} de {pastors.length} resultados
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -817,4 +813,3 @@ export default function PastoresPage() {
     </div>
   )
 }
-
