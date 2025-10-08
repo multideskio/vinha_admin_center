@@ -437,6 +437,24 @@ export default function SupervisorProfilePage(): JSX.Element {
     defaultValues: {},
   })
 
+  const handleCepBlur = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '')
+    if (cleanCep.length !== 8) return
+
+    try {
+      const response = await fetch(`/api/v1/cep?cep=${cleanCep}`)
+      if (!response.ok) return
+      
+      const data = await response.json()
+      form.setValue('address', data.address || '')
+      form.setValue('neighborhood', data.neighborhood || '')
+      form.setValue('city', data.city || '')
+      form.setValue('state', data.state || '')
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
+    }
+  }
+
   const fetchData = React.useCallback(async () => {
     if (!id) return
     setIsLoading(true)
@@ -830,7 +848,11 @@ export default function SupervisorProfilePage(): JSX.Element {
                             <FormItem>
                               <FormLabel>CEP</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <Input 
+                                  {...field} 
+                                  value={field.value ?? ''}
+                                  onBlur={(e) => handleCepBlur(e.target.value)}
+                                />
                               </FormControl>
                             </FormItem>
                           )}
