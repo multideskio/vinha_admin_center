@@ -30,7 +30,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
+  if (!user || !['admin', 'manager'].includes(user.role)) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
@@ -66,7 +66,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
+  if (!user || !['admin', 'manager'].includes(user.role)) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 

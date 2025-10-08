@@ -140,6 +140,165 @@ const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => voi
   )
 }
 
+const SettingsTab = ({ userId }: { userId: string }) => {
+  const [settings, setSettings] = React.useState({
+    payment_notifications: { email: false, whatsapp: false },
+    due_date_reminders: { email: false, whatsapp: false },
+    network_reports: { email: false, whatsapp: false },
+  })
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSaving, setIsSaving] = React.useState(false)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`)
+        if (!response.ok) throw new Error('Falha ao carregar configurações.')
+        const data = await response.json()
+        setSettings(data)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchSettings()
+  }, [userId, toast])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+      toast({
+        title: 'Sucesso',
+        description: 'Configurações salvas com sucesso.',
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const updateSetting = (type: string, channel: 'email' | 'whatsapp', value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [type]: { ...prev[type as keyof typeof prev], [channel]: value }
+    }))
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <Skeleton className="h-64 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardDescription>
+          Gerencie quais notificações este usuário receberá.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Notificações de Pagamento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber avisos sobre pagamentos recebidos, recusados, etc.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.payment_notifications.email}
+                onCheckedChange={(v) => updateSetting('payment_notifications', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.payment_notifications.whatsapp}
+                onCheckedChange={(v) => updateSetting('payment_notifications', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Lembretes de Vencimento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber lembretes sobre pagamentos próximos do vencimento.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.due_date_reminders.email}
+                onCheckedChange={(v) => updateSetting('due_date_reminders', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.due_date_reminders.whatsapp}
+                onCheckedChange={(v) => updateSetting('due_date_reminders', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Relatórios da Rede</p>
+            <p className="text-sm text-muted-foreground">
+              Receber relatórios sobre a rede de supervisão.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.network_reports.email}
+                onCheckedChange={(v) => updateSetting('network_reports', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.network_reports.whatsapp}
+                onCheckedChange={(v) => updateSetting('network_reports', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar Configurações
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 const TransactionsTab = ({ userId }: { userId: string }) => {
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -824,75 +983,7 @@ export default function SupervisorProfilePage(): JSX.Element {
               <TransactionsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="configuracoes">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações de Notificação</CardTitle>
-                  <CardDescription>
-                    Gerencie quais notificações este usuário receberá.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <p className="font-medium">Notificações de Pagamento</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber avisos sobre pagamentos recebidos, recusados, etc.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
-                      </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <p className="font-medium">Lembretes de Vencimento</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber lembretes sobre pagamentos próximos do vencimento.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
-                      </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <p className="font-medium">Novos Cadastros na Rede</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber notificações sobre novos pastores ou igrejas na sua supervisão.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
-                      </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
-                      </div>
-                    </div>
-                  </div>
-                  <Alert>
-                    <AlertDescription>
-                      Funcionalidade de configurações de notificação em desenvolvimento.
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
+              <SettingsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="delete">
               <Card className="border-destructive">
