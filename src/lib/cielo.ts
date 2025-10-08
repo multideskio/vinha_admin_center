@@ -1,0 +1,223 @@
+import { db } from '@/db/drizzle'
+import { gatewayConfigurations } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+
+const COMPANY_ID = process.env.COMPANY_INIT!
+
+type CieloConfig = {
+  merchantId: string
+  merchantKey: string
+  environment: 'production' | 'development'
+}
+
+async function getCieloConfig(): Promise<CieloConfig | null> {
+  const [config] = await db
+    .select()
+    .from(gatewayConfigurations)
+    .where(
+      and(
+        eq(gatewayConfigurations.companyId, COMPANY_ID),
+        eq(gatewayConfigurations.gatewayName, 'Cielo'),
+        eq(gatewayConfigurations.isActive, true)
+      )
+    )
+    .limit(1)
+
+  if (!config) return null
+
+  const merchantId = config.environment === 'production' ? config.prodClientId : config.devClientId
+  const merchantKey = config.environment === 'production' ? config.prodClientSecret : config.devClientSecret
+
+  if (!merchantId || !merchantKey) return null
+
+  return {
+    merchantId,
+    merchantKey,
+    environment: config.environment as 'production' | 'development',
+  }
+}
+
+function getCieloApiUrl(environment: 'production' | 'development'): string {
+  return environment === 'production'
+    ? 'https://api.cieloecommerce.cielo.com.br'
+    : 'https://apisandbox.cieloecommerce.cielo.com.br'
+}
+
+export async function createPixPayment(amount: number, customerName: string, customerEmail: string) {
+  const config = await getCieloConfig()
+  if (!config) throw new Error('Cielo não configurada')
+
+  const apiUrl = getCieloApiUrl(config.environment)
+
+  const payload = {
+    MerchantOrderId: `ORDER-${Date.now()}`,
+    Customer: {
+      Name: customerName,
+      Email: customerEmail,
+    },
+    Payment: {
+      Type: 'Pix',
+      Amount: Math.round(amount * 100),
+      QrCodeExpirationDate: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    },
+  }
+
+  const response = await fetch(`${apiUrl}/1/sales`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      MerchantId: config.merchantId,
+      MerchantKey: config.merchantKey,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.Message || 'Erro ao criar pagamento PIX')
+  }
+
+  const data = await response.json()
+  return {
+    PaymentId: data.Payment.PaymentId,
+    QrCodeBase64Image: data.Payment.QrCodeBase64Image,
+    QrCodeString: data.Payment.QrCodeString,
+  }
+}
+
+export async function createCreditCardPayment(
+  amount: number,
+  customerName: string,
+  customerEmail: string,
+  card: {
+    number: string
+    holder: string
+    expirationDate: string
+    securityCode: string
+    brand: string
+  }
+) {
+  const config = await getCieloConfig()
+  if (!config) throw new Error('Cielo não configurada')
+
+  const apiUrl = getCieloApiUrl(config.environment)
+
+  const [month, year] = card.expirationDate.split('/')
+
+  const payload = {
+    MerchantOrderId: `ORDER-${Date.now()}`,
+    Customer: {
+      Name: customerName,
+      Email: customerEmail,
+    },
+    Payment: {
+      Type: 'CreditCard',
+      Amount: Math.round(amount * 100),
+      Installments: 1,
+      SoftDescriptor: 'Contribuicao',
+      CreditCard: {
+        CardNumber: card.number.replace(/\s/g, ''),
+        Holder: card.holder,
+        ExpirationDate: `${month}/20${year}`,
+        SecurityCode: card.securityCode,
+        Brand: card.brand,
+      },
+    },
+  }
+
+  const response = await fetch(`${apiUrl}/1/sales`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      MerchantId: config.merchantId,
+      MerchantKey: config.merchantKey,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.Message || 'Erro ao processar cartão de crédito')
+  }
+
+  const data = await response.json()
+  return {
+    PaymentId: data.Payment.PaymentId,
+    Status: data.Payment.Status,
+    ReturnCode: data.Payment.ReturnCode,
+    ReturnMessage: data.Payment.ReturnMessage,
+  }
+}
+
+export async function createBoletoPayment(amount: number, customerName: string, customerEmail: string, customerCpf: string) {
+  const config = await getCieloConfig()
+  if (!config) throw new Error('Cielo não configurada')
+
+  const apiUrl = getCieloApiUrl(config.environment)
+
+  const payload = {
+    MerchantOrderId: `ORDER-${Date.now()}`,
+    Customer: {
+      Name: customerName,
+      Email: customerEmail,
+      Identity: customerCpf,
+      IdentityType: 'CPF',
+    },
+    Payment: {
+      Type: 'Boleto',
+      Amount: Math.round(amount * 100),
+      Provider: 'Bradesco2',
+      BoletoNumber: `${Date.now()}`.slice(-10),
+      Assignor: 'Vinha Ministérios',
+      Demonstrative: 'Contribuição',
+      ExpirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      Identification: customerCpf,
+      Instructions: 'Aceitar somente até a data de vencimento',
+    },
+  }
+
+  const response = await fetch(`${apiUrl}/1/sales`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      MerchantId: config.merchantId,
+      MerchantKey: config.merchantKey,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.Message || 'Erro ao gerar boleto')
+  }
+
+  const data = await response.json()
+  return {
+    PaymentId: data.Payment.PaymentId,
+    Url: data.Payment.Url,
+    DigitableLine: data.Payment.DigitableLine,
+    BarCodeNumber: data.Payment.BarCodeNumber,
+  }
+}
+
+export async function queryPayment(paymentId: string) {
+  const config = await getCieloConfig()
+  if (!config) throw new Error('Cielo não configurada')
+
+  const apiUrl = getCieloApiUrl(config.environment)
+
+  const response = await fetch(`${apiUrl}/1/sales/${paymentId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      MerchantId: config.merchantId,
+      MerchantKey: config.merchantKey,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Erro ao consultar pagamento')
+  }
+
+  return await response.json()
+}

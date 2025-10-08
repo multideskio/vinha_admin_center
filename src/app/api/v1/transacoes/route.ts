@@ -1,12 +1,26 @@
-/**
- * @fileoverview API para listar transações
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions } from '@/db/schema'
+import { transactions, users, churchProfiles } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
+import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
+import { z } from 'zod'
+
+const COMPANY_ID = process.env.COMPANY_INIT!
+
+const transactionSchema = z.object({
+  amount: z.number().min(1),
+  paymentMethod: z.enum(['pix', 'credit_card', 'boleto']),
+  contributionType: z.enum(['dizimo', 'oferta']),
+  description: z.string().optional(),
+  card: z.object({
+    number: z.string(),
+    holder: z.string(),
+    expirationDate: z.string(),
+    securityCode: z.string(),
+    brand: z.string(),
+  }).optional(),
+})
 
 export async function GET(request: NextRequest) {
   const { user } = await validateRequest()
@@ -55,5 +69,77 @@ export async function GET(request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { user } = await validateRequest()
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const data = transactionSchema.parse(body)
+
+    // Get user details
+    const [userData] = await db
+      .select({ name: users.name, email: users.email, phone: users.phone })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1)
+
+    if (!userData) {
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+    }
+
+    // Get church ID if user is church
+    let churchId = null
+    if (user.role === 'church') {
+      churchId = user.id
+    }
+
+    let paymentResult: any
+    let status: 'pending' | 'approved' | 'refused' = 'pending'
+
+    // Process payment based on method
+    if (data.paymentMethod === 'pix') {
+      paymentResult = await createPixPayment(data.amount, userData.name, userData.email)
+    } else if (data.paymentMethod === 'credit_card' && data.card) {
+      paymentResult = await createCreditCardPayment(
+        data.amount,
+        userData.name,
+        userData.email,
+        data.card
+      )
+      status = paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
+    } else if (data.paymentMethod === 'boleto') {
+      const cpf = userData.phone || '00000000000' // Fallback, should get from profile
+      paymentResult = await createBoletoPayment(data.amount, userData.name, userData.email, cpf)
+    }
+
+    // Save transaction to database
+    const [transaction] = await db
+      .insert(transactions)
+      .values({
+        companyId: COMPANY_ID,
+        contributorId: user.id,
+        originChurchId: churchId,
+        amount: data.amount.toString(),
+        status,
+        paymentMethod: data.paymentMethod,
+        gatewayTransactionId: paymentResult.PaymentId,
+      })
+      .returning()
+
+    return NextResponse.json({
+      success: true,
+      transaction: { id: transaction.id },
+      data: paymentResult,
+    })
+  } catch (error) {
+    console.error('Error creating transaction:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento'
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
