@@ -102,6 +102,9 @@ type Supervisor = z.infer<typeof supervisorSchema> & {
   status: 'active' | 'inactive'
   managerName?: string
   regionName?: string
+  regionColor?: string
+  avatarUrl?: string
+  createdAt?: string
 }
 
 type Region = {
@@ -558,7 +561,7 @@ export default function SupervisoresPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
+              <TableHead>Supervisor</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="hidden md:table-cell">Região</TableHead>
               <TableHead className="hidden sm:table-cell">Status</TableHead>
@@ -591,7 +594,19 @@ export default function SupervisoresPage() {
             ) : paginatedSupervisors.length > 0 ? (
               paginatedSupervisors.map((supervisor) => (
                 <TableRow key={supervisor.id}>
-                  <TableCell className="font-medium">{`${supervisor.firstName} ${supervisor.lastName}`}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={supervisor.avatarUrl || 'https://placehold.co/40x40.png'}
+                        alt={`${supervisor.firstName} ${supervisor.lastName}`}
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover"
+                        data-ai-hint="person"
+                      />
+                      <span>{`${supervisor.firstName} ${supervisor.lastName}`}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {supervisor.email}
                   </TableCell>
@@ -674,12 +689,12 @@ export default function SupervisoresPage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <Image
-                    src="https://placehold.co/96x96.png"
+                    src={supervisor.avatarUrl || 'https://placehold.co/96x96.png'}
                     alt={`Foto de ${supervisor.firstName}`}
                     width={96}
                     height={96}
                     className="rounded-lg object-cover w-24 h-24"
-                    data-ai-hint="male person"
+                    data-ai-hint="person"
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">

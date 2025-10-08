@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supervisorProfileSchema } from '@/lib/types'
+import { AvatarUpload } from '@/components/ui/avatar-upload'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,7 +97,6 @@ export default function SupervisorProfilePage() {
   const [regions, setRegions] = React.useState<Region[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
-  const [previewImage, setPreviewImage] = React.useState<string | null>(null)
 
   const params = useParams()
   const router = useRouter()
@@ -181,19 +181,23 @@ export default function SupervisorProfilePage() {
     }
   }
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
-        toast({
-          title: 'Preview da Imagem',
-          description:
-            'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
-        })
-      }
-      reader.readAsDataURL(file)
+  const handleAvatarUpload = async (url: string) => {
+    try {
+      const response = await fetch(`/api/v1/manager/supervisores/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: url }),
+      })
+      if (!response.ok) throw new Error('Falha ao atualizar avatar.')
+      toast({
+        title: 'Sucesso',
+        description: 'Avatar atualizado com sucesso.',
+        variant: 'success',
+      })
+      fetchData()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
     }
   }
 
@@ -228,32 +232,11 @@ export default function SupervisorProfilePage() {
         <div className="lg:col-span-1">
           <Card>
             <CardContent className="flex flex-col items-center pt-6 text-center">
-              <div className="relative">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={previewImage || supervisor.avatarUrl || 'https://placehold.co/96x96.png'}
-                    alt={supervisor.firstName ?? ''}
-                    data-ai-hint="male person"
-                  />
-                  <AvatarFallback>
-                    {supervisor.firstName?.[0]}
-                    {supervisor.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <span className="sr-only">Trocar foto</span>
-                </Label>
-                <Input
-                  id="photo-upload"
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                />
-              </div>
+              <AvatarUpload
+                currentAvatarUrl={supervisor.avatarUrl}
+                onUploadComplete={handleAvatarUpload}
+                fallback={`${supervisor.firstName?.[0] || ''}${supervisor.lastName?.[0] || ''}`}
+              />
               <h2 className="mt-4 text-xl font-semibold">
                 {supervisor.firstName} {supervisor.lastName}
               </h2>
