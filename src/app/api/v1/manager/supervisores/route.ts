@@ -43,7 +43,13 @@ export async function GET(request: Request): Promise<NextResponse> {
           ),
         )
         .orderBy(desc(users.createdAt))
-      return NextResponse.json({ supervisors: result })
+      
+      const supervisorsWithName = result.map(s => ({
+        id: s.id,
+        name: `${s.firstName} ${s.lastName}`
+      }))
+      
+      return NextResponse.json({ supervisors: supervisorsWithName })
     }
 
     const result = await db
