@@ -17,18 +17,25 @@ async function getCieloConfig(): Promise<CieloConfig | null> {
     .where(
       and(
         eq(gatewayConfigurations.companyId, COMPANY_ID),
-        eq(gatewayConfigurations.gatewayName, 'Cielo'),
-        eq(gatewayConfigurations.isActive, true)
+        eq(gatewayConfigurations.gatewayName, 'Cielo')
       )
     )
     .limit(1)
 
-  if (!config) return null
+  if (!config) {
+    throw new Error('Gateway Cielo não configurado. Configure em /admin/gateways/cielo')
+  }
+
+  if (!config.isActive) {
+    throw new Error('Gateway Cielo está desativado. Ative em /admin/gateways/cielo')
+  }
 
   const merchantId = config.environment === 'production' ? config.prodClientId : config.devClientId
   const merchantKey = config.environment === 'production' ? config.prodClientSecret : config.devClientSecret
 
-  if (!merchantId || !merchantKey) return null
+  if (!merchantId || !merchantKey) {
+    throw new Error(`Credenciais Cielo ${config.environment} não configuradas. Configure em /admin/gateways/cielo`)
+  }
 
   return {
     merchantId,
@@ -45,7 +52,6 @@ function getCieloApiUrl(environment: 'production' | 'development'): string {
 
 export async function createPixPayment(amount: number, customerName: string, customerEmail: string) {
   const config = await getCieloConfig()
-  if (!config) throw new Error('Cielo não configurada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
@@ -106,7 +112,6 @@ export async function createCreditCardPayment(
   }
 ) {
   const config = await getCieloConfig()
-  if (!config) throw new Error('Cielo não configurada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
@@ -167,7 +172,6 @@ export async function createCreditCardPayment(
 
 export async function createBoletoPayment(amount: number, customerName: string, customerEmail: string, customerCpf: string) {
   const config = await getCieloConfig()
-  if (!config) throw new Error('Cielo não configurada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
@@ -226,7 +230,6 @@ export async function createBoletoPayment(amount: number, customerName: string, 
 
 export async function queryPayment(paymentId: string) {
   const config = await getCieloConfig()
-  if (!config) throw new Error('Cielo não configurada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
