@@ -151,7 +151,7 @@ const PastorFormModal = ({
 
   const handleSave = async (data: z.infer<typeof pastorSchema>) => {
     try {
-      const response = await fetch('/api/v1/manager/Pastores', {
+      const response = await fetch('/api/v1/manager/pastores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -482,7 +482,7 @@ export default function PastoresPage() {
     setIsLoading(true)
     try {
       const [PastorsRes, supervisorsRes] = await Promise.all([
-        fetch('/api/v1/manager/Pastores'),
+        fetch('/api/v1/manager/pastores'),
         fetch('/api/v1/manager/supervisores?minimal=true'),
       ])
 
@@ -508,7 +508,7 @@ export default function PastoresPage() {
 
   const handleDelete = async (PastorId: string) => {
     try {
-      const response = await fetch(`/api/v1/manager/Pastores/${PastorId}`, {
+      const response = await fetch(`/api/v1/manager/pastores/${PastorId}`, {
         method: 'DELETE',
       })
       if (!response.ok) throw new Error('Falha ao excluir o Pastor.')
@@ -618,7 +618,7 @@ export default function PastoresPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
-                          <Link href={`/manager/Pastores/${Pastor.id}`}>Editar</Link>
+                          <Link href={`/manager/pastores/${Pastor.id}`}>Editar</Link>
                         </DropdownMenuItem>
                         <AlertDialog>
                           <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
@@ -714,7 +714,7 @@ export default function PastoresPage() {
                 </div>
                 <div className="flex justify-end mt-4">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/manager/Pastores/${Pastor.id}`}>
+                    <Link href={`/manager/pastores/${Pastor.id}`}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar
                     </Link>
