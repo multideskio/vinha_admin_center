@@ -13,7 +13,12 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 20000,
+  allowExitOnIdle: true,
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected database pool error:', err);
 });
 
 export const db = drizzle(pool, { schema });
