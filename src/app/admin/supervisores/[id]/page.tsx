@@ -74,6 +74,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,11 +91,11 @@ const supervisorUpdateSchema = supervisorProfileSchema
   })
   .partial()
 
-type SupervisorProfile = z.infer<typeof supervisorUpdateSchema> & {
+type SupervisorFormData = z.infer<typeof supervisorUpdateSchema>
+
+type SupervisorProfile = SupervisorFormData & {
   id?: string
-  cpf?: string
   status?: string
-  avatarUrl?: string
 }
 
 type Manager = {
@@ -278,7 +280,7 @@ export default function SupervisorProfilePage(): JSX.Element {
   const { id } = params
   const { toast } = useToast()
 
-  const form = useForm<SupervisorProfile>({
+  const form = useForm<SupervisorFormData>({
     resolver: zodResolver(supervisorUpdateSchema),
     defaultValues: {},
   })
@@ -288,7 +290,7 @@ export default function SupervisorProfilePage(): JSX.Element {
     setIsLoading(true)
     try {
       const [supervisorRes, managersRes, regionsRes] = await Promise.all([
-        fetch(`/api/v1/supervisores/${id}`),
+        fetch(`/api/v1/admin/supervisores/${id}`),
         fetch('/api/v1/admin/gerentes?minimal=true'),
         fetch('/api/v1/regioes?minimal=true'),
       ])
@@ -317,21 +319,22 @@ export default function SupervisorProfilePage(): JSX.Element {
     fetchData()
   }, [fetchData])
 
-  const onSubmit = async (data: Partial<SupervisorProfile>) => {
+  const onSubmit = async (data: SupervisorFormData) => {
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/v1/supervisores/${id}`, {
+      const response = await fetch(`/api/v1/admin/supervisores/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error('Falha ao atualizar o supervisor.')
+      const updatedData = await response.json()
       toast({
         title: 'Sucesso',
         description: 'Supervisor atualizado com sucesso.',
         variant: 'success',
       })
-      fetchData()
+      setSupervisor((prev) => (prev ? { ...prev, ...updatedData.supervisor } : null))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -342,7 +345,7 @@ export default function SupervisorProfilePage(): JSX.Element {
 
   const handleDelete = async (reason: string) => {
     try {
-      const response = await fetch(`/api/v1/supervisores/${id}`, {
+      const response = await fetch(`/api/v1/admin/supervisores/${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deletionReason: reason }),
@@ -357,6 +360,44 @@ export default function SupervisorProfilePage(): JSX.Element {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    }
+  }
+
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string | null,
+  ) => {
+    try {
+      const payload = { [fieldName]: value }
+
+      const response = await fetch(`/api/v1/admin/supervisores/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Falha ao atualizar ${fieldName}.`)
+      }
+
+      const updatedData = await response.json()
+      toast({
+        title: 'Sucesso!',
+        description: `Link do ${fieldName} atualizado.`,
+        variant: 'success',
+      })
+      if (updatedData.supervisor) {
+        setSupervisor(updatedData.supervisor)
+      } else {
+        setSupervisor((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
     }
   }
 
@@ -381,7 +422,7 @@ export default function SupervisorProfilePage(): JSX.Element {
         const result = await response.json()
         
         // Atualizar avatar no banco
-        const updateResponse = await fetch(`/api/v1/supervisores/${id}`, {
+        const updateResponse = await fetch(`/api/v1/admin/supervisores/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ avatarUrl: result.url }),
@@ -391,8 +432,12 @@ export default function SupervisorProfilePage(): JSX.Element {
           throw new Error('Falha ao atualizar avatar')
         }
 
+        const updatedData = await updateResponse.json()
         setPreviewImage(result.url)
         setSupervisor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
+        // Recarregar dados do servidor para garantir sincronização
+        await fetchData()
         
         toast({
           title: 'Sucesso',
@@ -470,6 +515,31 @@ export default function SupervisorProfilePage(): JSX.Element {
                 {supervisor.firstName} {supervisor.lastName}
               </h2>
               <p className="text-muted-foreground">Supervisor</p>
+              <div className="flex gap-2 mt-3">
+                <SendMessageDialog
+                  recipientName={`${supervisor.firstName} ${supervisor.lastName}`}
+                  recipientEmail={supervisor.email || ''}
+                  recipientPhone={supervisor.phone || ''}
+                >
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                  >
+                    <Mail className="h-3 w-3" />
+                    Mensagem
+                  </Button>
+                </SendMessageDialog>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(`https://wa.me/55${supervisor.phone?.replace(/\D/g, '')}`, '_blank')}
+                  className="flex items-center gap-1"
+                >
+                  <Smartphone className="h-3 w-3" />
+                  WhatsApp
+                </Button>
+              </div>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">
@@ -480,6 +550,7 @@ export default function SupervisorProfilePage(): JSX.Element {
                   <Input
                     defaultValue={supervisor.facebook ?? ''}
                     placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                   />
                 </div>
                 <div className="flex items-center gap-3">
@@ -487,6 +558,7 @@ export default function SupervisorProfilePage(): JSX.Element {
                   <Input
                     defaultValue={supervisor.instagram ?? ''}
                     placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
                   />
                 </div>
                 <div className="flex items-center gap-3">
@@ -494,6 +566,7 @@ export default function SupervisorProfilePage(): JSX.Element {
                   <Input
                     defaultValue={supervisor.website ?? ''}
                     placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
                   />
                 </div>
               </div>
@@ -613,16 +686,11 @@ export default function SupervisorProfilePage(): JSX.Element {
                             <FormItem>
                               <FormLabel>Celular/WhatsApp</FormLabel>
                               <FormControl>
-                                <div className="flex items-center">
-                                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                    🇧🇷 +55
-                                  </span>
-                                  <Input
-                                    {...field}
-                                    value={field.value ?? ''}
-                                    className="rounded-l-none"
-                                  />
-                                </div>
+                                <PhoneInput
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  type="mobile"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -633,9 +701,13 @@ export default function SupervisorProfilePage(): JSX.Element {
                           name="landline"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Telefone 2</FormLabel>
+                              <FormLabel>Telefone Fixo</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <PhoneInput
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  type="landline"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

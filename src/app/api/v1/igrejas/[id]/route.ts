@@ -72,6 +72,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       facebook: profile?.facebook,
       instagram: profile?.instagram,
       website: profile?.website,
+      avatarUrl: user.avatarUrl,
       status: user.status,
     })
   } catch (error: unknown) {
@@ -105,6 +106,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if ('avatarUrl' in body) userUpdateData.avatarUrl = body.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)

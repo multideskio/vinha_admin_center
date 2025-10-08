@@ -56,6 +56,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         phone: users.phone,
         status: users.status,
         cpf: supervisorProfiles.cpf,
+        avatarUrl: users.avatarUrl,
         managerName: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
         regionName: regions.name,
       })

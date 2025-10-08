@@ -73,7 +73,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import PhoneInput from 'react-phone-input-2'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -409,10 +409,9 @@ const GerenteFormModal = ({
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
                       <PhoneInput
-                        country={'br'}
                         value={field.value}
                         onChange={field.onChange}
-                        inputClass="!w-full"
+                        type="mobile"
                       />
                     </FormControl>
                     <FormMessage />
@@ -426,7 +425,11 @@ const GerenteFormModal = ({
                   <FormItem>
                     <FormLabel>Telefone Fixo</FormLabel>
                     <FormControl>
-                      <Input placeholder="(11) 1234-5678" {...field} />
+                      <PhoneInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        type="landline"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

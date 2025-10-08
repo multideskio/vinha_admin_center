@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { managerProfileSchema } from '@/lib/types'
+import { PhoneInput } from '@/components/ui/phone-input'
 import {
   Camera,
   Facebook,
@@ -745,12 +746,11 @@ export default function GerenteProfilePage() {
                             <FormItem>
                               <FormLabel>Celular/WhatsApp</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <span className="text-muted-foreground">🇧🇷 +55</span>
-                                  </div>
-                                  <Input {...field} value={field.value ?? ''} className="pl-16" />
-                                </div>
+                              <PhoneInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                type="mobile"
+                              />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -763,7 +763,11 @@ export default function GerenteProfilePage() {
                             <FormItem>
                               <FormLabel>Fixo</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <PhoneInput
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  type="landline"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

@@ -72,6 +72,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { PhoneInput } from '@/components/ui/phone-input'
 import {
   Form,
   FormControl,
@@ -95,6 +96,8 @@ import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { pastorProfileSchema, type UserStatus, type SupervisorProfile } from '@/lib/types'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 type Pastor = z.infer<typeof pastorProfileSchema> & {
   id: string
@@ -102,8 +105,51 @@ type Pastor = z.infer<typeof pastorProfileSchema> & {
   supervisorName?: string
   email: string
   phone: string | null
+  avatarUrl?: string
 }
 type Supervisor = SupervisorProfile & { id: string }
+
+const DeletePastorDialog = ({ pastorId, onConfirm }: { pastorId: string; onConfirm: (id: string, reason: string) => void }) => {
+  const [reason, setReason] = React.useState('')
+  const [isOpen, setIsOpen] = React.useState(false)
+  
+  const handleConfirm = () => {
+    onConfirm(pastorId, reason)
+    setIsOpen(false)
+    setReason('')
+  }
+  
+  return (
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+        Excluir
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir Pastor</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste pastor para fins de auditoria.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+          <Textarea
+            id="deletion-reason"
+            placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm} disabled={!reason.trim()}>
+            Excluir permanentemente
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 
 const PastorFormModal = ({
   onSave,
@@ -487,18 +533,12 @@ const PastorFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <PhoneInput
+                        type="mobile"
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        placeholder="(00) 00000-0000"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -558,9 +598,13 @@ export default function PastoresPage(): JSX.Element {
     fetchData()
   }, [fetchData])
 
-  const handleDelete = async (pastorId: string) => {
+  const handleDelete = async (pastorId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/v1/admin/pastores/${pastorId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/v1/admin/pastores/${pastorId}`, { 
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletionReason: reason })
+      })
       if (!response.ok) throw new Error('Falha ao excluir o pastor.')
       toast({ title: 'Sucesso!', description: 'Pastor excluído com sucesso.', variant: 'success' })
       fetchData()
@@ -627,7 +671,18 @@ export default function PastoresPage(): JSX.Element {
             ) : paginatedPastors.length > 0 ? (
               paginatedPastors.map((pastor) => (
                 <TableRow key={pastor.id}>
-                  <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={pastor.avatarUrl || 'https://placehold.co/32x32.png'}
+                        alt={`${pastor.firstName} ${pastor.lastName}`}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover"
+                      />
+                      {`${pastor.firstName} ${pastor.lastName}`}
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {pastor.email}
                   </TableCell>
@@ -652,26 +707,7 @@ export default function PastoresPage(): JSX.Element {
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/pastores/${pastor.id}`}>Editar</Link>
                         </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o
-                                pastor.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(pastor.id)}>
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <DeletePastorDialog pastorId={pastor.id} onConfirm={handleDelete} />
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -708,7 +744,7 @@ export default function PastoresPage(): JSX.Element {
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <Image
-                    src="https://placehold.co/96x96.png"
+                    src={pastor.avatarUrl || 'https://placehold.co/96x96.png'}
                     alt={`Foto de ${pastor.firstName}`}
                     width={96}
                     height={96}

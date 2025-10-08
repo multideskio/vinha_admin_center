@@ -17,13 +17,15 @@ interface SendMessageDialogProps {
   recipientEmail: string
   recipientPhone: string
   children: React.ReactNode
+  defaultTab?: 'email' | 'whatsapp'
 }
 
 export function SendMessageDialog({ 
   recipientName, 
   recipientEmail, 
   recipientPhone, 
-  children 
+  children,
+  defaultTab = 'email'
 }: SendMessageDialogProps) {
   const [open, setOpen] = useState(false)
   const [emailSubject, setEmailSubject] = useState('')
@@ -127,7 +129,7 @@ export function SendMessageDialog({
         <DialogHeader>
           <DialogTitle>Enviar Mensagem para {recipientName}</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="email" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />

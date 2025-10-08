@@ -71,6 +71,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         phone: users.phone,
         status: users.status,
         cnpj: churchProfiles.cnpj,
+        avatarUrl: users.avatarUrl,
         supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
       })
       .from(users)

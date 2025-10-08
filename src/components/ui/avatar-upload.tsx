@@ -80,7 +80,7 @@ export function AvatarUpload({
       <div className="space-y-4">
         <div className="relative opacity-50">
           <ClickableImage
-            src={previewUrl || currentUrl || ''}
+            src={previewUrl || currentUrl || 'https://placehold.co/96x96.png'}
             alt="Avatar"
             className={`${sizeClasses[size]} rounded-full object-cover`}
             width={size === 'sm' ? 64 : size === 'md' ? 96 : 128}

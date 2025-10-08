@@ -51,6 +51,7 @@ export async function GET(): Promise<NextResponse> {
         role: adminProfiles.permission,
         city: adminProfiles.city,
         state: adminProfiles.state,
+        avatarUrl: users.avatarUrl,
       })
       .from(users)
       .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))

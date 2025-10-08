@@ -33,6 +33,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { PhoneInput } from '@/components/ui/phone-input'
 import {
   Form,
   FormControl,
@@ -93,12 +94,15 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 
 const pastorUpdateSchema = pastorProfileSchema.extend({
   newPassword: z.string().optional().or(z.literal('')),
-})
+}).partial()
 
-type PastorProfile = z.infer<typeof pastorUpdateSchema> & {
+type PastorFormData = z.infer<typeof pastorUpdateSchema>
+
+type PastorProfile = PastorFormData & {
   id?: string
   cpf?: string
   status?: string
@@ -404,7 +408,7 @@ export default function PastorProfilePage(): JSX.Element {
   const { id } = params
   const { toast } = useToast()
 
-  const form = useForm<z.infer<typeof pastorUpdateSchema>>({
+  const form = useForm<PastorFormData>({
     resolver: zodResolver(pastorUpdateSchema),
     defaultValues: {},
   })
@@ -445,7 +449,7 @@ export default function PastorProfilePage(): JSX.Element {
     fetchData()
   }, [fetchData])
 
-  const onSubmit = async (data: Partial<PastorProfile>) => {
+  const onSubmit = async (data: PastorFormData) => {
     setIsSaving(true)
     try {
       const response = await fetch(`/api/v1/pastores/${id}`, {
@@ -477,6 +481,44 @@ export default function PastorProfilePage(): JSX.Element {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    }
+  }
+
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string | null,
+  ) => {
+    try {
+      const payload = { [fieldName]: value }
+
+      const response = await fetch(`/api/v1/pastores/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Falha ao atualizar ${fieldName}.`)
+      }
+
+      const updatedData = await response.json()
+      toast({
+        title: 'Sucesso!',
+        description: `Link do ${fieldName} atualizado.`,
+        variant: 'success',
+      })
+      if (updatedData.pastor) {
+        setPastor(updatedData.pastor)
+      } else {
+        setPastor((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
     }
   }
 
@@ -513,6 +555,9 @@ export default function PastorProfilePage(): JSX.Element {
 
         setPreviewImage(result.url)
         setPastor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
+        // Recarregar dados do servidor para garantir sincronização
+        await fetchData()
         
         toast({
           title: 'Sucesso',
@@ -590,6 +635,19 @@ export default function PastorProfilePage(): JSX.Element {
                 {pastor.firstName} {pastor.lastName}
               </h2>
               <p className="text-muted-foreground">Pastor</p>
+              
+              <div className="flex gap-2 mt-4">
+                <SendMessageDialog
+                  recipientName={`${pastor.firstName} ${pastor.lastName}`}
+                  recipientEmail={pastor.email || ''}
+                  recipientPhone={pastor.phone || ''}
+                >
+                  <Button variant="outline" size="sm">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Mensagem
+                  </Button>
+                </SendMessageDialog>
+              </div>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">
@@ -600,13 +658,7 @@ export default function PastorProfilePage(): JSX.Element {
                   <Input
                     defaultValue={pastor.facebook ?? ''}
                     placeholder="https://facebook.com/..."
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-muted-foreground" />
-                  <Input
-                    defaultValue={pastor.website ?? ''}
-                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                   />
                 </div>
                 <div className="flex items-center gap-3">
@@ -614,6 +666,15 @@ export default function PastorProfilePage(): JSX.Element {
                   <Input
                     defaultValue={pastor.instagram ?? ''}
                     placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={pastor.website ?? ''}
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
                   />
                 </div>
               </div>
@@ -751,16 +812,12 @@ export default function PastorProfilePage(): JSX.Element {
                             <FormItem>
                               <FormLabel>Celular</FormLabel>
                               <FormControl>
-                                <div className="flex items-center">
-                                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                    🇧🇷 +55
-                                  </span>
-                                  <Input
-                                    {...field}
-                                    value={field.value ?? ''}
-                                    className="rounded-l-none"
-                                  />
-                                </div>
+                                <PhoneInput
+                                  type="mobile"
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  placeholder="(00) 00000-0000"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -773,7 +830,12 @@ export default function PastorProfilePage(): JSX.Element {
                             <FormItem>
                               <FormLabel>Telefone 2</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <PhoneInput
+                                  type="landline"
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  placeholder="(00) 0000-0000"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

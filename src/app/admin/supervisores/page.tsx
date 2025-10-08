@@ -28,6 +28,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
+import { PhoneInput } from '@/components/ui/phone-input'
 import Image from 'next/image'
 
 import { Badge } from '@/components/ui/badge'
@@ -105,6 +106,7 @@ type Supervisor = z.infer<typeof supervisorProfileSchema> & {
   regionName?: string | null
   email: string
   phone: string | null
+  avatarUrl?: string
 }
 
 type Manager = ManagerProfile & { id: string }
@@ -470,18 +472,12 @@ const SupervisorFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          value={field.value ?? ''}
-                          className="rounded-l-none"
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <PhoneInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        type="mobile"
+                        placeholder="(11) 99999-9999"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -623,7 +619,18 @@ export default function SupervisoresPage() {
             ) : paginatedSupervisors.length > 0 ? (
               paginatedSupervisors.map((supervisor) => (
                 <TableRow key={supervisor.id}>
-                  <TableCell className="font-medium">{`${supervisor.firstName} ${supervisor.lastName}`}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={supervisor.avatarUrl || 'https://placehold.co/32x32.png'}
+                        alt={`${supervisor.firstName} ${supervisor.lastName}`}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover"
+                      />
+                      {`${supervisor.firstName} ${supervisor.lastName}`}
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {supervisor.email}
                   </TableCell>
@@ -706,7 +713,7 @@ export default function SupervisoresPage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <Image
-                    src="https://placehold.co/96x96.png"
+                    src={supervisor.avatarUrl || 'https://placehold.co/96x96.png'}
                     alt={`Foto de ${supervisor.firstName}`}
                     width={96}
                     height={96}

@@ -27,10 +27,11 @@ const adminUpdateSchema = z
     neighborhood: z.string().optional(),
     address: z.string().optional(),
     role: z.enum(['admin', 'superadmin']).optional(),
-    facebook: z.string().url().or(z.literal('')).optional(),
-    instagram: z.string().url().or(z.literal('')).optional(),
-    website: z.string().url().or(z.literal('')).optional(),
+    facebook: z.string().optional().nullable(),
+    instagram: z.string().optional().nullable(),
+    website: z.string().optional().nullable(),
     newPassword: z.string().optional().or(z.literal('')),
+    avatarUrl: z.string().optional(),
   })
   .partial()
 
@@ -77,6 +78,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       instagram: profile?.instagram,
       website: profile?.website,
       status: user.status,
+      avatarUrl: user.avatarUrl,
     })
   } catch (error) {
     console.error('Erro ao buscar administrador:', error)
@@ -104,6 +106,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       const userUpdateData: Partial<typeof users.$inferInsert> = {}
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -123,9 +126,9 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address) profileUpdateData.address = validatedData.address
       if (validatedData.role) profileUpdateData.permission = validatedData.role
-      if (validatedData.facebook) profileUpdateData.facebook = validatedData.facebook
-      if (validatedData.instagram) profileUpdateData.instagram = validatedData.instagram
-      if (validatedData.website) profileUpdateData.website = validatedData.website
+      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook || null
+      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram || null
+      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website || null
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx.update(adminProfiles).set(profileUpdateData).where(eq(adminProfiles.userId, id))
@@ -158,11 +161,16 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const { id } = params
 
   try {
+    const body = await request.json()
+    const { deletionReason } = body
+
     await db
       .update(users)
       .set({
         deletedAt: new Date(),
         status: 'inactive',
+        deletedBy: user.id,
+        deletionReason: deletionReason || 'Não informado',
       })
       .where(eq(users.id, id))
 

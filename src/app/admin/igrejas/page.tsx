@@ -85,6 +85,10 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 
 const churchSchema = z.object({
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
@@ -111,6 +115,49 @@ type Church = z.infer<typeof churchSchema> & {
   id: string
   status: 'active' | 'inactive'
   supervisorName?: string
+  avatarUrl?: string
+}
+
+const DeleteChurchDialog = ({ churchId, onConfirm }: { churchId: string; onConfirm: (id: string, reason: string) => void }) => {
+  const [reason, setReason] = React.useState('')
+  const [isOpen, setIsOpen] = React.useState(false)
+  
+  const handleConfirm = () => {
+    onConfirm(churchId, reason)
+    setIsOpen(false)
+    setReason('')
+  }
+  
+  return (
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+        Excluir
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir Igreja</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação é irreversível. Por favor, forneça um motivo para a exclusão desta igreja para fins de auditoria.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+          <Textarea
+            id="deletion-reason"
+            placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm} disabled={!reason.trim()}>
+            Excluir permanentemente
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 }
 
 type Supervisor = {
@@ -537,18 +584,12 @@ const ChurchFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                          value={field.value ?? ''}
-                        />
-                      </div>
+                      <PhoneInput
+                        type="mobile"
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        placeholder="(00) 00000-0000"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -656,9 +697,13 @@ export default function IgrejasPage() {
     fetchData()
   }, [fetchData])
 
-  const handleDelete = async (churchId: string) => {
+  const handleDelete = async (churchId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/v1/igrejas/${churchId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/v1/igrejas/${churchId}`, { 
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletionReason: reason })
+      })
       if (!response.ok) throw new Error('Falha ao excluir a igreja.')
       toast({ title: 'Sucesso!', description: 'Igreja excluída com sucesso.', variant: 'success' })
       fetchData()
@@ -725,7 +770,18 @@ export default function IgrejasPage() {
             ) : paginatedChurches.length > 0 ? (
               paginatedChurches.map((church) => (
                 <TableRow key={church.id}>
-                  <TableCell className="font-medium">{church.nomeFantasia}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={church.avatarUrl || 'https://placehold.co/32x32.png'}
+                        alt={church.nomeFantasia}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover"
+                      />
+                      {church.nomeFantasia}
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {church.cnpj}
                   </TableCell>
@@ -750,28 +806,7 @@ export default function IgrejasPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/igrejas/${church.id}`}>Editar</Link>
                         </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente a
-                                igreja.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => church.id && handleDelete(church.id)}
-                              >
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <DeleteChurchDialog churchId={church.id} onConfirm={handleDelete} />
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -809,7 +844,7 @@ export default function IgrejasPage() {
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                     <Image
-                      src="https://placehold.co/96x96.png"
+                      src={church.avatarUrl || 'https://placehold.co/96x96.png'}
                       alt={`Foto da ${church.nomeFantasia}`}
                       width={96}
                       height={96}
@@ -843,7 +878,17 @@ export default function IgrejasPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-4">
+                  <div className="flex justify-between mt-4">
+                    <SendMessageDialog
+                      recipientName={church.nomeFantasia}
+                      recipientEmail={church.email}
+                      recipientPhone={church.phone || ''}
+                    >
+                      <Button variant="outline" size="sm">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Mensagem
+                      </Button>
+                    </SendMessageDialog>
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/admin/igrejas/${church.id}`}>
                         <Pencil className="mr-2 h-4 w-4" />

@@ -70,6 +70,85 @@ export async function onTransactionFailed(transactionId: string): Promise<void> 
   console.log(`Transaction failed: ${transactionId}`)
 }
 
+// Hook para quando um usuário é excluído
+export async function onUserDeleted(userId: string, deletionReason: string, deletedByUserId: string): Promise<void> {
+  try {
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        phone: users.phone,
+        companyId: users.companyId,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+
+    if (!user) return
+
+    const [deletedByUser] = await db
+      .select({
+        email: users.email,
+      })
+      .from(users)
+      .where(eq(users.id, deletedByUserId))
+      .limit(1)
+
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, user.companyId))
+      .limit(1)
+
+    if (!settings || !deletedByUser) return
+
+    const notificationService = new NotificationService({
+      whatsappApiUrl: settings.whatsappApiUrl || undefined,
+      whatsappApiKey: settings.whatsappApiKey || undefined,
+      whatsappApiInstance: settings.whatsappApiInstance || undefined,
+      sesRegion: settings.s3Region || undefined,
+      sesAccessKeyId: settings.s3AccessKeyId || undefined,
+      sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+      fromEmail: settings.smtpFrom || undefined,
+      companyId: user.companyId,
+    })
+
+    // Notificar administradores sobre a exclusão
+    const subject = `Usuário ${user.role} excluído do sistema`
+    const message = `
+      Um usuário foi excluído do sistema:
+      
+      ID: ${userId}
+      Tipo: ${user.role}
+      Email: ${user.email}
+      Motivo: ${deletionReason}
+      Excluído por: ${deletedByUser.email}
+      Data: ${new Date().toLocaleString('pt-BR')}
+    `
+
+    // Enviar notificação por email para o administrador que fez a exclusão
+    if (deletedByUser.email) {
+      const emailService = new (await import('./notifications')).EmailService({
+        sesRegion: settings.s3Region || undefined,
+        sesAccessKeyId: settings.s3AccessKeyId || undefined,
+        sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+        fromEmail: settings.smtpFrom || undefined,
+      })
+      
+      await emailService.sendEmail({
+        to: deletedByUser.email,
+        subject,
+        html: message.replace(/\n/g, '<br>'),
+      })
+    }
+
+    console.log(`User deletion notification sent for user ${userId}`)
+  } catch (error) {
+    console.error('Error in onUserDeleted hook:', error)
+  }
+}
+
 // Função utilitária para testar notificações
 export async function testNotifications(companyId: string): Promise<void> {
   const [settings] = await db

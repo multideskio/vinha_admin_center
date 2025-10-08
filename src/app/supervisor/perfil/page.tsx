@@ -50,7 +50,6 @@ const supervisorUpdateSchema = supervisorProfileSchema
 
 type SupervisorProfile = z.infer<typeof supervisorUpdateSchema> & {
   id?: string
-  avatarUrl?: string
 }
 
 const notificationSettingsConfig = {

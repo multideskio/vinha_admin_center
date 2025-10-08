@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { supervisorProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
+import { onUserDeleted } from '@/lib/notification-hooks'
 
 const supervisorUpdateSchema = supervisorProfileSchema
   .extend({
@@ -73,6 +74,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       instagram: profile?.instagram,
       website: profile?.website,
       status: user.status,
+      avatarUrl: user.avatarUrl,
     })
   } catch (error) {
     console.error('Erro ao buscar supervisor:', error)
@@ -98,6 +100,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -136,7 +139,48 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       }
     })
 
-    return NextResponse.json({ success: true })
+    // Buscar dados atualizados para retornar
+    const result = await db
+      .select({
+        user: users,
+        profile: supervisorProfiles,
+      })
+      .from(users)
+      .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
+      .where(and(eq(users.id, id), eq(users.role, 'supervisor'), isNull(users.deletedAt)))
+      .limit(1)
+
+    if (result.length === 0 || !result[0]) {
+      return NextResponse.json({ error: 'Supervisor não encontrado.' }, { status: 404 })
+    }
+
+    const { user: updatedUser, profile: updatedProfile } = result[0]
+    const updatedSupervisor = {
+      id: updatedUser.id,
+      firstName: updatedProfile?.firstName,
+      lastName: updatedProfile?.lastName,
+      cpf: updatedProfile?.cpf,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      landline: updatedProfile?.landline,
+      cep: updatedProfile?.cep,
+      state: updatedProfile?.state,
+      city: updatedProfile?.city,
+      neighborhood: updatedProfile?.neighborhood,
+      address: updatedProfile?.address,
+      number: updatedProfile?.number,
+      complement: updatedProfile?.complement,
+      titheDay: updatedUser.titheDay,
+      managerId: updatedProfile?.managerId,
+      regionId: updatedProfile?.regionId,
+      facebook: updatedProfile?.facebook,
+      instagram: updatedProfile?.instagram,
+      website: updatedProfile?.website,
+      status: updatedUser.status,
+      avatarUrl: updatedUser.avatarUrl,
+    }
+
+    return NextResponse.json({ success: true, supervisor: updatedSupervisor })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -171,6 +215,9 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         deletionReason: deletionReason,
       })
       .where(eq(users.id, id))
+
+    // Enviar notificação de exclusão
+    await onUserDeleted(id, deletionReason, user.id)
 
     return NextResponse.json({ success: true, message: 'Supervisor excluído com sucesso.' })
   } catch (error) {

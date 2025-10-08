@@ -69,6 +69,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       facebook: profile?.facebook,
       instagram: profile?.instagram,
       website: profile?.website,
+      avatarUrl: user.avatarUrl,
       status: user.status,
     })
   } catch (error) {
@@ -97,6 +98,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if ('avatarUrl' in body) userUpdateData.avatarUrl = body.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -156,11 +158,16 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const { id } = params
 
   try {
+    const body = await request.json()
+    const { deletionReason } = body
+
     await db
       .update(users)
       .set({
         deletedAt: new Date(),
         status: 'inactive',
+        deletedBy: user.id,
+        deletionReason: deletionReason || null,
       })
       .where(eq(users.id, id))
 

@@ -13,6 +13,7 @@ import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { managerProfileSchema } from '@/lib/types'
+import { onUserDeleted } from '@/lib/notification-hooks'
 
 const managerUpdateSchema = managerProfileSchema
   .extend({
@@ -182,6 +183,9 @@ export async function DELETE(
     if (!deletedUser) {
       return NextResponse.json({ error: 'Gerente não encontrado.' }, { status: 404 })
     }
+
+    // Enviar notificação de exclusão
+    await onUserDeleted(id, deletionReason, user.id)
 
     return NextResponse.json({ success: true, message: 'Gerente excluído com sucesso.' })
   } catch (error) {

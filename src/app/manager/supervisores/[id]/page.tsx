@@ -53,9 +53,7 @@ const supervisorUpdateSchema = supervisorProfileSchema
 
 type SupervisorProfile = z.infer<typeof supervisorUpdateSchema> & {
   id?: string
-  cpf?: string
   status?: string
-  avatarUrl?: string
 }
 
 type Region = {
