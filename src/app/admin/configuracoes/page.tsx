@@ -49,24 +49,26 @@ const settingsLinks = [
     title: 'Mensagens Automáticas',
     description: 'Personalize os templates de comunicação.',
   },
-  {
-    href: '/admin/configuracoes/webhooks',
-    icon: Webhook,
-    title: 'Webhooks',
-    description: 'Envie eventos do sistema para outros serviços.',
-  },
+  // {
+  //   href: '/admin/configuracoes/webhooks',
+  //   icon: Webhook,
+  //   title: 'Webhooks',
+  //   description: 'Envie eventos do sistema para outros serviços.',
+  //   disabled: true, // Em desenvolvimento
+  // },
   {
     href: '/admin/configuracoes/s3',
     icon: Cloud,
     title: 'Armazenamento (S3)',
     description: 'Configure o local para armazenamento de arquivos (ex: S3, MinIO).',
   },
-  {
-    href: '/admin/configuracoes/api',
-    icon: KeyRound,
-    title: 'Chaves de API',
-    description: 'Gerencie as chaves para acesso programático à API.',
-  }
+  // {
+  //   href: '/admin/configuracoes/api',
+  //   icon: KeyRound,
+  //   title: 'Chaves de API',
+  //   description: 'Gerencie as chaves para acesso programático à API.',
+  //   disabled: true, // Em desenvolvimento - Segurança pendente
+  // }
 ];
 
 export default function SettingsPage() {

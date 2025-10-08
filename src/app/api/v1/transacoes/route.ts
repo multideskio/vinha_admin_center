@@ -18,32 +18,34 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      )
-    }
-
-    const userTransactions = await db
+    const query = db
       .select({
         id: transactions.id,
         amount: transactions.amount,
         status: transactions.status,
         createdAt: transactions.createdAt,
         paymentMethod: transactions.paymentMethod,
+        contributorId: transactions.contributorId,
+        originChurchId: transactions.originChurchId,
+        refundRequestReason: transactions.refundRequestReason,
       })
       .from(transactions)
-      .where(eq(transactions.contributorId, userId))
       .orderBy(desc(transactions.createdAt))
-      .limit(50)
+      .limit(100)
+
+    const userTransactions = userId
+      ? await query.where(eq(transactions.contributorId, userId))
+      : await query
 
     const formattedTransactions = userTransactions.map(t => ({
       id: t.id,
+      contributor: t.contributorId,
+      church: t.originChurchId,
       amount: parseFloat(t.amount),
+      method: t.paymentMethod,
       status: t.status,
-      date: t.createdAt.toLocaleDateString('pt-BR'),
-      paymentMethod: t.paymentMethod,
+      date: t.createdAt.toISOString(),
+      refundRequestReason: t.refundRequestReason,
     }))
 
     return NextResponse.json({ transactions: formattedTransactions })

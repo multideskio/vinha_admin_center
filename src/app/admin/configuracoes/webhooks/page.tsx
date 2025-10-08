@@ -10,6 +10,7 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
+  AlertTriangle,
 } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -282,6 +283,27 @@ export default function WebhooksPage() {
 
   return (
     <div className="grid gap-6">
+      {/* Aviso de funcionalidade em desenvolvimento */}
+      <Card className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
+            <div className="space-y-1">
+              <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">
+                Funcionalidade em Desenvolvimento
+              </h3>
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                A interface de webhooks está disponível, mas o sistema de disparo automático de eventos ainda não foi implementado. 
+                Webhooks cadastrados aqui não receberão notificações até que esta funcionalidade seja concluída.
+              </p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
+                Status: Planejado para versão futura | Prioridade: Baixa
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <div>
           <CardTitle>Webhooks de Saída</CardTitle>
@@ -290,7 +312,7 @@ export default function WebhooksPage() {
           </CardDescription>
         </div>
         <WebhookFormModal onSave={fetchWebhooks}>
-          <Button>
+          <Button disabled>
             <PlusCircle className="h-4 w-4 mr-2" />
             Adicionar Webhook
           </Button>
