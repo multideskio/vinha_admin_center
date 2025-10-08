@@ -149,7 +149,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
     const fetchTransactions = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/v1/transacoes?userId=${userId}`)
+        const response = await fetch(`/api/v1/manager/transacoes?userId=${userId}`)
         if (!response.ok) throw new Error('Falha ao carregar transações.')
         const data = await response.json()
         setTransactions(data.transactions)
@@ -501,31 +501,6 @@ export default function SupervisorProfilePage(): JSX.Element {
                 {supervisor.firstName} {supervisor.lastName}
               </h2>
               <p className="text-muted-foreground">Supervisor</p>
-              <div className="flex gap-2 mt-3">
-                <SendMessageDialog
-                  recipientName={`${supervisor.firstName} ${supervisor.lastName}`}
-                  recipientEmail={supervisor.email || ''}
-                  recipientPhone={supervisor.phone || ''}
-                >
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex items-center gap-1"
-                  >
-                    <Mail className="h-3 w-3" />
-                    Mensagem
-                  </Button>
-                </SendMessageDialog>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.open(`https://wa.me/55${supervisor.phone?.replace(/\D/g, '')}`, '_blank')}
-                  className="flex items-center gap-1"
-                >
-                  <Smartphone className="h-3 w-3" />
-                  WhatsApp
-                </Button>
-              </div>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">
@@ -911,9 +886,11 @@ export default function SupervisorProfilePage(): JSX.Element {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    <Button>Salvar Configurações</Button>
-                  </div>
+                  <Alert>
+                    <AlertDescription>
+                      Funcionalidade de configurações de notificação em desenvolvimento.
+                    </AlertDescription>
+                  </Alert>
                 </CardContent>
               </Card>
             </TabsContent>
