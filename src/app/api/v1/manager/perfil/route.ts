@@ -12,7 +12,6 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { authenticateApiKey } from '@/lib/api-auth'
 import { managerProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
@@ -24,9 +23,6 @@ const managerUpdateSchema = managerProfileSchema
   .partial()
 
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -68,9 +64,6 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function PUT(request: Request): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

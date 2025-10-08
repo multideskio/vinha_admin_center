@@ -55,7 +55,11 @@ export async function GET(request: Request): Promise<NextResponse> {
         phone: users.phone,
         status: users.status,
         cpf: supervisorProfiles.cpf,
+        avatarUrl: users.avatarUrl,
+        regionId: supervisorProfiles.regionId,
         regionName: regions.name,
+        regionColor: regions.color,
+        createdAt: users.createdAt,
       })
       .from(users)
       .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))

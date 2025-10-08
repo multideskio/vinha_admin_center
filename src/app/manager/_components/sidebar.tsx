@@ -49,7 +49,12 @@ const settingsItem = {
   icon: Settings,
 };
 
-export function ManagerSidebar() {
+type SidebarProps = {
+  companyLogo?: string
+  companyName?: string
+}
+
+export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -57,8 +62,12 @@ export function ManagerSidebar() {
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Link href="/manager/dashboard" className="flex items-center gap-2 font-semibold">
-            <Logo className="h-6 w-6 text-primary" />
-            <span className="">Vinha Ministérios</span>
+            {companyLogo ? (
+              <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" />
+            ) : (
+              <Logo className="h-6 w-6 text-primary" />
+            )}
+            <span className="">{companyName || 'Vinha Ministérios'}</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto">

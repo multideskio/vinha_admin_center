@@ -9,15 +9,11 @@ import {
 } from '@/db/schema'
 import { eq, desc, inArray } from 'drizzle-orm'
 import { format } from 'date-fns'
-import { authenticateApiKey } from '@/lib/api-auth'
 import { getErrorMessage } from '@/lib/error-types'
 
 const GERENTE_INIT_ID = process.env.GERENTE_INIT
 
 export async function GET() {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   if (!GERENTE_INIT_ID) {
     return NextResponse.json(
       { error: 'ID do Gerente não configurado no ambiente.' },

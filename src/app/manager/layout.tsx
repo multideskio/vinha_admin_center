@@ -1,6 +1,6 @@
 /**
  * @fileoverview Layout principal para o painel de gerente.
- * @version 1.2
+ * @version 1.3
  * @date 2024-08-07
  * @author PH
  */
@@ -10,10 +10,17 @@ import { ManagerSidebar } from './_components/sidebar'
 import { ManagerHeader } from './_components/header'
 import { validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
+import { db } from '@/db/drizzle'
+import { users, managerProfiles } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { getCompanySettings } from '@/lib/company'
 
-export const metadata: Metadata = {
-  title: 'Vinha Gerente Center',
-  description: 'Painel de Gerente para Vinha Ministérios',
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompanySettings()
+  return {
+    title: company?.name || 'Vinha Admin Center',
+    description: `Painel de gerente para ${company?.name || 'Vinha Ministérios'}`,
+  }
 }
 
 export default async function ManagerLayout({
@@ -27,15 +34,43 @@ export default async function ManagerLayout({
     return redirect('/auth/login')
   }
 
-  const userName = user.email?.split('@')[0] || 'Usuario'
-  const userFallback = userName.substring(0, 2).toUpperCase()
+  const [userData, company] = await Promise.all([
+    db
+      .select({
+        avatarUrl: users.avatarUrl,
+        firstName: managerProfiles.firstName,
+        lastName: managerProfiles.lastName,
+      })
+      .from(users)
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+      .where(eq(users.id, user.id))
+      .limit(1)
+      .then((res) => res[0]),
+    getCompanySettings(),
+  ])
+
+  const userName = userData?.firstName
+    ? `${userData.firstName} ${userData.lastName}`
+    : user.email?.split('@')[0] || 'User'
+  const userFallback = userData?.firstName
+    ? `${userData.firstName[0]}${userData.lastName?.[0] || ''}`
+    : userName.substring(0, 2).toUpperCase()
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <ManagerSidebar />
+      <ManagerSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
       <div className="flex flex-col">
-        <ManagerHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
+        <ManagerHeader
+          userName={userName}
+          userEmail={user.email}
+          userFallback={userFallback}
+          avatarUrl={userData?.avatarUrl || undefined}
+          companyLogo={company?.logoUrl || undefined}
+          companyName={company?.name || undefined}
+        />
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+          {children}
+        </main>
       </div>
     </div>
   )

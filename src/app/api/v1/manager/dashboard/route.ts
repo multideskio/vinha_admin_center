@@ -15,7 +15,6 @@ import {
 } from '@/db/schema'
 import { count, sum, eq, isNull, and, desc, sql, inArray, gte, lt } from 'drizzle-orm'
 import { format, subMonths, startOfMonth } from 'date-fns'
-import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { type UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
@@ -31,9 +30,6 @@ const calculateChange = (current: number, previous: number): string => {
 }
 
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

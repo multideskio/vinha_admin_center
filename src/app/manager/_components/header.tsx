@@ -68,9 +68,12 @@ type HeaderProps = {
   userName: string
   userEmail: string
   userFallback: string
+  avatarUrl?: string
+  companyLogo?: string
+  companyName?: string
 }
 
-export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps) {
+export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, companyLogo, companyName }: HeaderProps) {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       <Sheet>
@@ -86,8 +89,12 @@ export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps
               href="/manager/dashboard"
               className="flex items-center gap-2 text-lg font-semibold"
             >
-              <Logo className="h-6 w-6 text-primary" />
-              <span className="sr-only">Vinha Ministérios</span>
+              {companyLogo ? (
+                <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" />
+              ) : (
+                <Logo className="h-6 w-6 text-primary" />
+              )}
+              <span className="sr-only">{companyName || 'Vinha Ministérios'}</span>
             </Link>
             {menuItems.map((item) => (
               <Link
@@ -127,7 +134,7 @@ export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps
           <Button variant="secondary" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage
-                src="https://placehold.co/32x32.png"
+                src={avatarUrl || 'https://placehold.co/32x32.png'}
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />

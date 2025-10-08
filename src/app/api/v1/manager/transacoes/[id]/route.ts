@@ -15,7 +15,6 @@ import {
   churchProfiles,
 } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
-import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { ApiError } from '@/lib/errors'
 
@@ -99,9 +98,6 @@ async function verifyTransactionOwnership(
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || sessionUser.role !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
