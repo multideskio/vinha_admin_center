@@ -72,12 +72,20 @@ export async function createPixPayment(amount: number, customerName: string, cus
     body: JSON.stringify(payload),
   })
 
+  const responseText = await response.text()
+  
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.Message || 'Erro ao criar pagamento PIX')
+    let errorMessage = 'Erro ao criar pagamento PIX'
+    try {
+      const error = JSON.parse(responseText)
+      errorMessage = error.Message || error[0]?.Message || errorMessage
+    } catch {
+      errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
+    }
+    throw new Error(errorMessage)
   }
 
-  const data = await response.json()
+  const data = JSON.parse(responseText)
   return {
     PaymentId: data.Payment.PaymentId,
     QrCodeBase64Image: data.Payment.QrCodeBase64Image,
@@ -135,12 +143,20 @@ export async function createCreditCardPayment(
     body: JSON.stringify(payload),
   })
 
+  const responseText = await response.text()
+  
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.Message || 'Erro ao processar cartão de crédito')
+    let errorMessage = 'Erro ao processar cartão de crédito'
+    try {
+      const error = JSON.parse(responseText)
+      errorMessage = error.Message || error[0]?.Message || errorMessage
+    } catch {
+      errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
+    }
+    throw new Error(errorMessage)
   }
 
-  const data = await response.json()
+  const data = JSON.parse(responseText)
   return {
     PaymentId: data.Payment.PaymentId,
     Status: data.Payment.Status,
@@ -186,12 +202,20 @@ export async function createBoletoPayment(amount: number, customerName: string, 
     body: JSON.stringify(payload),
   })
 
+  const responseText = await response.text()
+  
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.Message || 'Erro ao gerar boleto')
+    let errorMessage = 'Erro ao gerar boleto'
+    try {
+      const error = JSON.parse(responseText)
+      errorMessage = error.Message || error[0]?.Message || errorMessage
+    } catch {
+      errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
+    }
+    throw new Error(errorMessage)
   }
 
-  const data = await response.json()
+  const data = JSON.parse(responseText)
   return {
     PaymentId: data.Payment.PaymentId,
     Url: data.Payment.Url,
