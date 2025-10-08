@@ -81,6 +81,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const supervisorSchema = z.object({
   regionId: z.string({ required_error: 'Selecione uma região.' }),
