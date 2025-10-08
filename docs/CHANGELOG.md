@@ -2,6 +2,90 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.7.0] - 2025-01-20
+
+### Adicionado
+
+- **Painel Manager Completo:**
+  - Dashboard com KPIs (supervisores, pastores, igrejas, transações, arrecadação)
+  - Gráficos de arrecadação por método e igrejas por supervisor
+  - Tabelas de últimas transações e cadastros recentes
+  - API endpoint `/api/v1/manager/dashboard`
+- **Módulo de Supervisores (/manager/supervisores):**
+  - Listagem com visualização em tabela e cards
+  - Busca por nome/email e paginação
+  - Criação de novos supervisores com formulário completo
+  - Página de perfil detalhado com avatar, dados pessoais, redes sociais
+  - Aba de transações com histórico completo
+  - Aba de configurações de notificações (email/WhatsApp)
+  - Exclusão com motivo obrigatório (soft delete)
+  - APIs: `/api/v1/manager/supervisores` e `/api/v1/manager/supervisores/[id]`
+- **Módulo de Pastores (/manager/pastores):**
+  - Todas as funcionalidades do módulo de supervisores
+  - Vinculação a supervisores via dropdown
+  - Filtro automático por supervisores do manager
+  - APIs: `/api/v1/manager/pastores` e `/api/v1/manager/pastores/[id]`
+- **Módulo de Igrejas (/manager/igrejas):**
+  - CRUD completo com CNPJ, razão social, tesoureiro
+  - Consulta automática de CNPJ via ReceitaWS
+  - Perfil detalhado com todas as funcionalidades
+  - Exclusão apenas via perfil (removida da listagem)
+  - APIs: `/api/v1/manager/igrejas` e `/api/v1/manager/igrejas/[id]`
+- **Componente PhoneInput Padronizado:**
+  - Componente customizado baseado em react-phone-input-2
+  - Integração com design system (Tailwind CSS)
+  - Suporte a tipos mobile e landline
+  - Exibição automática de DDI (+55)
+  - Usado em todos os formulários do manager
+- **API de Consulta de CEP:**
+  - Endpoint `/api/v1/cep` usando ViaCEP
+  - Preenchimento automático de endereço, bairro, cidade, estado
+  - Integrado em todos os formulários de cadastro
+- **Configurações de Notificações Compartilhadas:**
+  - Endpoint `/api/v1/users/[id]/notification-settings` acessível por admin e manager
+  - Três tipos: payment_notifications, due_date_reminders, network_reports
+  - Canais: email e WhatsApp para cada tipo
+  - Integrado nas abas de configurações de todos os perfis
+
+### Melhorias
+
+- **Connection Pool do PostgreSQL:**
+  - Configurado pool com max: 20 conexões
+  - idleTimeout: 30s, connectionTimeout: 20s
+  - allowExitOnIdle: true para melhor gestão de recursos
+  - Error handler para prevenir crashes
+- **Middleware de Rotas:**
+  - Adicionadas rotas `/manager`, `/pastor`, `/supervisor` à lista de rotas permitidas
+  - Bypass de verificação de modo manutenção para essas rotas
+- **APIs com avatarUrl:**
+  - Todas as listagens (supervisores, pastores, igrejas) retornam avatarUrl
+  - Exibição de imagens de perfil em tabelas e cards
+- **Padrão de Exclusão:**
+  - Exclusão removida das listagens
+  - Disponível apenas nas páginas de perfil
+  - Motivo obrigatório para auditoria
+  - Soft delete com deletedAt, deletedBy, deletionReason
+- **Tratamento de Erros:**
+  - Try-catch em getCompanySettings() para prevenir crashes de layout
+  - Mensagens de erro padronizadas em todas as APIs
+
+### Corrigido
+
+- **Middleware Bloqueando Rotas:** Corrigido middleware que bloqueava acesso a `/manager`, `/pastor`, `/supervisor`
+- **Connection Pool Exhaustion:** Resolvido problema de esgotamento de conexões do PostgreSQL
+- **Layout Crashes:** Corrigido crash de layout quando banco de dados está indisponível
+
+### Segurança
+
+- **Filtro por Ownership:**
+  - Manager só acessa supervisores vinculados a ele (managerId)
+  - Pastores e igrejas filtrados por supervisores do manager
+  - Validação de ownership em todas as operações de edição/exclusão
+- **Validação de Sessão:**
+  - Todos os endpoints manager usam validateRequest()
+  - Verificação de role === 'manager'
+  - Redirect automático para login se sessão inválida
+
 ## [1.6.0] - 2025-01-15
 
 ### Adicionado

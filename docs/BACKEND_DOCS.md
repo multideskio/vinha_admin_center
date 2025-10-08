@@ -46,9 +46,59 @@ Para garantir um desacoplamento claro entre o frontend e o backend, a aplicaçã
 
 - **Endpoints:** Os endpoints da API estão localizados no diretório `src/app/api/`. A estrutura de pastas segue o padrão de versionamento, como em `src/app/api/v1/[recurso]`.
 - **Manipuladores de Rota (Route Handlers):** Cada endpoint é implementado usando os _Route Handlers_ do Next.js, com arquivos como `route.ts` que exportam funções assíncronas correspondentes aos métodos HTTP (`GET`, `POST`, `PUT`, `DELETE`).
-- **Exemplo (Gerentes e Administradores):** As funcionalidades de Regiões, Administradores, Gerentes e Gateways foram migradas para esta arquitetura. Todas as operações CRUD são tratadas por seus respectivos endpoints, como `/api/v1/regioes`, `/api/v1/admin/administradores`, `/api/v1/manager/gerentes`, etc. Além disso, foram criados endpoints específicos para cada dashboard (ex: `/api/v1/admin/dashboard`) para agregar dados.
+- **Exemplo (Admin e Manager):** As funcionalidades de Regiões, Administradores, Gerentes, Supervisores, Pastores e Igrejas foram migradas para esta arquitetura. Todas as operações CRUD são tratadas por seus respectivos endpoints, como `/api/v1/regioes`, `/api/v1/admin/administradores`, `/api/v1/manager/supervisores`, `/api/v1/manager/pastores`, `/api/v1/manager/igrejas`, etc. Além disso, foram criados endpoints específicos para cada dashboard (ex: `/api/v1/admin/dashboard`, `/api/v1/manager/dashboard`) para agregar dados.
 
 Esta abordagem substitui o uso inicial de Server Actions para a busca e manipulação de dados, proporcionando uma forma mais tradicional e explícita de comunicação de dados.
+
+### Endpoints Principais
+
+#### Admin Endpoints
+- `/api/v1/admin/dashboard` - KPIs e estatísticas do admin
+- `/api/v1/admin/administradores` - CRUD de administradores
+- `/api/v1/admin/gerentes` - CRUD de gerentes
+- `/api/v1/admin/supervisores` - CRUD de supervisores
+- `/api/v1/admin/pastores` - CRUD de pastores
+- `/api/v1/admin/igrejas` - CRUD de igrejas
+- `/api/v1/regioes` - Gerenciamento de regiões
+- `/api/v1/transacoes` - Listagem e detalhes de transações
+- `/api/v1/gateways` - Configuração de gateways de pagamento
+- `/api/v1/company` - Configurações da empresa
+
+#### Manager Endpoints
+- `/api/v1/manager/dashboard` - KPIs e estatísticas do manager
+- `/api/v1/manager/supervisores` - CRUD de supervisores (filtrado por managerId)
+- `/api/v1/manager/supervisores/[id]` - Operações em supervisor específico
+- `/api/v1/manager/pastores` - CRUD de pastores (filtrado por supervisores do manager)
+- `/api/v1/manager/pastores/[id]` - Operações em pastor específico
+- `/api/v1/manager/igrejas` - CRUD de igrejas (filtrado por supervisores do manager)
+- `/api/v1/manager/igrejas/[id]` - Operações em igreja específica
+
+#### Shared Endpoints
+- `/api/v1/cep` - Consulta de CEP via ViaCEP
+- `/api/v1/users/[id]/notification-settings` - Configurações de notificações (admin e manager)
+- `/api/v1/cron/notifications` - Sistema de notificações automáticas
+
+### Padrões de API
+
+#### Autenticação
+- Todos os endpoints protegidos usam `validateRequest()` do Lucia Auth
+- Verificação de role (admin, manager, etc.)
+- Verificação de ownership (manager só acessa seus próprios recursos)
+
+#### Respostas
+- Sucesso: `{ success: true, data: {...} }`
+- Erro: `{ success: false, error: "mensagem" }` com status HTTP apropriado
+- Listagens incluem `avatarUrl` para exibição de imagens
+
+#### Query Parameters
+- `?minimal=true` - Retorna apenas id e name para dropdowns
+- `?page=1&limit=10` - Paginação
+- `?search=termo` - Busca por nome/email
+
+#### Soft Delete
+- DELETE endpoints não removem registros permanentemente
+- Definem `deletedAt`, `deletedBy`, `deletionReason`
+- `deletionReason` é obrigatório para auditoria
 
 ---
 
