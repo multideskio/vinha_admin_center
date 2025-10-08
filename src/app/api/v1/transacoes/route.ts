@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = transactionSchema.parse(body)
 
-    // Get user details
+    // Get user email
     const [userData] = await db
-      .select({ name: users.name, email: users.email, phone: users.phone })
+      .select({ email: users.email })
       .from(users)
       .where(eq(users.id, user.id))
       .limit(1)
@@ -92,6 +92,9 @@ export async function POST(request: NextRequest) {
     if (!userData) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
+
+    // Use email as name fallback
+    const userName = userData.email.split('@')[0]
 
     // Get church ID if user is church
     let churchId = null
@@ -104,18 +107,18 @@ export async function POST(request: NextRequest) {
 
     // Process payment based on method
     if (data.paymentMethod === 'pix') {
-      paymentResult = await createPixPayment(data.amount, userData.name, userData.email)
+      paymentResult = await createPixPayment(data.amount, userName, userData.email)
     } else if (data.paymentMethod === 'credit_card' && data.card) {
       paymentResult = await createCreditCardPayment(
         data.amount,
-        userData.name,
+        userName,
         userData.email,
         data.card
       )
       status = paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
     } else if (data.paymentMethod === 'boleto') {
-      const cpf = userData.phone || '00000000000' // Fallback, should get from profile
-      paymentResult = await createBoletoPayment(data.amount, userData.name, userData.email, cpf)
+      const cpf = '00000000000' // Fallback, should get from profile
+      paymentResult = await createBoletoPayment(data.amount, userName, userData.email, cpf)
     }
 
     // Save transaction to database
