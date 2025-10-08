@@ -125,6 +125,9 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.complement !== undefined)
         profileUpdateData.complement = validatedData.complement
       if (validatedData.regionId) profileUpdateData.regionId = validatedData.regionId
+      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
+      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx
