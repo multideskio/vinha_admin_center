@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db/drizzle';
 import { transactions as transactionsTable, gatewayConfigurations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { validateRequest } from '@/lib/auth';
+import { validateRequest } from '@/lib/jwt';
 import { ApiError } from '@/lib/errors';
 
 
@@ -30,13 +30,14 @@ async function getCieloCredentials(): Promise<{ merchantId: string | null; merch
 }
 
 
-export async function GET(request: Request, { params }: { params: { id: string }}): Promise<NextResponse> {
+export async function GET(request: Request, props: { params: Promise<{ id: string }>}): Promise<NextResponse> {
+    const params = await props.params;
     const { user } = await validateRequest();
     if (!user) {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
     }
 
-    const { id: paymentId } = params;
+    const { id: paymentId } = await params;
 
     if (!paymentId) {
         return NextResponse.json({ error: "ID da transação não fornecido." }, { status: 400 });

@@ -14,6 +14,7 @@ import {
   Loader2,
   Mail,
   Smartphone,
+  MessageSquare,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -32,11 +33,13 @@ import {
 } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
+import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +52,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const adminProfileSchema = z
   .object({
@@ -111,6 +116,11 @@ export default function AdminProfilePage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const [notificationSettings, setNotificationSettings] = React.useState<Record<string, { email: boolean; whatsapp: boolean }>>({
+    payment_notifications: { email: false, whatsapp: false },
+    due_date_reminders: { email: false, whatsapp: false },
+    network_reports: { email: false, whatsapp: false },
+  })
 
   const params = useParams()
   const router = useRouter()
@@ -162,9 +172,21 @@ export default function AdminProfilePage() {
     }
   }, [id, form, toast])
 
+  const fetchNotificationSettings = React.useCallback(async () => {
+    try {
+      const response = await fetch(`/api/v1/users/${id}/notification-settings`)
+      if (!response.ok) throw new Error('Falha ao carregar configurações')
+      const data = await response.json()
+      setNotificationSettings(data)
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error)
+    }
+  }, [id])
+
   React.useEffect(() => {
     fetchAdmin()
-  }, [fetchAdmin])
+    fetchNotificationSettings()
+  }, [fetchAdmin, fetchNotificationSettings])
 
   const onSubmit = async (data: Partial<AdminProfile>) => {
     setIsSaving(true)
@@ -208,21 +230,86 @@ export default function AdminProfilePage() {
     }
   }
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'avatars')
+        formData.append('filename', `admin-${id}-${file.name}`)
+
+        const response = await fetch('/api/v1/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem')
+        }
+
+        const result = await response.json()
+        
+        const updateResponse = await fetch(`/api/v1/administradores/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: result.url }),
+        })
+
+        if (!updateResponse.ok) {
+          throw new Error('Falha ao atualizar avatar')
+        }
+
+        await updateResponse.json()
+        setPreviewImage(result.url)
+        setAdmin(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
+        await fetchAdmin()
+        
         toast({
-          title: 'Preview da Imagem',
-          description:
-            'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+          title: 'Sucesso',
+          description: 'Avatar atualizado com sucesso!',
+          variant: 'success',
+        })
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Falha ao fazer upload da imagem.',
+          variant: 'destructive',
         })
       }
-      reader.readAsDataURL(file)
     }
   }
+
+  const handleSocialLinkBlur = async (field: 'facebook' | 'instagram' | 'website', value: string) => {
+    try {
+      const response = await fetch(`/api/v1/administradores/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+      if (!response.ok) throw new Error('Falha ao atualizar link')
+      toast({ title: 'Sucesso', description: 'Link atualizado com sucesso.', variant: 'success' })
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Falha ao atualizar link.', variant: 'destructive' })
+    }
+  }
+
+  const handleSaveNotifications = async () => {
+    try {
+      const response = await fetch(`/api/v1/users/${id}/notification-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationSettings),
+      })
+      if (!response.ok) throw new Error('Falha ao salvar configurações')
+      toast({ title: 'Sucesso', description: 'Configurações salvas com sucesso.', variant: 'success' })
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Falha ao salvar configurações.', variant: 'destructive' })
+    }
+  }
+
+
 
   if (isLoading) {
     return (
@@ -257,14 +344,9 @@ export default function AdminProfilePage() {
             <CardContent className="flex flex-col items-center pt-6 text-center">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={previewImage || admin.avatarUrl || 'https://placehold.co/96x96.png'}
-                    alt={admin.firstName ?? ''}
-                    data-ai-hint="person shield"
-                  />
-                  <AvatarFallback>
-                    {admin.firstName?.[0]}
-                    {admin.lastName?.[0]}
+                  <AvatarImage src={previewImage || admin.avatarUrl || undefined} />
+                  <AvatarFallback className="text-lg">
+                    {admin.firstName?.[0]}{admin.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
@@ -287,6 +369,31 @@ export default function AdminProfilePage() {
               <p className="text-muted-foreground">
                 {admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}
               </p>
+              <div className="flex gap-2 mt-3">
+                <SendMessageDialog
+                  recipientName={`${admin.firstName} ${admin.lastName}`}
+                  recipientEmail={admin.email || ''}
+                  recipientPhone={admin.phone || ''}
+                >
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                  >
+                    <Mail className="h-3 w-3" />
+                    Mensagem
+                  </Button>
+                </SendMessageDialog>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(`https://wa.me/55${admin.phone?.replace(/\D/g, '')}`, '_blank')}
+                  className="flex items-center gap-1"
+                >
+                  <Smartphone className="h-3 w-3" />
+                  WhatsApp
+                </Button>
+              </div>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">
@@ -297,6 +404,7 @@ export default function AdminProfilePage() {
                   <Input
                     defaultValue={admin.facebook ?? ''}
                     placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                   />
                 </div>
                 <div className="flex items-center gap-3">
@@ -304,11 +412,16 @@ export default function AdminProfilePage() {
                   <Input
                     defaultValue={admin.instagram ?? ''}
                     placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
                   />
                 </div>
                 <div className="flex items-center gap-3">
                   <Globe className="h-5 w-5 text-muted-foreground" />
-                  <Input defaultValue={admin.website ?? ''} placeholder="https://website.com/..." />
+                  <Input
+                    defaultValue={admin.website ?? ''}
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -459,16 +572,11 @@ export default function AdminProfilePage() {
                             <FormItem>
                               <FormLabel>Celular</FormLabel>
                               <FormControl>
-                                <div className="flex items-center">
-                                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                    🇧🇷 +55
-                                  </span>
-                                  <Input
-                                    {...field}
-                                    value={field.value ?? ''}
-                                    className="rounded-l-none"
-                                  />
-                                </div>
+                                <PhoneInput
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  type="mobile"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -571,11 +679,27 @@ export default function AdminProfilePage() {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2" title="Notificar por Email">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
+                        <Switch
+                          checked={notificationSettings.payment_notifications?.email ?? false}
+                          onCheckedChange={(checked) =>
+                            setNotificationSettings((prev) => ({
+                              ...prev,
+                              payment_notifications: { email: checked, whatsapp: prev.payment_notifications?.whatsapp ?? false },
+                            }))
+                          }
+                        />
                       </div>
                       <div className="flex items-center gap-2" title="Notificar por WhatsApp">
                         <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
+                        <Switch
+                          checked={notificationSettings.payment_notifications?.whatsapp ?? false}
+                          onCheckedChange={(checked) =>
+                            setNotificationSettings((prev) => ({
+                              ...prev,
+                              payment_notifications: { email: prev.payment_notifications?.email ?? false, whatsapp: checked },
+                            }))
+                          }
+                        />
                       </div>
                     </div>
                   </div>
@@ -589,34 +713,66 @@ export default function AdminProfilePage() {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2" title="Notificar por Email">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
+                        <Switch
+                          checked={notificationSettings.due_date_reminders?.email ?? false}
+                          onCheckedChange={(checked) =>
+                            setNotificationSettings((prev) => ({
+                              ...prev,
+                              due_date_reminders: { email: checked, whatsapp: prev.due_date_reminders?.whatsapp ?? false },
+                            }))
+                          }
+                        />
                       </div>
                       <div className="flex items-center gap-2" title="Notificar por WhatsApp">
                         <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
+                        <Switch
+                          checked={notificationSettings.due_date_reminders?.whatsapp ?? false}
+                          onCheckedChange={(checked) =>
+                            setNotificationSettings((prev) => ({
+                              ...prev,
+                              due_date_reminders: { email: prev.due_date_reminders?.email ?? false, whatsapp: checked },
+                            }))
+                          }
+                        />
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between rounded-lg border p-4">
                     <div>
-                      <p className="font-medium">Novos Cadastros</p>
+                      <p className="font-medium">Relatórios da Rede</p>
                       <p className="text-sm text-muted-foreground">
-                        Receber notificações sobre novos usuários cadastrados no sistema.
+                        Receber relatórios sobre a rede de usuários.
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2" title="Notificar por Email">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
+                        <Switch
+                          checked={notificationSettings.network_reports?.email ?? false}
+                          onCheckedChange={(checked) =>
+                            setNotificationSettings((prev) => ({
+                              ...prev,
+                              network_reports: { email: checked, whatsapp: prev.network_reports?.whatsapp ?? false },
+                            }))
+                          }
+                        />
                       </div>
                       <div className="flex items-center gap-2" title="Notificar por WhatsApp">
                         <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
+                        <Switch
+                          checked={notificationSettings.network_reports?.whatsapp ?? false}
+                          onCheckedChange={(checked) =>
+                            setNotificationSettings((prev) => ({
+                              ...prev,
+                              network_reports: { email: prev.network_reports?.email ?? false, whatsapp: checked },
+                            }))
+                          }
+                        />
                       </div>
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <Button>Salvar Configurações</Button>
+                    <Button onClick={handleSaveNotifications}>Salvar Configurações</Button>
                   </div>
                 </CardContent>
               </Card>

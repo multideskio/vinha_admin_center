@@ -345,7 +345,7 @@ export default function DashboardPage() {
               <PieChart>
                 <Tooltip content={<ChartTooltipContent hideLabel />} />
                 <Legend content={<ChartLegendContent nameKey="name" />} />
-                <Pie data={data.churchesByRegion} dataKey="count" nameKey="region" innerRadius={60}>
+                <Pie data={data.churchesByRegion} dataKey="count" nameKey="name" innerRadius={60}>
                   {data.churchesByRegion.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}

@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { webhooks, webhookEventEnum } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 
 import { getCompanyId } from '@/lib/utils'
 

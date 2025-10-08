@@ -5,7 +5,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { authenticateApiKey } from '@/lib/api-auth'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { pastorProfileSchema } from '@/lib/types'
 import { ApiError } from '@/lib/errors'
 
@@ -21,7 +21,8 @@ async function verifyPastor(pastorId: string, supervisorId: string): Promise<boo
   return true
 }
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 
@@ -83,7 +84,8 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 
@@ -158,7 +160,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 

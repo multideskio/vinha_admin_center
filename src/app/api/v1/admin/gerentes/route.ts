@@ -11,7 +11,7 @@ import { users, managerProfiles } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { managerProfileSchema } from '@/lib/types'
 
 const COMPANY_ID = process.env.COMPANY_INIT
@@ -113,11 +113,15 @@ export async function POST(request: Request): Promise<NextResponse> {
           firstName: validatedData.firstName,
           lastName: validatedData.lastName,
           cpf: validatedData.cpf,
+          landline: validatedData.landline,
           cep: validatedData.cep,
           state: validatedData.state,
           city: validatedData.city,
           neighborhood: validatedData.neighborhood,
           address: validatedData.address,
+          facebook: validatedData.facebook,
+          instagram: validatedData.instagram,
+          website: validatedData.website,
         })
         .returning()
 

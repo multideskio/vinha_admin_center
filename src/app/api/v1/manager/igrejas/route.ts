@@ -4,7 +4,7 @@ import { users, churchProfiles, supervisorProfiles } from '@/db/schema'
 import { eq, and, isNull, desc, sql, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 
 import { getCompanyId } from '@/lib/utils'
 

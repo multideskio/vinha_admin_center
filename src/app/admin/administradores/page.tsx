@@ -15,6 +15,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
+  Smartphone,
 } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -73,6 +75,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { SendMessageDialog } from '@/components/ui/send-message-dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const adminSchema = z.object({
   firstName: z.string().min(1, { message: 'O nome é obrigatório.' }),
@@ -90,6 +96,41 @@ export type Admin = z.infer<typeof adminSchema> & {
   status: 'active' | 'inactive'
   city?: string
   state?: string
+  avatarUrl?: string
+}
+
+const DeleteAdminDialog = ({ adminName, onConfirm }: { adminName: string; onConfirm: (reason: string) => void }) => {
+  const [reason, setReason] = React.useState('')
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+        Excluir
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir Administrador</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação é irreversível. Por favor, forneça um motivo para a exclusão de {adminName} para fins de auditoria.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+          <label htmlFor="deletion-reason" className="text-sm font-medium">Motivo da Exclusão</label>
+          <Textarea
+            id="deletion-reason"
+            placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>
+            Excluir permanentemente
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 }
 
 const AdminFormModal = ({
@@ -246,17 +287,11 @@ const AdminFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <PhoneInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        type="mobile"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -348,9 +383,13 @@ export default function AdministradoresPage() {
     fetchAdmins()
   }, [fetchAdmins])
 
-  const handleDelete = async (adminId: string) => {
+  const handleDelete = async (adminId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/v1/administradores/${adminId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/v1/administradores/${adminId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletionReason: reason }),
+      })
       if (!response.ok) throw new Error('Falha ao excluir o administrador')
       toast({
         title: 'Sucesso!',
@@ -396,6 +435,7 @@ export default function AdministradoresPage() {
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="hidden md:table-cell">Permissão</TableHead>
               <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead className="hidden lg:table-cell">Mensagem</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
               </TableHead>
@@ -425,7 +465,17 @@ export default function AdministradoresPage() {
             ) : paginatedAdmins.length > 0 ? (
               paginatedAdmins.map((admin) => (
                 <TableRow key={admin.id}>
-                  <TableCell className="font-medium">{`${admin.firstName} ${admin.lastName}`}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={admin.avatarUrl || 'https://placehold.co/32x32.png'} />
+                        <AvatarFallback>
+                          {admin.firstName?.[0]}{admin.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      {`${admin.firstName} ${admin.lastName}`}
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {admin.email}
                   </TableCell>
@@ -438,6 +488,29 @@ export default function AdministradoresPage() {
                     <Badge variant={admin.status === 'active' ? 'success' : 'destructive'}>
                       {admin.status === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <div className="flex gap-1">
+                      <SendMessageDialog
+                        recipientName={`${admin.firstName} ${admin.lastName}`}
+                        recipientEmail={admin.email}
+                        recipientPhone={admin.phone || ''}
+                      >
+                        <Button variant="ghost" size="sm">
+                          <Mail className="h-4 w-4" />
+                        </Button>
+                      </SendMessageDialog>
+                      <SendMessageDialog
+                        recipientName={`${admin.firstName} ${admin.lastName}`}
+                        recipientEmail={admin.email}
+                        recipientPhone={admin.phone || ''}
+                        defaultTab="whatsapp"
+                      >
+                        <Button variant="ghost" size="sm">
+                          <Smartphone className="h-4 w-4" />
+                        </Button>
+                      </SendMessageDialog>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -452,26 +525,10 @@ export default function AdministradoresPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/administradores/${admin.id}`}>Editar</Link>
                         </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o
-                                administrador.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => admin.id && handleDelete(admin.id)}>
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <DeleteAdminDialog
+                          adminName={`${admin.firstName} ${admin.lastName}`}
+                          onConfirm={(reason) => admin.id && handleDelete(admin.id, reason)}
+                        />
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -507,14 +564,12 @@ export default function AdministradoresPage() {
             <Card key={admin.id}>
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                  <Image
-                    src="https://placehold.co/96x96.png"
-                    alt={`Foto de ${admin.firstName}`}
-                    width={96}
-                    height={96}
-                    className="rounded-lg object-cover w-24 h-24"
-                    data-ai-hint="person shield"
-                  />
+                  <Avatar className="w-24 h-24">
+                    <AvatarImage src={admin.avatarUrl || 'https://placehold.co/96x96.png'} />
+                    <AvatarFallback className="text-lg">
+                      {admin.firstName?.[0]}{admin.lastName?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
                       #{(currentPage - 1) * itemsPerPage + index + 1} - {admin.firstName}{' '}
@@ -545,7 +600,28 @@ export default function AdministradoresPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-between items-center mt-4">
+                  <div className="flex gap-1">
+                    <SendMessageDialog
+                      recipientName={`${admin.firstName} ${admin.lastName}`}
+                      recipientEmail={admin.email}
+                      recipientPhone={admin.phone || ''}
+                    >
+                      <Button variant="ghost" size="sm">
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                    </SendMessageDialog>
+                    <SendMessageDialog
+                      recipientName={`${admin.firstName} ${admin.lastName}`}
+                      recipientEmail={admin.email}
+                      recipientPhone={admin.phone || ''}
+                      defaultTab="whatsapp"
+                    >
+                      <Button variant="ghost" size="sm">
+                        <Smartphone className="h-4 w-4" />
+                      </Button>
+                    </SendMessageDialog>
+                  </div>
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/admin/administradores/${admin.id}`}>
                       <Pencil className="mr-2 h-4 w-4" />

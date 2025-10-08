@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 
 const COMPANY_ID = process.env.COMPANY_INIT
 if (!COMPANY_ID) {
@@ -27,6 +27,7 @@ const s3SettingsSchema = z.object({
   accessKeyId: z.string().min(1),
   secretAccessKey: z.string().min(1),
   forcePathStyle: z.boolean().default(false),
+  cloudfrontUrl: z.string().optional(),
 })
 
 export async function GET(): Promise<NextResponse> {
@@ -54,6 +55,7 @@ export async function GET(): Promise<NextResponse> {
         accessKeyId: config.s3AccessKeyId,
         secretAccessKey: config.s3SecretAccessKey,
         forcePathStyle: config.s3ForcePathStyle,
+        cloudfrontUrl: config.s3CloudfrontUrl,
       },
     })
   } catch (error) {
@@ -86,6 +88,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       s3AccessKeyId: validatedData.accessKeyId,
       s3SecretAccessKey: validatedData.secretAccessKey,
       s3ForcePathStyle: validatedData.forcePathStyle,
+      s3CloudfrontUrl: validatedData.cloudfrontUrl,
     }
 
     if (existingConfig) {

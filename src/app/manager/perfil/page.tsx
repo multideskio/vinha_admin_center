@@ -32,11 +32,16 @@ import {
 } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { User, Phone, MapPin, Calendar, Shield, Save } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import {
   managerProfileSchema,
+  type ManagerProfile as BaseManagerProfile,
   type NotificationType,
   type UserNotificationSettings,
 } from '@/lib/types'
@@ -49,9 +54,10 @@ const managerUpdateSchema = managerProfileSchema
   })
   .partial()
 
-type ManagerProfile = z.infer<typeof managerUpdateSchema> & {
+type ManagerProfile = BaseManagerProfile & {
   id?: string
   avatarUrl?: string
+  newPassword?: string
 }
 
 const notificationSettingsConfig = {
@@ -186,7 +192,7 @@ export default function GerenteProfilePage() {
   const router = useRouter()
 
   const form = useForm<ManagerProfile>({
-    resolver: zodResolver(managerUpdateSchema),
+    resolver: zodResolver(managerUpdateSchema) as any,
     defaultValues: {},
   })
 
@@ -292,17 +298,12 @@ export default function GerenteProfilePage() {
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage
-                  src={previewImage || manager.avatarUrl || 'https://placehold.co/96x96.png'}
-                  alt={manager.firstName ?? ''}
-                  data-ai-hint="male person"
-                />
-                <AvatarFallback>
-                  {manager.firstName?.[0]}
-                  {manager.lastName?.[0]}
-                </AvatarFallback>
-              </Avatar>
+              <ClickableAvatar
+                src={previewImage || manager.avatarUrl || 'https://placehold.co/96x96.png'}
+                alt={manager.firstName ?? ''}
+                fallback={`${manager.firstName?.[0] || ''}${manager.lastName?.[0] || ''}`}
+                className="h-24 w-24"
+              />
               <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
                   <Camera className="h-4 w-4 text-muted-foreground" />

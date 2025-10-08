@@ -11,7 +11,7 @@ import { users, adminProfiles } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 
 const COMPANY_ID = process.env.COMPANY_INIT
 if (!COMPANY_ID) {
@@ -51,6 +51,7 @@ export async function GET(): Promise<NextResponse> {
         role: adminProfiles.permission,
         city: adminProfiles.city,
         state: adminProfiles.state,
+        avatarUrl: users.avatarUrl,
       })
       .from(users)
       .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))

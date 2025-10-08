@@ -23,10 +23,8 @@ const updateKeySchema = z.object({
   status: z.enum(['active', 'inactive']),
 })
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 
@@ -58,10 +56,8 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 

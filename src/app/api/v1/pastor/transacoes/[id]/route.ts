@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { transactions as transactionsTable, gatewayConfigurations } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { ApiError } from '@/lib/errors'
 import type { UserRole } from '@/lib/types'
 
@@ -51,10 +51,8 @@ async function verifyTransactionOwnership(transactionId: string, userId: string)
   return true
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 

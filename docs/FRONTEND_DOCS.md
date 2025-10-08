@@ -27,12 +27,32 @@ src
 │   ├── api           # Endpoints da API RESTful (backend)
 │   │   └── v1
 │   │       ├── admin
-│   │       ├── manager
+│   │       ├── dashboard
+│   │       ├── transacoes
+│   │       ├── company
+│   │       ├── cron
 │   │       └── ...
-│   ├── admin         # Layout e páginas do painel de Administrador
+│   ├── admin         # Layout e páginas do painel de Administrador (COMPLETO)
+│   │   ├── _components      # Componentes específicos (header, sidebar)
+│   │   ├── administradores  # CRUD de administradores
+│   │   ├── gerentes         # CRUD de gerentes
+│   │   ├── supervisores     # CRUD de supervisores
+│   │   ├── pastores         # CRUD de pastores
+│   │   ├── igrejas          # CRUD de igrejas
+│   │   ├── regioes          # Gerenciamento de regiões
+│   │   ├── transacoes       # Listagem e detalhes de transações
+│   │   ├── relatorios       # Relatórios financeiros
+│   │   ├── dashboard        # Dashboard com KPIs e gráficos
+│   │   ├── gateways         # Configuração Cielo/Bradesco
+│   │   ├── configuracoes    # Configurações gerais, SMTP, WhatsApp, S3
+│   │   ├── roadmap          # Roadmap do projeto
+│   │   └── changelog        # Histórico de mudanças
 │   ├── auth          # Layout e páginas de autenticação (login, cadastro, etc.)
-│   ├── manager       # Layout e páginas do painel de Gerente
-│   └── ...           # Outros painéis de perfil
+│   ├── manager       # Layout e páginas do painel de Gerente (PENDENTE)
+│   ├── supervisor    # Layout e páginas do painel de Supervisor (PENDENTE)
+│   ├── pastor        # Layout e páginas do painel de Pastor (PENDENTE)
+│   ├── church        # Layout e páginas do painel de Igreja (PENDENTE)
+│   └── maintenance   # Página de modo manutenção
 ├── actions           # Server Actions (usadas primariamente para autenticação)
 ├── components
 │   ├── layout        # Componentes de layout (Sidebars, Header) - DEPRECIADO
@@ -48,7 +68,9 @@ src
 - **`src/app/api`**: Contém os _Route Handlers_ que formam a API RESTful do backend. É a principal fonte de dados para as páginas do cliente.
 - **`src/app/auth`**: Contém todas as páginas relacionadas à autenticação.
 - **`src/actions`**: Armazena as Server Actions. Com a migração para a API REST, seu uso principal se concentra em operações específicas como o fluxo de login (`loginUser`) e logout (`logoutUser`).
-- **`src/lib/auth.ts`**: Arquivo central de configuração do Lucia Auth, responsável por definir o adaptador, a estratégia de sessão e a validação de requisições.
+- **`src/lib/jwt.ts`**: Arquivo central de autenticação com Lucia Auth, responsável por validar sessões e gerenciar cookies.
+- **`src/lib/company.ts`**: Utilitário para buscar configurações da empresa (logo, nome, modo manutenção).
+- **`src/lib/notifications.ts`**: Serviço de notificações (email e WhatsApp) usado pelo sistema de cron.
 
 ---
 
@@ -70,7 +92,72 @@ src
     - Se as credenciais forem válidas, cria uma sessão com `lucia.createSession()` e define o cookie de sessão no navegador.
     - Retorna um objeto de sucesso com o `role` do usuário.
 4.  O frontend recebe a resposta e redireciona o usuário para o dashboard apropriado (ex: `/admin`, `/manager`).
-5.  Em cada painel (`/admin`, `/manager`, etc.), o `layout.tsx` principal usa a função `validateRequest` de `lucia` para verificar a sessão. Durante o desenvolvimento, o redirecionamento em caso de falha foi removido para agilizar o trabalho, mas os dados do usuário (nome, email) são carregados e exibidos se a sessão for válida.
+5.  Em cada painel (`/admin`, `/manager`, etc.), o `layout.tsx` principal usa a função `validateRequest` de `lucia` para verificar a sessão e redireciona para login se inválida.
+6.  O middleware (`src/middleware.ts`) verifica o modo de manutenção e bloqueia acesso se ativo (exceto para admins).
+
+---
+
+## 🎯 Status de Implementação - Painel Admin (/admin)
+
+### ✅ Funcionalidades Completas
+
+#### Dashboard
+- KPIs: Arrecadação mensal, membros, transações, igrejas, pastores, supervisores, gerentes
+- Gráficos: Arrecadação por método, por região, igrejas por região, novos membros
+- Tabelas: Últimas transações e cadastros recentes
+- API: `/api/v1/dashboard/admin` (funcional)
+
+#### Gestão de Usuários
+- **Administradores**: CRUD completo com perfil detalhado
+- **Gerentes**: CRUD completo com perfil detalhado
+- **Supervisores**: CRUD completo com perfil detalhado e vinculação a regiões
+- **Pastores**: CRUD completo com perfil detalhado e vinculação a supervisores
+- **Igrejas**: CRUD completo com perfil detalhado (CNPJ, razão social, tesoureiro)
+
+#### Gestão Financeira
+- **Transações**: Listagem com filtros, busca, paginação e detalhes
+- **Relatórios**: Página de relatórios financeiros implementada
+- **Gateways**: Configuração de Cielo e Bradesco (credenciais, ambiente, métodos aceitos)
+
+#### Configurações
+- **Gerais**: Nome da empresa, logo (upload S3), email de suporte, modo manutenção
+- **SMTP**: Configuração de servidor de email
+- **WhatsApp**: Integração com API de WhatsApp
+- **S3**: Configuração de armazenamento (AWS S3, MinIO, CloudFront)
+- **Mensagens**: Templates de notificações personalizáveis
+- **Regiões**: Gerenciamento de regiões com cores
+
+#### Sistema de Notificações
+- Endpoint cron: `/api/v1/cron/notifications`
+- Eventos: Boas-vindas, pagamento recebido, lembretes, atraso
+- Canais: Email e WhatsApp
+- Deduplicação: Controle via `notification_logs`
+- Proteção: `CRON_SECRET` obrigatório
+
+#### Documentação
+- **Roadmap**: Renderização dinâmica de `docs/ROADMAP.md`
+- **Changelog**: Renderização dinâmica de `docs/CHANGELOG.md`
+- Acesso via menu do usuário no header
+
+### ⏸️ Funcionalidades em Standby
+- **Webhooks**: Interface existe mas funcionalidade não implementada (sem dispatcher, retry, validação)
+- **Chaves de API**: Interface existe mas desabilitada (chaves em texto plano, precisa criptografia)
+
+### 🎨 Recursos de UI/UX
+- Avatar do usuário no header (com fallback de iniciais)
+- Logo da empresa no header e sidebar
+- Modo manutenção funcional com middleware
+- Metadata dinâmica baseada em configurações da empresa
+- Tema dark/light mode
+- Layout responsivo (mobile-first)
+- Skeleton loaders em todas as páginas
+- Toast notifications para feedback
+
+### 📊 Próximos Painéis a Implementar
+1. **Manager** (`/manager`) - Gerenciar supervisores e visualizar regiões
+2. **Supervisor** (`/supervisor`) - Gerenciar pastores e igrejas da sua região
+3. **Pastor** (`/pastor`) - Visualizar dados da própria atuação
+4. **Church** (`/church`) - Dashboard financeiro e gestão da igreja
 
 ---
 
@@ -79,8 +166,33 @@ src
 A aplicação utiliza uma abordagem híbrida:
 
 1.  **API REST (Preferencial):** Para a maioria das operações CRUD (Criar, Ler, Atualizar, Deletar), o frontend faz chamadas `fetch` para os endpoints da API REST em `src/app/api/v1/`. Isso é feito dentro de componentes do cliente, geralmente com `useEffect`.
-    - **Exemplo:** As páginas de Regiões, Administradores e Gateways buscam e manipulam dados exclusivamente através de seus respectivos endpoints na API.
+    - **Exemplo:** As páginas de Regiões, Administradores, Gateways, Dashboard e Transações buscam e manipulam dados exclusivamente através de seus respectivos endpoints na API.
+    - **Autenticação**: Endpoints protegidos usam `validateRequest()` para verificar sessão
+    - **Formato**: JSON com tratamento de erros padronizado
 
 2.  **Server Actions (Para Casos Específicos):** São usadas para funcionalidades onde uma chamada de procedimento remoto (RPC) do cliente para o servidor é mais direta, como no processo de login e logout.
+    - **Exemplo**: `loginUser`, `logoutUser` em `src/actions/auth.ts`
+
+3.  **Cron Jobs (Externos):** Sistema de notificações automatizado via endpoint `/api/v1/cron/notifications` protegido por `CRON_SECRET`.
+
+---
+
+## 🔧 Utilitários e Bibliotecas
+
+### Principais Utilitários
+- **`src/lib/company.ts`**: Busca configurações da empresa do banco
+- **`src/lib/notifications.ts`**: Serviço de envio de notificações (email/WhatsApp)
+- **`src/lib/s3.ts`**: Cliente S3 para upload de arquivos
+- **`src/lib/jwt.ts`**: Validação de sessões com Lucia Auth
+- **`src/lib/types.ts`**: Tipos TypeScript centralizados
+- **`src/lib/error-types.ts`**: Tratamento padronizado de erros
+
+### Componentes UI Principais
+- **ShadCN/UI**: Badge, Button, Card, Dialog, Form, Input, Select, Table, Toast, Skeleton
+- **Recharts**: BarChart, PieChart, LineChart com configuração customizada
+- **React Hook Form + Zod**: Validação de formulários tipada
+- **Date-fns**: Manipulação de datas (pt-BR)
+
+---
 
 Esta documentação deve ser mantida atualizada conforme novas funcionalidades e estruturas são adicionadas ao projeto.

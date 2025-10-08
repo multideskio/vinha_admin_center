@@ -90,6 +90,7 @@ export const managerProfileSchema = z.object({
   phone: z.string().nullable().optional(),
   email: z.string().email('E-mail inválido.'),
   titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
+  avatarUrl: z.string().optional(),
   ...addressSchema,
   ...socialLinksSchema,
 })
@@ -106,6 +107,7 @@ export const supervisorProfileSchema = z.object({
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
   landline: z.string().nullable().optional(),
   titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
+  avatarUrl: z.string().optional(),
   ...addressSchema,
   ...socialLinksSchema,
 })
@@ -122,6 +124,7 @@ export const pastorProfileSchema = z.object({
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
   landline: z.string().nullable().optional(),
   titheDay: z.coerce.number().min(1).max(31).nullable().optional(),
+  avatarUrl: z.string().optional(),
   ...addressSchema,
   ...socialLinksSchema,
 })

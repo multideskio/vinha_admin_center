@@ -18,12 +18,15 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Form,
   FormControl,
@@ -32,17 +35,20 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { useToast } from '@/hooks/use-toast'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Loader2, User, Phone, MapPin, Shield, Save } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { type UserNotificationSettings, type NotificationType } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 import { Switch } from '@/components/ui/switch'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-toast'
 
 const pastorProfileSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
@@ -238,14 +244,12 @@ export default function PastorProfilePage() {
         <Card>
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage
-                  src="https://placehold.co/96x96.png"
-                  alt="Paulo"
-                  data-ai-hint="male pastor"
-                />
-                <AvatarFallback>PF</AvatarFallback>
-              </Avatar>
+              <ClickableAvatar
+                src={pastor.avatarUrl || "https://placehold.co/96x96.png"}
+                alt={`${pastor.firstName} ${pastor.lastName}`}
+                fallback={`${pastor.firstName?.[0] || ''}${pastor.lastName?.[0] || ''}`}
+                className="h-24 w-24"
+              />
               <Button
                 variant="outline"
                 size="icon"
@@ -389,12 +393,34 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Celular</FormLabel>
                             <FormControl>
-                              <div className="flex items-center">
-                                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                  🇧🇷 +55
-                                </span>
-                                <Input {...field} className="rounded-l-none" />
-                              </div>
+                              <PhoneInput
+                                country={'br'}
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClass="!w-full"
+                                containerClass="phone-input-wrapper"
+                                inputStyle={{
+                                  width: '100%',
+                                  height: '40px',
+                                  fontSize: '14px',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: 'calc(var(--radius) - 2px)',
+                                  backgroundColor: 'hsl(var(--background))',
+                                  color: 'hsl(var(--foreground))',
+                                }}
+                                buttonStyle={{
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRight: 'none',
+                                  backgroundColor: 'hsl(var(--background))',
+                                  borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
+                                }}
+                                dropdownStyle={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: 'calc(var(--radius) - 2px)',
+                                  color: 'hsl(var(--foreground))',
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -407,7 +433,34 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Telefone 2</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <PhoneInput
+                                country={'br'}
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClass="!w-full"
+                                containerClass="phone-input-wrapper"
+                                inputStyle={{
+                                  width: '100%',
+                                  height: '40px',
+                                  fontSize: '14px',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: 'calc(var(--radius) - 2px)',
+                                  backgroundColor: 'hsl(var(--background))',
+                                  color: 'hsl(var(--foreground))',
+                                }}
+                                buttonStyle={{
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRight: 'none',
+                                  backgroundColor: 'hsl(var(--background))',
+                                  borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
+                                }}
+                                dropdownStyle={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: 'calc(var(--radius) - 2px)',
+                                  color: 'hsl(var(--foreground))',
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

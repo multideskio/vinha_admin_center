@@ -8,7 +8,7 @@
 import type { Metadata } from 'next'
 import { PastorSidebar } from './_components/sidebar'
 import { PastorHeader } from './_components/header'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {

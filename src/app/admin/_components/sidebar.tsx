@@ -54,7 +54,12 @@ const settingsItem = {
   icon: Settings,
 }
 
-export function AppSidebar(): JSX.Element {
+type AppSidebarProps = {
+  companyLogo?: string
+  companyName?: string
+}
+
+export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): JSX.Element {
   const pathname = usePathname()
 
   return (
@@ -62,8 +67,12 @@ export function AppSidebar(): JSX.Element {
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Link href="/admin/dashboard" className="flex items-center gap-2 font-semibold">
-            <Logo className="h-6 w-6 text-primary" />
-            <span className="">Vinha Ministérios</span>
+            {companyLogo ? (
+              <img src={companyLogo} alt={companyName || 'Logo'} className="h-6 object-contain" />
+            ) : (
+              <Logo className="h-6 w-6 text-primary" />
+            )}
+            <span className="">{companyName || 'Vinha Ministérios'}</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto">

@@ -6,7 +6,7 @@
  */
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3'
+import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3'
 
 const s3SettingsSchema = z.object({
   endpoint: z.string().min(1, 'Endpoint é obrigatório.'),
@@ -27,8 +27,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       endpointUrl = `https://${endpointUrl}`
     }
 
+    // Para AWS S3 padrão, não usar endpoint customizado
+    const isAwsS3 = endpointUrl.includes('amazonaws.com') || 
+                    endpointUrl === 's3.amazonaws.com' ||
+                    validatedData.endpoint === 's3.amazonaws.com'
+
     const s3Client = new S3Client({
-      endpoint: endpointUrl,
+      ...(isAwsS3 ? {} : { endpoint: endpointUrl }),
       region: validatedData.region,
       credentials: {
         accessKeyId: validatedData.accessKeyId,
@@ -37,7 +42,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       forcePathStyle: validatedData.forcePathStyle,
     })
 
-    await s3Client.send(new ListBucketsCommand({}))
+    await s3Client.send(new HeadBucketCommand({ Bucket: validatedData.bucket }))
 
     return NextResponse.json({ success: true, message: 'Conexão bem-sucedida!' })
   } catch (error) {

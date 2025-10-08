@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { authenticateApiKey } from '@/lib/api-auth'
+import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
 const COMPANY_ID = process.env.COMPANY_INIT
@@ -27,8 +27,10 @@ const companyUpdateSchema = z.object({
 })
 
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
+  const { user } = await validateRequest()
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
 
   try {
     const [company] = await db
@@ -52,8 +54,10 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function PUT(request: Request): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
+  const { user } = await validateRequest()
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
 
   try {
     const body = await request.json()

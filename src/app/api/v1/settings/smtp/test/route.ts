@@ -6,7 +6,7 @@
  */
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import * as nodemailer from 'nodemailer'
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 
 const testEmailSchema = z.object({
   email: z.string().email(),
@@ -26,24 +26,40 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const { email, config } = validatedData
 
-    const transporter = nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      auth: {
-        user: config.user,
-        pass: config.password,
+    const sesClient = new SESClient({
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: config.user,
+        secretAccessKey: config.password,
       },
     })
 
-    const fromAddress = config.from || config.user
+    const fromAddress = config.from || 'contato@multidesk.io'
 
-    await transporter.sendMail({
-      from: `"Vinha Admin Teste" <${fromAddress}>`,
-      to: email,
-      subject: 'E-mail de Teste - Vinha Admin',
-      text: 'Se você recebeu este e-mail, suas configurações de SMTP estão funcionando corretamente!',
-      html: '<b>Se você recebeu este e-mail, suas configurações de SMTP estão funcionando corretamente!</b>',
+    const command = new SendEmailCommand({
+      Source: fromAddress,
+      Destination: {
+        ToAddresses: [email],
+      },
+      Message: {
+        Subject: {
+          Data: 'E-mail de Teste - Vinha Admin',
+          Charset: 'UTF-8',
+        },
+        Body: {
+          Html: {
+            Data: '<b>Se você recebeu este e-mail, suas configurações de SES estão funcionando corretamente!</b>',
+            Charset: 'UTF-8',
+          },
+          Text: {
+            Data: 'Se você recebeu este e-mail, suas configurações de SES estão funcionando corretamente!',
+            Charset: 'UTF-8',
+          },
+        },
+      },
     })
+
+    await sesClient.send(command)
 
     return NextResponse.json({ success: true })
   } catch (error) {

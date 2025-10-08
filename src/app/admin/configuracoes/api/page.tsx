@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { PlusCircle, MoreHorizontal, Copy, Loader2, KeyRound } from 'lucide-react'
+import { PlusCircle, MoreHorizontal, Copy, Loader2, KeyRound, AlertTriangle } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -58,7 +58,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 
 type ApiKey = {
   id: string
@@ -126,7 +126,7 @@ const NewKeyModal = ({ onKeyCreated }: { onKeyCreated: () => void }) => {
       }}
     >
       <DialogTrigger asChild>
-        <Button>
+        <Button disabled>
           <PlusCircle className="h-4 w-4 mr-2" />
           Criar nova chave
         </Button>
@@ -268,6 +268,16 @@ export default function ApiKeysPage() {
         </div>
         <NewKeyModal onKeyCreated={fetchKeys} />
       </div>
+
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Funcionalidade em Desenvolvimento</AlertTitle>
+        <AlertDescription>
+          O sistema de chaves de API está temporariamente desabilitado devido a melhorias de segurança pendentes.
+          As chaves atualmente são armazenadas sem criptografia adequada e precisam de refatoração antes do uso em produção.
+          <span className="block mt-2 text-xs">Status: <strong>Em Standby</strong> | Prioridade: <strong>Baixa</strong></span>
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardContent className="pt-6">

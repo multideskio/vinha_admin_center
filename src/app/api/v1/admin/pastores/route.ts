@@ -11,7 +11,7 @@ import { users, pastorProfiles, supervisorProfiles } from '@/db/schema'
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { pastorProfileSchema } from '@/lib/types'
 
 const COMPANY_ID = process.env.COMPANY_INIT
@@ -55,6 +55,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         phone: users.phone,
         status: users.status,
         cpf: pastorProfiles.cpf,
+        avatarUrl: users.avatarUrl,
         supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
       })
       .from(users)

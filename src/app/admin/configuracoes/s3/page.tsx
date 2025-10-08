@@ -29,6 +29,7 @@ const s3SettingsSchema = z.object({
   accessKeyId: z.string().min(1, 'Access Key ID é obrigatório.'),
   secretAccessKey: z.string().min(1, 'Secret Access Key é obrigatório.'),
   forcePathStyle: z.boolean().default(false),
+  cloudfrontUrl: z.string().optional(),
 })
 
 type S3SettingsValues = z.infer<typeof s3SettingsSchema>
@@ -48,6 +49,7 @@ export default function S3SettingsPage() {
       accessKeyId: '',
       secretAccessKey: '',
       forcePathStyle: false,
+      cloudfrontUrl: '',
     },
   })
 
@@ -66,6 +68,7 @@ export default function S3SettingsPage() {
             accessKeyId: data.config.accessKeyId || '',
             secretAccessKey: data.config.secretAccessKey || '',
             forcePathStyle: data.config.forcePathStyle || false,
+            cloudfrontUrl: data.config.cloudfrontUrl || '',
           })
         }
       } catch (error) {
@@ -222,6 +225,19 @@ export default function S3SettingsPage() {
                       <FormLabel>Secret Access Key</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="Sua Secret Access Key" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cloudfrontUrl"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>CloudFront URL (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://d1v03qm1k6ud1f.cloudfront.net" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

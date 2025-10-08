@@ -2,6 +2,126 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.6.0] - 2025-01-15
+
+### Adicionado
+
+- **Sistema de Notificações Automáticas:**
+  - Endpoint cron `/api/v1/cron/notifications` para processamento automático
+  - Controle de duplicação usando `notification_logs`
+  - 4 tipos de eventos: boas-vindas, pagamento recebido, lembretes, atrasos
+  - Proteção com `CRON_SECRET` para segurança
+  - Documentação completa em `docs/CRON_SETUP.md`
+  - Suporte a cron externo (cron-job.org, EasyCron, Vercel Cron)
+- **Sistema de Relatórios Completo:**
+  - Geração de relatórios em tempo real com exportação para PDF e Excel
+  - 4 tipos de relatórios: Financeiro, Membros, Igrejas e Contribuições
+  - Filtros por período com seleção de datas (início e fim)
+  - Preview do último relatório gerado com resumo de dados
+  - Consultas otimizadas ao banco de dados para agregação de dados
+  - Bibliotecas integradas: jsPDF, jsPDF-AutoTable e XLSX
+  - API endpoint `/api/v1/relatorios` para geração de relatórios
+- **Configurações da Empresa:**
+  - Upload de logo da empresa (integrado com S3)
+  - Nome da aplicação customizável
+  - Email de suporte configurável
+  - Modo de manutenção com middleware
+  - Logo e nome exibidos em header, sidebar e página de manutenção
+  - Metadata dinâmica baseada nas configurações
+- **Páginas de Documentação Dinâmicas:**
+  - Página `/admin/roadmap` renderizando `docs/ROADMAP.md` dinamicamente
+  - Página `/admin/changelog` renderizando `docs/CHANGELOG.md` dinamicamente
+  - Links adicionados no menu dropdown do perfil do usuário
+  - Integração com `react-markdown` e `remark-gfm` para renderização
+  - Estilização automática com `@tailwindcss/typography`
+- **Avatar do Usuário no Header:**
+  - Avatar do usuário logado agora é exibido no header
+  - Busca automática da imagem do perfil no banco de dados
+  - Exibição do nome completo do usuário ao invés de apenas email
+  - Fallback com iniciais quando não há avatar configurado
+
+### Melhorias
+
+- **Organização de Código:**
+  - Criado arquivo `src/db/index.ts` para centralizar exports do banco de dados
+  - Criado `src/lib/report-generator.ts` para geração de relatórios
+  - Criado `src/lib/company.ts` para buscar configurações da empresa
+  - Melhorias na estrutura de queries do banco de dados
+  - Adicionado `companyId` ao retorno de `validateRequest()`
+- **Interface do Usuário:**
+  - Menu dropdown do perfil reorganizado com novos links
+  - Ícones atualizados (MapPin para Roadmap, History para Changelog)
+  - Páginas de documentação agora leem diretamente de `docs/` (fonte única de verdade)
+  - Suporte a dark mode nas páginas de documentação
+- **Performance:**
+  - Otimização de imports com `optimizePackageImports` no Next.js config
+  - Redução de bundle size para Radix UI, lucide-react, recharts e date-fns
+
+### Corrigido
+
+- **Erro de Build:** Resolvido erro "Module not found: Can't resolve '@/db'" criando arquivo de índice na pasta db
+- **Middleware Edge Runtime:** Removida query de banco do middleware, usando API call para verificar modo manutenção
+- **TypeScript Errors:** Corrigidos todos os erros de tipagem em cron, relatórios e validação de usuário
+- **NotificationService:** Adicionados métodos `sendWhatsApp` e `sendEmail` para uso direto no cron
+
+## [1.5.0] - 2024-12-20
+
+### Adicionado
+
+- **Paridade Completa de Features:**
+  - Todas as páginas de perfil (Admin, Manager, Supervisor, Pastor, Igreja) agora possuem funcionalidades idênticas
+  - Sistema de mensagens via WhatsApp e Email em todos os perfis
+  - Upload de avatares com integração S3 para todos os usuários
+  - Gestão de redes sociais (Facebook, Instagram, Website) com auto-save
+  - Configurações de notificações personalizáveis por usuário
+  - Histórico de transações em todos os perfis
+
+### Melhorias
+
+- **Componente PhoneInput Padronizado:**
+  - Substituição de todas as instâncias diretas de `react-phone-input-2` pelo componente customizado
+  - Integração completa com design system
+  - Suporte a tipos mobile e landline
+  - TypeScript types adequados
+- **Auto-save de Redes Sociais:**
+  - Links de redes sociais salvam automaticamente ao perder foco (onBlur)
+  - Não requer submissão de formulário
+  - Feedback visual de salvamento
+
+### Corrigido
+
+- **Bug de Links de Redes Sociais:** Corrigido problema onde links não eram salvos corretamente
+- **Erros de TypeScript:** Resolvidos todos os erros de compilação relacionados a tipos
+- **Configuração CloudFront:** Corrigida integração entre S3 (upload) e CloudFront (serving)
+
+## [1.4.0] - 2024-11-15
+
+### Adicionado
+
+- **Sistema de Notificações via WhatsApp:**
+  - Integração completa com Evolution API v2
+  - Headers corretos (apikey ao invés de Bearer)
+  - Payload estruturado com delay e linkPreview
+  - Tratamento de respostas e erros
+- **Sistema de Notificações via Email:**
+  - Integração com AWS SES
+  - Templates HTML personalizáveis
+  - Suporte a variáveis dinâmicas
+- **Templates de Mensagens:**
+  - Tabela `message_templates` no banco de dados
+  - Engine de templates com suporte a variáveis ({{name}}, {{churchName}})
+  - Suporte a condicionais ({{#if variable}})
+  - Templates para boas-vindas e lembretes de pagamento
+- **Logs de Notificações:**
+  - Tabela `notification_logs` para auditoria
+  - Registro de status (sucesso/falha)
+  - Armazenamento de mensagens de erro
+
+### Melhorias
+
+- **Multi-tenant:** Todas as notificações são scoped por companyId
+- **Configurações S3:** Sistema de avisos quando credenciais não estão configuradas
+
 ## [1.0.8] - 2024-08-08
 
 ### Corrigido

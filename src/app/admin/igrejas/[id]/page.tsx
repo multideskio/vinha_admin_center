@@ -74,7 +74,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
-import { churchProfileSchema, type TransactionStatus } from '@/lib/types'
+import { churchProfileSchema, type TransactionStatus, type UserNotificationSettings, type NotificationType, NOTIFICATION_TYPES } from '@/lib/types'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,6 +87,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 
 const churchUpdateSchema = churchProfileSchema.extend({
   newPassword: z.string().optional().or(z.literal('')),
@@ -263,6 +264,129 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   )
 }
 
+const notificationSettingsConfig = {
+  payment_notifications: 'Notificações de Pagamento',
+  due_date_reminders: 'Lembretes de Vencimento',
+  network_reports: 'Relatórios da Rede',
+}
+
+const SettingsTab = ({ userId }: { userId: string }) => {
+  const [settings, setSettings] = React.useState<UserNotificationSettings>({
+    payment_notifications: { email: false, whatsapp: false },
+    due_date_reminders: { email: false, whatsapp: false },
+    network_reports: { email: false, whatsapp: false },
+  })
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
+
+  const fetchSettings = React.useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/v1/users/${userId}/notification-settings`)
+      if (!response.ok) throw new Error('Falha ao carregar configurações.')
+      const data = await response.json()
+      setSettings(data)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [userId, toast])
+
+  React.useEffect(() => {
+    fetchSettings()
+  }, [fetchSettings])
+
+  const handleSwitchChange = (
+    type: NotificationType,
+    channel: 'email' | 'whatsapp',
+    value: boolean,
+  ) => {
+    setSettings((prev) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [channel]: value,
+      },
+    }))
+  }
+
+  const handleSaveSettings = async () => {
+    try {
+      const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+      toast({
+        title: 'Sucesso',
+        description: 'Configurações de notificação salvas.',
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {NOTIFICATION_TYPES.map((type) => (
+          <div key={type} className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="font-medium">
+                {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2" title="Notificar por Email">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <Switch
+                  checked={settings[type]?.email ?? false}
+                  onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
+                />
+              </div>
+              <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+                <Smartphone className="h-4 w-4 text-muted-foreground" />
+                <Switch
+                  checked={settings[type]?.whatsapp ?? false}
+                  onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        <div className="flex justify-end">
+          <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function IgrejaProfilePage(): JSX.Element {
   const [church, setChurch] = React.useState<ChurchProfile | null>(null)
   const [supervisors, setSupervisors] = React.useState<Supervisor[]>([])
@@ -365,14 +489,85 @@ export default function IgrejaProfilePage(): JSX.Element {
     }
   }
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string | null,
+  ) => {
+    try {
+      const payload = { [fieldName]: value }
+
+      const response = await fetch(`/api/v1/igrejas/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Falha ao atualizar ${fieldName}.`)
+      }
+
+      toast({
+        title: 'Sucesso!',
+        description: `Link do ${fieldName} atualizado.`,
+        variant: 'success',
+      })
+      setChurch((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    }
+  }
+
+    const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'avatars')
+        formData.append('filename', `igreja-${id}-${file.name}`)
+
+        const response = await fetch('/api/v1/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem')
+        }
+
+        const result = await response.json()
+        
+        // Atualizar avatar no banco
+        const updateResponse = await fetch(`/api/v1/igrejas/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: result.url }),
+        })
+
+        if (!updateResponse.ok) {
+          throw new Error('Falha ao atualizar avatar')
+        }
+
+        setPreviewImage(result.url)
+        setChurch(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
+        toast({
+          title: 'Sucesso',
+          description: 'Avatar atualizado com sucesso!',
+          variant: 'success',
+        })
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Falha ao fazer upload da imagem.',
+          variant: 'destructive',
+        })
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -433,6 +628,19 @@ export default function IgrejaProfilePage(): JSX.Element {
               </div>
               <h2 className="mt-4 text-xl font-semibold">{church.nomeFantasia}</h2>
               <p className="text-muted-foreground">Igreja</p>
+              
+              <div className="flex gap-2 mt-4">
+                <SendMessageDialog
+                  recipientName={church.nomeFantasia || ''}
+                  recipientEmail={church.email || ''}
+                  recipientPhone={church.phone || ''}
+                >
+                  <Button variant="outline" size="sm">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Mensagem
+                  </Button>
+                </SendMessageDialog>
+              </div>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">
@@ -440,15 +648,27 @@ export default function IgrejaProfilePage(): JSX.Element {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Facebook className="h-5 w-5 text-muted-foreground" />
-                  <Input defaultValue={''} placeholder="https://facebook.com/..." />
+                  <Input
+                    defaultValue={church.facebook ?? ''}
+                    placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                  />
                 </div>
                 <div className="flex items-center gap-3">
                   <Instagram className="h-5 w-5 text-muted-foreground" />
-                  <Input defaultValue={''} placeholder="https://instagram.com/..." />
+                  <Input
+                    defaultValue={church.instagram ?? ''}
+                    placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                  />
                 </div>
                 <div className="flex items-center gap-3">
                   <Globe className="h-5 w-5 text-muted-foreground" />
-                  <Input defaultValue={''} placeholder="https://website.com/..." />
+                  <Input
+                    defaultValue={church.website ?? ''}
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -780,55 +1000,7 @@ export default function IgrejaProfilePage(): JSX.Element {
               <TransactionsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="configuracoes">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações de Notificação</CardTitle>
-                  <CardDescription>
-                    Gerencie quais notificações este usuário receberá.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <p className="font-medium">Notificações de Pagamento</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber avisos sobre pagamentos recebidos, recusados, etc.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
-                      </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <p className="font-medium">Relatórios da Supervisão</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber relatórios semanais sobre a performance da sua supervisão.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
-                      </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button>Salvar Configurações</Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <SettingsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="delete">
               <Card className="border-destructive">

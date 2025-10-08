@@ -11,7 +11,7 @@ import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { supervisorProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 
@@ -56,6 +56,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         phone: users.phone,
         status: users.status,
         cpf: supervisorProfiles.cpf,
+        avatarUrl: users.avatarUrl,
         managerName: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
         regionName: regions.name,
       })

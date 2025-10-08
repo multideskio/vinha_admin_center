@@ -16,7 +16,7 @@ import {
 } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { ApiError } from '@/lib/errors'
 
 const COMPANY_ID = process.env.COMPANY_INIT
@@ -97,10 +97,8 @@ async function verifyTransactionOwnership(
   return false
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const authResponse = await authenticateApiKey()
   if (authResponse) return authResponse
 

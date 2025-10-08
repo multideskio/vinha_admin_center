@@ -23,6 +23,8 @@ import {
   FileText,
   Shield,
   ArrowRightLeft,
+  MapPin,
+  History,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,9 +83,12 @@ type AdminHeaderProps = {
   userName: string
   userEmail: string
   userFallback: string
+  avatarUrl?: string
+  companyLogo?: string
+  companyName?: string
 }
 
-export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderProps): JSX.Element {
+export function AdminHeader({ userName, userEmail, userFallback, avatarUrl, companyLogo, companyName }: AdminHeaderProps): JSX.Element {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       <Sheet>
@@ -96,8 +101,12 @@ export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderPr
         <SheetContent side="left" className="flex flex-col">
           <nav className="grid gap-2 text-lg font-medium">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold">
-              <Logo className="h-6 w-6 text-primary" />
-              <span className="sr-only">Vinha Ministérios</span>
+              {companyLogo ? (
+                <img src={companyLogo} alt={companyName || 'Logo'} className="h-6 object-contain" />
+              ) : (
+                <Logo className="h-6 w-6 text-primary" />
+              )}
+              <span className="sr-only">{companyName || 'Vinha Ministérios'}</span>
             </Link>
             {menuItems.map((item) => (
               <Link
@@ -137,7 +146,7 @@ export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderPr
           <Button variant="secondary" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage
-                src="https://placehold.co/32x32.png"
+                src={avatarUrl || undefined}
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />
@@ -154,13 +163,29 @@ export function AdminHeader({ userName, userEmail, userFallback }: AdminHeaderPr
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/perfil">
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LifeBuoy className="mr-2 h-4 w-4" />
-            <span>Ajuda</span>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/roadmap">
+              <MapPin className="mr-2 h-4 w-4" />
+              <span>Roadmap</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/changelog">
+              <History className="mr-2 h-4 w-4" />
+              <span>Changelog</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/admin/ajuda">
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Ajuda</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <form action={() => logoutUser()}>

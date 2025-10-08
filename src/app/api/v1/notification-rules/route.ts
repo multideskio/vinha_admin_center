@@ -10,7 +10,7 @@ import { db } from '@/db/drizzle'
 import { notificationRules } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
-import { validateRequest } from '@/lib/auth'
+import { validateRequest } from '@/lib/jwt'
 import { NOTIFICATION_EVENT_TRIGGERS } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 

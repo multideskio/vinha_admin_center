@@ -5,8 +5,7 @@ import { db } from '@/db/drizzle'
 import { users } from '@/db/schema'
 import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
-import { lucia, validateRequest } from '@/lib/auth'
-import { cookies } from 'next/headers'
+import { createJWT, setJWTCookie, clearJWTCookie, validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
 import { getErrorMessage } from '@/lib/error-types'
 
@@ -49,10 +48,13 @@ export async function loginUser(
       throw new Error('Credenciais inválidas.')
     }
 
-    // 3. Criar a sessão do usuário
-    const session = await lucia.createSession(existingUser.id, {})
-    const sessionCookie = lucia.createSessionCookie(session.id)
-    ;(await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes)
+    // 3. Criar token JWT e definir cookie
+    const token = await createJWT({
+      id: existingUser.id,
+      email: existingUser.email,
+      role: existingUser.role as any,
+    })
+    await setJWTCookie(token)
 
     return { success: true, role: existingUser.role }
   } catch (error: unknown) {
@@ -67,9 +69,6 @@ export async function logoutUser(): Promise<void> {
     return
   }
 
-  await lucia.invalidateSession(session.id)
-
-  const sessionCookie = lucia.createBlankSessionCookie()
-  ;(await cookies()).set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes)
+  await clearJWTCookie()
   redirect('/auth/login')
 }

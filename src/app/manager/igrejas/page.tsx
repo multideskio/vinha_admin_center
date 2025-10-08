@@ -23,6 +23,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import Image from 'next/image'
 import { format } from 'date-fns'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -522,18 +524,34 @@ const ChurchFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <PhoneInput
+                        country={'br'}
+                        value={field.value}
+                        onChange={field.onChange}
+                        inputClass="!w-full"
+                        containerClass="phone-input-wrapper"
+                        inputStyle={{
+                          width: '100%',
+                          height: '40px',
+                          fontSize: '14px',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 'calc(var(--radius) - 2px)',
+                          backgroundColor: 'hsl(var(--background))',
+                          color: 'hsl(var(--foreground))',
+                        }}
+                        buttonStyle={{
+                          border: '1px solid hsl(var(--border))',
+                          borderRight: 'none',
+                          backgroundColor: 'hsl(var(--background))',
+                          borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
+                        }}
+                        dropdownStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 'calc(var(--radius) - 2px)',
+                          color: 'hsl(var(--foreground))',
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
