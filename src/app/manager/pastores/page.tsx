@@ -524,7 +524,7 @@ export default function PastoresPage() {
     }
   }
 
-  const filteredPastors = Pastors.filter((Pastor) =>
+  const filteredPastors = (Pastors || []).filter((Pastor) =>
     `${Pastor.firstName} ${Pastor.lastName}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase()),
