@@ -82,6 +82,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PhoneInput } from '@/components/ui/phone-input'
+import { sanitizeText } from '@/lib/sanitize'
 
 const supervisorSchema = z.object({
   regionId: z.string({ required_error: 'Selecione uma região.' }),
@@ -593,14 +594,14 @@ export default function SupervisoresPage() {
                         className="rounded-full object-cover"
                         data-ai-hint="person"
                       />
-                      <span>{`${supervisor.firstName} ${supervisor.lastName}`}</span>
+                      <span>{sanitizeText(`${supervisor.firstName} ${supervisor.lastName}`)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {supervisor.email}
+                    {sanitizeText(supervisor.email)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {supervisor.regionName || 'N/A'}
+                    {sanitizeText(supervisor.regionName) || 'N/A'}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={supervisor.status === 'active' ? 'success' : 'destructive'}>
@@ -687,26 +688,26 @@ export default function SupervisoresPage() {
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
-                      #{(currentPage - 1) * itemsPerPage + index + 1} - {supervisor.firstName}{' '}
-                      {supervisor.lastName}
+                      #{(currentPage - 1) * itemsPerPage + index + 1} - {sanitizeText(supervisor.firstName)}{' '}
+                      {sanitizeText(supervisor.lastName)}
                     </h3>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p className="flex items-center gap-2">
-                        <Map size={14} /> <span>Região: {supervisor.regionName || 'N/A'}</span>
+                        <Map size={14} /> <span>Região: {sanitizeText(supervisor.regionName) || 'N/A'}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <FileText size={14} /> <span>{supervisor.cpf}</span>
+                        <FileText size={14} /> <span>{sanitizeText(supervisor.cpf)}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Phone size={14} /> <span>{supervisor.phone}</span>
+                        <Phone size={14} /> <span>{sanitizeText(supervisor.phone)}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Mail size={14} /> <span>{supervisor.email}</span>
+                        <Mail size={14} /> <span>{sanitizeText(supervisor.email)}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <MapPin size={14} />{' '}
                         <span>
-                          {supervisor.city} - {supervisor.state}
+                          {sanitizeText(supervisor.city)} - {sanitizeText(supervisor.state)}
                         </span>
                       </p>
                     </div>
