@@ -238,12 +238,10 @@ export const transactions = pgTable('transactions', {
   contributorId: uuid('contributor_id')
     .references(() => users.id)
     .notNull(),
-  churchId: uuid('church_id').references(() => users.id),
   originChurchId: uuid('origin_church_id').references(() => users.id),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   status: transactionStatusEnum('status').notNull(),
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
-  method: paymentMethodEnum('method'),
   gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
   paymentDetails: text('payment_details'),
   refundRequestReason: text('refund_request_reason'),
