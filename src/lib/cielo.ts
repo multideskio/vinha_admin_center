@@ -182,7 +182,16 @@ export async function createCreditCardPayment(
   }
 }
 
-export async function createBoletoPayment(amount: number, customerName: string, customerEmail: string, customerCpf: string) {
+export async function createBoletoPayment(
+  amount: number,
+  customerName: string,
+  customerEmail: string,
+  customerCpf: string,
+  customerAddress: string,
+  customerCity: string,
+  customerState: string,
+  customerZipCode: string
+) {
   const config = await getCieloConfig()
 
   const apiUrl = getCieloApiUrl(config.environment)
@@ -194,6 +203,15 @@ export async function createBoletoPayment(amount: number, customerName: string, 
       Email: customerEmail,
       Identity: customerCpf,
       IdentityType: 'CPF',
+      Address: {
+        Street: customerAddress,
+        Number: '0',
+        Complement: '',
+        ZipCode: customerZipCode.replace(/\D/g, ''),
+        City: customerCity,
+        State: customerState,
+        Country: 'BRA',
+      },
     },
     Payment: {
       Type: 'Boleto',
