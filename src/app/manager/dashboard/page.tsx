@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { DollarSign, Users, Church, UserCog, User, RefreshCw, ArrowRightLeft } from 'lucide-react'
+import { sanitizeText } from '@/lib/sanitize'
 import {
   Bar,
   BarChart,
@@ -84,7 +85,7 @@ export default function GerenteDashboardPage() {
       const message = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro',
-        description: message,
+        description: sanitizeText(message),
         variant: 'destructive',
       })
     } finally {
@@ -96,10 +97,16 @@ export default function GerenteDashboardPage() {
     const checkProfile = async () => {
       try {
         const res = await fetch('/api/v1/manager/profile-status')
+        if (!res.ok) {
+          throw new Error('Failed to check profile status')
+        }
         const data = await res.json()
         setProfileIncomplete(!data.complete)
+        console.log('Profile status checked:', data.complete ? 'complete' : 'incomplete')
       } catch (error) {
         console.error('Error checking profile:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        console.error('Profile check failed:', errorMessage)
       }
     }
     checkProfile()

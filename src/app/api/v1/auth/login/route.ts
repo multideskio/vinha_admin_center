@@ -49,7 +49,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const token = await createJWT({
       id: user.id,
       email: user.email,
-      role: user.role as any,
+      role: user.role,
     });
 
     // Definir cookie

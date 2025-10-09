@@ -75,13 +75,23 @@ type HeaderProps = {
 }
 
 export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, companyLogo, companyName }: HeaderProps) {
-  const handleLogoutSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await handleLogout()
+      console.log('User logout initiated:', userEmail);
+      await handleLogout();
+      console.log('User logout successful');
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('Logout error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout';
+      alert(errorMessage);
     }
-  }
+  };
+
+  const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('Failed to load company logo:', companyLogo);
+    e.currentTarget.style.display = 'none';
+  };
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
@@ -99,7 +109,7 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
               className="flex items-center gap-2 text-lg font-semibold"
             >
               {companyLogo ? (
-                <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" />
+                <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
               ) : (
                 <Logo className="h-6 w-6 text-primary" />
               )}

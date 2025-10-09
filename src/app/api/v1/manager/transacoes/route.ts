@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles, supervisorProfiles, pastorProfiles, managerProfiles } from '@/db/schema'
+import { transactions, churchProfiles, supervisorProfiles, pastorProfiles, managerProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
-import { eq, inArray, desc, asc, count, and, gte, lte, sql } from 'drizzle-orm'
+import { eq, inArray, desc, asc, count, and, gte, lte } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   try {

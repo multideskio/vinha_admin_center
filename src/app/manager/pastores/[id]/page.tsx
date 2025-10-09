@@ -75,7 +75,6 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { PhoneInput } from '@/components/ui/phone-input'
-import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +83,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
+import { sanitizeText } from '@/lib/sanitize'
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
@@ -160,7 +160,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
         setSettings(data)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+        toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
       } finally {
         setIsLoading(false)
       }
@@ -184,7 +184,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsSaving(false)
     }
@@ -314,7 +314,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
         setTransactions(data.transactions)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+        toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
       } finally {
         setIsLoading(false)
       }
@@ -443,7 +443,9 @@ export default function PastorProfilePage(): JSX.Element {
 
     try {
       const response = await fetch(`/api/v1/cep?cep=${cleanCep}`)
-      if (!response.ok) return
+      if (!response.ok) {
+        throw new Error('CEP não encontrado')
+      }
       
       const data = await response.json()
       form.setValue('address', data.address || '')
@@ -452,6 +454,8 @@ export default function PastorProfilePage(): JSX.Element {
       form.setValue('state', data.state || '')
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar CEP'
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     }
   }
 
@@ -475,7 +479,7 @@ export default function PastorProfilePage(): JSX.Element {
       form.reset(pastorData)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -494,16 +498,16 @@ export default function PastorProfilePage(): JSX.Element {
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error('Falha ao atualizar o pastor.')
-      const updatedData = await response.json()
+      await response.json()
       toast({
         title: 'Sucesso',
         description: 'Pastor atualizado com sucesso.',
         variant: 'success',
       })
-      setPastor((prev) => (prev ? { ...prev, ...updatedData.pastor } : null))
+      fetchData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsSaving(false)
     }
@@ -525,7 +529,7 @@ export default function PastorProfilePage(): JSX.Element {
       router.push('/manager/pastores')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     }
   }
 
@@ -561,7 +565,7 @@ export default function PastorProfilePage(): JSX.Element {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro',
-        description: errorMessage,
+        description: sanitizeText(errorMessage),
         variant: 'destructive',
       })
     }
@@ -569,51 +573,64 @@ export default function PastorProfilePage(): JSX.Element {
 
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('folder', 'avatars')
-        formData.append('filename', `pastor-${id}-${file.name}`)
+    if (!file) {
+      toast({
+        title: 'Erro',
+        description: 'Nenhum arquivo selecionado para upload.',
+        variant: 'destructive',
+      })
+      return
+    }
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'avatars')
+      formData.append('filename', `pastor-${id}-${file.name}`)
 
-        const response = await fetch('/api/v1/upload', {
-          method: 'POST',
-          body: formData,
-        })
+      const response = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      })
 
-        if (!response.ok) {
-          throw new Error('Falha no upload da imagem')
-        }
+      if (!response.ok) {
+        throw new Error('Falha no upload da imagem')
+      }
 
-        const result = await response.json()
-        
-        // Atualizar avatar no banco
-        const updateResponse = await fetch(`/api/v1/manager/pastores/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatarUrl: result.url }),
-        })
+      const result = await response.json()
+      
+      // Atualizar avatar no banco
+      const updateResponse = await fetch(`/api/v1/manager/pastores/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: result.url }),
+      })
 
-        if (!updateResponse.ok) {
-          throw new Error('Falha ao atualizar avatar')
-        }
+      if (!updateResponse.ok) {
+        throw new Error('Falha ao atualizar avatar')
+      }
 
-        const updatedData = await updateResponse.json()
+      const updateResult = await updateResponse.json()
+      if (updateResult && updateResult.pastor) {
+        setPreviewImage(result.url)
+        setPastor(updateResult.pastor)
+      } else {
         setPreviewImage(result.url)
         setPastor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
-        
-        toast({
-          title: 'Sucesso',
-          description: 'Avatar atualizado com sucesso!',
-          variant: 'success',
-        })
-      } catch (error) {
-        toast({
-          title: 'Erro',
-          description: 'Falha ao fazer upload da imagem.',
-          variant: 'destructive',
-        })
       }
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Avatar atualizado com sucesso!',
+        variant: 'success',
+      })
+    } catch (error) {
+      console.error('Photo upload error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Falha ao fazer upload da imagem.'
+      toast({
+        title: 'Erro',
+        description: sanitizeText(errorMessage),
+        variant: 'destructive',
+      })
     }
   }
 

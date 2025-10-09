@@ -17,7 +17,6 @@ import { count, sum, eq, isNull, and, desc, sql, inArray, gte, lt } from 'drizzl
 import { format, subMonths, startOfMonth } from 'date-fns'
 import { validateRequest } from '@/lib/jwt'
 import { type UserRole } from '@/lib/types'
-import { getErrorMessage } from '@/lib/error-types'
 import { handleApiError, ApiError } from '@/lib/api-error-handler'
 
 const calculateChange = (current: number, previous: number): string => {
@@ -291,7 +290,7 @@ export async function GET(): Promise<NextResponse> {
     const churchNameMap = new Map(churchNames.map(c => [c.id, c.name]))
 
     const revenueByChurch = revenueByChurchData.map((item, index) => ({
-      name: churchNameMap.get(item.churchId!) || 'Igreja',
+      name: churchNameMap.get(item.churchId || '') || 'Igreja',
       revenue: item.revenue,
       fill: colors[index % colors.length],
     }))
@@ -313,7 +312,7 @@ export async function GET(): Promise<NextResponse> {
       : []
 
     const membersByChurch = contributionsByChurchData.map((item, index) => ({
-      name: churchNameMap.get(item.churchId!) || 'Igreja',
+      name: churchNameMap.get(item.churchId || '') || 'Igreja',
       count: item.count,
       fill: colors[index % colors.length],
     }))

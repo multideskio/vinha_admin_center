@@ -75,7 +75,6 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { PhoneInput } from '@/components/ui/phone-input'
-import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -494,13 +493,13 @@ export default function SupervisorProfilePage(): JSX.Element {
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error('Falha ao atualizar o supervisor.')
-      const updatedData = await response.json()
+      await response.json()
       toast({
         title: 'Sucesso',
         description: 'Supervisor atualizado com sucesso.',
         variant: 'success',
       })
-      setSupervisor((prev) => (prev ? { ...prev, ...updatedData.supervisor } : null))
+      fetchData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -598,7 +597,7 @@ export default function SupervisorProfilePage(): JSX.Element {
           throw new Error('Falha ao atualizar avatar')
         }
 
-        const updatedData = await updateResponse.json()
+        await updateResponse.json()
         setPreviewImage(result.url)
         setSupervisor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
         
@@ -608,9 +607,11 @@ export default function SupervisorProfilePage(): JSX.Element {
           variant: 'success',
         })
       } catch (error) {
+        console.error('Photo upload error:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Falha ao fazer upload da imagem.'
         toast({
           title: 'Erro',
-          description: 'Falha ao fazer upload da imagem.',
+          description: errorMessage,
           variant: 'destructive',
         })
       }

@@ -6,7 +6,7 @@ import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
 import { z } from 'zod'
 
-const COMPANY_ID = process.env.COMPANY_INIT!
+const COMPANY_ID = process.env.COMPANY_INIT || ''
 
 const transactionSchema = z.object({
   amount: z.number().min(1),
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
     const data = transactionSchema.parse(body)
 
     // Get user data with profile based on role
-    let profile: any = null
-    let userData: any = null
+    let profile: Record<string, unknown> | null = null
+    let userData: { email: string } | null = null
 
     if (user.role === 'manager') {
       const [result] = await db
@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
         .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
         .where(eq(users.id, user.id))
         .limit(1)
-      userData = result
-      profile = result?.profile
+      userData = result || null
+      profile = result?.profile as Record<string, unknown> | null
     } else if (user.role === 'supervisor') {
       const [result] = await db
         .select({ email: users.email, profile: supervisorProfiles })
@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
         .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
         .where(eq(users.id, user.id))
         .limit(1)
-      userData = result
-      profile = result?.profile
+      userData = result || null
+      profile = result?.profile as Record<string, unknown> | null
     } else if (user.role === 'pastor') {
       const [result] = await db
         .select({ email: users.email, profile: pastorProfiles })
@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
         .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
         .where(eq(users.id, user.id))
         .limit(1)
-      userData = result
-      profile = result?.profile
+      userData = result || null
+      profile = result?.profile as Record<string, unknown> | null
     } else if (user.role === 'church_account') {
       const [result] = await db
         .select({ email: users.email, profile: churchProfiles })
@@ -120,15 +120,15 @@ export async function POST(request: NextRequest) {
         .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
         .where(eq(users.id, user.id))
         .limit(1)
-      userData = result
-      profile = result?.profile
+      userData = result || null
+      profile = result?.profile as Record<string, unknown> | null
     } else {
       const [result] = await db
         .select({ email: users.email })
         .from(users)
         .where(eq(users.id, user.id))
         .limit(1)
-      userData = result
+      userData = result || null
     }
 
     if (!userData) {
@@ -145,22 +145,18 @@ export async function POST(request: NextRequest) {
     const userCep = profile?.cep || ''
     const userDistrict = profile?.neighborhood || ''
 
-    // Get church ID if user is church
-    let churchId = null
-    if (user.role === 'church_account') {
-      churchId = user.id
-    }
 
-    let paymentResult: any
+
+    let paymentResult: Record<string, unknown> | undefined
     let status: 'pending' | 'approved' | 'refused' = 'pending'
 
     // Process payment based on method
     if (data.paymentMethod === 'pix') {
-      paymentResult = await createPixPayment(data.amount, userName, userData.email)
+      paymentResult = await createPixPayment(data.amount, userName as string)
     } else if (data.paymentMethod === 'credit_card' && data.card) {
       paymentResult = await createCreditCardPayment(
         data.amount,
-        userName,
+        String(userName),
         userData.email,
         data.card
       )
@@ -173,14 +169,14 @@ export async function POST(request: NextRequest) {
       }
       paymentResult = await createBoletoPayment(
         data.amount,
-        userName,
+        String(userName),
         userData.email,
-        userCpf,
-        userAddress,
-        userCity,
-        userState,
-        userCep,
-        userDistrict
+        String(userCpf),
+        String(userAddress),
+        String(userCity),
+        String(userState),
+        String(userCep),
+        String(userDistrict)
       )
     }
 
@@ -193,7 +189,7 @@ export async function POST(request: NextRequest) {
         amount: data.amount.toString(),
         status,
         paymentMethod: data.paymentMethod,
-        gatewayTransactionId: paymentResult?.PaymentId || null,
+        gatewayTransactionId: (paymentResult?.PaymentId as string) || null,
       })
       .returning()
 

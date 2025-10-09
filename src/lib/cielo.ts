@@ -2,7 +2,7 @@ import { db } from '@/db/drizzle'
 import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
-const COMPANY_ID = process.env.COMPANY_INIT!
+const COMPANY_ID = process.env.COMPANY_INIT || ''
 
 type CieloConfig = {
   merchantId: string
@@ -50,7 +50,7 @@ function getCieloApiUrl(environment: 'production' | 'development'): string {
     : 'https://apisandbox.cieloecommerce.cielo.com.br'
 }
 
-export async function createPixPayment(amount: number, customerName: string, customerEmail: string) {
+export async function createPixPayment(amount: number, customerName: string) {
   const config = await getCieloConfig()
   if (!config) throw new Error('Configuração Cielo não encontrada')
 

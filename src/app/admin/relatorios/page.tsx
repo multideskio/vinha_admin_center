@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Download, FileText, Loader2, FileSpreadsheet } from 'lucide-react';
+import { FileText, Loader2, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,14 +21,6 @@ const reportTypes = [
     { id: 'ch-01', name: 'Relatório de Igrejas por Região', description: 'Performance e estatísticas de todas as igrejas, agrupadas por região.'},
     { id: 'con-01', name: 'Relatório de Contribuições por Tipo', description: 'Análise detalhada de dízimos e ofertas.'},
 ];
-
-type GeneratedReport = {
-    id: string;
-    name: string;
-    description: string;
-    generatedAt: Date;
-    period: string;
-}
 
 export default function ReportsPage() {
     const [selectedReport, setSelectedReport] = React.useState<string>('');

@@ -39,13 +39,19 @@ export default function TransacaoDetalhePage({ params }: { params: Promise<{ id:
   React.useEffect(() => {
     const fetchTransaction = async () => {
       try {
+        console.log('Fetching transaction:', id)
         const response = await fetch(`/api/v1/manager/transacoes/${id}`)
         if (!response.ok) {
           throw new Error('Falha ao carregar a transação.')
         }
         const data = await response.json()
+        if (!data.transaction) {
+          throw new Error('Transação não encontrada')
+        }
         setTransaction(data.transaction)
+        console.log('Transaction loaded successfully:', id)
       } catch (error) {
+        console.error('Error fetching transaction:', error)
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
         toast({
           title: 'Erro',

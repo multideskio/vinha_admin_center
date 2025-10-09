@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import {
   Form,
   FormControl,
@@ -31,14 +32,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+
 import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
+
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { User, Phone, MapPin, Calendar, Shield, Save } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+
 import {
   managerProfileSchema,
   type ManagerProfile as BaseManagerProfile,
@@ -46,7 +46,7 @@ import {
   type UserNotificationSettings,
   type TransactionStatus,
 } from '@/lib/types'
-import { NOTIFICATION_TYPES } from '@/lib/types'
+
 import { Switch } from '@/components/ui/switch'
 import { PhoneInput } from '@/components/ui/phone-input'
 import {
@@ -67,22 +67,51 @@ import {
 import { MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 
-const managerUpdateSchema = managerProfileSchema
-  .extend({
-    newPassword: z.string().optional().or(z.literal('')),
-  })
-  .partial()
+const managerUpdateSchema = z.object({
+  email: z.string().email().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  cpf: z.string().optional(),
+  phone: z.string().nullable().optional(),
+  landline: z.string().nullable().optional(),
+  cep: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  neighborhood: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  titheDay: z.number().nullable().optional(),
+  facebook: z.string().nullable().optional(),
+  instagram: z.string().nullable().optional(),
+  website: z.string().nullable().optional(),
+  avatarUrl: z.string().optional(),
+  newPassword: z.string().optional().or(z.literal('')),
+  id: z.string().optional(),
+  number: z.string().nullable().optional(),
+  complement: z.string().nullable().optional(),
+})
 
-type ManagerProfile = BaseManagerProfile & {
-  id?: string
+type ManagerProfile = {
+  email?: string
+  firstName?: string
+  lastName?: string
+  cpf?: string
+  phone?: string | null
+  landline?: string | null
+  cep?: string | null
+  state?: string | null
+  city?: string | null
+  neighborhood?: string | null
+  address?: string | null
+  titheDay?: number | null
+  facebook?: string | null
+  instagram?: string | null
+  website?: string | null
   avatarUrl?: string
   newPassword?: string
-}
-
-const notificationSettingsConfig = {
-  payment_notifications: 'Notificações de Pagamento',
-  due_date_reminders: 'Lembretes de Vencimento',
-  network_reports: 'Relatórios da Rede',
+  id?: string
+  number?: string | null
+  complement?: string | null
+  userId?: string
 }
 
 type Transaction = {
@@ -448,7 +477,7 @@ export default function GerenteProfilePage() {
   const router = useRouter()
 
   const form = useForm<ManagerProfile>({
-    resolver: zodResolver(managerUpdateSchema) as any,
+    resolver: zodResolver(managerUpdateSchema),
     defaultValues: {},
   })
 

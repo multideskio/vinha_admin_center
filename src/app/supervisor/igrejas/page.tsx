@@ -211,14 +211,6 @@ const ChurchFormModal = ({
       .slice(0, 9)
   }
 
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15)
-  }
-
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value.replace(/\D/g, '')
     if (cep.length !== 8) return

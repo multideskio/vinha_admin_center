@@ -14,8 +14,8 @@ export type ReportData = {
   summary?: { label: string; value: string | number }[]
 }
 
-export class ReportGenerator {
-  static generatePDF(data: ReportData): Blob {
+export const ReportGenerator = {
+  generatePDF(data: ReportData): Blob {
     const doc = new jsPDF()
     
     // Título
@@ -38,7 +38,7 @@ export class ReportGenerator {
     
     // Resumo
     if (data.summary && data.summary.length > 0) {
-      const finalY = (doc as any).lastAutoTable.finalY || 40
+      const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || 40
       doc.setFontSize(12)
       doc.text('Resumo:', 14, finalY + 10)
       
@@ -49,9 +49,9 @@ export class ReportGenerator {
     }
     
     return doc.output('blob')
-  }
+  },
   
-  static generateExcel(data: ReportData): Blob {
+  generateExcel(data: ReportData): Blob {
     const ws = XLSX.utils.aoa_to_sheet([
       [data.title],
       [`Período: ${data.period}`],
@@ -70,9 +70,9 @@ export class ReportGenerator {
     
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
     return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  }
+  },
   
-  static downloadFile(blob: Blob, filename: string) {
+  downloadFile(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url

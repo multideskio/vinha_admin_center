@@ -43,7 +43,7 @@ export default function WhatsappSettingsPage() {
   )
   const [connectionStatus, setConnectionStatus] = React.useState<'disconnected' | 'connecting' | 'connected'>('disconnected')
   const [qrCode, setQrCode] = React.useState<string | null>(null)
-  const [instanceInfo, setInstanceInfo] = React.useState<any>(null)
+  const [instanceInfo, setInstanceInfo] = React.useState<Record<string, unknown> | null>(null)
   const [isConnecting, setIsConnecting] = React.useState(false)
   const [qrCodeExpired, setQrCodeExpired] = React.useState(false)
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
@@ -336,7 +336,7 @@ export default function WhatsappSettingsPage() {
           }, 3000)
           
           // Limpar interval após 2 minutos
-          const timeoutId = setTimeout(() => {
+          setTimeout(() => {
             clearInterval(interval)
             
             // Verificar o status atual antes de expirar
@@ -374,6 +374,7 @@ export default function WhatsappSettingsPage() {
     if (!isLoading) {
       checkInstanceStatus().catch(console.error)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading])
 
   const handleSendTestMessage = async () => {
@@ -700,28 +701,28 @@ export default function WhatsappSettingsPage() {
                 {connectionStatus === 'connected' && instanceInfo && (
                   <div className="text-center space-y-4">
                     <Avatar className="h-20 w-20 mx-auto border-4 border-green-500">
-                      <AvatarImage src={instanceInfo.profilePictureUrl} />
+                      <AvatarImage src={String(instanceInfo.profilePictureUrl || '')} />
                       <AvatarFallback className="bg-green-100">
                         <Smartphone className="h-10 w-10 text-green-600" />
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
                       <p className="font-semibold text-gray-800 text-lg">
-                        {instanceInfo.profileName || 'WhatsApp Business'}
+                        {String(instanceInfo.profileName || 'WhatsApp Business')}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {instanceInfo.number || 'Número não disponível'}
+                        {String(instanceInfo.number || 'Número não disponível')}
                       </p>
-                      {instanceInfo.description && (
+                      {Boolean(instanceInfo.description) && (
                         <p className="text-xs text-gray-500 px-2">
-                          {instanceInfo.description}
+                          {String(instanceInfo.description)}
                         </p>
                       )}
                       <div className="flex items-center justify-center gap-1 text-green-600">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <span className="text-xs font-medium">Online</span>
                       </div>
-                      {instanceInfo.businessProfile && (
+                      {Boolean(instanceInfo.businessProfile) && (
                         <div className="mt-2 p-2 bg-blue-50 rounded-lg">
                           <p className="text-xs text-blue-600 font-medium">Perfil Business</p>
                         </div>

@@ -174,7 +174,7 @@ const SupervisorFormModal = ({
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro',
-        description: errorMessage,
+        description: sanitizeText(errorMessage),
         variant: 'destructive',
       })
     }
@@ -497,7 +497,7 @@ export default function SupervisoresPage() {
       setRegions(regionsData.regions)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -521,7 +521,7 @@ export default function SupervisoresPage() {
       fetchData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     }
   }
 

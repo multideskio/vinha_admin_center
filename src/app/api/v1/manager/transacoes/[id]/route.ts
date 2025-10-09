@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles, supervisorProfiles } from '@/db/schema'
+import { transactions, users, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
 import { eq } from 'drizzle-orm'
 

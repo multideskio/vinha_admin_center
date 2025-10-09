@@ -432,7 +432,7 @@ export default function SupervisorProfilePage(): JSX.Element {
           throw new Error('Falha ao atualizar avatar')
         }
 
-        const updatedData = await updateResponse.json()
+        await updateResponse.json()
         setPreviewImage(result.url)
         setSupervisor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
         

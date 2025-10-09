@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { sanitizeText } from '@/lib/sanitize'
 
 const contributionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
@@ -92,19 +93,27 @@ export default function ContribuicoesPage(): JSX.Element {
   React.useEffect(() => {
     const fetchMethods = async () => {
       try {
+        console.log('Fetching payment methods')
         const res = await fetch('/api/v1/payment-methods')
+        if (!res.ok) {
+          throw new Error('Failed to fetch payment methods')
+        }
         const data = await res.json()
         setAvailableMethods(data.methods || [])
+        console.log('Payment methods loaded:', data.methods?.length || 0)
         if (data.methods.length > 0) {
-          form.setValue('paymentMethod', data.methods[0] as any)
+          form.setValue('paymentMethod', data.methods[0] as 'pix' | 'credit_card' | 'boleto')
         }
       } catch (error) {
         console.error('Error fetching payment methods:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar métodos de pagamento'
+        toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
       } finally {
         setIsLoadingMethods(false)
       }
     }
     fetchMethods()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const form = useForm<ContributionFormValues>({
@@ -148,9 +157,14 @@ export default function ContribuicoesPage(): JSX.Element {
       timer = setTimeout(async () => {
         try {
           if (!paymentDetails.PaymentId) return
+          console.log('Checking PIX payment status:', paymentDetails.PaymentId)
           const res = await fetch(`/api/v1/transacoes/${paymentDetails.PaymentId}`)
+          if (!res.ok) {
+            throw new Error('Failed to check payment status')
+          }
           const data = await res.json()
           if ((data.transaction?.Payment?.Status as number) === 2) {
+            console.log('PIX payment confirmed')
             setPixStatus('confirmed')
             toast({
               title: 'Sucesso!',
@@ -159,7 +173,9 @@ export default function ContribuicoesPage(): JSX.Element {
             })
           }
         } catch (error) {
-          console.error('Falha ao verificar status do Pix')
+          console.error('Falha ao verificar status do Pix:', error)
+          const errorMessage = error instanceof Error ? error.message : 'Erro ao verificar pagamento'
+          console.error('PIX status check failed:', errorMessage)
         }
       }, 8000)
     }
@@ -216,7 +232,7 @@ export default function ContribuicoesPage(): JSX.Element {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro no Pagamento',
-        description: errorMessage,
+        description: sanitizeText(errorMessage),
         variant: 'destructive',
       })
     } finally {
@@ -258,7 +274,7 @@ export default function ContribuicoesPage(): JSX.Element {
       setPaymentDetails(null)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro no Pagamento', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro no Pagamento', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsProcessing(false)
     }

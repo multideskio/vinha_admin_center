@@ -155,7 +155,7 @@ const ChurchFormModal = ({
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro',
-        description: errorMessage,
+        description: sanitizeText(errorMessage),
         variant: 'destructive',
       })
     }
@@ -608,7 +608,7 @@ export default function IgrejasPage() {
       setSupervisors(supervisorsData.supervisors)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }

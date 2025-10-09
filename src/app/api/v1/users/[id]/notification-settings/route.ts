@@ -49,7 +49,7 @@ export async function GET(
         whatsapp: setting?.whatsapp ?? false,
       }
       return acc
-    }, {} as any)
+    }, {} as Record<string, unknown>)
 
     return NextResponse.json(result)
   } catch (error) {
@@ -85,7 +85,7 @@ export async function PUT(
       // Insere novas configurações
       const insertData = Object.entries(data).map(([type, settings]) => ({
         userId: id,
-        notificationType: type as any,
+        notificationType: type as 'payment_notifications' | 'due_date_reminders' | 'network_reports',
         email: settings.email,
         whatsapp: settings.whatsapp,
       }))
