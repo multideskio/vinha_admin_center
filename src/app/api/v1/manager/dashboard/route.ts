@@ -18,6 +18,7 @@ import { format, subMonths, startOfMonth } from 'date-fns'
 import { validateRequest } from '@/lib/jwt'
 import { type UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
+import { handleApiError, ApiError } from '@/lib/api-error-handler'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -30,13 +31,12 @@ const calculateChange = (current: number, previous: number): string => {
 }
 
 export async function GET(): Promise<NextResponse> {
-  const { user } = await validateRequest()
-  if (!user || (user.role as UserRole) !== 'manager') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-  const managerId = user.id
-
   try {
+    const { user } = await validateRequest()
+    if (!user || (user.role as UserRole) !== 'manager') {
+      throw new ApiError(401, 'Não autorizado')
+    }
+    const managerId = user.id
     const now = new Date()
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
@@ -328,10 +328,6 @@ export async function GET(): Promise<NextResponse> {
       newMembers: formattedNewMembers,
     })
   } catch (error: unknown) {
-    console.error('Erro ao buscar dados para o dashboard do gerente:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar dados do dashboard do gerente', details: getErrorMessage(error) },
-      { status: 500 },
-    )
+    return handleApiError(error)
   }
 }

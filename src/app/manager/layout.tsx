@@ -14,6 +14,7 @@ import { db } from '@/db/drizzle'
 import { users, managerProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getCompanySettings } from '@/lib/company'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 export async function generateMetadata(): Promise<Metadata> {
   const company = await getCompanySettings()
@@ -28,26 +29,27 @@ export default async function ManagerLayout({
 }: {
   children: React.ReactNode
 }): Promise<JSX.Element> {
-  const { user } = await validateRequest()
+  try {
+    const { user } = await validateRequest()
 
-  if (!user || user.role !== 'manager') {
-    return redirect('/auth/login')
-  }
+    if (!user || user.role !== 'manager') {
+      return redirect('/auth/login')
+    }
 
-  const [userData, company] = await Promise.all([
-    db
-      .select({
-        avatarUrl: users.avatarUrl,
-        firstName: managerProfiles.firstName,
-        lastName: managerProfiles.lastName,
-      })
-      .from(users)
-      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-      .where(eq(users.id, user.id))
-      .limit(1)
-      .then((res) => res[0]),
-    getCompanySettings(),
-  ])
+    const [userData, company] = await Promise.all([
+      db
+        .select({
+          avatarUrl: users.avatarUrl,
+          firstName: managerProfiles.firstName,
+          lastName: managerProfiles.lastName,
+        })
+        .from(users)
+        .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+        .where(eq(users.id, user.id))
+        .limit(1)
+        .then((res) => res[0]),
+      getCompanySettings(),
+    ])
 
   const userName = userData?.firstName
     ? `${userData.firstName} ${userData.lastName}`
@@ -56,22 +58,28 @@ export default async function ManagerLayout({
     ? `${userData.firstName[0]}${userData.lastName?.[0] || ''}`
     : userName.substring(0, 2).toUpperCase()
 
-  return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <ManagerSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
-      <div className="flex flex-col">
-        <ManagerHeader
-          userName={userName}
-          userEmail={user.email}
-          userFallback={userFallback}
-          avatarUrl={userData?.avatarUrl || undefined}
-          companyLogo={company?.logoUrl || undefined}
-          companyName={company?.name || undefined}
-        />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-          {children}
-        </main>
-      </div>
-    </div>
-  )
+    return (
+      <ErrorBoundary>
+        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+          <ManagerSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
+          <div className="flex flex-col">
+            <ManagerHeader
+              userName={userName}
+              userEmail={user.email}
+              userFallback={userFallback}
+              avatarUrl={userData?.avatarUrl || undefined}
+              companyLogo={company?.logoUrl || undefined}
+              companyName={company?.name || undefined}
+            />
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+              {children}
+            </main>
+          </div>
+        </div>
+      </ErrorBoundary>
+    )
+  } catch (error) {
+    console.error('Manager layout error:', error)
+    return redirect('/auth/login')
+  }
 }
