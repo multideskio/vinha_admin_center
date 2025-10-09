@@ -6,9 +6,10 @@ import { eq } from 'drizzle-orm'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { user } = await validateRequest()
 
     if (!user) {
@@ -23,61 +24,34 @@ export async function GET(
     const [transaction] = await db
       .select()
       .from(transactions)
-      .where(eq(transactions.id, params.id))
+      .where(eq(transactions.id, id))
       .limit(1)
 
     if (!transaction) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    // Verify transaction belongs to manager's network
-    const [church] = await db
-      .select({ supervisorId: churchProfiles.supervisorId })
-      .from(churchProfiles)
-      .where(eq(churchProfiles.userId, transaction.churchId))
-      .limit(1)
+    // Verify transaction belongs to manager or their network
+    if (transaction.contributorId !== user.id) {
+      // Check if contributor is in manager's network
+      const supervisors = await db
+        .select({ userId: supervisorProfiles.userId })
+        .from(supervisorProfiles)
+        .where(eq(supervisorProfiles.managerId, user.id))
 
-    if (!church) {
-      return NextResponse.json({ error: 'Igreja não encontrada' }, { status: 404 })
-    }
+      const supervisorUserIds = supervisors.map(s => s.userId)
+      const isInNetwork = supervisorUserIds.includes(transaction.contributorId)
 
-    const [supervisor] = await db
-      .select({ managerId: supervisorProfiles.managerId })
-      .from(supervisorProfiles)
-      .where(eq(supervisorProfiles.id, church.supervisorId))
-      .limit(1)
-
-    if (!supervisor || supervisor.managerId !== user.id) {
-      return NextResponse.json({ error: 'Acesso negado a esta transação' }, { status: 403 })
+      if (!isInNetwork) {
+        return NextResponse.json({ error: 'Acesso negado a esta transação' }, { status: 403 })
+      }
     }
 
     // Get contributor details
-    const [contributor] = await db
-      .select({
-        name: users.name,
-        email: users.email,
-      })
+    const [contributorUser] = await db
+      .select({ email: users.email })
       .from(users)
       .where(eq(users.id, transaction.contributorId))
-      .limit(1)
-
-    // Get church details
-    const [churchUser] = await db
-      .select({
-        name: users.name,
-      })
-      .from(users)
-      .where(eq(users.id, transaction.churchId))
-      .limit(1)
-
-    const [churchProfile] = await db
-      .select({
-        address: churchProfiles.address,
-        city: churchProfiles.city,
-        state: churchProfiles.state,
-      })
-      .from(churchProfiles)
-      .where(eq(churchProfiles.userId, transaction.churchId))
       .limit(1)
 
     const formattedTransaction = {
@@ -86,18 +60,16 @@ export async function GET(
       amount: Number(transaction.amount),
       status: transaction.status,
       contributor: {
-        name: contributor?.name || 'Desconhecido',
-        email: contributor?.email || 'N/A',
+        name: contributorUser?.email.split('@')[0] || 'Desconhecido',
+        email: contributorUser?.email || 'N/A',
       },
       church: {
-        name: churchUser?.name || 'Desconhecida',
-        address: churchProfile
-          ? `${churchProfile.address}, ${churchProfile.city}, ${churchProfile.state}`
-          : 'N/A',
+        name: 'N/A',
+        address: 'N/A',
       },
       payment: {
-        method: transaction.method,
-        details: transaction.paymentDetails || 'N/A',
+        method: transaction.paymentMethod || 'N/A',
+        details: 'N/A',
       },
       refundRequestReason: transaction.refundRequestReason,
     }

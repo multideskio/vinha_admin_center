@@ -1,10 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { ChevronLeft, Copy } from 'lucide-react'
+import { ChevronLeft, Copy, Download } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,7 +30,8 @@ type Transaction = {
   refundRequestReason?: string | null
 }
 
-export default function TransacaoDetalhePage({ params }: { params: { id: string } }) {
+export default function TransacaoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
   const [transaction, setTransaction] = React.useState<Transaction | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const { toast } = useToast()
@@ -37,7 +39,7 @@ export default function TransacaoDetalhePage({ params }: { params: { id: string 
   React.useEffect(() => {
     const fetchTransaction = async () => {
       try {
-        const response = await fetch(`/api/v1/manager/transacoes/${params.id}`)
+        const response = await fetch(`/api/v1/manager/transacoes/${id}`)
         if (!response.ok) {
           throw new Error('Falha ao carregar a transação.')
         }
@@ -56,7 +58,7 @@ export default function TransacaoDetalhePage({ params }: { params: { id: string 
     }
 
     fetchTransaction()
-  }, [params.id, toast])
+  }, [id, toast])
 
   const statusMap: {
     [key: string]: { text: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }
@@ -79,6 +81,36 @@ export default function TransacaoDetalhePage({ params }: { params: { id: string 
       title: 'Copiado!',
       description: 'ID da transação copiado para a área de transferência.',
     })
+  }
+
+  const downloadPDF = () => {
+    if (!transaction) return
+    
+    const content = `
+      COMPROVANTE DE TRANSAÇÃO
+      
+      ID: ${transaction.id}
+      Data: ${new Date(transaction.date).toLocaleDateString('pt-BR')}
+      Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
+      Status: ${statusMap[transaction.status]?.text}
+      
+      CONTRIBUINTE
+      Nome: ${transaction.contributor.name}
+      Email: ${transaction.contributor.email}
+      
+      PAGAMENTO
+      Método: ${methodMap[transaction.payment.method] || transaction.payment.method}
+    `
+    
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `transacao-${transaction.id}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    toast({ title: 'Download iniciado', description: 'Comprovante baixado com sucesso.' })
   }
 
   if (isLoading) {
@@ -129,53 +161,68 @@ export default function TransacaoDetalhePage({ params }: { params: { id: string 
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
             Detalhes da Transação
           </h1>
-          <Badge variant={statusMap[transaction.status]?.variant || 'outline'} className="ml-auto sm:ml-0">
-            {statusMap[transaction.status]?.text || transaction.status}
-          </Badge>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button variant="outline" size="sm" onClick={downloadPDF}>
+              <Download className="h-4 w-4 mr-2" />
+              Baixar PDF
+            </Button>
+            <Badge variant={statusMap[transaction.status]?.variant || 'outline'}>
+              {statusMap[transaction.status]?.text || transaction.status}
+            </Badge>
+          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
           <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Transação {transaction.id}</CardTitle>
-                <Button
-                  aria-label="Copiar ID da Transação"
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  onClick={() => copyToClipboard(transaction.id)}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Informações da Transação</CardTitle>
+                  <Button
+                    aria-label="Copiar ID da Transação"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(transaction.id)}
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-2" />
+                    Copiar ID
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium text-muted-foreground">Valor</div>
-                    <div className="font-semibold">
+                <div className="grid gap-3">
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">ID da Transação</span>
+                    <span className="text-sm font-mono">{transaction.id}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Valor</span>
+                    <span className="text-lg font-bold text-green-600">
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
                       }).format(transaction.amount)}
-                    </div>
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium text-muted-foreground">Data</div>
-                    <div>
+                  <Separator />
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Data</span>
+                    <span className="text-sm font-medium">
                       {new Date(transaction.date).toLocaleDateString('pt-BR', {
                         day: '2-digit',
                         month: 'long',
                         year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
                       })}
-                    </div>
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium text-muted-foreground">Status</div>
-                    <div>
-                      <Badge variant={statusMap[transaction.status]?.variant || 'outline'}>
-                        {statusMap[transaction.status]?.text || transaction.status}
-                      </Badge>
-                    </div>
+                  <Separator />
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-muted-foreground">Status</span>
+                    <Badge variant={statusMap[transaction.status]?.variant || 'outline'}>
+                      {statusMap[transaction.status]?.text || transaction.status}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -194,14 +241,10 @@ export default function TransacaoDetalhePage({ params }: { params: { id: string 
               <CardHeader>
                 <CardTitle>Detalhes do Pagamento</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Método</dt>
-                  <dd>{methodMap[transaction.payment.method] || transaction.payment.method}</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Detalhes</dt>
-                  <dd className="text-right">{transaction.payment.details}</dd>
+              <CardContent className="grid gap-3">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-muted-foreground">Método</span>
+                  <span className="text-sm font-medium">{methodMap[transaction.payment.method] || transaction.payment.method}</span>
                 </div>
               </CardContent>
             </Card>
@@ -211,25 +254,15 @@ export default function TransacaoDetalhePage({ params }: { params: { id: string 
               <CardHeader>
                 <CardTitle>Contribuinte</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="grid gap-1">
-                    <p className="font-semibold">{transaction.contributor.name}</p>
-                    <p className="text-sm text-muted-foreground">{transaction.contributor.email}</p>
-                  </div>
+              <CardContent className="grid gap-2">
+                <div className="grid gap-1">
+                  <p className="text-sm text-muted-foreground">Nome</p>
+                  <p className="font-semibold">{transaction.contributor.name}</p>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Igreja</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="grid gap-1">
-                    <p className="font-semibold">{transaction.church.name}</p>
-                    <p className="text-sm text-muted-foreground">{transaction.church.address}</p>
-                  </div>
+                <Separator className="my-2" />
+                <div className="grid gap-1">
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="text-sm">{transaction.contributor.email}</p>
                 </div>
               </CardContent>
             </Card>

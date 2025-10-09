@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles, supervisorProfiles } from '@/db/schema'
+import { transactions, users, churchProfiles, supervisorProfiles, pastorProfiles, managerProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
 import { eq, inArray, desc, asc, count, and, gte, lte, sql } from 'drizzle-orm'
 
@@ -72,30 +72,39 @@ export async function GET(request: Request) {
 
     // Get all supervisors under this manager
     const supervisors = await db
-      .select({ id: supervisorProfiles.id })
+      .select({ userId: supervisorProfiles.userId })
       .from(supervisorProfiles)
       .where(eq(supervisorProfiles.managerId, user.id))
 
-    const supervisorIds = supervisors.map((s) => s.id)
+    const supervisorUserIds = supervisors.map((s) => s.userId)
 
-    if (supervisorIds.length === 0) {
-      return NextResponse.json({ transactions: [] })
-    }
+    // Get all pastors under these supervisors
+    const pastors = supervisorUserIds.length > 0
+      ? await db
+          .select({ userId: pastorProfiles.userId })
+          .from(pastorProfiles)
+          .where(inArray(pastorProfiles.supervisorId, supervisorUserIds))
+      : []
+
+    const pastorUserIds = pastors.map((p) => p.userId)
 
     // Get all churches under these supervisors
-    const churches = await db
-      .select({ userId: churchProfiles.userId })
-      .from(churchProfiles)
-      .where(inArray(churchProfiles.supervisorId, supervisorIds))
+    const churches = supervisorUserIds.length > 0
+      ? await db
+          .select({ userId: churchProfiles.userId })
+          .from(churchProfiles)
+          .where(inArray(churchProfiles.supervisorId, supervisorUserIds))
+      : []
 
     const churchUserIds = churches.map((c) => c.userId)
 
-    if (churchUserIds.length === 0) {
-      return NextResponse.json({ transactions: [] })
-    }
+    // Get all transactions from manager + supervisors + pastors + churches
+    const allContributorIds = [user.id, ...supervisorUserIds, ...pastorUserIds, ...churchUserIds]
 
-    // Get all transactions from these churches
-    const conditions = [inArray(transactions.originChurchId, churchUserIds)]
+    if (allContributorIds.length === 1) {
+      return NextResponse.json({ transactions: [], pagination: { page, limit, total: 0, totalPages: 0 } })
+    }
+    const conditions = [inArray(transactions.contributorId, allContributorIds)]
     if (startDate) conditions.push(gte(transactions.createdAt, new Date(startDate)))
     if (endDate) conditions.push(lte(transactions.createdAt, new Date(endDate)))
     const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
@@ -121,8 +130,34 @@ export async function GET(request: Request) {
         .where(whereClause),
     ])
 
+    // Get contributor names from profiles
+    const contributorIds = [...new Set(allTransactions.map((t) => t.contributorId))]
+    
+    const [managers, supervisorsData, pastorsData, churchesData] = await Promise.all([
+      db.select({ userId: managerProfiles.userId, firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
+        .from(managerProfiles)
+        .where(inArray(managerProfiles.userId, contributorIds)),
+      db.select({ userId: supervisorProfiles.userId, firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+        .from(supervisorProfiles)
+        .where(inArray(supervisorProfiles.userId, contributorIds)),
+      db.select({ userId: pastorProfiles.userId, firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+        .from(pastorProfiles)
+        .where(inArray(pastorProfiles.userId, contributorIds)),
+      db.select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
+        .from(churchProfiles)
+        .where(inArray(churchProfiles.userId, contributorIds)),
+    ])
+
+    const contributorMap = new Map<string, string>()
+    managers.forEach(m => contributorMap.set(m.userId, `${m.firstName} ${m.lastName}`))
+    supervisorsData.forEach(s => contributorMap.set(s.userId, `${s.firstName} ${s.lastName}`))
+    pastorsData.forEach(p => contributorMap.set(p.userId, `${p.firstName} ${p.lastName}`))
+    churchesData.forEach(c => contributorMap.set(c.userId, c.nomeFantasia))
+
     const formattedTransactions = allTransactions.map((transaction) => ({
       id: transaction.id,
+      contributor: contributorMap.get(transaction.contributorId) || 'Desconhecido',
+      church: null,
       amount: Number(transaction.amount),
       status: transaction.status,
       date: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
