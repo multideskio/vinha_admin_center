@@ -342,8 +342,8 @@ export default function GerenteDashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Membros por Igreja</CardTitle>
-            <CardDescription>Distribuição de membros entre as igrejas da sua rede.</CardDescription>
+            <CardTitle>Contribuições por Igreja</CardTitle>
+            <CardDescription>Número de contribuições de cada igreja da sua rede.</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={{}} className="h-[300px] w-full">

@@ -296,19 +296,25 @@ export async function GET(): Promise<NextResponse> {
       fill: colors[index % colors.length],
     }))
 
-    const membersByChurchData = churchIds.length > 0
+    const contributionsByChurchData = churchIds.length > 0
       ? await db
           .select({
-            churchId: users.id,
-            count: sql<number>`1`,
+            churchId: transactions.originChurchId,
+            count: count(transactions.id),
           })
-          .from(users)
-          .where(inArray(users.id, churchIds))
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.status, 'approved'),
+              inArray(transactions.originChurchId, churchIds),
+            ),
+          )
+          .groupBy(transactions.originChurchId)
       : []
 
-    const membersByChurch = membersByChurchData.map((item, index) => ({
-      name: churchNameMap.get(item.churchId) || 'Igreja',
-      count: 1,
+    const membersByChurch = contributionsByChurchData.map((item, index) => ({
+      name: churchNameMap.get(item.churchId!) || 'Igreja',
+      count: item.count,
       fill: colors[index % colors.length],
     }))
 
