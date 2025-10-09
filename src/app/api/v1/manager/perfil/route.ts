@@ -45,12 +45,14 @@ export async function GET(): Promise<NextResponse> {
 
     const { user, profile } = result[0]
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, id: profileId, ...userWithoutPassword } = user
+    const { password, ...userWithoutPassword } = user
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: profileId, userId, ...profileWithoutIds } = profile || {}
 
     const managerData = {
-      ...userWithoutPassword,
-      ...profile,
       id: user.id,
+      ...userWithoutPassword,
+      ...profileWithoutIds,
     }
 
     return NextResponse.json({ manager: managerData })
