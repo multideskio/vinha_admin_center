@@ -77,6 +77,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { churchProfileSchema } from '@/lib/types'
+import { sanitizeText } from '@/lib/sanitize'
 
 type Church = z.infer<typeof churchProfileSchema> & {
   id: string
@@ -686,14 +687,14 @@ export default function IgrejasPage() {
                         className="rounded-full object-cover"
                         data-ai-hint="church building"
                       />
-                      <span>{church.nomeFantasia}</span>
+                      <span>{sanitizeText(church.nomeFantasia)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {church.cnpj}
+                    {sanitizeText(church.cnpj)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {church.email}
+                    {sanitizeText(church.email)}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={church.status === 'active' ? 'success' : 'destructive'}>
@@ -759,26 +760,26 @@ export default function IgrejasPage() {
                     />
                     <div className="flex-1 space-y-2 min-w-[200px]">
                       <h3 className="text-lg font-bold">
-                        #{(currentPage - 1) * itemsPerPage + index + 1} - {church.nomeFantasia}
+                        #{(currentPage - 1) * itemsPerPage + index + 1} - {sanitizeText(church.nomeFantasia)}
                       </h3>
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <p className="flex items-center gap-2">
                           <User size={14} />{' '}
-                          <span>Supervisor: {church.supervisorName || 'N/A'}</span>
+                          <span>Supervisor: {sanitizeText(church.supervisorName) || 'N/A'}</span>
                         </p>
                         <p className="flex items-center gap-2">
-                          <FileText size={14} /> <span>{church.cnpj}</span>
+                          <FileText size={14} /> <span>{sanitizeText(church.cnpj)}</span>
                         </p>
                         <p className="flex items-center gap-2">
-                          <Phone size={14} /> <span>{church.phone}</span>
+                          <Phone size={14} /> <span>{sanitizeText(church.phone)}</span>
                         </p>
                         <p className="flex items-center gap-2">
-                          <Mail size={14} /> <span>{church.email}</span>
+                          <Mail size={14} /> <span>{sanitizeText(church.email)}</span>
                         </p>
                         <p className="flex items-center gap-2">
                           <MapPin size={14} />{' '}
                           <span>
-                            {church.city} - {church.state}
+                            {sanitizeText(church.city)} - {sanitizeText(church.state)}
                           </span>
                         </p>
                       </div>

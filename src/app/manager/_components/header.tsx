@@ -75,6 +75,14 @@ type HeaderProps = {
 }
 
 export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, companyLogo, companyName }: HeaderProps) {
+  const handleLogoutSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    try {
+      await handleLogout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       <Sheet>
@@ -165,7 +173,7 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <form action={handleLogout}>
+          <form onSubmit={handleLogoutSubmit}>
             <button type="submit" className="w-full">
               <DropdownMenuItem>
                 <LogOut className="mr-2 h-4 w-4" />
