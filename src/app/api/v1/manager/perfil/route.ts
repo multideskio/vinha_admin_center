@@ -98,6 +98,10 @@ export async function PUT(request: Request): Promise<NextResponse> {
       if (validatedData.neighborhood !== undefined)
         profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address
+      if (validatedData.avatarUrl !== undefined) profileUpdateData.avatarUrl = validatedData.avatarUrl
+      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
+      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx
