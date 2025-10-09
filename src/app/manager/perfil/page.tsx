@@ -47,6 +47,7 @@ import {
 } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 import { Switch } from '@/components/ui/switch'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const managerUpdateSchema = managerProfileSchema
   .extend({
@@ -456,7 +457,11 @@ export default function GerenteProfilePage() {
                           <FormItem>
                             <FormLabel>Celular/WhatsApp</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
+                              <PhoneInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                type="mobile"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -467,9 +472,13 @@ export default function GerenteProfilePage() {
                         name="landline"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Fixo</FormLabel>
+                            <FormLabel>Telefone Fixo</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
+                              <PhoneInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                type="landline"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
