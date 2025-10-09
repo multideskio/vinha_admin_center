@@ -174,6 +174,20 @@ export default function GerenteDashboardPage() {
         <DateRangePicker />
       </div>
 
+      <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950">
+        <CardHeader>
+          <CardTitle className="text-amber-900 dark:text-amber-100">Perfil Incompleto</CardTitle>
+          <CardDescription className="text-amber-800 dark:text-amber-200">
+            Complete seu perfil para habilitar todas as funcionalidades, incluindo pagamentos via boleto.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild>
+            <a href="/manager/perfil">Completar Perfil</a>
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpiDisplayData.map((kpi) => (
           <Card key={kpi.title}>

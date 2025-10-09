@@ -117,8 +117,9 @@ export async function POST(request: NextRequest) {
       )
       status = paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
     } else if (data.paymentMethod === 'boleto') {
-      const cpf = '00000000000' // Fallback, should get from profile
-      paymentResult = await createBoletoPayment(data.amount, userName, userData.email, cpf)
+      return NextResponse.json({ 
+        error: 'Boleto requer perfil completo com CPF e endereço. Complete seu perfil em /manager/perfil' 
+      }, { status: 400 })
     }
 
     // Save transaction to database
