@@ -250,55 +250,19 @@ export default function GerenteProfilePage() {
     }
   }
 
-  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('folder', 'avatars')
-        formData.append('filename', `manager-${manager?.id}-${file.name}`)
-
-        const response = await fetch('/api/v1/upload', {
-          method: 'POST',
-          body: formData,
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string)
+        toast({
+          title: 'Preview da Imagem',
+          description:
+            'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
         })
-
-        if (!response.ok) throw new Error('Falha no upload')
-        const result = await response.json()
-        
-        const updateResponse = await fetch('/api/v1/manager/perfil', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatarUrl: result.url }),
-        })
-
-        if (!updateResponse.ok) throw new Error('Falha ao atualizar avatar')
-
-        setPreviewImage(result.url)
-        toast({ title: 'Sucesso', description: 'Avatar atualizado!', variant: 'success' })
-      } catch (error) {
-        toast({ title: 'Erro', description: 'Falha ao fazer upload.', variant: 'destructive' })
       }
-    }
-  }
-
-  const handleSocialLinkBlur = async (
-    fieldName: 'facebook' | 'instagram' | 'website',
-    value: string,
-  ) => {
-    try {
-      const response = await fetch('/api/v1/manager/perfil', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [fieldName]: value }),
-      })
-
-      if (!response.ok) throw new Error(`Falha ao atualizar ${fieldName}`)
-
-      toast({ title: 'Sucesso', description: `Link atualizado!`, variant: 'success' })
-    } catch (error) {
-      toast({ title: 'Erro', description: 'Falha ao atualizar.', variant: 'destructive' })
+      reader.readAsDataURL(file)
     }
   }
 
@@ -368,7 +332,6 @@ export default function GerenteProfilePage() {
                 <Input
                   defaultValue={manager.facebook ?? ''}
                   placeholder="https://facebook.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -376,16 +339,11 @@ export default function GerenteProfilePage() {
                 <Input
                   defaultValue={manager.instagram ?? ''}
                   placeholder="https://instagram.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input 
-                  defaultValue={manager.website ?? ''} 
-                  placeholder="https://website.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
-                />
+                <Input defaultValue={manager.website ?? ''} placeholder="https://website.com/..." />
               </div>
             </div>
           </CardContent>
@@ -397,7 +355,6 @@ export default function GerenteProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-            <TabsTrigger value="transactions">Transações</TabsTrigger>
             <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
@@ -611,19 +568,6 @@ export default function GerenteProfilePage() {
                 </Form>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="transactions">
-            {manager.id && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Minhas Transações</CardTitle>
-                  <CardDescription>Histórico das minhas contribuições.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Nenhuma transação encontrada.</p>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
           <TabsContent value="configuracoes">
             {manager.id && <SettingsTab userId={manager.id} />}
