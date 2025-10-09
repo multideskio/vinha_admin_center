@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
     const userCity = profile?.city || ''
     const userState = profile?.state || ''
     const userCep = profile?.cep || ''
+    const userDistrict = profile?.neighborhood || ''
 
     // Get church ID if user is church
     let churchId = null
@@ -128,9 +129,9 @@ export async function POST(request: NextRequest) {
       )
       status = paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
     } else if (data.paymentMethod === 'boleto') {
-      if (!userCpf || !userAddress || !userCity || !userState || !userCep) {
+      if (!userCpf || !userAddress || !userCity || !userState || !userCep || !userDistrict) {
         return NextResponse.json({ 
-          error: 'Boleto requer perfil completo com CPF e endereço. Complete seu perfil em /manager/perfil' 
+          error: 'Boleto requer perfil completo com CPF, endereço e bairro. Complete seu perfil em /manager/perfil' 
         }, { status: 400 })
       }
       paymentResult = await createBoletoPayment(
@@ -141,7 +142,8 @@ export async function POST(request: NextRequest) {
         userAddress,
         userCity,
         userState,
-        userCep
+        userCep,
+        userDistrict
       )
     }
 

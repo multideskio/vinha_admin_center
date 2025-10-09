@@ -190,7 +190,8 @@ export async function createBoletoPayment(
   customerAddress: string,
   customerCity: string,
   customerState: string,
-  customerZipCode: string
+  customerZipCode: string,
+  customerDistrict: string
 ) {
   const config = await getCieloConfig()
 
@@ -211,6 +212,7 @@ export async function createBoletoPayment(
         City: customerCity,
         State: customerState,
         Country: 'BRA',
+        District: customerDistrict,
       },
     },
     Payment: {
