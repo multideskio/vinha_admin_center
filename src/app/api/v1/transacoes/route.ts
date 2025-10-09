@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles } from '@/db/schema'
+import { transactions, users, churchProfiles, managerProfiles } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
@@ -82,10 +82,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = transactionSchema.parse(body)
 
-    // Get user email
+    // Get user data with profile
     const [userData] = await db
-      .select({ email: users.email })
+      .select({
+        email: users.email,
+        profile: user.role === 'manager' ? managerProfiles : null,
+      })
       .from(users)
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
       .where(eq(users.id, user.id))
       .limit(1)
 
@@ -93,8 +97,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    // Use email as name fallback
-    const userName = userData.email.split('@')[0]
+    const profile = userData.profile
+    const userName = profile?.firstName && profile?.lastName 
+      ? `${profile.firstName} ${profile.lastName}` 
+      : userData.email.split('@')[0]
+    const userCpf = profile?.cpf || ''
+    const userAddress = profile?.address || ''
+    const userCity = profile?.city || ''
+    const userState = profile?.state || ''
+    const userCep = profile?.cep || ''
 
     // Get church ID if user is church
     let churchId = null
@@ -117,9 +128,21 @@ export async function POST(request: NextRequest) {
       )
       status = paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
     } else if (data.paymentMethod === 'boleto') {
-      return NextResponse.json({ 
-        error: 'Boleto requer perfil completo com CPF e endereço. Complete seu perfil em /manager/perfil' 
-      }, { status: 400 })
+      if (!userCpf || !userAddress || !userCity || !userState || !userCep) {
+        return NextResponse.json({ 
+          error: 'Boleto requer perfil completo com CPF e endereço. Complete seu perfil em /manager/perfil' 
+        }, { status: 400 })
+      }
+      paymentResult = await createBoletoPayment(
+        data.amount,
+        userName,
+        userData.email,
+        userCpf,
+        userAddress,
+        userCity,
+        userState,
+        userCep
+      )
     }
 
     // Save transaction to database
