@@ -190,8 +190,7 @@ export async function createBoletoPayment(
   customerAddress: string,
   customerCity: string,
   customerState: string,
-  customerZipCode: string,
-  customerDistrict: string
+  customerZipCode: string
 ) {
   const config = await getCieloConfig()
 
@@ -201,8 +200,7 @@ export async function createBoletoPayment(
     MerchantOrderId: `ORDER-${Date.now()}`,
     Customer: {
       Name: customerName,
-      Email: customerEmail,
-      Identity: customerCpf,
+      Identity: customerCpf.replace(/\D/g, ''),
       IdentityType: 'CPF',
       Address: {
         Street: customerAddress,
@@ -212,18 +210,16 @@ export async function createBoletoPayment(
         City: customerCity,
         State: customerState,
         Country: 'BRA',
-        District: customerDistrict,
       },
     },
     Payment: {
       Type: 'Boleto',
       Amount: Math.round(amount * 100),
       Provider: 'Bradesco2',
-      BoletoNumber: `${Date.now()}`.slice(-10),
       Assignor: 'Vinha Ministérios',
       Demonstrative: 'Contribuição',
       ExpirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      Identification: customerCpf,
+      Identification: customerCpf.replace(/\D/g, ''),
       Instructions: 'Aceitar somente até a data de vencimento',
     },
   }
