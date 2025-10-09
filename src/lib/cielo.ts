@@ -52,6 +52,7 @@ function getCieloApiUrl(environment: 'production' | 'development'): string {
 
 export async function createPixPayment(amount: number, customerName: string, customerEmail: string) {
   const config = await getCieloConfig()
+  if (!config) throw new Error('Configuração Cielo não encontrada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
@@ -120,6 +121,7 @@ export async function createCreditCardPayment(
   }
 ) {
   const config = await getCieloConfig()
+  if (!config) throw new Error('Configuração Cielo não encontrada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
@@ -190,6 +192,7 @@ export async function createBoletoPayment(
   customerDistrict: string
 ) {
   const config = await getCieloConfig()
+  if (!config) throw new Error('Configuração Cielo não encontrada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
@@ -256,6 +259,7 @@ export async function createBoletoPayment(
 
 export async function queryPayment(paymentId: string) {
   const config = await getCieloConfig()
+  if (!config) throw new Error('Configuração Cielo não encontrada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 

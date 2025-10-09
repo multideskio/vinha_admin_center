@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       if (endDate) conditions.push(lte(transactions.createdAt, new Date(endDate)))
       const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
 
-      const [userTransactions, [{ total }]] = await Promise.all([
+      const [userTransactions, totalResult] = await Promise.all([
         db
           .select({
             id: transactions.id,
@@ -52,6 +52,7 @@ export async function GET(request: Request) {
           .where(whereClause),
       ])
 
+      const total = totalResult[0]?.total || 0
       const formattedTransactions = userTransactions.map((t) => ({
         id: t.id,
         amount: Number(t.amount),
@@ -109,7 +110,7 @@ export async function GET(request: Request) {
     if (endDate) conditions.push(lte(transactions.createdAt, new Date(endDate)))
     const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
 
-    const [allTransactions, [{ total }]] = await Promise.all([
+    const [allTransactions, totalResult] = await Promise.all([
       db
         .select({
           id: transactions.id,
@@ -154,6 +155,7 @@ export async function GET(request: Request) {
     pastorsData.forEach(p => contributorMap.set(p.userId, `${p.firstName} ${p.lastName}`))
     churchesData.forEach(c => contributorMap.set(c.userId, c.nomeFantasia))
 
+    const total = totalResult[0]?.total || 0
     const formattedTransactions = allTransactions.map((transaction) => ({
       id: transaction.id,
       contributor: contributorMap.get(transaction.contributorId) || 'Desconhecido',

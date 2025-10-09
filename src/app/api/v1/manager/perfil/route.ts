@@ -50,7 +50,6 @@ export async function GET(): Promise<NextResponse> {
     const { id: profileId, userId, ...profileWithoutIds } = profile || {}
 
     const managerData = {
-      id: user.id,
       userId: user.id,
       ...userWithoutPassword,
       ...profileWithoutIds,

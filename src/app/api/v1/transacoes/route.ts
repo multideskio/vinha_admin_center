@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         .limit(1)
       userData = result
       profile = result?.profile
-    } else if (user.role === 'church') {
+    } else if (user.role === 'church_account') {
       const [result] = await db
         .select({ email: users.email, profile: churchProfiles })
         .from(users)
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     // Get church ID if user is church
     let churchId = null
-    if (user.role === 'church') {
+    if (user.role === 'church_account') {
       churchId = user.id
     }
 
@@ -193,13 +193,13 @@ export async function POST(request: NextRequest) {
         amount: data.amount.toString(),
         status,
         paymentMethod: data.paymentMethod,
-        gatewayTransactionId: paymentResult.PaymentId,
+        gatewayTransactionId: paymentResult?.PaymentId || null,
       })
       .returning()
 
     return NextResponse.json({
       success: true,
-      transaction: { id: transaction.id },
+      transaction: { id: transaction?.id },
       data: paymentResult,
     })
   } catch (error) {
