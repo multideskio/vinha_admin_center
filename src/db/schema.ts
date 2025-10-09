@@ -243,7 +243,6 @@ export const transactions = pgTable('transactions', {
   status: transactionStatusEnum('status').notNull(),
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
   gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
-  paymentDetails: text('payment_details'),
   refundRequestReason: text('refund_request_reason'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
