@@ -153,7 +153,6 @@ export async function POST(request: NextRequest) {
       .values({
         companyId: COMPANY_ID,
         contributorId: user.id,
-        originChurchId: churchId,
         amount: data.amount.toString(),
         status,
         paymentMethod: data.paymentMethod,
