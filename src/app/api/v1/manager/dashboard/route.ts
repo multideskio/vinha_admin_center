@@ -264,14 +264,53 @@ export async function GET(): Promise<NextResponse> {
     }))
 
     const colors = ['#16a34a', '#3b82f6', '#f97316', '#ef4444', '#8b5cf6']
-    const revenueByChurch = [
-      { name: 'Igreja A', revenue: 4000, fill: colors[0] },
-      { name: 'Igreja B', revenue: 3200, fill: colors[1] },
-    ]
-    const membersByChurch = [
-      { name: 'Igreja A', count: 120, fill: colors[0] },
-      { name: 'Igreja B', count: 80, fill: colors[1] },
-    ]
+    
+    const revenueByChurchData = churchIds.length > 0
+      ? await db
+          .select({
+            churchId: transactions.originChurchId,
+            revenue: sum(transactions.amount).mapWith(Number),
+          })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.status, 'approved'),
+              inArray(transactions.originChurchId, churchIds),
+            ),
+          )
+          .groupBy(transactions.originChurchId)
+      : []
+
+    const churchNames = churchIds.length > 0
+      ? await db
+          .select({ id: users.id, name: users.email })
+          .from(users)
+          .where(inArray(users.id, churchIds))
+      : []
+
+    const churchNameMap = new Map(churchNames.map(c => [c.id, c.name]))
+
+    const revenueByChurch = revenueByChurchData.map((item, index) => ({
+      name: churchNameMap.get(item.churchId!) || 'Igreja',
+      revenue: item.revenue,
+      fill: colors[index % colors.length],
+    }))
+
+    const membersByChurchData = churchIds.length > 0
+      ? await db
+          .select({
+            churchId: users.id,
+            count: sql<number>`1`,
+          })
+          .from(users)
+          .where(inArray(users.id, churchIds))
+      : []
+
+    const membersByChurch = membersByChurchData.map((item, index) => ({
+      name: churchNameMap.get(item.churchId) || 'Igreja',
+      count: 1,
+      fill: colors[index % colors.length],
+    }))
 
     return NextResponse.json({
       kpis,
