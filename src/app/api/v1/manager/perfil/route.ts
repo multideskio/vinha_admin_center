@@ -78,6 +78,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -98,7 +99,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
       if (validatedData.neighborhood !== undefined)
         profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address
-      if (validatedData.avatarUrl !== undefined) profileUpdateData.avatarUrl = validatedData.avatarUrl
       if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
       if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
       if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
