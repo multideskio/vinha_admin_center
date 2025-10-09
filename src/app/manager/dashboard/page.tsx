@@ -68,6 +68,7 @@ type DashboardData = {
 export default function GerenteDashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [profileIncomplete, setProfileIncomplete] = React.useState(false)
   const { toast } = useToast()
 
   const fetchData = React.useCallback(async () => {
@@ -90,6 +91,19 @@ export default function GerenteDashboardPage() {
       setIsLoading(false)
     }
   }, [toast])
+
+  React.useEffect(() => {
+    const checkProfile = async () => {
+      try {
+        const res = await fetch('/api/v1/manager/profile-status')
+        const data = await res.json()
+        setProfileIncomplete(!data.complete)
+      } catch (error) {
+        console.error('Error checking profile:', error)
+      }
+    }
+    checkProfile()
+  }, [])
 
   React.useEffect(() => {
     fetchData()
@@ -174,19 +188,21 @@ export default function GerenteDashboardPage() {
         <DateRangePicker />
       </div>
 
-      <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950">
-        <CardHeader>
-          <CardTitle className="text-amber-900 dark:text-amber-100">Perfil Incompleto</CardTitle>
-          <CardDescription className="text-amber-800 dark:text-amber-200">
-            Complete seu perfil para habilitar todas as funcionalidades, incluindo pagamentos via boleto.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild>
-            <a href="/manager/perfil">Completar Perfil</a>
-          </Button>
-        </CardContent>
-      </Card>
+      {profileIncomplete && (
+        <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950">
+          <CardHeader>
+            <CardTitle className="text-amber-900 dark:text-amber-100">Perfil Incompleto</CardTitle>
+            <CardDescription className="text-amber-800 dark:text-amber-200">
+              Complete seu perfil para habilitar todas as funcionalidades, incluindo pagamentos via boleto.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <a href="/manager/perfil">Completar Perfil</a>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpiDisplayData.map((kpi) => (
