@@ -68,13 +68,13 @@ export async function createPixPayment(amount: number, customerName: string, cus
   }
 
   console.log('Cielo PIX Request:', {
-    url: `${apiUrl}/1/pix/payments`,
+    url: `${apiUrl}/1/sales/`,
     environment: config.environment,
     merchantId: config.merchantId,
     payload,
   })
 
-  const response = await fetch(`${apiUrl}/1/pix/payments`, {
+  const response = await fetch(`${apiUrl}/1/sales/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -82,12 +82,6 @@ export async function createPixPayment(amount: number, customerName: string, cus
       MerchantKey: config.merchantKey,
     },
     body: JSON.stringify(payload),
-  })
-
-  console.log('Cielo PIX Response:', {
-    status: response.status,
-    statusText: response.statusText,
-    headers: Object.fromEntries(response.headers.entries()),
   })
 
   const responseText = await response.text()
@@ -104,6 +98,8 @@ export async function createPixPayment(amount: number, customerName: string, cus
   }
 
   const data = JSON.parse(responseText)
+  console.log('Cielo PIX Full Response:', JSON.stringify(data, null, 2))
+  
   return {
     PaymentId: data.Payment.PaymentId,
     QrCodeBase64Image: data.Payment.QrCodeBase64Image,
@@ -272,9 +268,16 @@ export async function queryPayment(paymentId: string) {
     },
   })
 
+  const responseText = await response.text()
+
   if (!response.ok) {
-    throw new Error('Erro ao consultar pagamento')
+    console.error('Cielo Query Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: responseText,
+    })
+    throw new Error(`Erro ao consultar pagamento: ${response.status}`)
   }
 
-  return await response.json()
+  return JSON.parse(responseText)
 }

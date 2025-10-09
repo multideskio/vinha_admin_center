@@ -6,14 +6,16 @@ import { eq } from 'drizzle-orm'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     // Check if it's a payment ID or transaction ID
     const [transaction] = await db
       .select()
       .from(transactions)
-      .where(eq(transactions.gatewayTransactionId, params.id))
+      .where(eq(transactions.gatewayTransactionId, id))
       .limit(1)
 
     if (!transaction) {
@@ -21,7 +23,7 @@ export async function GET(
     }
 
     // Query Cielo for payment status
-    const paymentData = await queryPayment(params.id)
+    const paymentData = await queryPayment(id)
 
     // Update transaction status if changed
     if (paymentData.Payment.Status === 2 && transaction.status !== 'approved') {

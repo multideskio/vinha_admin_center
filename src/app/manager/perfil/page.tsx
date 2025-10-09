@@ -95,16 +95,31 @@ type Transaction = {
 const TransactionsTab = ({ userId }: { userId: string }) => {
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [page, setPage] = React.useState(1)
+  const [totalPages, setTotalPages] = React.useState(1)
+  const [startDate, setStartDate] = React.useState('')
+  const [endDate, setEndDate] = React.useState('')
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc')
   const { toast } = useToast()
 
   React.useEffect(() => {
     const fetchTransactions = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/v1/manager/transacoes?userId=${userId}`)
+        const params = new URLSearchParams({
+          userId,
+          page: page.toString(),
+          limit: '10',
+          sort: sortOrder,
+        })
+        if (startDate) params.append('startDate', startDate)
+        if (endDate) params.append('endDate', endDate)
+        
+        const response = await fetch(`/api/v1/manager/transacoes?${params}`)
         if (!response.ok) throw new Error('Falha ao carregar transações.')
         const data = await response.json()
         setTransactions(data.transactions)
+        setTotalPages(data.pagination?.totalPages || 1)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
         toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -113,7 +128,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
       }
     }
     fetchTransactions()
-  }, [userId, toast])
+  }, [userId, page, startDate, endDate, sortOrder, toast])
 
   const statusMap: {
     [key in TransactionStatus]: {
@@ -134,6 +149,23 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
         <CardDescription>Histórico das minhas contribuições.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="flex gap-4 mb-4">
+          <div className="flex-1">
+            <Label>Data Início</Label>
+            <Input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPage(1) }} />
+          </div>
+          <div className="flex-1">
+            <Label>Data Fim</Label>
+            <Input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPage(1) }} />
+          </div>
+          <div className="flex-1">
+            <Label>Ordenar</Label>
+            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={sortOrder} onChange={(e) => { setSortOrder(e.target.value as 'asc' | 'desc'); setPage(1) }}>
+              <option value="desc">Mais recentes</option>
+              <option value="asc">Mais antigas</option>
+            </select>
+          </div>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -208,6 +240,29 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
             )}
           </TableBody>
         </Table>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || isLoading}
+            >
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Página {page} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || isLoading}
+            >
+              Próxima
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -823,10 +878,10 @@ export default function GerenteProfilePage() {
             </Card>
           </TabsContent>
           <TabsContent value="transactions">
-            {manager.id && <TransactionsTab userId={manager.id} />}
+            {manager.userId && <TransactionsTab userId={manager.userId} />}
           </TabsContent>
           <TabsContent value="configuracoes">
-            {manager.id && <SettingsTab userId={manager.id} />}
+            {manager.userId && <SettingsTab userId={manager.userId} />}
           </TabsContent>
         </Tabs>
       </div>

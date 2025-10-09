@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions, users, churchProfiles, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, desc, asc, count, and, gte, lte, sql } from 'drizzle-orm'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { user } = await validateRequest()
 
@@ -14,6 +14,60 @@ export async function GET() {
 
     if (user.role !== 'manager') {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const offset = (page - 1) * limit
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+    const sortOrder = searchParams.get('sort') === 'asc' ? asc : desc
+
+    // If userId is provided and it's the manager's own ID, return their transactions
+    if (userId && userId === user.id) {
+      const conditions = [eq(transactions.contributorId, userId)]
+      if (startDate) conditions.push(gte(transactions.createdAt, new Date(startDate)))
+      if (endDate) conditions.push(lte(transactions.createdAt, new Date(endDate)))
+      const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
+
+      const [userTransactions, [{ total }]] = await Promise.all([
+        db
+          .select({
+            id: transactions.id,
+            amount: transactions.amount,
+            status: transactions.status,
+            createdAt: transactions.createdAt,
+            paymentMethod: transactions.paymentMethod,
+          })
+          .from(transactions)
+          .where(whereClause)
+          .orderBy(sortOrder(transactions.createdAt))
+          .limit(limit)
+          .offset(offset),
+        db
+          .select({ total: count() })
+          .from(transactions)
+          .where(whereClause),
+      ])
+
+      const formattedTransactions = userTransactions.map((t) => ({
+        id: t.id,
+        amount: Number(t.amount),
+        status: t.status,
+        date: new Date(t.createdAt).toLocaleDateString('pt-BR'),
+      }))
+
+      return NextResponse.json({
+        transactions: formattedTransactions,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      })
     }
 
     // Get all supervisors under this manager
@@ -41,54 +95,49 @@ export async function GET() {
     }
 
     // Get all transactions from these churches
-    const allTransactions = await db
-      .select({
-        id: transactions.id,
-        amount: transactions.amount,
-        method: transactions.method,
-        status: transactions.status,
-        createdAt: transactions.createdAt,
-        refundRequestReason: transactions.refundRequestReason,
-        contributorId: transactions.contributorId,
-        churchId: transactions.churchId,
-      })
-      .from(transactions)
-      .where(inArray(transactions.churchId, churchUserIds))
-      .orderBy(transactions.createdAt)
+    const conditions = [inArray(transactions.originChurchId, churchUserIds)]
+    if (startDate) conditions.push(gte(transactions.createdAt, new Date(startDate)))
+    if (endDate) conditions.push(lte(transactions.createdAt, new Date(endDate)))
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
 
-    // Get contributor and church names
-    const contributorIds = [...new Set(allTransactions.map((t) => t.contributorId))]
-    const contributors = await db
-      .select({
-        id: users.id,
-        name: users.name,
-      })
-      .from(users)
-      .where(inArray(users.id, contributorIds))
-
-    const churchUsers = await db
-      .select({
-        id: users.id,
-        name: users.name,
-      })
-      .from(users)
-      .where(inArray(users.id, churchUserIds))
-
-    const contributorMap = new Map(contributors.map((c) => [c.id, c.name]))
-    const churchMap = new Map(churchUsers.map((c) => [c.id, c.name]))
+    const [allTransactions, [{ total }]] = await Promise.all([
+      db
+        .select({
+          id: transactions.id,
+          amount: transactions.amount,
+          status: transactions.status,
+          createdAt: transactions.createdAt,
+          refundRequestReason: transactions.refundRequestReason,
+          contributorId: transactions.contributorId,
+        })
+        .from(transactions)
+        .where(whereClause)
+        .orderBy(sortOrder(transactions.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ total: count() })
+        .from(transactions)
+        .where(whereClause),
+    ])
 
     const formattedTransactions = allTransactions.map((transaction) => ({
       id: transaction.id,
-      contributor: contributorMap.get(transaction.contributorId) || 'Desconhecido',
-      church: churchMap.get(transaction.churchId) || null,
       amount: Number(transaction.amount),
-      method: transaction.method,
       status: transaction.status,
-      date: transaction.createdAt,
+      date: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
       refundRequestReason: transaction.refundRequestReason,
     }))
 
-    return NextResponse.json({ transactions: formattedTransactions })
+    return NextResponse.json({
+      transactions: formattedTransactions,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    })
   } catch (error) {
     console.error('Error fetching manager transactions:', error)
     return NextResponse.json(

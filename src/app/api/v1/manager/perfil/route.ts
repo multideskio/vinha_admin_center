@@ -51,6 +51,7 @@ export async function GET(): Promise<NextResponse> {
 
     const managerData = {
       id: user.id,
+      userId: user.id,
       ...userWithoutPassword,
       ...profileWithoutIds,
     }
