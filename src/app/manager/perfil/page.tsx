@@ -276,6 +276,7 @@ export default function GerenteProfilePage() {
         if (!updateResponse.ok) throw new Error('Falha ao atualizar avatar')
 
         setPreviewImage(result.url)
+        setManager(prev => prev ? { ...prev, avatarUrl: result.url } : null)
         toast({ title: 'Sucesso', description: 'Avatar atualizado!', variant: 'success' })
       } catch (error) {
         toast({ title: 'Erro', description: 'Falha ao fazer upload.', variant: 'destructive' })
