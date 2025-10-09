@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles, managerProfiles } from '@/db/schema'
+import { transactions, users, churchProfiles, managerProfiles, supervisorProfiles, pastorProfiles } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
@@ -82,26 +82,63 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = transactionSchema.parse(body)
 
-    // Get user data with profile
-    const [userData] = await db
-      .select({
-        email: users.email,
-        profile: user.role === 'manager' ? managerProfiles : null,
-      })
-      .from(users)
-      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-      .where(eq(users.id, user.id))
-      .limit(1)
+    // Get user data with profile based on role
+    let profile: any = null
+    let userData: any = null
+
+    if (user.role === 'manager') {
+      const [result] = await db
+        .select({ email: users.email, profile: managerProfiles })
+        .from(users)
+        .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+        .where(eq(users.id, user.id))
+        .limit(1)
+      userData = result
+      profile = result?.profile
+    } else if (user.role === 'supervisor') {
+      const [result] = await db
+        .select({ email: users.email, profile: supervisorProfiles })
+        .from(users)
+        .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
+        .where(eq(users.id, user.id))
+        .limit(1)
+      userData = result
+      profile = result?.profile
+    } else if (user.role === 'pastor') {
+      const [result] = await db
+        .select({ email: users.email, profile: pastorProfiles })
+        .from(users)
+        .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+        .where(eq(users.id, user.id))
+        .limit(1)
+      userData = result
+      profile = result?.profile
+    } else if (user.role === 'church') {
+      const [result] = await db
+        .select({ email: users.email, profile: churchProfiles })
+        .from(users)
+        .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+        .where(eq(users.id, user.id))
+        .limit(1)
+      userData = result
+      profile = result?.profile
+    } else {
+      const [result] = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1)
+      userData = result
+    }
 
     if (!userData) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    const profile = userData.profile
     const userName = profile?.firstName && profile?.lastName 
       ? `${profile.firstName} ${profile.lastName}` 
-      : userData.email.split('@')[0]
-    const userCpf = profile?.cpf || ''
+      : profile?.nomeFantasia || userData.email.split('@')[0]
+    const userCpf = profile?.cpf || profile?.treasurerCpf || ''
     const userAddress = profile?.address || ''
     const userCity = profile?.city || ''
     const userState = profile?.state || ''
