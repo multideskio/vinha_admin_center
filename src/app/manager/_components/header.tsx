@@ -151,13 +151,17 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
+          <DropdownMenuItem asChild>
+            <Link href="/manager/perfil">
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LifeBuoy className="mr-2 h-4 w-4" />
-            <span>Ajuda</span>
+          <DropdownMenuItem asChild>
+            <Link href="/ajuda">
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Ajuda</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <form action={handleLogout}>
