@@ -44,10 +44,28 @@ import {
   type ManagerProfile as BaseManagerProfile,
   type NotificationType,
   type UserNotificationSettings,
+  type TransactionStatus,
 } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 import { Switch } from '@/components/ui/switch'
 import { PhoneInput } from '@/components/ui/phone-input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MoreHorizontal } from 'lucide-react'
+import Link from 'next/link'
 
 const managerUpdateSchema = managerProfileSchema
   .extend({
@@ -65,6 +83,134 @@ const notificationSettingsConfig = {
   payment_notifications: 'Notificações de Pagamento',
   due_date_reminders: 'Lembretes de Vencimento',
   network_reports: 'Relatórios da Rede',
+}
+
+type Transaction = {
+  id: string
+  amount: number
+  status: 'approved' | 'pending' | 'refused' | 'refunded'
+  date: string
+}
+
+const TransactionsTab = ({ userId }: { userId: string }) => {
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/manager/transacoes?userId=${userId}`)
+        if (!response.ok) throw new Error('Falha ao carregar transações.')
+        const data = await response.json()
+        setTransactions(data.transactions)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTransactions()
+  }, [userId, toast])
+
+  const statusMap: {
+    [key in TransactionStatus]: {
+      text: string
+      variant: 'success' | 'warning' | 'destructive' | 'outline'
+    }
+  } = {
+    approved: { text: 'Aprovada', variant: 'success' },
+    pending: { text: 'Pendente', variant: 'warning' },
+    refused: { text: 'Recusada', variant: 'destructive' },
+    refunded: { text: 'Reembolsada', variant: 'outline' },
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Minhas Transações</CardTitle>
+        <CardDescription>Histórico das minhas contribuições.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID da Transação</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : transactions.length > 0 ? (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                      {statusMap[transaction.status]?.text || transaction.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{transaction.date}</TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      transaction.amount,
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/manager/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24">
+                  Nenhuma transação encontrada.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
 }
 
 const SettingsTab = ({ userId }: { userId: string }) => {
@@ -623,17 +769,7 @@ export default function GerenteProfilePage() {
             </Card>
           </TabsContent>
           <TabsContent value="transactions">
-            {manager.id && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Minhas Transações</CardTitle>
-                  <CardDescription>Histórico das minhas contribuições.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Nenhuma transação encontrada.</p>
-                </CardContent>
-              </Card>
-            )}
+            {manager.id && <TransactionsTab userId={manager.id} />}
           </TabsContent>
           <TabsContent value="configuracoes">
             {manager.id && <SettingsTab userId={manager.id} />}
