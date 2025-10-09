@@ -220,6 +220,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
     network_reports: { email: false, whatsapp: false },
   })
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isSaving, setIsSaving] = React.useState(false)
   const { toast } = useToast()
 
   const fetchSettings = React.useCallback(async () => {
@@ -256,6 +257,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
   }
 
   const handleSaveSettings = async () => {
+    setIsSaving(true)
     try {
       const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
         method: 'PUT',
@@ -265,12 +267,14 @@ const SettingsTab = ({ userId }: { userId: string }) => {
       if (!response.ok) throw new Error('Falha ao salvar configurações.')
       toast({
         title: 'Sucesso',
-        description: 'Configurações de notificação salvas.',
+        description: 'Configurações salvas com sucesso.',
         variant: 'success',
       })
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: message, variant: 'destructive' })
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -297,33 +301,83 @@ const SettingsTab = ({ userId }: { userId: string }) => {
         <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {NOTIFICATION_TYPES.map((type) => (
-          <div key={type} className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-medium">
-                {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
-              </p>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Notificações de Pagamento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber avisos sobre pagamentos recebidos, recusados, etc.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={settings.payment_notifications.email}
+                onCheckedChange={(v) => handleSwitchChange('payment_notifications', 'email', v)}
+              />
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2" title="Notificar por Email">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <Switch
-                  checked={settings[type]?.email ?? false}
-                  onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
-                />
-              </div>
-              <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                <Smartphone className="h-4 w-4 text-muted-foreground" />
-                <Switch
-                  checked={settings[type]?.whatsapp ?? false}
-                  onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
-                />
-              </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={settings.payment_notifications.whatsapp}
+                onCheckedChange={(v) => handleSwitchChange('payment_notifications', 'whatsapp', v)}
+              />
             </div>
           </div>
-        ))}
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Lembretes de Vencimento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber lembretes sobre pagamentos próximos do vencimento.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={settings.due_date_reminders.email}
+                onCheckedChange={(v) => handleSwitchChange('due_date_reminders', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={settings.due_date_reminders.whatsapp}
+                onCheckedChange={(v) => handleSwitchChange('due_date_reminders', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Relatórios da Rede</p>
+            <p className="text-sm text-muted-foreground">
+              Receber relatórios sobre a rede de supervisão.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={settings.network_reports.email}
+                onCheckedChange={(v) => handleSwitchChange('network_reports', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={settings.network_reports.whatsapp}
+                onCheckedChange={(v) => handleSwitchChange('network_reports', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
         <div className="flex justify-end">
-          <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+          <Button onClick={handleSaveSettings} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar Configurações
+          </Button>
         </div>
       </CardContent>
     </Card>
