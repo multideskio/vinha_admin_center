@@ -82,6 +82,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PhoneInput } from '@/components/ui/phone-input'
+import { sanitizeText } from '@/lib/sanitize'
 
 const pastorSchema = z.object({
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
@@ -589,14 +590,14 @@ export default function PastoresPage() {
                         className="rounded-full object-cover"
                         data-ai-hint="person"
                       />
-                      <span>{`${pastor.firstName} ${pastor.lastName}`}</span>
+                      <span>{sanitizeText(`${pastor.firstName} ${pastor.lastName}`)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {pastor.email}
+                    {sanitizeText(pastor.email)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {pastor.supervisorName || 'N/A'}
+                    {sanitizeText(pastor.supervisorName) || 'N/A'}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
@@ -683,26 +684,26 @@ export default function PastoresPage() {
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
-                      #{(currentPage - 1) * itemsPerPage + index + 1} - {pastor.firstName}{' '}
-                      {pastor.lastName}
+                      #{(currentPage - 1) * itemsPerPage + index + 1} - {sanitizeText(pastor.firstName)}{' '}
+                      {sanitizeText(pastor.lastName)}
                     </h3>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p className="flex items-center gap-2">
-                        <User size={14} /> <span>Supervisor: {pastor.supervisorName || 'N/A'}</span>
+                        <User size={14} /> <span>Supervisor: {sanitizeText(pastor.supervisorName) || 'N/A'}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <FileText size={14} /> <span>{pastor.cpf}</span>
+                        <FileText size={14} /> <span>{sanitizeText(pastor.cpf)}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Phone size={14} /> <span>{pastor.phone}</span>
+                        <Phone size={14} /> <span>{sanitizeText(pastor.phone)}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Mail size={14} /> <span>{pastor.email}</span>
+                        <Mail size={14} /> <span>{sanitizeText(pastor.email)}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <MapPin size={14} />{' '}
                         <span>
-                          {pastor.city} - {pastor.state}
+                          {sanitizeText(pastor.city)} - {sanitizeText(pastor.state)}
                         </span>
                       </p>
                     </div>

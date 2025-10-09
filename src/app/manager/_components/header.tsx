@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { handleLogout } from '@/actions/logout'
+import { sanitizeText } from '@/lib/sanitize'
 
 const menuItems = [
   { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -146,8 +147,8 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
         <DropdownMenuContent align="end">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">Bem vindo {userName}!</p>
-              <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
+              <p className="text-sm font-medium leading-none">Bem vindo {sanitizeText(userName)}!</p>
+              <p className="text-xs leading-none text-muted-foreground">{sanitizeText(userEmail)}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
