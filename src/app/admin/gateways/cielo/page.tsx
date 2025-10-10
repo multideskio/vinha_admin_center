@@ -4,7 +4,7 @@ import * as React from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Copy, Check } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -55,6 +55,18 @@ export default function CieloGatewayPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
+  const [copied, setCopied] = React.useState(false)
+
+  const webhookUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/api/v1/webhooks/cielo`
+    : ''
+
+  const handleCopyWebhook = () => {
+    navigator.clipboard.writeText(webhookUrl)
+    setCopied(true)
+    toast({ title: 'Copiado!', description: 'URL do webhook copiada.' })
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const form = useForm<CieloGatewayValues>({
     resolver: zodResolver(cieloGatewaySchema),
@@ -276,6 +288,26 @@ export default function CieloGatewayPage() {
                   </FormItem>
                 )}
               />
+            </div>
+
+            <Separator />
+
+            <div className="rounded-lg border p-4 bg-muted/50">
+              <h3 className="text-sm font-medium mb-2">URL do Webhook</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Configure esta URL no painel da Cielo para receber notificações automáticas de pagamento.
+              </p>
+              <div className="flex gap-2">
+                <Input value={webhookUrl} readOnly className="font-mono text-xs" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyWebhook}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
 
             <Separator />
