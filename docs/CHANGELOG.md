@@ -2,6 +2,60 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.8.0] - 2025-01-22
+
+### Adicionado
+
+- **Sistema de Pagamentos Completo:**
+  - Integração completa com Cielo API (PIX, Cartão de Crédito, Boleto)
+  - Página de contribuições em `/manager/contribuicoes`
+  - Geração de QR Code PIX com string copia e cola
+  - Formulário de cartão de crédito com validação visual (react-credit-cards-2)
+  - Geração de boleto com linha digitável e PDF
+  - Biblioteca `src/lib/cielo.ts` com funções: createPixPayment(), createCreditCardPayment(), createBoletoPayment(), queryPayment()
+- **Webhook Cielo:**
+  - Endpoint `/api/v1/webhooks/cielo` para receber notificações automáticas
+  - Processamento de 3 tipos de eventos: mudança de status (1), boleto pago (2), recorrência (3)
+  - Mapeamento automático de status Cielo → status interno
+  - Atualização automática de transações quando pagamento confirmado
+  - Documentação completa em `WEBHOOK_CIELO.md`
+- **Configuração de Webhook no Admin:**
+  - Campo de webhook URL em `/admin/gateways/cielo`
+  - Geração automática da URL baseada no domínio
+  - Botão de copiar URL para facilitar configuração
+- **Polling PIX Otimizado:**
+  - Mudança de setTimeout (8s single check) para setInterval (3s continuous)
+  - Verificação contínua até confirmação ou timeout de 5 minutos
+  - Confirmação instantânea (1-5s) após pagamento
+  - Parada automática ao detectar sucesso
+- **Documentação de Pagamentos:**
+  - `PAYMENT_VALIDATION.md` - Guia completo de testes
+  - `WEBHOOK_CIELO.md` - Configuração e troubleshooting
+  - Cartões de teste Cielo Sandbox documentados
+  - Roteiro de testes para cada método de pagamento
+
+### Melhorias
+
+- **Experiência do Usuário:**
+  - Feedback visual instantâneo em pagamentos PIX
+  - Preview do cartão de crédito em tempo real
+  - Validação de perfil completo antes de gerar boleto
+  - Mensagens de erro claras e acionáveis
+- **Performance:**
+  - Polling PIX reduzido de 8s para 3s
+  - Confirmação de pagamento até 5x mais rápida
+  - Webhook elimina necessidade de polling em produção
+- **Segurança:**
+  - Sanitização de dados em formulários de pagamento
+  - Validação de cartão no frontend e backend
+  - Logs de todas as transações e webhooks
+
+### Corrigido
+
+- **Polling PIX:** Corrigido para verificar continuamente ao invés de uma única vez
+- **Timeout PIX:** Adicionado timeout de 5 minutos para evitar polling infinito
+- **Validação de Boleto:** Mensagem clara quando perfil está incompleto
+
 ## [1.7.0] - 2025-01-20
 
 ### Adicionado

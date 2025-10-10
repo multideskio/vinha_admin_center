@@ -21,6 +21,12 @@ O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel 
 - **Autenticação Segura:** Sistema de login robusto com gerenciamento de sessões JWT e hashing de senhas.
 - **Dashboards Interativos:** Cada nível de usuário possui um dashboard customizado com KPIs, gráficos e dados relevantes para suas responsabilidades.
 - **Gerenciamento de Usuários:** CRUD completo para todos os níveis de usuários (Gerentes, Supervisores, Pastores, etc.) com paridade de features.
+- **Sistema de Pagamentos Completo:**
+  - **PIX:** Geração de QR Code Base64 e string copia e cola, polling otimizado (3s), confirmação instantânea (1-5s)
+  - **Cartão de Crédito:** Validação visual com react-credit-cards-2, suporte Visa/Mastercard/Elo, aprovação imediata
+  - **Boleto:** Geração com linha digitável, PDF para download, vencimento em 7 dias
+  - **Webhook Cielo:** Confirmação automática de pagamentos via `/api/v1/webhooks/cielo`
+  - **Documentação:** Guias completos em `PAYMENT_VALIDATION.md` e `WEBHOOK_CIELO.md`
 - **Sistema de Notificações Automáticas:** 
   - Envio via WhatsApp (Evolution API v2) e Email (AWS SES)
   - Templates personalizáveis com variáveis dinâmicas
@@ -35,7 +41,7 @@ O sistema suporta múltiplos níveis de acesso, cada um com seu próprio painel 
 - **Gestão de Redes Sociais:** Gerenciamento de links de Facebook, Instagram e Website com auto-save.
 - **Sistema de Relatórios:** Geração de relatórios em PDF e Excel (Financeiro, Membros, Igrejas, Contribuições) com filtros por período.
 - **Gestão Financeira:** Acompanhamento de transações, contribuições (dízimos e ofertas) e relatórios financeiros.
-- **Configurações de Gateway:** Integração com gateways de pagamento como Cielo e Bradesco.
+- **Configurações de Gateway:** Integração completa com Cielo (credenciais, webhook URL, métodos aceitos).
 - **Layout Responsivo:** A aplicação é totalmente otimizada para uso em dispositivos móveis e desktops.
 
 ## Primeiros Passos

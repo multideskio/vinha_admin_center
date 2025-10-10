@@ -73,10 +73,19 @@ Esta abordagem substitui o uso inicial de Server Actions para a busca e manipula
 - `/api/v1/manager/igrejas` - CRUD de igrejas (filtrado por supervisores do manager)
 - `/api/v1/manager/igrejas/[id]` - Operações em igreja específica
 
+#### Payment Endpoints
+- `/api/v1/transacoes` - Criar transação (PIX, Cartão, Boleto) e listar histórico
+- `/api/v1/transacoes/[id]` - Consultar status de transação específica
+- `/api/v1/webhooks/cielo` - Receber notificações automáticas da Cielo
+
 #### Shared Endpoints
 - `/api/v1/cep` - Consulta de CEP via ViaCEP
 - `/api/v1/users/[id]/notification-settings` - Configurações de notificações (admin e manager)
 - `/api/v1/cron/notifications` - Sistema de notificações automáticas
+
+#### Gateway Endpoints
+- `/api/v1/gateways` - Listar configurações de gateways
+- `/api/v1/gateways/cielo` - Configurar credenciais Cielo (MerchantId, MerchantKey, webhook URL)
 
 ### Padrões de API
 

@@ -168,6 +168,14 @@ src
 - Tabelas: Últimas transações e cadastros recentes
 - API: `/api/v1/manager/dashboard` (funcional)
 
+##### Sistema de Pagamentos
+- **PIX:** Geração de QR Code e string copia e cola, polling otimizado (3s), confirmação instantânea
+- **Cartão de Crédito:** Formulário com validação visual, suporte a Visa/Mastercard/Elo, aprovação imediata
+- **Boleto:** Geração com linha digitável, PDF para download, vencimento em 7 dias
+- **Webhook Cielo:** Confirmação automática de pagamentos via `/api/v1/webhooks/cielo`
+- **Histórico:** Visualização de todas as contribuições em `/manager/transacoes`
+- API: `/api/v1/transacoes` (POST para criar, GET para listar)
+
 ##### Gestão de Supervisores
 - CRUD completo com listagem, criação, edição e exclusão
 - Perfil detalhado com avatar, dados pessoais, redes sociais
@@ -202,6 +210,8 @@ src
 - Pastores e igrejas filtrados por supervisores do manager
 - Validação de sessão em todos os endpoints
 - Verificação de ownership em operações de edição/exclusão
+- Sanitização de dados em formulários de pagamento
+- Validação de cartão no frontend e backend
 
 ### 📊 Próximos Painéis a Implementar
 1. **Supervisor** (`/supervisor`) - Gerenciar pastores e igrejas da sua região

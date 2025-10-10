@@ -48,11 +48,16 @@ Toda a documentação do projeto está organizada no diretório `docs/`:
 - ✅ **Logging completo para monitoramento**
 - ✅ **Performance otimizada**
 - ✅ **Código auditado e aprovado**
+- ✅ **Sistema de pagamentos completo e seguro**
 
 ### Documentação de Segurança
 - [Auditoria de Segurança](docs/MANAGER_SECURITY_AUDIT.md)
 - [Checklist de Produção](docs/PRODUCTION_CHECKLIST.md)
 - [Resumo Executivo](docs/EXECUTIVE_SUMMARY.md)
+
+### Documentação de Pagamentos
+- [Validação de Pagamentos](PAYMENT_VALIDATION.md)
+- [Webhook Cielo](WEBHOOK_CIELO.md)
 
 ## 📄 Licença
 
