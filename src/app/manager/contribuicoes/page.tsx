@@ -152,9 +152,10 @@ export default function ContribuicoesPage(): JSX.Element {
   }, [paymentMethod, amount])
 
   React.useEffect(() => {
-    let timer: NodeJS.Timeout
+    let interval: NodeJS.Timeout
     if (paymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
-      timer = setTimeout(async () => {
+      // Verificar a cada 3 segundos
+      interval = setInterval(async () => {
         try {
           if (!paymentDetails.PaymentId) return
           console.log('Checking PIX payment status:', paymentDetails.PaymentId)
@@ -165,6 +166,7 @@ export default function ContribuicoesPage(): JSX.Element {
           const data = await res.json()
           if ((data.transaction?.Payment?.Status as number) === 2) {
             console.log('PIX payment confirmed')
+            clearInterval(interval)
             setPixStatus('confirmed')
             toast({
               title: 'Sucesso!',
@@ -177,9 +179,14 @@ export default function ContribuicoesPage(): JSX.Element {
           const errorMessage = error instanceof Error ? error.message : 'Erro ao verificar pagamento'
           console.error('PIX status check failed:', errorMessage)
         }
-      }, 8000)
+      }, 3000) // Verifica a cada 3 segundos
+
+      // Parar após 5 minutos
+      setTimeout(() => {
+        clearInterval(interval)
+      }, 300000)
     }
-    return () => clearTimeout(timer)
+    return () => clearInterval(interval)
   }, [paymentDetails, paymentMethod, pixStatus, toast])
 
   const handleInputChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
