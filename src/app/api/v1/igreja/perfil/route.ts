@@ -18,11 +18,22 @@ export async function GET(): Promise<NextResponse> {
       .from(churchProfiles)
       .where(eq(churchProfiles.userId, sessionUser.id))
 
+    // Converter data de yyyy-mm-dd para dd/mm/yyyy
+    let foundationDate = profile?.foundationDate
+    if (foundationDate) {
+      const date = new Date(foundationDate)
+      const day = String(date.getDate()).padStart(2, '0')
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear()
+      foundationDate = `${day}/${month}/${year}`
+    }
+
     return NextResponse.json({ 
       ...sessionUser, 
       ...profile,
-      userId: sessionUser.id, // Garantir que o userId correto está disponível
-      avatarUrl: sessionUser.avatarUrl // Garantir que o avatarUrl está disponível
+      foundationDate,
+      userId: sessionUser.id,
+      avatarUrl: sessionUser.avatarUrl
     })
   } catch (error) {
     console.error('Erro ao buscar perfil da igreja:', error)
@@ -41,13 +52,14 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
   try {
     const body = await request.json()
-    const { newPassword, email, phone, titheDay, facebook, instagram, website, ...profileData } = body
+    const { newPassword, email, phone, titheDay, avatarUrl, facebook, instagram, website, foundationDate, ...profileData } = body
 
-    // Atualizar tabela users apenas se houver campos relevantes
+    // Atualizar tabela users
     const userUpdate: any = {}
     if (email) userUpdate.email = email
     if (phone) userUpdate.phone = phone
     if (titheDay) userUpdate.titheDay = titheDay
+    if (avatarUrl) userUpdate.avatarUrl = avatarUrl
     if (newPassword) {
       userUpdate.password = await bcrypt.hash(newPassword, 10)
     }
@@ -56,20 +68,27 @@ export async function PUT(request: Request): Promise<NextResponse> {
       await db.update(users).set(userUpdate).where(eq(users.id, sessionUser.id))
     }
 
-    // Preparar dados do perfil, convertendo strings vazias para null
+    // Atualizar tabela church_profiles
     const profileUpdate: any = {}
     
-    // Adicionar campos do profileData apenas se existirem
     Object.keys(profileData).forEach(key => {
-      if (profileData[key] !== undefined) {
-        profileUpdate[key] = profileData[key]
+      const value = profileData[key]
+      if (value !== undefined && value !== null && value !== '') {
+        profileUpdate[key] = value
       }
     })
     
-    // Adicionar redes sociais se foram fornecidas
-    if (facebook !== undefined) profileUpdate.facebook = facebook || null
-    if (instagram !== undefined) profileUpdate.instagram = instagram || null
-    if (website !== undefined) profileUpdate.website = website || null
+    // Converter data de dd/mm/yyyy para yyyy-mm-dd
+    if (foundationDate && foundationDate.length === 10) {
+      const [day, month, year] = foundationDate.split('/')
+      if (day && month && year) {
+        profileUpdate.foundationDate = `${year}-${month}-${day}`
+      }
+    }
+    
+    if (facebook) profileUpdate.facebook = facebook
+    if (instagram) profileUpdate.instagram = instagram
+    if (website) profileUpdate.website = website
     
     if (Object.keys(profileUpdate).length > 0) {
       await db

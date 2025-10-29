@@ -12,13 +12,18 @@ import { eq, desc, and, isNull } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
+import { getErrorMessage } from '@/lib/error-types'
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'church_account') {
+  
+  if (!sessionUser) {
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  if (!['igreja', 'church_account'].includes(sessionUser.role)) {
+    return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
   }
 
   try {
@@ -53,9 +58,8 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ transactions: formattedTransactions })
   } catch (error: unknown) {
     console.error('Erro ao buscar transações da igreja:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
-      { error: 'Erro interno do servidor.', details: errorMessage },
+      { error: 'Erro interno do servidor.', details: getErrorMessage(error) },
       { status: 500 },
     )
   }

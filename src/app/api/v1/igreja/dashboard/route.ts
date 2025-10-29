@@ -24,17 +24,25 @@ const calculateChange = (current: number, previous: number): string => {
   return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`
 }
 
-export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+export async function GET(request: Request): Promise<NextResponse> {
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'church_account') {
+  
+  if (!sessionUser) {
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  if (!['igreja', 'church_account'].includes(sessionUser.role)) {
+    return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
   }
   const churchId = sessionUser.id
 
   try {
+    const { searchParams } = new URL(request.url)
+    const startDateParam = searchParams.get('startDate')
+    const endDateParam = searchParams.get('endDate')
+
     const now = new Date()
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))

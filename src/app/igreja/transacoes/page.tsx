@@ -5,6 +5,7 @@ import { Download, ListFilter, MoreHorizontal, Search, Calendar } from 'lucide-r
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { DateRange } from 'react-day-picker'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -45,12 +46,13 @@ type Transaction = {
 export default function TransacoesPage() {
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
-  const [searchTerm, setSearchTerm] = React.useState('')
-  const [dateRange, setDateRange] = React.useState<{ from?: Date; to?: Date }>({})
+  const [statusFilters, setStatusFilters] = React.useState<string[]>(['approved', 'pending', 'refused', 'refunded'])
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
   const fetchTransactions = React.useCallback(async (search?: string, startDate?: string, endDate?: string) => {
     setIsLoading(true)
+    
     try {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
@@ -72,6 +74,44 @@ export default function TransacoesPage() {
   React.useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
+
+  const filteredTransactions = React.useMemo(() => {
+    return transactions.filter(t => statusFilters.includes(t.status))
+  }, [transactions, statusFilters])
+
+  const toggleStatusFilter = (status: string) => {
+    setStatusFilters(prev => 
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    )
+  }
+
+  const handleDateRangeChange = React.useCallback((range: DateRange | undefined) => {
+    setDateRange(range)
+    const startDate = range?.from ? format(range.from, 'yyyy-MM-dd') : undefined
+    const endDate = range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
+    fetchTransactions(undefined, startDate, endDate)
+  }, [fetchTransactions])
+
+  const exportToCSV = () => {
+    const headers = ['Contribuinte', 'Valor', 'Status', 'Data']
+    const rows = filteredTransactions.map(t => [
+      t.contributor,
+      t.amount.toFixed(2),
+      statusMap[t.status]?.text || t.status,
+      t.date
+    ])
+    
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `transacoes-igreja-${format(new Date(), 'yyyy-MM-dd')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    toast({ title: 'Sucesso', description: 'Transações exportadas!', variant: 'success' })
+  }
 
   const statusMap: {
     [key: string]: { text: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }
@@ -103,14 +143,34 @@ export default function TransacoesPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem checked>Aprovada</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Pendente</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Recusada</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={statusFilters.includes('approved')}
+                  onCheckedChange={() => toggleStatusFilter('approved')}
+                >
+                  Aprovada
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={statusFilters.includes('pending')}
+                  onCheckedChange={() => toggleStatusFilter('pending')}
+                >
+                  Pendente
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={statusFilters.includes('refused')}
+                  onCheckedChange={() => toggleStatusFilter('refused')}
+                >
+                  Recusada
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem 
+                  checked={statusFilters.includes('refunded')}
+                  onCheckedChange={() => toggleStatusFilter('refunded')}
+                >
+                  Reembolsada
+                </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <DateRangePicker />
-            <Button size="sm" variant="outline" className="gap-1">
+            <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+            <Button size="sm" variant="outline" className="gap-1" onClick={exportToCSV}>
               <Download className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only">Exportar</span>
             </Button>
@@ -152,14 +212,14 @@ export default function TransacoesPage() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : transactions.length === 0 ? (
+              ) : filteredTransactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
                     Nenhuma transação encontrada.
                   </TableCell>
                 </TableRow>
               ) : (
-                transactions.map((transaction) => (
+                filteredTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell className="font-medium">{transaction.contributor}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
