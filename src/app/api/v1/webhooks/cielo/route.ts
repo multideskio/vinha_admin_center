@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
             .where(
               and(
                 eq(userNotificationSettings.userId, transaction.contributorId),
-                eq(userNotificationSettings.notificationType, 'transaction')
+                eq(userNotificationSettings.notificationType, 'payment_notifications')
               )
             )
             .limit(1)

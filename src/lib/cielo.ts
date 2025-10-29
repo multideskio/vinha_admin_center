@@ -82,7 +82,7 @@ export async function createPixPayment(amount: number, customerName: string) {
     payload,
   })
 
-  await logCieloRequest({ method: 'POST', endpoint: `${apiUrl}/1/sales/`, requestBody: payload })
+  await logCieloRequest({ operationType: 'pix', method: 'POST', endpoint: `${apiUrl}/1/sales/`, requestBody: payload })
 
   const response = await fetch(`${apiUrl}/1/sales/`, {
     method: 'POST',
@@ -95,7 +95,14 @@ export async function createPixPayment(amount: number, customerName: string) {
   })
 
   const responseText = await response.text()
-  await logCieloResponse({ method: 'POST', endpoint: `${apiUrl}/1/sales/`, statusCode: response.status, responseBody: responseText, errorMessage: !response.ok ? responseText : undefined })
+  
+  let paymentId: string | undefined
+  try {
+    const parsed = JSON.parse(responseText)
+    paymentId = parsed.Payment?.PaymentId
+  } catch {}
+  
+  await logCieloResponse({ operationType: 'pix', method: 'POST', endpoint: `${apiUrl}/1/sales/`, statusCode: response.status, responseBody: responseText, paymentId, errorMessage: !response.ok ? responseText : undefined })
   
   if (!response.ok) {
     let errorMessage = 'Erro ao criar pagamento PIX'
