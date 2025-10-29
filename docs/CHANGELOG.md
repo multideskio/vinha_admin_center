@@ -2,6 +2,59 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [0.1.1] - 2025-01-30 - Estrutura Profissional Completa
+
+### 🔧 **Melhorias de Infraestrutura**
+
+#### **📁 GitHub Templates e Automação**
+- Adicionada pasta `.github/` completa com templates profissionais
+- **Issue Templates**: Bug Report e Feature Request padronizados
+- **Pull Request Template**: Checklist completo para PRs
+- **Security Policy**: Política de segurança e reporte de vulnerabilidades
+- **CI/CD Pipeline**: Automação completa com GitHub Actions
+- **Dependabot**: Atualizações automáticas de dependências
+
+#### **📄 Documentação e Licenciamento**
+- **LICENSE**: Licença proprietária para projeto privado
+- **CONTRIBUTING.md**: Guia de desenvolvimento para equipe interna
+- **Avisos de Confidencialidade**: Marcação clara de projeto privado
+- **Badges atualizados**: Indicação de acesso restrito
+
+#### **🔄 Automações Implementadas**
+- **Testes automáticos** em Node.js 18.x e 20.x
+- **Linting e formatação** automática
+- **Type checking** em cada PR
+- **Build verification** antes do merge
+- **Security audit** das dependências
+
+### 🎯 **Benefícios Adicionados**
+
+- ✅ **Organização profissional** de issues e PRs
+- ✅ **Qualidade de código** garantida por CI/CD
+- ✅ **Segurança** monitorada automaticamente
+- ✅ **Dependências** sempre atualizadas
+- ✅ **Documentação** estruturada para equipe
+- ✅ **Proteção legal** com licença proprietária
+
+### 📋 **Arquivos Adicionados**
+
+```
+.github/
+├── ISSUE_TEMPLATE/
+│   ├── bug_report.md
+│   └── feature_request.md
+├── workflows/
+│   └── ci.yml
+├── SECURITY.md
+├── PULL_REQUEST_TEMPLATE.md
+└── dependabot.yml
+
+LICENSE (atualizada)
+CONTRIBUTING.md (novo)
+```
+
+---
+
 ## [0.1.0] - 2025-01-30 - Lançamento Inicial
 
 ### 🎉 Lançamento da Versão Inicial

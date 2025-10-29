@@ -2,11 +2,16 @@
 
 > Sistema Completo de Gestão para Igrejas e Organizações Religiosas
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/multideskio/vinha_admin_center)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/multideskio/vinha_admin_center)
 [![Status](https://img.shields.io/badge/status-stable-green.svg)](https://github.com/multideskio/vinha_admin_center)
-[![License](https://img.shields.io/badge/license-proprietary-red.svg)](https://github.com/multideskio/vinha_admin_center)
+[![License](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
+[![Private](https://img.shields.io/badge/access-private-red.svg)](https://github.com/multideskio/vinha_admin_center)
 
-## 🎉 Versão 0.1.0 - Lançamento Inicial
+## 🔒 CONFIDENCIAL - Acesso Restrito
+
+**⚠️ AVISO:** Este é um repositório **PRIVADO** da Multidesk.io. Acesso restrito apenas à equipe autorizada.
+
+## 🎉 Versão 0.1.1 - Estrutura Profissional Completa
 
 Esta é a **primeira versão estável** do Vinha Admin Center, um sistema completo e profissional para gestão de igrejas, desenvolvido com as mais modernas tecnologias web.
 
