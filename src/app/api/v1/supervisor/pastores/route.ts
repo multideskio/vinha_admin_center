@@ -8,7 +8,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, pastorProfiles } from '@/db/schema'
-import { eq, and, isNull, desc } from 'drizzle-orm'
+import { eq, and, isNull, desc, gte, lte } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { authenticateApiKey } from '@/lib/api-auth'
@@ -35,16 +35,48 @@ const pastorSchema = z.object({
   phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
 })
 
-export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+export async function GET(request: Request): Promise<NextResponse> {
+  // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'supervisor') {
+  
+  if (!sessionUser) {
+    // Se não há usuário logado, tenta autenticação por API Key
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
+    
+    // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  // Verifica se o usuário tem a role correta
+  if (sessionUser.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
   }
 
   try {
+    // Extrair parâmetros de data da URL
+    const { searchParams } = new URL(request.url)
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+
+    // Construir condições de filtro
+    const conditions = [
+      eq(users.role, 'pastor'),
+      eq(pastorProfiles.supervisorId, sessionUser.id),
+      isNull(users.deletedAt),
+    ]
+    
+    if (startDate) {
+      conditions.push(gte(users.createdAt, new Date(startDate)))
+    }
+    
+    if (endDate) {
+      // Adicionar 1 dia para incluir registros do dia final
+      const endDateTime = new Date(endDate)
+      endDateTime.setDate(endDateTime.getDate() + 1)
+      conditions.push(lte(users.createdAt, endDateTime))
+    }
+
     const result = await db
       .select({
         id: users.id,
@@ -56,16 +88,11 @@ export async function GET(): Promise<NextResponse> {
         cpf: pastorProfiles.cpf,
         city: pastorProfiles.city,
         state: pastorProfiles.state,
+        avatarUrl: users.avatarUrl,
       })
       .from(users)
       .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-      .where(
-        and(
-          eq(users.role, 'pastor'),
-          eq(pastorProfiles.supervisorId, sessionUser.id),
-          isNull(users.deletedAt),
-        ),
-      )
+      .where(and(...conditions))
       .orderBy(desc(users.createdAt))
 
     return NextResponse.json({ pastors: result })
@@ -76,12 +103,21 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+  // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'supervisor') {
+  
+  if (!sessionUser) {
+    // Se não há usuário logado, tenta autenticação por API Key
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
+    
+    // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  // Verifica se o usuário tem a role correta
+  if (sessionUser.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
   }
 
   try {

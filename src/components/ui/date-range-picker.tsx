@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { format, subDays } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { DateRange } from 'react-day-picker'
 
@@ -10,17 +11,33 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
+interface DateRangePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+  value?: DateRange | undefined
+  onChange?: (dateRange: DateRange | undefined) => void
+}
+
 export function DateRangePicker({
   className,
-}: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element {
-  const [date, setDate] = React.useState<DateRange | undefined>(undefined)
-
-  React.useEffect(() => {
-    setDate({
+  value,
+  onChange,
+}: DateRangePickerProps): React.JSX.Element {
+  const [date, setDate] = React.useState<DateRange | undefined>(
+    value || {
       from: subDays(new Date(), 7),
       to: new Date(),
-    })
-  }, [])
+    }
+  )
+
+  React.useEffect(() => {
+    if (value) {
+      setDate(value)
+    }
+  }, [value])
+
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    setDate(newDate)
+    onChange?.(newDate)
+  }
 
   return (
     <div className={cn('grid gap-2', className)}>
@@ -38,10 +55,10 @@ export function DateRangePicker({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
+                  {format(date.from, 'dd/MM/yyyy', { locale: ptBR })} - {format(date.to, 'dd/MM/yyyy', { locale: ptBR })}
                 </>
               ) : (
-                format(date.from, 'LLL dd, y')
+                format(date.from, 'dd/MM/yyyy', { locale: ptBR })
               )
             ) : (
               <span>Selecione um período</span>
@@ -54,9 +71,10 @@ export function DateRangePicker({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateChange}
             numberOfMonths={2}
             disabled={{ after: new Date() }}
+            locale={ptBR}
           />
         </PopoverContent>
       </Popover>

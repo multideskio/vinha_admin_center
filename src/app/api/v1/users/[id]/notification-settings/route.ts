@@ -30,11 +30,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
+  if (!user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
   const { id } = await params
+  
+  // Usuário pode acessar suas próprias configurações OU admin/manager/supervisor podem acessar de qualquer um
+  if (user.id !== id && !['admin', 'manager', 'supervisor'].includes(user.role)) {
+    return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
+  }
 
   try {
     const settings = await db
@@ -49,7 +54,7 @@ export async function GET(
         whatsapp: setting?.whatsapp ?? false,
       }
       return acc
-    }, {} as any)
+    }, {} as Record<string, unknown>)
 
     return NextResponse.json(result)
   } catch (error) {
@@ -66,11 +71,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
+  if (!user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
   const { id } = await params
+  
+  // Usuário pode atualizar suas próprias configurações OU admin/manager/supervisor podem atualizar de qualquer um
+  if (user.id !== id && !['admin', 'manager', 'supervisor'].includes(user.role)) {
+    return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
+  }
 
   try {
     const body = await request.json()
@@ -85,7 +95,7 @@ export async function PUT(
       // Insere novas configurações
       const insertData = Object.entries(data).map(([type, settings]) => ({
         userId: id,
-        notificationType: type as any,
+        notificationType: type as 'payment_notifications' | 'due_date_reminders' | 'network_reports',
         email: settings.email,
         whatsapp: settings.whatsapp,
       }))

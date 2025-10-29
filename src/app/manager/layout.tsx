@@ -1,6 +1,6 @@
 /**
  * @fileoverview Layout principal para o painel de gerente.
- * @version 1.2
+ * @version 1.3
  * @date 2024-08-07
  * @author PH
  */
@@ -10,10 +10,21 @@ import { ManagerSidebar } from './_components/sidebar'
 import { ManagerHeader } from './_components/header'
 import { validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
+import { db } from '@/db/drizzle'
+import { users, managerProfiles } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { getCompanySettings } from '@/lib/company'
+import { ErrorBoundary } from '@/components/error-boundary'
 
-export const metadata: Metadata = {
-  title: 'Vinha Gerente Center',
-  description: 'Painel de Gerente para Vinha Ministérios',
+// Força renderização dinâmica para páginas autenticadas
+export const dynamic = 'force-dynamic'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompanySettings()
+  return {
+    title: company?.name || 'Vinha Admin Center',
+    description: `Painel de gerente para ${company?.name || 'Vinha Ministérios'}`,
+  }
 }
 
 export default async function ManagerLayout({
@@ -21,22 +32,57 @@ export default async function ManagerLayout({
 }: {
   children: React.ReactNode
 }): Promise<JSX.Element> {
-  const { user } = await validateRequest()
+  try {
+    const { user } = await validateRequest()
 
-  if (!user || user.role !== 'manager') {
+    if (!user || user.role !== 'manager') {
+      return redirect('/auth/login')
+    }
+
+    const [userData, company] = await Promise.all([
+      db
+        .select({
+          avatarUrl: users.avatarUrl,
+          firstName: managerProfiles.firstName,
+          lastName: managerProfiles.lastName,
+        })
+        .from(users)
+        .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+        .where(eq(users.id, user.id))
+        .limit(1)
+        .then((res) => res[0]),
+      getCompanySettings(),
+    ])
+
+  const userName = userData?.firstName
+    ? `${userData.firstName} ${userData.lastName}`
+    : user.email?.split('@')[0] || 'User'
+  const userFallback = userData?.firstName
+    ? `${userData.firstName[0]}${userData.lastName?.[0] || ''}`
+    : userName.substring(0, 2).toUpperCase()
+
+    return (
+      <ErrorBoundary>
+        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+          <ManagerSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
+          <div className="flex flex-col">
+            <ManagerHeader
+              userName={userName}
+              userEmail={user.email}
+              userFallback={userFallback}
+              avatarUrl={userData?.avatarUrl || undefined}
+              companyLogo={company?.logoUrl || undefined}
+              companyName={company?.name || undefined}
+            />
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+              {children}
+            </main>
+          </div>
+        </div>
+      </ErrorBoundary>
+    )
+  } catch (error) {
+    console.error('Manager layout error:', error)
     return redirect('/auth/login')
   }
-
-  const userName = user.email?.split('@')[0] || 'Usuario'
-  const userFallback = userName.substring(0, 2).toUpperCase()
-
-  return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <ManagerSidebar />
-      <div className="flex flex-col">
-        <ManagerHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
-      </div>
-    </div>
-  )
 }

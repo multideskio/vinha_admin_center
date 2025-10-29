@@ -100,6 +100,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -124,6 +125,9 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.complement !== undefined)
         profileUpdateData.complement = validatedData.complement
       if (validatedData.regionId) profileUpdateData.regionId = validatedData.regionId
+      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
+      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx
@@ -159,6 +163,13 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const { id } = params
 
   try {
+    const body = await request.json()
+    const { deletionReason } = body
+
+    if (!deletionReason?.trim()) {
+      throw new ApiError(400, 'Motivo da exclusão é obrigatório.')
+    }
+
     const isAuthorized = await verifySupervisor(id, sessionUser.id)
     if (!isAuthorized) {
       throw new ApiError(403, 'Não autorizado a excluir este supervisor.')
@@ -168,6 +179,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       .set({
         deletedAt: new Date(),
         status: 'inactive',
+        deletionReason,
       })
       .where(eq(users.id, id))
 

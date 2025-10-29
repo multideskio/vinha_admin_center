@@ -1,10 +1,28 @@
+/**
+ * @fileoverview Página de edição de perfil do supervisor (visão do admin).
+ * @version 1.5
+ * @date 2024-08-08
+ * @author PH
+ */
+
 'use client'
 
 import * as React from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Camera, AlertTriangle, Lock, Loader2 } from 'lucide-react'
+import {
+  Camera,
+  Facebook,
+  Instagram,
+  Globe,
+  AlertTriangle,
+  Lock,
+  Loader2,
+  Mail,
+  Smartphone,
+  MoreHorizontal,
+} from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
@@ -29,9 +47,11 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supervisorProfileSchema } from '@/lib/types'
+import type { TransactionStatus } from '@/lib/types'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +64,25 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { PhoneInput } from '@/components/ui/phone-input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import Link from 'next/link'
 
 const supervisorUpdateSchema = supervisorProfileSchema
   .extend({
@@ -51,7 +90,9 @@ const supervisorUpdateSchema = supervisorProfileSchema
   })
   .partial()
 
-type SupervisorProfile = z.infer<typeof supervisorUpdateSchema> & {
+type SupervisorFormData = z.infer<typeof supervisorUpdateSchema>
+
+type SupervisorProfile = SupervisorFormData & {
   id?: string
   status?: string
 }
@@ -59,6 +100,13 @@ type SupervisorProfile = z.infer<typeof supervisorUpdateSchema> & {
 type Region = {
   id: string
   name: string
+}
+
+type Transaction = {
+  id: string
+  amount: number
+  status: 'approved' | 'pending' | 'refused' | 'refunded'
+  date: string
 }
 
 const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
@@ -91,7 +139,287 @@ const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => voi
   )
 }
 
-export default function SupervisorProfilePage() {
+const SettingsTab = ({ userId }: { userId: string }) => {
+  const [settings, setSettings] = React.useState({
+    payment_notifications: { email: false, whatsapp: false },
+    due_date_reminders: { email: false, whatsapp: false },
+    network_reports: { email: false, whatsapp: false },
+  })
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSaving, setIsSaving] = React.useState(false)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/users/${userId}/notification-settings`)
+        if (!response.ok) throw new Error('Falha ao carregar configurações.')
+        const data = await response.json()
+        setSettings(data)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchSettings()
+  }, [userId, toast])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+      toast({
+        title: 'Sucesso',
+        description: 'Configurações salvas com sucesso.',
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const updateSetting = (type: string, channel: 'email' | 'whatsapp', value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [type]: { ...prev[type as keyof typeof prev], [channel]: value }
+    }))
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <Skeleton className="h-64 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardDescription>
+          Gerencie quais notificações este usuário receberá.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Notificações de Pagamento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber avisos sobre pagamentos recebidos, recusados, etc.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.payment_notifications.email}
+                onCheckedChange={(v) => updateSetting('payment_notifications', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.payment_notifications.whatsapp}
+                onCheckedChange={(v) => updateSetting('payment_notifications', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Lembretes de Vencimento</p>
+            <p className="text-sm text-muted-foreground">
+              Receber lembretes sobre pagamentos próximos do vencimento.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.due_date_reminders.email}
+                onCheckedChange={(v) => updateSetting('due_date_reminders', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.due_date_reminders.whatsapp}
+                onCheckedChange={(v) => updateSetting('due_date_reminders', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div>
+            <p className="font-medium">Relatórios da Rede</p>
+            <p className="text-sm text-muted-foreground">
+              Receber relatórios sobre a rede de supervisão.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2" title="Notificar por Email">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.network_reports.email}
+                onCheckedChange={(v) => updateSetting('network_reports', 'email', v)}
+              />
+            </div>
+            <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <Switch 
+                checked={settings.network_reports.whatsapp}
+                onCheckedChange={(v) => updateSetting('network_reports', 'whatsapp', v)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar Configurações
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+const TransactionsTab = ({ userId }: { userId: string }) => {
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/manager/transacoes?userId=${userId}`)
+        if (!response.ok) throw new Error('Falha ao carregar transações.')
+        const data = await response.json()
+        setTransactions(data.transactions)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTransactions()
+  }, [userId, toast])
+
+  const statusMap: {
+    [key in TransactionStatus]: {
+      text: string
+      variant: 'success' | 'warning' | 'destructive' | 'outline'
+    }
+  } = {
+    approved: { text: 'Aprovada', variant: 'success' },
+    pending: { text: 'Pendente', variant: 'warning' },
+    refused: { text: 'Recusada', variant: 'destructive' },
+    refunded: { text: 'Reembolsada', variant: 'outline' },
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Transações do Usuário</CardTitle>
+        <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID da Transação</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : transactions.length > 0 ? (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                      {statusMap[transaction.status]?.text || transaction.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{transaction.date}</TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      transaction.amount,
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/manager/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24">
+                  Nenhuma transação encontrada para este usuário.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function SupervisorProfilePage(): JSX.Element {
   const [supervisor, setSupervisor] = React.useState<SupervisorProfile | null>(null)
   const [regions, setRegions] = React.useState<Region[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -103,10 +431,28 @@ export default function SupervisorProfilePage() {
   const { id } = params
   const { toast } = useToast()
 
-  const form = useForm<SupervisorProfile>({
+  const form = useForm<SupervisorFormData>({
     resolver: zodResolver(supervisorUpdateSchema),
     defaultValues: {},
   })
+
+  const handleCepBlur = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '')
+    if (cleanCep.length !== 8) return
+
+    try {
+      const response = await fetch(`/api/v1/cep?cep=${cleanCep}`)
+      if (!response.ok) return
+      
+      const data = await response.json()
+      form.setValue('address', data.address || '')
+      form.setValue('neighborhood', data.neighborhood || '')
+      form.setValue('city', data.city || '')
+      form.setValue('state', data.state || '')
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
+    }
+  }
 
   const fetchData = React.useCallback(async () => {
     if (!id) return
@@ -114,7 +460,7 @@ export default function SupervisorProfilePage() {
     try {
       const [supervisorRes, regionsRes] = await Promise.all([
         fetch(`/api/v1/manager/supervisores/${id}`),
-        fetch('/api/v1/regioes'),
+        fetch('/api/v1/regioes?minimal=true'),
       ])
 
       if (!supervisorRes.ok) throw new Error('Falha ao carregar dados do supervisor.')
@@ -138,7 +484,7 @@ export default function SupervisorProfilePage() {
     fetchData()
   }, [fetchData])
 
-  const onSubmit = async (data: Partial<SupervisorProfile>) => {
+  const onSubmit = async (data: SupervisorFormData) => {
     setIsSaving(true)
     try {
       const response = await fetch(`/api/v1/manager/supervisores/${id}`, {
@@ -147,6 +493,7 @@ export default function SupervisorProfilePage() {
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error('Falha ao atualizar o supervisor.')
+      await response.json()
       toast({
         title: 'Sucesso',
         description: 'Supervisor atualizado com sucesso.',
@@ -181,19 +528,93 @@ export default function SupervisorProfilePage() {
     }
   }
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string | null,
+  ) => {
+    try {
+      const payload = { [fieldName]: value }
+
+      const response = await fetch(`/api/v1/manager/supervisores/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Falha ao atualizar ${fieldName}.`)
+      }
+
+      const updatedData = await response.json()
+      toast({
+        title: 'Sucesso!',
+        description: `Link do ${fieldName} atualizado.`,
+        variant: 'success',
+      })
+      if (updatedData.supervisor) {
+        setSupervisor(updatedData.supervisor)
+      } else {
+        setSupervisor((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string)
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'avatars')
+        formData.append('filename', `supervisor-${id}-${file.name}`)
+
+        const response = await fetch('/api/v1/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Falha no upload da imagem')
+        }
+
+        const result = await response.json()
+        
+        // Atualizar avatar no banco
+        const updateResponse = await fetch(`/api/v1/manager/supervisores/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: result.url }),
+        })
+
+        if (!updateResponse.ok) {
+          throw new Error('Falha ao atualizar avatar')
+        }
+
+        await updateResponse.json()
+        setPreviewImage(result.url)
+        setSupervisor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
         toast({
-          title: 'Preview da Imagem',
-          description:
-            'A nova imagem está sendo exibida. O upload ainda não foi implementado no backend.',
+          title: 'Sucesso',
+          description: 'Avatar atualizado com sucesso!',
+          variant: 'success',
+        })
+      } catch (error) {
+        console.error('Photo upload error:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Falha ao fazer upload da imagem.'
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
         })
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -259,6 +680,36 @@ export default function SupervisorProfilePage() {
               </h2>
               <p className="text-muted-foreground">Supervisor</p>
             </CardContent>
+            <Separator />
+            <CardContent className="pt-6">
+              <h3 className="mb-4 font-semibold">Redes sociais</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Facebook className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={supervisor.facebook ?? ''}
+                    placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Instagram className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={supervisor.instagram ?? ''}
+                    placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={supervisor.website ?? ''}
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
 
@@ -266,6 +717,8 @@ export default function SupervisorProfilePage() {
           <Tabs defaultValue="profile">
             <TabsList>
               <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+              <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
+              <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
               <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
@@ -277,7 +730,7 @@ export default function SupervisorProfilePage() {
                         control={form.control}
                         name="regionId"
                         render={({ field }) => (
-                          <FormItem className="col-span-2">
+                          <FormItem>
                             <FormLabel>Região</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? ''}>
                               <FormControl>
@@ -346,16 +799,11 @@ export default function SupervisorProfilePage() {
                             <FormItem>
                               <FormLabel>Celular/WhatsApp</FormLabel>
                               <FormControl>
-                                <div className="flex items-center">
-                                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                    🇧🇷 +55
-                                  </span>
-                                  <Input
-                                    {...field}
-                                    value={field.value ?? ''}
-                                    className="rounded-l-none"
-                                  />
-                                </div>
+                                <PhoneInput
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  type="mobile"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -366,9 +814,13 @@ export default function SupervisorProfilePage() {
                           name="landline"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Telefone 2</FormLabel>
+                              <FormLabel>Telefone Fixo</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <PhoneInput
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  type="landline"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -397,7 +849,11 @@ export default function SupervisorProfilePage() {
                             <FormItem>
                               <FormLabel>CEP</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
+                                <Input 
+                                  {...field} 
+                                  value={field.value ?? ''}
+                                  onBlur={(e) => handleCepBlur(e.target.value)}
+                                />
                               </FormControl>
                             </FormItem>
                           )}
@@ -545,6 +1001,12 @@ export default function SupervisorProfilePage() {
                   </Form>
                 </CardContent>
               </Card>
+            </TabsContent>
+            <TabsContent value="transactions">
+              <TransactionsTab userId={id as string} />
+            </TabsContent>
+            <TabsContent value="configuracoes">
+              <SettingsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="delete">
               <Card className="border-destructive">

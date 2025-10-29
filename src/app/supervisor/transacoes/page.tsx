@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
+import { DateRange } from 'react-day-picker'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -53,6 +54,7 @@ export default function TransacoesPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string[]>([])
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const [currentPage, setCurrentPage] = React.useState(1)
   const itemsPerPage = 10
   const { toast } = useToast()
@@ -60,7 +62,19 @@ export default function TransacoesPage() {
   const fetchTransactions = React.useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/supervisor/transacoes')
+      const url = new URL('/api/v1/supervisor/transacoes', window.location.origin)
+
+      // Adicionar parâmetros de data se selecionados
+      if (dateRange?.from) {
+        const startDate = (dateRange.from as Date).toISOString().substring(0, 10)
+        url.searchParams.set('startDate', startDate)
+      }
+      if (dateRange?.to) {
+        const endDate = (dateRange.to as Date).toISOString().substring(0, 10)
+        url.searchParams.set('endDate', endDate)
+      }
+
+      const response = await fetch(url.toString())
       if (!response.ok) {
         throw new Error('Falha ao carregar as transações da supervisão.')
       }
@@ -76,7 +90,7 @@ export default function TransacoesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, dateRange])
 
   React.useEffect(() => {
     fetchTransactions()
@@ -89,9 +103,13 @@ export default function TransacoesPage() {
   }
 
   const filteredTransactions = transactions
-    .filter((transaction) =>
-      transaction.contributor.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
+    .filter((transaction) => {
+      // Só aplica filtro de busca se tiver 4+ caracteres ou estiver vazio
+      if (searchTerm.length === 0 || searchTerm.length >= 4) {
+        return transaction.contributor.toLowerCase().includes(searchTerm.toLowerCase())
+      }
+      return true // Se tem menos de 4 caracteres, não filtra
+    })
     .filter((transaction) => statusFilter.length === 0 || statusFilter.includes(transaction.status))
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
@@ -125,21 +143,36 @@ export default function TransacoesPage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           Gerencie as transações financeiras da sua supervisão.
+          {dateRange?.from && dateRange?.to && (
+            <span className="ml-2 font-medium">
+              Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
+            </span>
+          )}
         </p>
       </div>
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar por contribuinte..."
-                className="pl-8 w-full sm:w-[250px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative flex-1 sm:flex-initial">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Buscar..."
+                      className="pl-8 w-full sm:w-[250px]"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Buscar por nome do contribuinte</p>
+                  <p className="text-xs text-muted-foreground">Mínimo 4 caracteres</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1">
@@ -161,7 +194,11 @@ export default function TransacoesPage() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <DateRangePicker />
+            <DateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+            />
+
             <Button size="sm" variant="outline" className="gap-1">
               <Download className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only">Exportar</span>
@@ -253,7 +290,67 @@ export default function TransacoesPage() {
                               Ver Detalhes
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>Reenviar Comprovante</DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(
+                                  `/api/v1/supervisor/transacoes/${transaction.id}/resend-receipt`,
+                                  { method: 'POST' }
+                                )
+                                const data = await res.json()
+                                if (res.ok) {
+                                  toast({
+                                    title: 'Sucesso',
+                                    description: data.message,
+                                    variant: 'success',
+                                  })
+                                } else {
+                                  throw new Error(data.error)
+                                }
+                              } catch (error) {
+                                toast({
+                                  title: 'Erro',
+                                  description:
+                                    error instanceof Error ? error.message : 'Erro ao reenviar comprovante',
+                                  variant: 'destructive',
+                                })
+                              }
+                            }}
+                          >
+                            Reenviar Comprovante
+                          </DropdownMenuItem>
+                          {transaction.status === 'pending' && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(
+                                    `/api/v1/supervisor/transacoes/${transaction.id}/sync`,
+                                    { method: 'POST' }
+                                  )
+                                  const data = await res.json()
+                                  if (res.ok) {
+                                    toast({
+                                      title: 'Sucesso',
+                                      description: data.message,
+                                      variant: 'success',
+                                    })
+                                    fetchTransactions()
+                                  } else {
+                                    throw new Error(data.error)
+                                  }
+                                } catch (error) {
+                                  toast({
+                                    title: 'Erro',
+                                    description:
+                                      error instanceof Error ? error.message : 'Erro ao sincronizar',
+                                    variant: 'destructive',
+                                  })
+                                }
+                              }}
+                            >
+                              Sincronizar Status
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/db'
+import { db } from '@/db/drizzle'
 import { companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
-const COMPANY_ID = process.env.COMPANY_INIT!
+const COMPANY_ID = process.env.COMPANY_INIT || ''
 
 export async function GET() {
   try {

@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { DollarSign, Users, Church, UserCog, User, RefreshCw, ArrowRightLeft } from 'lucide-react'
+import { sanitizeText } from '@/lib/sanitize'
 import {
   Bar,
   BarChart,
@@ -68,6 +69,7 @@ type DashboardData = {
 export default function GerenteDashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [profileIncomplete, setProfileIncomplete] = React.useState(false)
   const { toast } = useToast()
 
   const fetchData = React.useCallback(async () => {
@@ -83,13 +85,32 @@ export default function GerenteDashboardPage() {
       const message = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro',
-        description: message,
+        description: sanitizeText(message),
         variant: 'destructive',
       })
     } finally {
       setIsLoading(false)
     }
   }, [toast])
+
+  React.useEffect(() => {
+    const checkProfile = async () => {
+      try {
+        const res = await fetch('/api/v1/manager/profile-status')
+        if (!res.ok) {
+          throw new Error('Failed to check profile status')
+        }
+        const data = await res.json()
+        setProfileIncomplete(!data.complete)
+        console.log('Profile status checked:', data.complete ? 'complete' : 'incomplete')
+      } catch (error) {
+        console.error('Error checking profile:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        console.error('Profile check failed:', errorMessage)
+      }
+    }
+    checkProfile()
+  }, [])
 
   React.useEffect(() => {
     fetchData()
@@ -173,6 +194,22 @@ export default function GerenteDashboardPage() {
         </h1>
         <DateRangePicker />
       </div>
+
+      {profileIncomplete && (
+        <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950">
+          <CardHeader>
+            <CardTitle className="text-amber-900 dark:text-amber-100">Perfil Incompleto</CardTitle>
+            <CardDescription className="text-amber-800 dark:text-amber-200">
+              Complete seu perfil para habilitar todas as funcionalidades, incluindo pagamentos via boleto.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <a href="/manager/perfil">Completar Perfil</a>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpiDisplayData.map((kpi) => (
@@ -312,8 +349,8 @@ export default function GerenteDashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Membros por Igreja</CardTitle>
-            <CardDescription>Distribuição de membros entre as igrejas da sua rede.</CardDescription>
+            <CardTitle>Contribuições por Igreja</CardTitle>
+            <CardDescription>Número de contribuições de cada igreja da sua rede.</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={{}} className="h-[300px] w-full">

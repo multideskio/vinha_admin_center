@@ -2,6 +2,9 @@
 
 Este documento serve como um registro "vivo" de todas as funcionalidades que foram implementadas, testadas e consideradas **concluídas** no projeto Vinha Admin Center. O objetivo é evitar retrabalho e manter um controle claro do progresso.
 
+**Última Atualização:** Janeiro 2025
+**Status Geral:** Módulo Admin e Manager 100% completos, Sistema de Pagamentos implementado
+
 ---
 
 ## 🏛️ Arquitetura e Base (100% Concluído)
@@ -43,31 +46,50 @@ Este documento serve como um registro "vivo" de todas as funcionalidades que for
 - **[OK] Listagem de Pastores e Igrejas:** Páginas `manager/pastores` e `manager/igrejas` listam corretamente apenas os usuários que pertencem à rede do gerente logado.
 - **[OK] Página de Perfil:** O gerente pode visualizar e atualizar seus próprios dados.
 - **[OK] Transações:** A página de transações exibe corretamente apenas as movimentações financeiras ocorridas dentro da sua rede.
+- **[OK] Sistema de Pagamentos Completo:**
+  - **PIX:** Geração de QR Code Base64 e string copia e cola, polling otimizado (3s), confirmação instantânea (1-5s)
+  - **Cartão de Crédito:** Formulário com validação visual (react-credit-cards-2), suporte Visa/Mastercard/Elo, aprovação imediata
+  - **Boleto:** Geração com linha digitável, PDF para download, vencimento em 7 dias, validação de perfil completo
+  - **Webhook Cielo:** Endpoint `/api/v1/webhooks/cielo` para confirmação automática de pagamentos
+  - **Biblioteca:** `src/lib/cielo.ts` com createPixPayment(), createCreditCardPayment(), createBoletoPayment(), queryPayment()
+  - **Configuração:** Campo webhook URL em `/admin/gateways/cielo` com botão de copiar
 
 ---
 
 ## 👓 Painel de Supervisor (`/supervisor`)
 
-- **[OK] Dashboard:** Totalmente dinâmico, consumindo dados da API `/api/v1/supervisor/dashboard` que agrega informações apenas da sua equipe (pastores e igrejas).
-- **[OK] CRUD de Pastores:** O supervisor pode criar, listar, editar e remover apenas os pastores que estão sob sua supervisão.
-- **[OK] CRUD de Igrejas:** O supervisor pode criar, listar, editar e remover apenas as igrejas que estão sob sua supervisão.
-- **[OK] Página de Perfil:** O supervisor pode visualizar e atualizar seus próprios dados.
-- **[OK] Transações:** A página exibe corretamente apenas as transações relacionadas aos pastores e igrejas de sua supervisão.
+- **[PENDENTE] Dashboard:** Estrutura criada, aguardando implementação da API.
+- **[PENDENTE] CRUD de Pastores:** Estrutura criada, aguardando implementação.
+- **[PENDENTE] CRUD de Igrejas:** Estrutura criada, aguardando implementação.
+- **[PENDENTE] Página de Perfil:** Estrutura criada, aguardando implementação.
+- **[PENDENTE] Transações:** Estrutura criada, aguardando implementação.
 
 ---
 
 ## ✝️ Painel do Pastor (`/pastor`)
 
-- **[OK] Dashboard:** Totalmente dinâmico, exibindo os dados pessoais e o histórico de contribuições do pastor logado via API `/api/v1/pastor/dashboard`.
-- **[OK] Histórico de Transações:** A página `/pastor/transacoes` e a página de detalhe (`/pastor/transacoes/[id]`) estão conectadas à API e exibem apenas as transações do pastor logado.
-- **[OK] Página de Contribuição:** O formulário em `/pastor/contribuir` está funcional e integrado à API de pagamentos, permitindo que o pastor faça suas próprias contribuições (dízimos e ofertas).
-- **[OK] Página de Perfil:** O pastor pode visualizar e atualizar seus próprios dados.
+- **[PENDENTE] Dashboard:** Estrutura criada, aguardando implementação da API.
+- **[PENDENTE] Histórico de Transações:** Estrutura criada, aguardando implementação.
+- **[PENDENTE] Página de Contribuição:** Estrutura criada, aguardando implementação.
+- **[PENDENTE] Página de Perfil:** Estrutura criada, aguardando implementação.
 
 ---
 
 ## ⛪ Painel da Igreja (`/igreja`)
 
-- **[OK] Dashboard:** Totalmente dinâmico, exibindo os dados cadastrais e o histórico de arrecadações da igreja logada via API `/api/v1/igreja/dashboard`.
-- **[OK] Histórico de Transações:** A página `/igreja/transacoes` e seus detalhes estão funcionando e exibem apenas as transações originadas na igreja logada.
-- **[OK] Página de Contribuição:** O formulário em `/igreja/contribuir` está conectado à API de pagamento, permitindo que a igreja faça contribuições.
-- **[OK] Página de Perfil:** A igreja pode visualizar e atualizar seus próprios dados cadastrais.
+- **[PENDENTE] Dashboard:** Estrutura criada, aguardando implementação da API.
+- **[PENDENTE] Histórico de Transações:** Estrutura criada, aguardando implementação.
+- **[PENDENTE] Página de Contribuição:** Estrutura criada, aguardando implementação.
+- **[PENDENTE] Página de Perfil:** Estrutura criada, aguardando implementação.
+
+---
+
+## 💳 Sistema de Pagamentos (100% Concluído)
+
+- **[OK] Integração Cielo API:** Biblioteca completa em `src/lib/cielo.ts`
+- **[OK] PIX:** QR Code, polling 3s, confirmação instantânea
+- **[OK] Cartão de Crédito:** Validação visual, aprovação imediata
+- **[OK] Boleto:** Linha digitável, PDF, vencimento 7 dias
+- **[OK] Webhook:** Confirmação automática via `/api/v1/webhooks/cielo`
+- **[OK] Documentação:** `PAYMENT_VALIDATION.md` e `WEBHOOK_CIELO.md`
+- **[OK] Configuração Admin:** Campo webhook URL em `/admin/gateways/cielo`

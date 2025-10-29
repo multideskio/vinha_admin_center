@@ -48,7 +48,12 @@ src
 │   │   ├── roadmap          # Roadmap do projeto
 │   │   └── changelog        # Histórico de mudanças
 │   ├── auth          # Layout e páginas de autenticação (login, cadastro, etc.)
-│   ├── manager       # Layout e páginas do painel de Gerente (PENDENTE)
+│   ├── manager       # Layout e páginas do painel de Gerente (COMPLETO)
+│   │   ├── _components      # Componentes específicos (header, sidebar)
+│   │   ├── supervisores     # CRUD de supervisores
+│   │   ├── pastores         # CRUD de pastores
+│   │   ├── igrejas          # CRUD de igrejas
+│   │   └── dashboard        # Dashboard com KPIs e gráficos
 │   ├── supervisor    # Layout e páginas do painel de Supervisor (PENDENTE)
 │   ├── pastor        # Layout e páginas do painel de Pastor (PENDENTE)
 │   ├── church        # Layout e páginas do painel de Igreja (PENDENTE)
@@ -153,11 +158,65 @@ src
 - Skeleton loaders em todas as páginas
 - Toast notifications para feedback
 
+### 🎯 Status de Implementação - Painel Manager (/manager)
+
+#### ✅ Funcionalidades Completas
+
+##### Dashboard
+- KPIs: Supervisores, pastores, igrejas, transações, arrecadação mensal
+- Gráficos: Arrecadação por método, igrejas por supervisor
+- Tabelas: Últimas transações e cadastros recentes
+- API: `/api/v1/manager/dashboard` (funcional)
+
+##### Sistema de Pagamentos
+- **PIX:** Geração de QR Code e string copia e cola, polling otimizado (3s), confirmação instantânea
+- **Cartão de Crédito:** Formulário com validação visual, suporte a Visa/Mastercard/Elo, aprovação imediata
+- **Boleto:** Geração com linha digitável, PDF para download, vencimento em 7 dias
+- **Webhook Cielo:** Confirmação automática de pagamentos via `/api/v1/webhooks/cielo`
+- **Histórico:** Visualização de todas as contribuições em `/manager/transacoes`
+- API: `/api/v1/transacoes` (POST para criar, GET para listar)
+
+##### Gestão de Supervisores
+- CRUD completo com listagem, criação, edição e exclusão
+- Perfil detalhado com avatar, dados pessoais, redes sociais
+- Aba de transações com histórico completo
+- Aba de configurações de notificações (email/WhatsApp)
+- Exclusão com motivo obrigatório (soft delete)
+- API: `/api/v1/manager/supervisores` e `/api/v1/manager/supervisores/[id]`
+
+##### Gestão de Pastores
+- CRUD completo seguindo padrão de supervisores
+- Perfil detalhado com todas as funcionalidades
+- Vinculação a supervisores
+- Transações e notificações
+- API: `/api/v1/manager/pastores` e `/api/v1/manager/pastores/[id]`
+
+##### Gestão de Igrejas
+- CRUD completo com CNPJ, razão social, tesoureiro
+- Perfil detalhado com avatar e dados completos
+- Transações e configurações de notificações
+- Exclusão apenas via perfil com motivo obrigatório
+- API: `/api/v1/manager/igrejas` e `/api/v1/manager/igrejas/[id]`
+
+##### Recursos Compartilhados
+- **PhoneInput Component**: Componente padronizado para telefones com DDI (+55)
+- **CEP Lookup**: Endpoint `/api/v1/cep` para preenchimento automático de endereços
+- **Avatar Upload**: Integração com S3 para upload de imagens de perfil
+- **Notification Settings**: Configurações de notificações por email e WhatsApp
+- **Soft Delete**: Exclusão lógica com motivo obrigatório para auditoria
+
+##### Segurança e Permissões
+- Manager só acessa supervisores vinculados a ele (filtro por managerId)
+- Pastores e igrejas filtrados por supervisores do manager
+- Validação de sessão em todos os endpoints
+- Verificação de ownership em operações de edição/exclusão
+- Sanitização de dados em formulários de pagamento
+- Validação de cartão no frontend e backend
+
 ### 📊 Próximos Painéis a Implementar
-1. **Manager** (`/manager`) - Gerenciar supervisores e visualizar regiões
-2. **Supervisor** (`/supervisor`) - Gerenciar pastores e igrejas da sua região
-3. **Pastor** (`/pastor`) - Visualizar dados da própria atuação
-4. **Church** (`/church`) - Dashboard financeiro e gestão da igreja
+1. **Supervisor** (`/supervisor`) - Gerenciar pastores e igrejas da sua região
+2. **Pastor** (`/pastor`) - Visualizar dados da própria atuação
+3. **Church** (`/church`) - Dashboard financeiro e gestão da igreja
 
 ---
 

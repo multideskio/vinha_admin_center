@@ -1,168 +1,85 @@
-/**
- * @fileoverview API para buscar detalhes de uma transação específica (visão do gerente).
- * @version 1.1
- * @date 2024-08-07
- * @author PH
- */
-
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import {
-  transactions as transactionsTable,
-  gatewayConfigurations,
-  supervisorProfiles,
-  pastorProfiles,
-  churchProfiles,
-} from '@/db/schema'
-import { eq, and, inArray } from 'drizzle-orm'
-import { authenticateApiKey } from '@/lib/api-auth'
+import { transactions, users, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
-import { ApiError } from '@/lib/errors'
+import { eq } from 'drizzle-orm'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
-
-async function getCieloCredentials(): Promise<{
-  merchantId: string | null
-  merchantKey: string | null
-  apiUrl: string
-}> {
-  const [config] = await db
-    .select()
-    .from(gatewayConfigurations)
-    .where(eq(gatewayConfigurations.gatewayName, 'Cielo'))
-    .limit(1)
-
-  if (!config) throw new Error('Configuração do gateway Cielo não encontrada.')
-
-  const isProduction = config.environment === 'production'
-  return {
-    merchantId: isProduction ? config.prodClientId : config.devClientId,
-    merchantKey: isProduction ? config.prodClientSecret : config.devClientSecret,
-    apiUrl: isProduction
-      ? 'https://api.cieloecommerce.cielo.com.br'
-      : 'https://apisandbox.cieloecommerce.cielo.com.br',
-  }
-}
-
-async function verifyTransactionOwnership(
-  transactionId: string,
-  managerId: string,
-): Promise<boolean> {
-  const [transaction] = await db
-    .select({ contributorId: transactionsTable.contributorId })
-    .from(transactionsTable)
-    .where(
-      and(
-        eq(transactionsTable.id, transactionId),
-        eq(transactionsTable.companyId, VALIDATED_COMPANY_ID),
-      ),
-    )
-    .limit(1)
-
-  if (!transaction || !transaction.contributorId) return false
-
-  const contributorId = transaction.contributorId
-
-  // Check if the contributor is the manager himself
-  if (contributorId === managerId) return true
-
-  // Check if the contributor is in the manager's network
-  const supervisorsResult = await db
-    .select({ id: supervisorProfiles.userId })
-    .from(supervisorProfiles)
-    .where(eq(supervisorProfiles.managerId, managerId))
-  const supervisorIds = supervisorsResult.map((s) => s.id)
-  if (supervisorIds.includes(contributorId)) return true
-
-  if (supervisorIds.length > 0) {
-    const pastorsResult = await db
-      .select({ id: pastorProfiles.userId })
-      .from(pastorProfiles)
-      .where(inArray(pastorProfiles.supervisorId, supervisorIds))
-    const pastorIds = pastorsResult.map((p) => p.id)
-    if (pastorIds.includes(contributorId)) return true
-
-    const churchesResult = await db
-      .select({ id: churchProfiles.userId })
-      .from(churchProfiles)
-      .where(inArray(churchProfiles.supervisorId, supervisorIds))
-    const churchIds = churchesResult.map((c) => c.id)
-    if (churchIds.includes(contributorId)) return true
-  }
-
-  return false
-}
-
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
-  const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'manager') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  const { id } = params
-
-  if (!id) {
-    return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
-  }
-
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
-    if (!isAuthorized) {
-      throw new ApiError(
-        404,
-        'Transação não encontrada ou você não tem permissão para visualizá-la.',
-      )
+    const { id } = await params
+    const { user } = await validateRequest()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    if (user.role !== 'manager') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
+
+    // Get transaction
     const [transaction] = await db
       .select()
-      .from(transactionsTable)
-      .where(eq(transactionsTable.gatewayTransactionId, id))
+      .from(transactions)
+      .where(eq(transactions.id, id))
+      .limit(1)
 
-    if (!transaction || !transaction.gatewayTransactionId) {
-      throw new ApiError(404, 'Transação não possui um ID de gateway válido.')
+    if (!transaction) {
+      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    const credentials = await getCieloCredentials()
+    // Verify transaction belongs to manager or their network
+    if (transaction.contributorId !== user.id) {
+      // Check if contributor is in manager's network
+      const supervisors = await db
+        .select({ userId: supervisorProfiles.userId })
+        .from(supervisorProfiles)
+        .where(eq(supervisorProfiles.managerId, user.id))
 
-    const response = await fetch(
-      `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          MerchantId: credentials.merchantId || '',
-          MerchantKey: credentials.merchantKey || '',
-        },
+      const supervisorUserIds = supervisors.map(s => s.userId)
+      const isInNetwork = supervisorUserIds.includes(transaction.contributorId)
+
+      if (!isInNetwork) {
+        return NextResponse.json({ error: 'Acesso negado a esta transação' }, { status: 403 })
+      }
+    }
+
+    // Get contributor details
+    const [contributorUser] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, transaction.contributorId))
+      .limit(1)
+
+    const formattedTransaction = {
+      id: transaction.id,
+      date: transaction.createdAt,
+      amount: Number(transaction.amount),
+      status: transaction.status,
+      contributor: {
+        name: contributorUser?.email.split('@')[0] || 'Desconhecido',
+        email: contributorUser?.email || 'N/A',
       },
-    )
-
-    if (!response.ok) {
-      const errorBody = await response.json()
-      console.error('Erro ao consultar transação na Cielo:', errorBody)
-      throw new Error('Falha ao consultar o status da transação na Cielo.')
+      church: {
+        name: 'N/A',
+        address: 'N/A',
+      },
+      payment: {
+        method: transaction.paymentMethod || 'N/A',
+        details: 'N/A',
+      },
+      refundRequestReason: transaction.refundRequestReason,
     }
 
-    const cieloData = await response.json()
-
-    return NextResponse.json({ success: true, transaction: cieloData })
-  } catch (error: unknown) {
-    if (error instanceof ApiError) {
-      return NextResponse.json({ error: error.message }, { status: error.status })
-    }
-    console.error('Erro ao consultar transação:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    return NextResponse.json({ transaction: formattedTransaction })
+  } catch (error) {
+    console.error('Error fetching manager transaction:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor.', details: errorMessage },
-      { status: 500 },
+      { error: 'Erro ao buscar transação' },
+      { status: 500 }
     )
   }
 }

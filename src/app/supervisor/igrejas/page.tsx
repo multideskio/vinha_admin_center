@@ -22,7 +22,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 
-import Image from 'next/image'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -79,8 +78,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DateRange } from 'react-day-picker'
 
 const churchSchema = z.object({
   id: z.string().optional(),
@@ -106,7 +107,10 @@ const churchSchema = z.object({
   status: z.enum(['active', 'inactive']),
 })
 
-type Church = z.infer<typeof churchSchema> & { supervisorName?: string }
+type Church = z.infer<typeof churchSchema> & { 
+  supervisorName?: string
+  avatarUrl?: string | null
+}
 
 const ChurchFormModal = ({
   onSave,
@@ -209,14 +213,6 @@ const ChurchFormModal = ({
       .replace(/\D/g, '')
       .replace(/(\d{5})(\d)/, '$1-$2')
       .slice(0, 9)
-  }
-
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15)
   }
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
@@ -607,6 +603,7 @@ export default function IgrejasPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table')
   const [searchTerm, setSearchTerm] = React.useState('')
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const [currentPage, setCurrentPage] = React.useState(1)
   const itemsPerPage = viewMode === 'table' ? 10 : 9
   const { toast } = useToast()
@@ -614,7 +611,19 @@ export default function IgrejasPage() {
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/supervisor/igrejas')
+      const url = new URL('/api/v1/supervisor/igrejas', window.location.origin)
+      
+      // Adicionar parâmetros de data se selecionados
+      if (dateRange?.from) {
+        const startDate = (dateRange.from as Date).toISOString().substring(0, 10)
+        url.searchParams.set('startDate', startDate)
+      }
+      if (dateRange?.to) {
+        const endDate = (dateRange.to as Date).toISOString().substring(0, 10)
+        url.searchParams.set('endDate', endDate)
+      }
+
+      const response = await fetch(url.toString())
       if (!response.ok) throw new Error('Falha ao carregar igrejas.')
       const data = await response.json()
       setChurches(data.churches)
@@ -624,7 +633,7 @@ export default function IgrejasPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, dateRange])
 
   React.useEffect(() => {
     fetchData()
@@ -642,9 +651,17 @@ export default function IgrejasPage() {
     }
   }
 
-  const filteredChurches = churches.filter((church) =>
-    (church.nomeFantasia || '').toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const filteredChurches = churches.filter((church) => {
+    // Só aplica filtro de busca se tiver 4+ caracteres ou estiver vazio
+    if (searchTerm.length === 0 || searchTerm.length >= 4) {
+      const nomeFantasia = (church.nomeFantasia || '').toLowerCase()
+      const razaoSocial = (church.razaoSocial || '').toLowerCase()
+      const email = (church.email || '').toLowerCase()
+      const term = searchTerm.toLowerCase()
+      return nomeFantasia.includes(term) || razaoSocial.includes(term) || email.includes(term)
+    }
+    return true // Se tem menos de 4 caracteres, não filtra
+  })
 
   const totalPages = Math.ceil(filteredChurches.length / itemsPerPage)
   const paginatedChurches = filteredChurches.slice(
@@ -782,13 +799,12 @@ export default function IgrejasPage() {
               <Card key={church.id}>
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                    <Image
-                      src="https://placehold.co/96x96.png"
+                    <ClickableAvatar
+                      src={church.avatarUrl || undefined}
                       alt={`Foto da ${church.nomeFantasia}`}
-                      width={96}
-                      height={96}
-                      className="rounded-lg object-cover w-24 h-24"
-                      data-ai-hint="church building"
+                      fallback={church.nomeFantasia?.substring(0, 2).toUpperCase() || 'IG'}
+                      className="w-24 h-24"
+                      enableModal={!!church.avatarUrl}
                     />
                     <div className="flex-1 space-y-2 min-w-[200px]">
                       <h3 className="text-lg font-bold">
@@ -866,20 +882,38 @@ export default function IgrejasPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             Exibindo {filteredChurches.length} de {churches.length} resultados
+            {dateRange?.from && dateRange?.to && (
+              <span className="ml-2 font-medium">
+                • Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <TooltipProvider>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome fantasia..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <DateRangePicker />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Buscar por nome fantasia, razão social ou email</p>
+                <p className="text-xs text-muted-foreground">Mínimo 4 caracteres</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <DateRangePicker 
+            value={dateRange}
+            onChange={setDateRange}
+          />
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

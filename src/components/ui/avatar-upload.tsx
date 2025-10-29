@@ -13,9 +13,9 @@ import { useS3Config } from '@/hooks/use-s3-config'
 import { useUpload } from '@/hooks/use-upload'
 
 interface AvatarUploadProps {
-  currentUrl?: string
+  currentAvatarUrl?: string
   fallback?: string
-  onUploadSuccess?: (url: string) => void
+  onUploadComplete?: (url: string) => void
   userId?: string
   folder?: string
   size?: 'sm' | 'md' | 'lg'
@@ -28,8 +28,8 @@ const sizeClasses = {
 }
 
 export function AvatarUpload({
-  currentUrl,
-  onUploadSuccess,
+  currentAvatarUrl,
+  onUploadComplete,
   folder = 'avatars',
   size = 'md',
 }: AvatarUploadProps) {
@@ -56,7 +56,7 @@ export function AvatarUpload({
 
       if (result.success && result.url) {
         setPreviewUrl(result.url)
-        onUploadSuccess?.(result.url)
+        onUploadComplete?.(result.url)
         
         toast({
           title: 'Sucesso',
@@ -80,7 +80,7 @@ export function AvatarUpload({
       <div className="space-y-4">
         <div className="relative opacity-50">
           <ClickableImage
-            src={previewUrl || currentUrl || 'https://placehold.co/96x96.png'}
+            src={previewUrl || currentAvatarUrl || 'https://placehold.co/96x96.png'}
             alt="Avatar"
             className={`${sizeClasses[size]} rounded-full object-cover`}
             width={size === 'sm' ? 64 : size === 'md' ? 96 : 128}
@@ -98,10 +98,12 @@ export function AvatarUpload({
     )
   }
 
+  const displayUrl = previewUrl || currentAvatarUrl || 'https://placehold.co/96x96.png'
+
   return (
     <div className="relative">
       <ClickableImage
-        src={previewUrl || currentUrl || ''}
+        src={displayUrl}
         alt="Avatar"
         className={`${sizeClasses[size]} rounded-full object-cover`}
         width={size === 'sm' ? 64 : size === 'md' ? 96 : 128}

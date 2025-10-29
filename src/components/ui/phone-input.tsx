@@ -15,7 +15,7 @@ export interface PhoneInputProps {
 }
 
 const CustomPhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
-  ({ className, value = '', onChange, placeholder, disabled = false, type = 'mobile', ...props }, ref) => {
+  ({ className, value = '', onChange, placeholder, disabled = false, type = 'mobile', ...props }, _) => {
     
     const handleChange = (phone: string) => {
       onChange?.(phone)

@@ -134,6 +134,34 @@
       "when": 1757872939433,
       "tag": "0018_clean_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1761697085908,
+      "tag": "0019_romantic_adam_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1761719421592,
+      "tag": "0020_quick_bromley",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1761721386180,
+      "tag": "0021_watery_magik",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1761721511272,
+      "tag": "0022_flashy_starhawk",
+      "breakpoints": true
     }
   ]
 }

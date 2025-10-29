@@ -24,7 +24,7 @@ export async function createUserWithWelcome(userData: {
       companyId: userData.companyId,
       email: userData.email,
       password: userData.password,
-      role: userData.role as any,
+      role: userData.role as 'admin' | 'manager' | 'supervisor' | 'pastor' | 'church_account',
       phone: userData.phone,
       welcomeSent: false,
     })

@@ -18,6 +18,7 @@ import { churchProfileSchema } from '@/lib/types'
 const churchUpdateSchema = churchProfileSchema
   .extend({
     newPassword: z.string().optional().or(z.literal('')),
+    avatarUrl: z.string().optional(),
   })
   .partial()
 
@@ -29,12 +30,22 @@ async function verifyChurch(churchId: string, supervisorId: string): Promise<boo
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+  
+  // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'supervisor') {
+  
+  if (!sessionUser) {
+    // Se não há usuário logado, tenta autenticação por API Key
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
+    
+    // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  // Verifica se o usuário tem a role correta
+  if (sessionUser.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
   }
 
   const { id } = params
@@ -83,6 +94,11 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       treasurerLastName: profile?.treasurerLastName,
       treasurerCpf: profile?.treasurerCpf,
       status: user.status,
+      // Campos de redes sociais e avatar
+      avatarUrl: user.avatarUrl,
+      facebook: profile?.facebook,
+      instagram: profile?.instagram,
+      website: profile?.website,
     })
   } catch (error) {
     console.error('Erro ao buscar igreja:', error)
@@ -92,12 +108,22 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+  
+  // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'supervisor') {
+  
+  if (!sessionUser) {
+    // Se não há usuário logado, tenta autenticação por API Key
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
+    
+    // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  // Verifica se o usuário tem a role correta
+  if (sessionUser.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
   }
 
   const { id } = params
@@ -122,6 +148,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -147,6 +174,10 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.treasurerLastName)
         profileUpdateData.treasurerLastName = validatedData.treasurerLastName
       if (validatedData.treasurerCpf) profileUpdateData.treasurerCpf = validatedData.treasurerCpf
+      // Campos de redes sociais
+      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
+      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx.update(churchProfiles).set(profileUpdateData).where(eq(churchProfiles.userId, id))
@@ -168,12 +199,22 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+  
+  // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'supervisor') {
+  
+  if (!sessionUser) {
+    // Se não há usuário logado, tenta autenticação por API Key
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
+    
+    // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  // Verifica se o usuário tem a role correta
+  if (sessionUser.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
   }
 
   const { id } = params

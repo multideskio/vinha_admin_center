@@ -11,15 +11,15 @@ export interface TemplateVariables {
   [key: string]: string | undefined
 }
 
-export class TemplateEngine {
-  static processTemplate(template: string, variables: TemplateVariables): string {
+export const TemplateEngine = {
+  processTemplate(template: string, variables: TemplateVariables): string {
     return processTemplate(template, variables)
-  }
+  },
 
-  static validateTemplate(template: string): { isValid: boolean; errors: string[] } {
+  validateTemplate(template: string): { isValid: boolean; errors: string[] } {
     return validateTemplate(template)
-  }
-}
+  },
+} as const
 
 export function processTemplate(template: string, variables: TemplateVariables): string {
   let processed = template

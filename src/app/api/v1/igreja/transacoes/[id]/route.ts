@@ -37,8 +37,8 @@ async function getCieloCredentials(): Promise<{
     merchantId: isProduction ? config.prodClientId : config.devClientId,
     merchantKey: isProduction ? config.prodClientSecret : config.devClientSecret,
     apiUrl: isProduction
-      ? 'https://api.cieloecommerce.cielo.com.br'
-      : 'https://apisandbox.cieloecommerce.cielo.com.br',
+      ? 'https://apiquery.cieloecommerce.cielo.com.br'
+      : 'https://apiquerysandbox.cieloecommerce.cielo.com.br',
   }
 }
 
@@ -61,12 +61,16 @@ async function verifyTransactionOwnership(
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'church_account') {
+  
+  if (!sessionUser) {
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  if (!['igreja', 'church_account'].includes(sessionUser.role)) {
+    return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
   }
 
   const { id: transactionId } = params
@@ -132,13 +136,21 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       .from(churchProfiles)
       .where(eq(churchProfiles.userId, transaction.originChurchId))
 
+    const payment = cieloData.Payment
+
+    // Mapear status da Cielo
+    let status: 'approved' | 'pending' | 'refused' | 'refunded' = 'pending'
+    if (payment.Status === 2) status = 'approved'
+    else if (payment.Status === 3) status = 'refused'
+    else if (payment.Status === 10 || payment.Status === 11) status = 'refunded'
+
     const formattedData = {
-      id: cieloData.Payment.PaymentId,
-      date: format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss'),
-      amount: cieloData.Payment.Amount / 100,
-      status: 'approved', // Mapear o status da Cielo para o seu
+      id: payment.PaymentId,
+      date: payment.ReceivedDate ? format(parseISO(payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss') : 'N/A',
+      amount: payment.Amount / 100,
+      status,
       contributor: {
-        name: contributor?.email ?? 'N/A', // ou nome do perfil se disponível
+        name: contributor?.email ?? 'N/A',
         email: contributor?.email ?? 'N/A',
       },
       church: {
@@ -146,12 +158,13 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
         address: `${church?.address ?? ''}, ${church?.city ?? ''} - ${church?.state ?? ''}`,
       },
       payment: {
-        method: cieloData.Payment.Type,
+        method: payment.Type === 'CreditCard' ? 'Cartão de Crédito' : payment.Type === 'Pix' ? 'Pix' : 'Boleto',
         details:
-          cieloData.Payment.Type === 'CreditCard'
-            ? `Cartão final ${cieloData.Payment.CreditCard.CardNumber.slice(-4)}`
-            : cieloData.Payment.ProofOfSale,
+          payment.Type === 'CreditCard' && payment.CreditCard
+            ? `${payment.CreditCard.Brand} final ${payment.CreditCard.CardNumber.slice(-4)}`
+            : payment.ProofOfSale || 'N/A',
       },
+      refundRequestReason: payment.VoidReason || null,
     }
 
     return NextResponse.json({ success: true, transaction: formattedData })

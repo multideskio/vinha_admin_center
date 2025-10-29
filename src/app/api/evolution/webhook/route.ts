@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         break
       
       case 'connection.update':
-        await handleConnectionUpdate(data)
+        await handleConnectionUpdate()
         break
       
       default:
@@ -54,7 +54,7 @@ async function handleMessageUpdate(data: EvolutionWebhookData) {
   console.log('Message status updated:', data.data.status)
 }
 
-async function handleConnectionUpdate(_data: EvolutionWebhookData) {
+async function handleConnectionUpdate() {
   // Processar mudança de status da conexão
   console.log('Connection status updated')
 }
