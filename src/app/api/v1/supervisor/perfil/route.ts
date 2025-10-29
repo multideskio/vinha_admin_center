@@ -82,6 +82,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)

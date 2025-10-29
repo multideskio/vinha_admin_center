@@ -51,6 +51,7 @@ export async function GET(): Promise<NextResponse> {
         cpf: pastorProfiles.cpf,
         city: pastorProfiles.city,
         state: pastorProfiles.state,
+        avatarUrl: users.avatarUrl,
         supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
       })
       .from(users)

@@ -12,7 +12,6 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { authenticateApiKey } from '@/lib/api-auth'
 import { managerProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
@@ -24,9 +23,6 @@ const managerUpdateSchema = managerProfileSchema
   .partial()
 
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -50,10 +46,13 @@ export async function GET(): Promise<NextResponse> {
     const { user, profile } = result[0]
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: profileId, userId, ...profileWithoutIds } = profile || {}
 
     const managerData = {
+      userId: user.id,
       ...userWithoutPassword,
-      ...profile,
+      ...profileWithoutIds,
     }
 
     return NextResponse.json({ manager: managerData })
@@ -68,9 +67,6 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function PUT(request: Request): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -85,6 +81,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -105,6 +102,9 @@ export async function PUT(request: Request): Promise<NextResponse> {
       if (validatedData.neighborhood !== undefined)
         profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address
+      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
+      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx

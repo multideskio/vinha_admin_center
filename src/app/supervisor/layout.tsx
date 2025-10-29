@@ -1,19 +1,36 @@
 /**
  * @fileoverview Layout principal para o painel de supervisor.
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 2.0
+ * @date 2025-01-28
+ * @author Sistema de Padronização
  */
 
 import type { Metadata } from 'next'
-import { SupervisorSidebar } from './_components/sidebar'
-import { SupervisorHeader } from './_components/header'
 import { validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
+import { getCompanySettings } from '@/lib/company'
+import { RoleLayout } from '@/components/role-layout'
+// Configuração dos itens de menu do supervisor
+const menuItems = [
+  { href: '/supervisor/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { href: '/supervisor/pastores', label: 'Pastores', icon: 'User' },
+  { href: '/supervisor/igrejas', label: 'Igrejas', icon: 'Church' },
+  { href: '/supervisor/transacoes', label: 'Transações', icon: 'ArrowRightLeft' },
+  { href: '/supervisor/contribuicoes', label: 'Contribuições', icon: 'Handshake' },
+]
 
-export const metadata: Metadata = {
-  title: 'Vinha Supervisor Center',
-  description: 'Painel de Supervisor para Vinha Ministérios',
+const settingsItem = {
+  href: '/supervisor/perfil',
+  label: 'Meu Perfil',
+  icon: 'Settings',
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompanySettings()
+  return {
+    title: company?.name ? `${company.name} - Supervisor Center` : 'Vinha Supervisor Center',
+    description: `Painel de Supervisor para ${company?.name || 'Vinha Ministérios'}`,
+  }
 }
 
 export default async function SupervisorLayout({
@@ -27,20 +44,15 @@ export default async function SupervisorLayout({
     return redirect('/auth/login')
   }
 
-  const userName = user.email?.split('@')[0] || 'user'
-  const userFallback = userName.substring(0, 2).toUpperCase()
-
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <SupervisorSidebar />
-      <div className="flex flex-col">
-        <SupervisorHeader
-          userName={userName}
-          userEmail={user.email || ''}
-          userFallback={userFallback}
-        />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
-      </div>
-    </div>
+    <RoleLayout
+      user={user}
+      role="supervisor"
+      menuItems={menuItems}
+      settingsItem={settingsItem}
+      basePath="/supervisor"
+    >
+      {children}
+    </RoleLayout>
   )
 }

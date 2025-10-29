@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { sanitizeText } from '@/lib/sanitize'
 
 const contributionSchema = z.object({
   amount: z.coerce.number().min(1, 'O valor deve ser maior que zero.'),
@@ -77,6 +78,8 @@ export default function ContribuicoesPage(): JSX.Element {
   const [isProcessing, setIsProcessing] = React.useState(false)
   const [pixStatus, setPixStatus] = React.useState<'idle' | 'pending' | 'confirmed'>('idle')
   const [showPaymentDetails, setShowPaymentDetails] = React.useState(false)
+  const [availableMethods, setAvailableMethods] = React.useState<string[]>([])
+  const [isLoadingMethods, setIsLoadingMethods] = React.useState(true)
   const [cardState, setCardState] = React.useState({
     number: '',
     expiry: '',
@@ -86,6 +89,32 @@ export default function ContribuicoesPage(): JSX.Element {
   })
 
   const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchMethods = async () => {
+      try {
+        console.log('Fetching payment methods')
+        const res = await fetch('/api/v1/payment-methods')
+        if (!res.ok) {
+          throw new Error('Failed to fetch payment methods')
+        }
+        const data = await res.json()
+        setAvailableMethods(data.methods || [])
+        console.log('Payment methods loaded:', data.methods?.length || 0)
+        if (data.methods.length > 0) {
+          form.setValue('paymentMethod', data.methods[0] as 'pix' | 'credit_card' | 'boleto')
+        }
+      } catch (error) {
+        console.error('Error fetching payment methods:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar métodos de pagamento'
+        toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
+      } finally {
+        setIsLoadingMethods(false)
+      }
+    }
+    fetchMethods()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const form = useForm<ContributionFormValues>({
     resolver: zodResolver(contributionSchema),
@@ -123,14 +152,21 @@ export default function ContribuicoesPage(): JSX.Element {
   }, [paymentMethod, amount])
 
   React.useEffect(() => {
-    let timer: NodeJS.Timeout
+    let interval: NodeJS.Timeout
     if (paymentDetails && paymentMethod === 'pix' && pixStatus === 'pending') {
-      timer = setTimeout(async () => {
+      // Verificar a cada 3 segundos
+      interval = setInterval(async () => {
         try {
           if (!paymentDetails.PaymentId) return
+          console.log('Checking PIX payment status:', paymentDetails.PaymentId)
           const res = await fetch(`/api/v1/transacoes/${paymentDetails.PaymentId}`)
+          if (!res.ok) {
+            throw new Error('Failed to check payment status')
+          }
           const data = await res.json()
           if ((data.transaction?.Payment?.Status as number) === 2) {
+            console.log('PIX payment confirmed')
+            clearInterval(interval)
             setPixStatus('confirmed')
             toast({
               title: 'Sucesso!',
@@ -139,11 +175,18 @@ export default function ContribuicoesPage(): JSX.Element {
             })
           }
         } catch (error) {
-          console.error('Falha ao verificar status do Pix')
+          console.error('Falha ao verificar status do Pix:', error)
+          const errorMessage = error instanceof Error ? error.message : 'Erro ao verificar pagamento'
+          console.error('PIX status check failed:', errorMessage)
         }
-      }, 8000)
+      }, 3000) // Verifica a cada 3 segundos
+
+      // Parar após 5 minutos
+      setTimeout(() => {
+        clearInterval(interval)
+      }, 300000)
     }
-    return () => clearTimeout(timer)
+    return () => clearInterval(interval)
   }, [paymentDetails, paymentMethod, pixStatus, toast])
 
   const handleInputChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,7 +239,7 @@ export default function ContribuicoesPage(): JSX.Element {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro no Pagamento',
-        description: errorMessage,
+        description: sanitizeText(errorMessage),
         variant: 'destructive',
       })
     } finally {
@@ -238,7 +281,7 @@ export default function ContribuicoesPage(): JSX.Element {
       setPaymentDetails(null)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro no Pagamento', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro no Pagamento', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsProcessing(false)
     }
@@ -337,53 +380,69 @@ export default function ContribuicoesPage(): JSX.Element {
                 </div>
                 <div className="space-y-4">
                   <Label>Método de Pagamento</Label>
-                  <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-                          >
-                            <Label
-                              className={cn(
-                                'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer',
-                                field.value === 'pix' && 'border-primary',
-                              )}
+                  {isLoadingMethods ? (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <Skeleton className="h-24 w-full" />
+                      <Skeleton className="h-24 w-full" />
+                      <Skeleton className="h-24 w-full" />
+                    </div>
+                  ) : availableMethods.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum método de pagamento disponível. Configure em /admin/gateways/cielo</p>
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              className="grid grid-cols-1 gap-4 sm:grid-cols-3"
                             >
-                              <RadioGroupItem value="pix" className="sr-only" />
-                              <QrCode className="mb-3 h-6 w-6" />
-                              Pix
-                            </Label>
-                            <Label
-                              className={cn(
-                                'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer',
-                                field.value === 'credit_card' && 'border-primary',
+                              {availableMethods.includes('pix') && (
+                                <Label
+                                  className={cn(
+                                    'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer',
+                                    field.value === 'pix' && 'border-primary',
+                                  )}
+                                >
+                                  <RadioGroupItem value="pix" className="sr-only" />
+                                  <QrCode className="mb-3 h-6 w-6" />
+                                  Pix
+                                </Label>
                               )}
-                            >
-                              <RadioGroupItem value="credit_card" className="sr-only" />
-                              <CreditCard className="mb-3 h-6 w-6" />
-                              Crédito
-                            </Label>
-                            <Label
-                              className={cn(
-                                'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer',
-                                field.value === 'boleto' && 'border-primary',
+                              {availableMethods.includes('credit_card') && (
+                                <Label
+                                  className={cn(
+                                    'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer',
+                                    field.value === 'credit_card' && 'border-primary',
+                                  )}
+                                >
+                                  <RadioGroupItem value="credit_card" className="sr-only" />
+                                  <CreditCard className="mb-3 h-6 w-6" />
+                                  Crédito
+                                </Label>
                               )}
-                            >
-                              <RadioGroupItem value="boleto" className="sr-only" />
-                              <Banknote className="mb-3 h-6 w-6" />
-                              Boleto
-                            </Label>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage className="pt-2" />
-                      </FormItem>
-                    )}
-                  />
+                              {availableMethods.includes('boleto') && (
+                                <Label
+                                  className={cn(
+                                    'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer',
+                                    field.value === 'boleto' && 'border-primary',
+                                  )}
+                                >
+                                  <RadioGroupItem value="boleto" className="sr-only" />
+                                  <Banknote className="mb-3 h-6 w-6" />
+                                  Boleto
+                                </Label>
+                              )}
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage className="pt-2" />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </div>
 

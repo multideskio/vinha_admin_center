@@ -43,7 +43,13 @@ export async function GET(request: Request): Promise<NextResponse> {
           ),
         )
         .orderBy(desc(users.createdAt))
-      return NextResponse.json({ supervisors: result })
+      
+      const supervisorsWithName = result.map(s => ({
+        id: s.id,
+        name: `${s.firstName} ${s.lastName}`
+      }))
+      
+      return NextResponse.json({ supervisors: supervisorsWithName })
     }
 
     const result = await db
@@ -55,7 +61,11 @@ export async function GET(request: Request): Promise<NextResponse> {
         phone: users.phone,
         status: users.status,
         cpf: supervisorProfiles.cpf,
+        avatarUrl: users.avatarUrl,
+        regionId: supervisorProfiles.regionId,
         regionName: regions.name,
+        regionColor: regions.color,
+        createdAt: users.createdAt,
       })
       .from(users)
       .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))

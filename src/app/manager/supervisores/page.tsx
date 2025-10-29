@@ -81,6 +81,8 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { sanitizeText } from '@/lib/sanitize'
 
 const supervisorSchema = z.object({
   regionId: z.string({ required_error: 'Selecione uma região.' }),
@@ -102,6 +104,9 @@ type Supervisor = z.infer<typeof supervisorSchema> & {
   status: 'active' | 'inactive'
   managerName?: string
   regionName?: string
+  regionColor?: string
+  avatarUrl?: string
+  createdAt?: string
 }
 
 type Region = {
@@ -169,7 +174,7 @@ const SupervisorFormModal = ({
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro',
-        description: errorMessage,
+        description: sanitizeText(errorMessage),
         variant: 'destructive',
       })
     }
@@ -191,13 +196,7 @@ const SupervisorFormModal = ({
       .slice(0, 9)
   }
 
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15)
-  }
+
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value.replace(/\D/g, '')
@@ -205,14 +204,14 @@ const SupervisorFormModal = ({
 
     setIsFetchingCep(true)
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const response = await fetch(`/api/v1/cep?cep=${cep}`)
+      if (!response.ok) return
+      
       const data = await response.json()
-      if (!data.erro) {
-        form.setValue('address', data.logradouro)
-        form.setValue('neighborhood', data.bairro)
-        form.setValue('city', data.localidade)
-        form.setValue('state', data.uf)
-      }
+      form.setValue('address', data.address || '')
+      form.setValue('neighborhood', data.neighborhood || '')
+      form.setValue('city', data.city || '')
+      form.setValue('state', data.state || '')
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
     } finally {
@@ -442,19 +441,13 @@ const SupervisorFormModal = ({
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Celular *</FormLabel>
+                    <FormLabel>Celular/WhatsApp</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <PhoneInput
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        type="mobile"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -504,7 +497,7 @@ export default function SupervisoresPage() {
       setRegions(regionsData.regions)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -528,7 +521,7 @@ export default function SupervisoresPage() {
       fetchData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     }
   }
 
@@ -558,7 +551,7 @@ export default function SupervisoresPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
+              <TableHead>Supervisor</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="hidden md:table-cell">Região</TableHead>
               <TableHead className="hidden sm:table-cell">Status</TableHead>
@@ -591,12 +584,24 @@ export default function SupervisoresPage() {
             ) : paginatedSupervisors.length > 0 ? (
               paginatedSupervisors.map((supervisor) => (
                 <TableRow key={supervisor.id}>
-                  <TableCell className="font-medium">{`${supervisor.firstName} ${supervisor.lastName}`}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {supervisor.email}
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={supervisor.avatarUrl || 'https://placehold.co/40x40.png'}
+                        alt={`${supervisor.firstName} ${supervisor.lastName}`}
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover"
+                        data-ai-hint="person"
+                      />
+                      <span>{sanitizeText(`${supervisor.firstName} ${supervisor.lastName}`)}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {supervisor.regionName || 'N/A'}
+                    {sanitizeText(supervisor.email)}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {sanitizeText(supervisor.regionName) || 'N/A'}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={supervisor.status === 'active' ? 'success' : 'destructive'}>
@@ -674,35 +679,35 @@ export default function SupervisoresPage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <Image
-                    src="https://placehold.co/96x96.png"
+                    src={supervisor.avatarUrl || 'https://placehold.co/96x96.png'}
                     alt={`Foto de ${supervisor.firstName}`}
                     width={96}
                     height={96}
                     className="rounded-lg object-cover w-24 h-24"
-                    data-ai-hint="male person"
+                    data-ai-hint="person"
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
-                      #{(currentPage - 1) * itemsPerPage + index + 1} - {supervisor.firstName}{' '}
-                      {supervisor.lastName}
+                      #{(currentPage - 1) * itemsPerPage + index + 1} - {sanitizeText(supervisor.firstName)}{' '}
+                      {sanitizeText(supervisor.lastName)}
                     </h3>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p className="flex items-center gap-2">
-                        <Map size={14} /> <span>Região: {supervisor.regionName || 'N/A'}</span>
+                        <Map size={14} /> <span>Região: {sanitizeText(supervisor.regionName) || 'N/A'}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <FileText size={14} /> <span>{supervisor.cpf}</span>
+                        <FileText size={14} /> <span>{sanitizeText(supervisor.cpf)}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Phone size={14} /> <span>{supervisor.phone}</span>
+                        <Phone size={14} /> <span>{sanitizeText(supervisor.phone)}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Mail size={14} /> <span>{supervisor.email}</span>
+                        <Mail size={14} /> <span>{sanitizeText(supervisor.email)}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <MapPin size={14} />{' '}
                         <span>
-                          {supervisor.city} - {supervisor.state}
+                          {sanitizeText(supervisor.city)} - {sanitizeText(supervisor.state)}
                         </span>
                       </p>
                     </div>

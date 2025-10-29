@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { handleLogout } from '@/actions/logout'
+import { sanitizeText } from '@/lib/sanitize'
 
 const menuItems = [
   { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -68,9 +69,30 @@ type HeaderProps = {
   userName: string
   userEmail: string
   userFallback: string
+  avatarUrl?: string
+  companyLogo?: string
+  companyName?: string
 }
 
-export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps) {
+export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, companyLogo, companyName }: HeaderProps) {
+  const handleLogoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      console.log('User logout initiated:', userEmail);
+      await handleLogout();
+      console.log('User logout successful');
+    } catch (error) {
+      console.error('Logout error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout';
+      alert(errorMessage);
+    }
+  };
+
+  const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('Failed to load company logo:', companyLogo);
+    e.currentTarget.style.display = 'none';
+  };
+
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       <Sheet>
@@ -86,8 +108,12 @@ export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps
               href="/manager/dashboard"
               className="flex items-center gap-2 text-lg font-semibold"
             >
-              <Logo className="h-6 w-6 text-primary" />
-              <span className="sr-only">Vinha Ministérios</span>
+              {companyLogo ? (
+                <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
+              ) : (
+                <Logo className="h-6 w-6 text-primary" />
+              )}
+              <span className="sr-only">{companyName || 'Vinha Ministérios'}</span>
             </Link>
             {menuItems.map((item) => (
               <Link
@@ -127,7 +153,7 @@ export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps
           <Button variant="secondary" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage
-                src="https://placehold.co/32x32.png"
+                src={avatarUrl || 'https://placehold.co/32x32.png'}
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />
@@ -139,21 +165,25 @@ export function ManagerHeader({ userName, userEmail, userFallback }: HeaderProps
         <DropdownMenuContent align="end">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">Bem vindo {userName}!</p>
-              <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
+              <p className="text-sm font-medium leading-none">Bem vindo {sanitizeText(userName)}!</p>
+              <p className="text-xs leading-none text-muted-foreground">{sanitizeText(userEmail)}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
+          <DropdownMenuItem asChild>
+            <Link href="/manager/perfil">
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LifeBuoy className="mr-2 h-4 w-4" />
-            <span>Ajuda</span>
+          <DropdownMenuItem asChild>
+            <Link href="/ajuda">
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Ajuda</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <form action={handleLogout}>
+          <form onSubmit={handleLogoutSubmit}>
             <button type="submit" className="w-full">
               <DropdownMenuItem>
                 <LogOut className="mr-2 h-4 w-4" />

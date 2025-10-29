@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/db'
+import { db } from '@/db/drizzle'
 import { notificationRules, users, transactions, notificationLogs } from '@/db/schema'
 import { eq, and, gte } from 'drizzle-orm'
 import { NotificationService } from '@/lib/notifications'
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
   }
 }
 
-async function processNewUsers(rule: any) {
+async function processNewUsers(rule: { messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean }) {
   const recentUsers = await db
     .select()
     .from(users)
@@ -66,7 +66,7 @@ async function processNewUsers(rule: any) {
     .limit(50)
 
   for (const user of recentUsers) {
-    const message = rule.messageTemplate.replace('{nome_usuario}', user.email.split('@')[0])
+    const message = String(rule.messageTemplate).replace('{nome_usuario}', user.email.split('@')[0] || '')
     const notificationService = new NotificationService({ companyId: user.companyId })
 
     try {
@@ -91,7 +91,7 @@ async function processNewUsers(rule: any) {
   }
 }
 
-async function processPayments(rule: any) {
+async function processPayments(rule: { messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean }) {
   const recentTransactions = await db
     .select({ transaction: transactions, user: users })
     .from(transactions)
@@ -119,9 +119,9 @@ async function processPayments(rule: any) {
 
     if (alreadySent.length > 0) continue // Já enviado
 
-    const message = rule.messageTemplate
-      .replace('{nome_usuario}', user.email.split('@')[0])
-      .replace('{valor_transacao}', transaction.amount)
+    const message = String(rule.messageTemplate)
+      .replace('{nome_usuario}', user.email.split('@')[0] || '')
+      .replace('{valor_transacao}', String(transaction.amount))
 
     const notificationService = new NotificationService({ companyId: user.companyId })
 
@@ -153,7 +153,7 @@ async function processPayments(rule: any) {
   }
 }
 
-async function processReminders(rule: any) {
+async function processReminders(rule: { id: string; messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean; daysOffset: number }) {
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() + rule.daysOffset)
   const today = new Date().toISOString().split('T')[0]
@@ -179,8 +179,8 @@ async function processReminders(rule: any) {
 
     if (alreadySent.length > 0) continue
 
-    const message = rule.messageTemplate
-      .replace('{nome_usuario}', user.email.split('@')[0])
+    const message = String(rule.messageTemplate)
+      .replace('{nome_usuario}', user.email.split('@')[0] || '')
       .replace('{data_vencimento}', targetDate.toLocaleDateString('pt-BR'))
 
     const notificationService = new NotificationService({ companyId: user.companyId })
@@ -212,7 +212,7 @@ async function processReminders(rule: any) {
   }
 }
 
-async function processOverdue(rule: any) {
+async function processOverdue(rule: { id: string; messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean; daysOffset: number }) {
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() - rule.daysOffset)
   const today = new Date().toISOString().split('T')[0]
@@ -238,8 +238,8 @@ async function processOverdue(rule: any) {
 
     if (alreadySent.length > 0) continue
 
-    const message = rule.messageTemplate
-      .replace('{nome_usuario}', user.email.split('@')[0])
+    const message = String(rule.messageTemplate)
+      .replace('{nome_usuario}', user.email.split('@')[0] || '')
       .replace('{data_vencimento}', targetDate.toLocaleDateString('pt-BR'))
 
     const notificationService = new NotificationService({ companyId: user.companyId })

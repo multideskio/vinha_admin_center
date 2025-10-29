@@ -59,6 +59,7 @@ export async function GET(): Promise<NextResponse> {
         cnpj: churchProfiles.cnpj,
         city: churchProfiles.city,
         state: churchProfiles.state,
+        avatarUrl: users.avatarUrl,
         supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
       })
       .from(users)

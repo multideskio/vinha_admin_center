@@ -28,9 +28,10 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
-import Image from 'next/image'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -88,7 +89,9 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
+import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { pastorProfileSchema, type UserStatus } from '@/lib/types'
+import { DateRange } from 'react-day-picker'
 
 type Pastor = z.infer<typeof pastorProfileSchema> & {
   id: string
@@ -96,6 +99,7 @@ type Pastor = z.infer<typeof pastorProfileSchema> & {
   supervisorName?: string
   email: string
   phone: string | null
+  avatarUrl?: string | null
 }
 
 const PastorFormModal = ({
@@ -183,13 +187,7 @@ const PastorFormModal = ({
       .slice(0, 9)
   }
 
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15)
-  }
+
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value.replace(/\D/g, '')
@@ -453,18 +451,34 @@ const PastorFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm">
-                          🇧🇷 +55
-                        </span>
-                        <Input
-                          placeholder="(00) 00000-0000"
-                          {...field}
-                          className="rounded-l-none"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                        />
-                      </div>
+                      <PhoneInput
+                        country={'br'}
+                        value={field.value}
+                        onChange={field.onChange}
+                        inputClass="!w-full"
+                        containerClass="phone-input-wrapper"
+                        inputStyle={{
+                          width: '100%',
+                          height: '40px',
+                          fontSize: '14px',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 'calc(var(--radius) - 2px)',
+                          backgroundColor: 'hsl(var(--background))',
+                          color: 'hsl(var(--foreground))',
+                        }}
+                        buttonStyle={{
+                          border: '1px solid hsl(var(--border))',
+                          borderRight: 'none',
+                          backgroundColor: 'hsl(var(--background))',
+                          borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
+                        }}
+                        dropdownStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 'calc(var(--radius) - 2px)',
+                          color: 'hsl(var(--foreground))',
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -491,6 +505,7 @@ export default function PastoresPage(): JSX.Element {
   const [isLoading, setIsLoading] = React.useState(true)
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table')
   const [searchTerm, setSearchTerm] = React.useState('')
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const [currentPage, setCurrentPage] = React.useState(1)
   const itemsPerPage = viewMode === 'table' ? 10 : 9
   const { toast } = useToast()
@@ -498,7 +513,19 @@ export default function PastoresPage(): JSX.Element {
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/supervisor/pastores')
+      const url = new URL('/api/v1/supervisor/pastores', window.location.origin)
+      
+      // Adicionar parâmetros de data se selecionados
+      if (dateRange?.from) {
+        const startDate = (dateRange.from as Date).toISOString().substring(0, 10)
+        url.searchParams.set('startDate', startDate)
+      }
+      if (dateRange?.to) {
+        const endDate = (dateRange.to as Date).toISOString().substring(0, 10)
+        url.searchParams.set('endDate', endDate)
+      }
+
+      const response = await fetch(url.toString())
       if (!response.ok) throw new Error('Falha ao carregar pastores.')
 
       const data = await response.json()
@@ -509,7 +536,7 @@ export default function PastoresPage(): JSX.Element {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, dateRange])
 
   React.useEffect(() => {
     fetchData()
@@ -527,9 +554,16 @@ export default function PastoresPage(): JSX.Element {
     }
   }
 
-  const filteredPastores = pastores.filter((pastor) =>
-    `${pastor.firstName} ${pastor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const filteredPastores = pastores.filter((pastor) => {
+    // Só aplica filtro de busca se tiver 4+ caracteres ou estiver vazio
+    if (searchTerm.length === 0 || searchTerm.length >= 4) {
+      const fullName = `${pastor.firstName} ${pastor.lastName}`.toLowerCase()
+      const email = pastor.email.toLowerCase()
+      const term = searchTerm.toLowerCase()
+      return fullName.includes(term) || email.includes(term)
+    }
+    return true // Se tem menos de 4 caracteres, não filtra
+  })
 
   const totalPages = Math.ceil(filteredPastores.length / itemsPerPage)
   const paginatedPastores = filteredPastores.slice(
@@ -666,13 +700,12 @@ export default function PastoresPage(): JSX.Element {
             <Card key={pastor.id}>
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                  <Image
-                    src="https://placehold.co/96x96.png"
+                  <ClickableAvatar
+                    src={pastor.avatarUrl || undefined}
                     alt={`Foto de ${pastor.firstName}`}
-                    width={96}
-                    height={96}
-                    className="rounded-lg object-cover w-24 h-24"
-                    data-ai-hint="male person"
+                    fallback={`${pastor.firstName.charAt(0)}${pastor.lastName.charAt(0)}`}
+                    className="w-24 h-24"
+                    enableModal={!!pastor.avatarUrl}
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
@@ -750,19 +783,37 @@ export default function PastoresPage(): JSX.Element {
           </h1>
           <p className="text-sm text-muted-foreground">
             Exibindo {filteredPastores.length} de {pastores.length} resultados
+            {dateRange?.from && dateRange?.to && (
+              <span className="ml-2 font-medium">
+                • Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <DateRangePicker />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Buscar por nome ou email do pastor</p>
+                <p className="text-xs text-muted-foreground">Mínimo 4 caracteres</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <DateRangePicker 
+            value={dateRange}
+            onChange={setDateRange}
+          />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

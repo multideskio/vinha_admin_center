@@ -52,7 +52,7 @@ export async function loginUser(
     const token = await createJWT({
       id: existingUser.id,
       email: existingUser.email,
-      role: existingUser.role as any,
+      role: existingUser.role,
     })
     await setJWTCookie(token)
 

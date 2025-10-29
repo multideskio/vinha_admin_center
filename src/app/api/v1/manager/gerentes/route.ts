@@ -11,7 +11,6 @@ import { users, managerProfiles } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
-import { authenticateApiKey } from '@/lib/api-auth'
 import { managerProfileSchema } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 
@@ -24,9 +23,6 @@ const VALIDATED_COMPANY_ID = COMPANY_ID as string
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
 
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   try {
     const result = await db
       .select({
@@ -56,9 +52,6 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   try {
     const body = await request.json()
     const validatedData = managerProfileSchema.omit({ id: true, userId: true }).parse(body)

@@ -14,7 +14,6 @@ import {
   Loader2,
   Mail,
   Smartphone,
-  MessageSquare,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -33,7 +32,6 @@ import {
 } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
@@ -52,7 +50,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { PhoneInput } from '@/components/ui/phone-input'
 
 const adminProfileSchema = z

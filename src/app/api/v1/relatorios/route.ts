@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   try {
     const { reportType, startDate, endDate } = await request.json()
 
-    let data: any = {}
+    let data: Record<string, unknown> = {}
 
     switch (reportType) {
       case 'fin-01':

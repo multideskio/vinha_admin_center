@@ -1,19 +1,34 @@
 /**
  * @fileoverview Layout principal para o painel do pastor.
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 2.0
+ * @date 2025-01-28
+ * @author Sistema de Padronização
  */
 
 import type { Metadata } from 'next'
-import { PastorSidebar } from './_components/sidebar'
-import { PastorHeader } from './_components/header'
 import { validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
+import { getCompanySettings } from '@/lib/company'
+import { RoleLayout } from '@/components/role-layout'
+// Configuração dos itens de menu do pastor
+const menuItems = [
+  { href: '/pastor/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { href: '/pastor/transacoes', label: 'Transações', icon: 'ArrowRightLeft' },
+  { href: '/pastor/contribuir', label: 'Contribuir', icon: 'Handshake' },
+]
 
-export const metadata: Metadata = {
-  title: 'Vinha Pastor Center',
-  description: 'Painel do Pastor para Vinha Ministérios',
+const settingsItem = {
+  href: '/pastor/perfil',
+  label: 'Meu Perfil',
+  icon: 'Settings',
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompanySettings()
+  return {
+    title: company?.name ? `${company.name} - Pastor Center` : 'Vinha Pastor Center',
+    description: `Painel do Pastor para ${company?.name || 'Vinha Ministérios'}`,
+  }
 }
 
 export default async function PastorLayout({
@@ -22,20 +37,20 @@ export default async function PastorLayout({
   children: React.ReactNode
 }): Promise<JSX.Element> {
   const { user } = await validateRequest()
+  
   if (!user || user.role !== 'pastor') {
-    redirect('/auth/login')
+    return redirect('/auth/login')
   }
 
-  const userName = user.email?.split('@')[0] || ''
-  const userFallback = userName.slice(0, 2).toUpperCase()
-
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <PastorSidebar />
-      <div className="flex flex-col">
-        <PastorHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
-      </div>
-    </div>
+    <RoleLayout
+      user={user}
+      role="pastor"
+      menuItems={menuItems}
+      settingsItem={settingsItem}
+      basePath="/pastor"
+    >
+      {children}
+    </RoleLayout>
   )
 }

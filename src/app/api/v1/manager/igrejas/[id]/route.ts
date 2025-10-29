@@ -98,6 +98,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (body.avatarUrl !== undefined) userUpdateData.avatarUrl = body.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -124,6 +125,9 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.treasurerLastName)
         profileUpdateData.treasurerLastName = validatedData.treasurerLastName
       if (validatedData.treasurerCpf) profileUpdateData.treasurerCpf = validatedData.treasurerCpf
+      if (body.facebook !== undefined) profileUpdateData.facebook = body.facebook
+      if (body.instagram !== undefined) profileUpdateData.instagram = body.instagram
+      if (body.website !== undefined) profileUpdateData.website = body.website
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx.update(churchProfiles).set(profileUpdateData).where(eq(churchProfiles.userId, id))
@@ -158,10 +162,15 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Não autorizado a excluir esta igreja.' }, { status: 403 })
     }
 
+    const body = await request.json()
+    const deletionReason = body.deletionReason || 'Sem motivo informado'
+
     await db
       .update(users)
       .set({
         deletedAt: new Date(),
+        deletedBy: sessionUser.id,
+        deletionReason,
         status: 'inactive',
       })
       .where(eq(users.id, id))

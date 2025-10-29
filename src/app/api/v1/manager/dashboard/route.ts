@@ -15,10 +15,9 @@ import {
 } from '@/db/schema'
 import { count, sum, eq, isNull, and, desc, sql, inArray, gte, lt } from 'drizzle-orm'
 import { format, subMonths, startOfMonth } from 'date-fns'
-import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { type UserRole } from '@/lib/types'
-import { getErrorMessage } from '@/lib/error-types'
+import { handleApiError, ApiError } from '@/lib/api-error-handler'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -31,16 +30,12 @@ const calculateChange = (current: number, previous: number): string => {
 }
 
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
-  const { user } = await validateRequest()
-  if (!user || (user.role as UserRole) !== 'manager') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-  const managerId = user.id
-
   try {
+    const { user } = await validateRequest()
+    if (!user || (user.role as UserRole) !== 'manager') {
+      throw new ApiError(401, 'Não autorizado')
+    }
+    const managerId = user.id
     const now = new Date()
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
@@ -268,14 +263,59 @@ export async function GET(): Promise<NextResponse> {
     }))
 
     const colors = ['#16a34a', '#3b82f6', '#f97316', '#ef4444', '#8b5cf6']
-    const revenueByChurch = [
-      { name: 'Igreja A', revenue: 4000, fill: colors[0] },
-      { name: 'Igreja B', revenue: 3200, fill: colors[1] },
-    ]
-    const membersByChurch = [
-      { name: 'Igreja A', count: 120, fill: colors[0] },
-      { name: 'Igreja B', count: 80, fill: colors[1] },
-    ]
+    
+    const revenueByChurchData = churchIds.length > 0
+      ? await db
+          .select({
+            churchId: transactions.originChurchId,
+            revenue: sum(transactions.amount).mapWith(Number),
+          })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.status, 'approved'),
+              inArray(transactions.originChurchId, churchIds),
+            ),
+          )
+          .groupBy(transactions.originChurchId)
+      : []
+
+    const churchNames = churchIds.length > 0
+      ? await db
+          .select({ id: users.id, name: users.email })
+          .from(users)
+          .where(inArray(users.id, churchIds))
+      : []
+
+    const churchNameMap = new Map(churchNames.map(c => [c.id, c.name]))
+
+    const revenueByChurch = revenueByChurchData.map((item, index) => ({
+      name: churchNameMap.get(item.churchId || '') || 'Igreja',
+      revenue: item.revenue,
+      fill: colors[index % colors.length],
+    }))
+
+    const contributionsByChurchData = churchIds.length > 0
+      ? await db
+          .select({
+            churchId: transactions.originChurchId,
+            count: count(transactions.id),
+          })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.status, 'approved'),
+              inArray(transactions.originChurchId, churchIds),
+            ),
+          )
+          .groupBy(transactions.originChurchId)
+      : []
+
+    const membersByChurch = contributionsByChurchData.map((item, index) => ({
+      name: churchNameMap.get(item.churchId || '') || 'Igreja',
+      count: item.count,
+      fill: colors[index % colors.length],
+    }))
 
     return NextResponse.json({
       kpis,
@@ -287,10 +327,6 @@ export async function GET(): Promise<NextResponse> {
       newMembers: formattedNewMembers,
     })
   } catch (error: unknown) {
-    console.error('Erro ao buscar dados para o dashboard do gerente:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar dados do dashboard do gerente', details: getErrorMessage(error) },
-      { status: 500 },
-    )
+    return handleApiError(error)
   }
 }

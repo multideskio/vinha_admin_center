@@ -76,12 +76,22 @@ async function verifyTransactionOwnership(
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+  
+  // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'supervisor') {
+  
+  if (!sessionUser) {
+    // Se não há usuário logado, tenta autenticação por API Key
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
+    
+    // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  // Verifica se o usuário tem a role correta
+  if (sessionUser.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
   }
 
   const { id } = params

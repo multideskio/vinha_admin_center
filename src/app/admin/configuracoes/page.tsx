@@ -7,9 +7,7 @@ import {
   Smartphone,
   MessageSquareQuote,
   ChevronRight,
-  Webhook,
   Cloud,
-  KeyRound,
   CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';

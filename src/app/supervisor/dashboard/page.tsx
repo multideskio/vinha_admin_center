@@ -8,7 +8,7 @@
 'use client'
 
 import * as React from 'react'
-import { DollarSign, Users, Church, User, RefreshCw, ArrowRightLeft } from 'lucide-react'
+import { DollarSign, Users, Church, User, RefreshCw, ArrowRightLeft, Search } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -39,6 +39,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { type TransactionStatus } from '@/lib/types'
+import { DateRange } from 'react-day-picker'
 
 type KpiData = {
   title: string
@@ -74,12 +75,24 @@ type DashboardData = {
 export default function SupervisorDashboardPage(): JSX.Element {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchData = React.useCallback(async () => {
+  const fetchData = React.useCallback(async (startDate?: Date, endDate?: Date) => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/supervisor/dashboard')
+      const params = new URLSearchParams()
+      if (startDate) params.append('startDate', startDate.toISOString())
+      if (endDate) params.append('endDate', endDate.toISOString())
+      
+      const url = `/api/v1/supervisor/dashboard${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await fetch(url)
+      
+      if (response.status === 401) {
+        // Usuário não autenticado, redirecionar para login
+        window.location.href = '/auth/login'
+        return
+      }
       if (!response.ok) {
         throw new Error('Falha ao carregar os dados do dashboard.')
       }
@@ -96,6 +109,14 @@ export default function SupervisorDashboardPage(): JSX.Element {
       setIsLoading(false)
     }
   }, [toast])
+
+  const handleSearch = React.useCallback(() => {
+    if (dateRange?.from && dateRange?.to) {
+      fetchData(dateRange.from, dateRange.to)
+    } else {
+      fetchData() // Busca sem filtro se não há range completo
+    }
+  }, [dateRange, fetchData])
 
   React.useEffect(() => {
     fetchData()
@@ -173,10 +194,27 @@ export default function SupervisorDashboardPage(): JSX.Element {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Dashboard do Supervisor
-        </h1>
-        <DateRangePicker />
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Dashboard do Supervisor
+          </h1>
+          {dateRange?.from && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Período: {dateRange.from.toLocaleDateString('pt-BR')} 
+              {dateRange.to && ` - ${dateRange.to.toLocaleDateString('pt-BR')}`}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <DateRangePicker 
+            value={dateRange}
+            onChange={setDateRange}
+          />
+          <Button onClick={handleSearch} variant="default" className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            Buscar
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -201,7 +239,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
               <CardTitle>Últimas Transações</CardTitle>
               <CardDescription>As transações mais recentes da sua supervisão.</CardDescription>
             </div>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={fetchData}>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => fetchData(dateRange?.from, dateRange?.to)}>
               <RefreshCw className="h-4 w-4" />
               <span className="sr-only">Atualizar</span>
             </Button>
@@ -216,22 +254,30 @@ export default function SupervisorDashboardPage(): JSX.Element {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.recentTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.name}</TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(transaction.amount)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                        {statusMap[transaction.status]?.text || transaction.status}
-                      </Badge>
+                {data.recentTransactions.length > 0 ? (
+                  data.recentTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">{transaction.name}</TableCell>
+                      <TableCell className="text-right">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(transaction.amount)}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                          {statusMap[transaction.status]?.text || transaction.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                      Nenhuma transação encontrada
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -243,25 +289,31 @@ export default function SupervisorDashboardPage(): JSX.Element {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {data.recentRegistrations.map((user) => (
-                <div key={user.id} className="flex items-center">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage
-                      src={`https://placehold.co/36x36.png`}
-                      alt="Avatar"
-                      data-ai-hint="person symbol"
-                    />
-                    <AvatarFallback>{user.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.type}</p>
+              {data.recentRegistrations.length > 0 ? (
+                data.recentRegistrations.map((user) => (
+                  <div key={user.id} className="flex items-center">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage
+                        src={`https://placehold.co/36x36.png`}
+                        alt="Avatar"
+                        data-ai-hint="person symbol"
+                      />
+                      <AvatarFallback>{user.avatar}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-4 space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-sm text-muted-foreground">{user.type}</p>
+                    </div>
+                    <div className="ml-auto font-medium text-muted-foreground text-sm">
+                      {user.date}
+                    </div>
                   </div>
-                  <div className="ml-auto font-medium text-muted-foreground text-sm">
-                    {user.date}
-                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  Nenhum cadastro recente encontrado
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -273,25 +325,31 @@ export default function SupervisorDashboardPage(): JSX.Element {
             <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={{
-                value: { label: 'Valor' },
-                pix: { label: 'Pix', color: '#10b981' },
-                credit_card: { label: 'Crédito', color: '#3b82f6' },
-                boleto: { label: 'Boleto', color: '#f59e0b' },
-              }}
-              className="h-[300px] w-full"
-            >
-              <PieChart>
-                <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
-                <Legend content={<ChartLegendContent nameKey="method" />} />
-                <Pie data={data.revenueByMethod} dataKey="value" nameKey="method" innerRadius={60}>
-                  {data.revenueByMethod.map((entry) => (
-                    <Cell key={entry.method} fill={entry.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+            {data.revenueByMethod.length > 0 ? (
+              <ChartContainer
+                config={{
+                  value: { label: 'Valor' },
+                  pix: { label: 'Pix', color: '#10b981' },
+                  credit_card: { label: 'Crédito', color: '#3b82f6' },
+                  boleto: { label: 'Boleto', color: '#f59e0b' },
+                }}
+                className="h-[300px] w-full"
+              >
+                <PieChart>
+                  <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
+                  <Legend content={<ChartLegendContent nameKey="method" />} />
+                  <Pie data={data.revenueByMethod} dataKey="value" nameKey="method" innerRadius={60}>
+                    {data.revenueByMethod.map((entry) => (
+                      <Cell key={entry.method} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Nenhum dado de arrecadação disponível
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -302,17 +360,23 @@ export default function SupervisorDashboardPage(): JSX.Element {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-[300px] w-full">
-              <PieChart>
-                <Tooltip content={<ChartTooltipContent hideLabel />} />
-                <Legend content={<ChartLegendContent nameKey="name" />} />
-                <Pie data={data.revenueByChurch} dataKey="revenue" nameKey="name" innerRadius={60}>
-                  {data.revenueByChurch.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+            {data.revenueByChurch.length > 0 ? (
+              <ChartContainer config={{}} className="h-[300px] w-full">
+                <PieChart>
+                  <Tooltip content={<ChartTooltipContent hideLabel />} />
+                  <Legend content={<ChartLegendContent nameKey="name" />} />
+                  <Pie data={data.revenueByChurch} dataKey="revenue" nameKey="name" innerRadius={60}>
+                    {data.revenueByChurch.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Nenhuma igreja com arrecadação
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -323,17 +387,23 @@ export default function SupervisorDashboardPage(): JSX.Element {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-[300px] w-full">
-              <PieChart>
-                <Tooltip content={<ChartTooltipContent hideLabel />} />
-                <Legend content={<ChartLegendContent nameKey="name" />} />
-                <Pie data={data.membersByChurch} dataKey="count" nameKey="name" innerRadius={60}>
-                  {data.membersByChurch.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+            {data.membersByChurch.length > 0 ? (
+              <ChartContainer config={{}} className="h-[300px] w-full">
+                <PieChart>
+                  <Tooltip content={<ChartTooltipContent hideLabel />} />
+                  <Legend content={<ChartLegendContent nameKey="name" />} />
+                  <Pie data={data.membersByChurch} dataKey="count" nameKey="name" innerRadius={60}>
+                    {data.membersByChurch.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Nenhuma igreja cadastrada
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -341,15 +411,21 @@ export default function SupervisorDashboardPage(): JSX.Element {
             <CardTitle>Novos Membros por Mês (Supervisão)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-[300px] w-full">
-              <BarChart data={data.newMembers} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                <Tooltip content={<ChartTooltipContent indicator="dot" />} />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ChartContainer>
+            {data.newMembers.length > 0 ? (
+              <ChartContainer config={{}} className="h-[300px] w-full">
+                <BarChart data={data.newMembers} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                  <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Nenhum dado de novos membros
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

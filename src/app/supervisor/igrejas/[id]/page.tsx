@@ -20,6 +20,13 @@ import {
   Lock,
   Calendar as CalendarIcon,
   Loader2,
+  Mail,
+  Smartphone,
+  MoreHorizontal,
+  User,
+  Bell,
+  CreditCard,
+  Share2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -49,12 +56,52 @@ import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import Link from 'next/link'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Textarea } from '@/components/ui/textarea'
 
-import { churchProfileSchema } from '@/lib/types'
+import {
+  churchProfileSchema,
+  type TransactionStatus,
+  type UserNotificationSettings,
+  type NotificationType,
+  NOTIFICATION_TYPES,
+} from '@/lib/types'
 
 const churchUpdateSchema = churchProfileSchema
   .extend({
     newPassword: z.string().optional().or(z.literal('')),
+    // Redes sociais
+    facebook: z.string().optional(),
+    instagram: z.string().optional(),
+    website: z.string().url().optional().or(z.literal('')),
   })
   .partial()
 
@@ -63,9 +110,263 @@ type ChurchProfile = z.infer<typeof churchUpdateSchema> & {
   cnpj?: string
   status: string
   avatarUrl?: string
+  facebook?: string
+  instagram?: string
+  website?: string
 }
 
-// TransactionsTab component removed as it was unused
+type Transaction = {
+  id: string
+  amount: number
+  status: TransactionStatus
+  date: string
+  paymentMethod: string
+  contributorName: string
+}
+
+const TransactionsTab = ({ churchId }: { churchId: string }) => {
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/supervisor/igrejas/${churchId}/transactions`)
+        if (!response.ok) throw new Error('Falha ao carregar transações.')
+        const data = await response.json()
+        setTransactions(data.transactions || [])
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTransactions()
+  }, [churchId, toast])
+
+  const statusMap: {
+    [key in TransactionStatus]: {
+      text: string
+      variant: 'success' | 'warning' | 'destructive' | 'outline'
+    }
+  } = {
+    approved: { text: 'Aprovada', variant: 'success' },
+    pending: { text: 'Pendente', variant: 'warning' },
+    refused: { text: 'Recusada', variant: 'destructive' },
+    refunded: { text: 'Reembolsada', variant: 'outline' },
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Transações da Igreja</CardTitle>
+        <CardDescription>Histórico de transações financeiras da igreja.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID da Transação</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : transactions.length > 0 ? (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                      {statusMap[transaction.status]?.text || transaction.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{transaction.date}</TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      transaction.amount,
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/supervisor/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24">
+                  Nenhuma transação encontrada para esta igreja.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
+}
+
+const notificationSettingsConfig = {
+  payment_notifications: 'Notificações de Pagamento',
+  due_date_reminders: 'Lembretes de Vencimento',
+  network_reports: 'Relatórios da Rede',
+}
+
+const SettingsTab = ({ churchId }: { churchId: string }) => {
+  const [settings, setSettings] = React.useState<UserNotificationSettings>({
+    payment_notifications: { email: false, whatsapp: false },
+    due_date_reminders: { email: false, whatsapp: false },
+    network_reports: { email: false, whatsapp: false },
+  })
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
+
+  const fetchSettings = React.useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/v1/supervisor/igrejas/${churchId}/notification-settings`)
+      if (!response.ok) throw new Error('Falha ao carregar configurações.')
+      const data = await response.json()
+      setSettings(data)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [churchId, toast])
+
+  React.useEffect(() => {
+    fetchSettings()
+  }, [fetchSettings])
+
+  const handleSwitchChange = (
+    type: NotificationType,
+    channel: 'email' | 'whatsapp',
+    value: boolean,
+  ) => {
+    setSettings((prev) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [channel]: value,
+      },
+    }))
+  }
+
+  const handleSaveSettings = async () => {
+    try {
+      const response = await fetch(`/api/v1/supervisor/igrejas/${churchId}/notification-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+      toast({
+        title: 'Sucesso',
+        description: 'Configurações de notificação salvas.',
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardDescription>Gerencie quais notificações esta igreja receberá.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {NOTIFICATION_TYPES.map((type) => (
+          <div key={type} className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="font-medium">
+                {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2" title="Notificar por Email">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <Switch
+                  checked={settings[type]?.email ?? false}
+                  onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
+                />
+              </div>
+              <div className="flex items-center gap-2" title="Notificar por WhatsApp">
+                <Smartphone className="h-4 w-4 text-muted-foreground" />
+                <Switch
+                  checked={settings[type]?.whatsapp ?? false}
+                  onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        <div className="flex justify-end">
+          <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function IgrejaProfilePage() {
   const [church, setChurch] = React.useState<ChurchProfile | null>(null)
@@ -121,6 +422,9 @@ export default function IgrejaProfilePage() {
       })
       if (!response.ok) throw new Error('Falha ao atualizar a igreja.')
       toast({ title: 'Sucesso', description: 'Igreja atualizada com sucesso.', variant: 'success' })
+      
+      // Recarregar dados após salvar
+      await fetchData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -141,7 +445,47 @@ export default function IgrejaProfilePage() {
     }
   }
 
-    const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string,
+  ) => {
+    // Não fazer nada se o valor estiver vazio ou for igual ao valor atual
+    if (!value || value === church?.[fieldName]) {
+      return
+    }
+
+    try {
+      const payload = { [fieldName]: value || null }
+
+      const response = await fetch(`/api/v1/supervisor/igrejas/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Falha ao atualizar ${fieldName}.`)
+      }
+
+      toast({
+        title: 'Sucesso!',
+        description: `Link do ${fieldName} atualizado.`,
+        variant: 'success',
+      })
+      
+      // Atualizar estado local
+      setChurch((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       try {
@@ -162,7 +506,7 @@ export default function IgrejaProfilePage() {
         const result = await response.json()
         
         // Atualizar avatar no banco
-        const updateResponse = await fetch(`/api/v1/igrejas/${id}`, {
+        const updateResponse = await fetch(`/api/v1/supervisor/igrejas/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ avatarUrl: result.url }),
@@ -249,15 +593,27 @@ export default function IgrejaProfilePage() {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
-                <Input defaultValue={''} placeholder="https://facebook.com/..." />
+                <Input 
+                  defaultValue={church.facebook || ''} 
+                  placeholder="https://facebook.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
-                <Input defaultValue={''} placeholder="https://instagram.com/..." />
+                <Input 
+                  defaultValue={church.instagram || ''} 
+                  placeholder="https://instagram.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input defaultValue={''} placeholder="https://website.com/..." />
+                <Input 
+                  defaultValue={church.website || ''} 
+                  placeholder="https://website.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                />
               </div>
             </div>
           </CardContent>
@@ -267,10 +623,23 @@ export default function IgrejaProfilePage() {
       {/* Right Column: Tabs and Form */}
       <div className="lg:col-span-2">
         <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Dados da Igreja</TabsTrigger>
-            <TabsTrigger value="transactions">Transações</TabsTrigger>
-            <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Dados da Igreja
+            </TabsTrigger>
+            <TabsTrigger value="transactions" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Transações
+            </TabsTrigger>
+            <TabsTrigger value="configuracoes" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Configurações
+            </TabsTrigger>
+            <TabsTrigger value="delete" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Excluir
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
             <Card>
@@ -587,6 +956,15 @@ export default function IgrejaProfilePage() {
               </CardContent>
             </Card>
           </TabsContent>
+          
+          <TabsContent value="transactions">
+            <TransactionsTab churchId={id as string} />
+          </TabsContent>
+          
+          <TabsContent value="configuracoes">
+            <SettingsTab churchId={id as string} />
+          </TabsContent>
+          
           <TabsContent value="delete">
             <Card className="border-destructive">
               <CardHeader>

@@ -23,8 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import Image from 'next/image'
 import { format } from 'date-fns'
-import PhoneInput from 'react-phone-input-2'
-import 'react-phone-input-2/lib/style.css'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -53,17 +52,7 @@ import {
   DialogClose,
   DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+
 import { Input } from '@/components/ui/input'
 import {
   Form,
@@ -86,19 +75,20 @@ import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DateRangePicker } from '@/components/ui/date-range-picker'
+
 import { churchProfileSchema } from '@/lib/types'
+import { sanitizeText } from '@/lib/sanitize'
 
 type Church = z.infer<typeof churchProfileSchema> & {
   id: string
   status: 'active' | 'inactive'
   supervisorName?: string
+  avatarUrl?: string
 }
 
 type Supervisor = {
   id: string
-  firstName: string
-  lastName: string
+  name: string
 }
 
 const ChurchFormModal = ({
@@ -165,7 +155,7 @@ const ChurchFormModal = ({
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
         title: 'Erro',
-        description: errorMessage,
+        description: sanitizeText(errorMessage),
         variant: 'destructive',
       })
     }
@@ -205,28 +195,20 @@ const ChurchFormModal = ({
       .slice(0, 9)
   }
 
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15)
-  }
-
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value.replace(/\D/g, '')
     if (cep.length !== 8) return
 
     setIsFetchingCep(true)
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const response = await fetch(`/api/v1/cep?cep=${cep}`)
+      if (!response.ok) return
+      
       const data = await response.json()
-      if (!data.erro) {
-        form.setValue('address', data.logradouro)
-        form.setValue('neighborhood', data.bairro)
-        form.setValue('city', data.localidade)
-        form.setValue('state', data.uf)
-      }
+      form.setValue('address', data.address || '')
+      form.setValue('neighborhood', data.neighborhood || '')
+      form.setValue('city', data.city || '')
+      form.setValue('state', data.state || '')
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
     } finally {
@@ -285,7 +267,7 @@ const ChurchFormModal = ({
                     <SelectContent>
                       {supervisors.map((supervisor) => (
                         <SelectItem key={supervisor.id} value={supervisor.id}>
-                          {supervisor.firstName} {supervisor.lastName}
+                          {supervisor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -522,35 +504,12 @@ const ChurchFormModal = ({
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Celular *</FormLabel>
+                    <FormLabel>Celular/WhatsApp</FormLabel>
                     <FormControl>
                       <PhoneInput
-                        country={'br'}
-                        value={field.value}
+                        value={field.value || ''}
                         onChange={field.onChange}
-                        inputClass="!w-full"
-                        containerClass="phone-input-wrapper"
-                        inputStyle={{
-                          width: '100%',
-                          height: '40px',
-                          fontSize: '14px',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 'calc(var(--radius) - 2px)',
-                          backgroundColor: 'hsl(var(--background))',
-                          color: 'hsl(var(--foreground))',
-                        }}
-                        buttonStyle={{
-                          border: '1px solid hsl(var(--border))',
-                          borderRight: 'none',
-                          backgroundColor: 'hsl(var(--background))',
-                          borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                        }}
-                        dropdownStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 'calc(var(--radius) - 2px)',
-                          color: 'hsl(var(--foreground))',
-                        }}
+                        type="mobile"
                       />
                     </FormControl>
                     <FormMessage />
@@ -649,7 +608,7 @@ export default function IgrejasPage() {
       setSupervisors(supervisorsData.supervisors)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      toast({ title: 'Erro', description: sanitizeText(errorMessage), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -659,17 +618,7 @@ export default function IgrejasPage() {
     fetchData()
   }, [fetchData])
 
-  const handleDelete = async (churchId: string) => {
-    try {
-      const response = await fetch(`/api/v1/manager/igrejas/${churchId}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Falha ao excluir a igreja.')
-      toast({ title: 'Sucesso!', description: 'Igreja excluída com sucesso.', variant: 'success' })
-      fetchData()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
-    }
-  }
+
 
   const filteredChurches = churches.filter((church) =>
     (church.nomeFantasia || '').toLowerCase().includes(searchTerm.toLowerCase()),
@@ -728,12 +677,24 @@ export default function IgrejasPage() {
             ) : paginatedChurches.length > 0 ? (
               paginatedChurches.map((church) => (
                 <TableRow key={church.id}>
-                  <TableCell className="font-medium">{church.nomeFantasia}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {church.cnpj}
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={church.avatarUrl || 'https://placehold.co/40x40.png'}
+                        alt={church.nomeFantasia || 'Igreja'}
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover"
+                        data-ai-hint="church building"
+                      />
+                      <span>{sanitizeText(church.nomeFantasia)}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {church.email}
+                    {sanitizeText(church.cnpj)}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {sanitizeText(church.email)}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={church.status === 'active' ? 'success' : 'destructive'}>
@@ -753,28 +714,6 @@ export default function IgrejasPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/manager/igrejas/${church.id}`}>Editar</Link>
                         </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente a
-                                igreja.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => church.id && handleDelete(church.id)}
-                              >
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -812,7 +751,7 @@ export default function IgrejasPage() {
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                     <Image
-                      src="https://placehold.co/96x96.png"
+                      src={church.avatarUrl || 'https://placehold.co/96x96.png'}
                       alt={`Foto da ${church.nomeFantasia}`}
                       width={96}
                       height={96}
@@ -821,26 +760,26 @@ export default function IgrejasPage() {
                     />
                     <div className="flex-1 space-y-2 min-w-[200px]">
                       <h3 className="text-lg font-bold">
-                        #{(currentPage - 1) * itemsPerPage + index + 1} - {church.nomeFantasia}
+                        #{(currentPage - 1) * itemsPerPage + index + 1} - {sanitizeText(church.nomeFantasia)}
                       </h3>
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <p className="flex items-center gap-2">
                           <User size={14} />{' '}
-                          <span>Supervisor: {church.supervisorName || 'N/A'}</span>
+                          <span>Supervisor: {sanitizeText(church.supervisorName) || 'N/A'}</span>
                         </p>
                         <p className="flex items-center gap-2">
-                          <FileText size={14} /> <span>{church.cnpj}</span>
+                          <FileText size={14} /> <span>{sanitizeText(church.cnpj)}</span>
                         </p>
                         <p className="flex items-center gap-2">
-                          <Phone size={14} /> <span>{church.phone}</span>
+                          <Phone size={14} /> <span>{sanitizeText(church.phone)}</span>
                         </p>
                         <p className="flex items-center gap-2">
-                          <Mail size={14} /> <span>{church.email}</span>
+                          <Mail size={14} /> <span>{sanitizeText(church.email)}</span>
                         </p>
                         <p className="flex items-center gap-2">
                           <MapPin size={14} />{' '}
                           <span>
-                            {church.city} - {church.state}
+                            {sanitizeText(church.city)} - {sanitizeText(church.state)}
                           </span>
                         </p>
                       </div>
@@ -910,7 +849,7 @@ export default function IgrejasPage() {
                 className="pl-8"
               />
             </div>
-            <DateRangePicker />
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

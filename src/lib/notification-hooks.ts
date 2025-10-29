@@ -103,17 +103,6 @@ export async function onUserDeleted(userId: string, deletionReason: string, dele
 
     if (!settings || !deletedByUser) return
 
-    const notificationService = new NotificationService({
-      whatsappApiUrl: settings.whatsappApiUrl || undefined,
-      whatsappApiKey: settings.whatsappApiKey || undefined,
-      whatsappApiInstance: settings.whatsappApiInstance || undefined,
-      sesRegion: settings.s3Region || undefined,
-      sesAccessKeyId: settings.s3AccessKeyId || undefined,
-      sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
-      fromEmail: settings.smtpFrom || undefined,
-      companyId: user.companyId,
-    })
-
     // Notificar administradores sobre a exclusão
     const subject = `Usuário ${user.role} excluído do sistema`
     const message = `
