@@ -53,12 +53,16 @@ async function verifyTransactionOwnership(transactionId: string, userId: string)
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || (sessionUser.role as UserRole) !== 'pastor') {
+  
+  if (!sessionUser) {
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  if (sessionUser.role !== 'pastor') {
+    return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
   }
 
   const { id: transactionId } = params

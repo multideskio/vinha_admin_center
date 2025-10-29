@@ -66,7 +66,7 @@ const churchProfileSchema = z.object({
   website: z.string().url().optional().or(z.literal('')),
 })
 
-type ChurchProfile = z.infer<typeof churchProfileSchema>
+type ChurchProfile = z.infer<typeof churchProfileSchema> & { userId?: string; avatarUrl?: string }
 
 const notificationSettingsConfig = {
   payment_notifications: 'Notificações de Pagamento',
@@ -193,16 +193,55 @@ const SettingsTab = ({ userId }: { userId: string }) => {
 }
 
 export default function IgrejaProfilePage() {
-  const [church] = React.useState<ChurchProfile | null>(null)
-  const [isLoading] = React.useState(true)
+  const [church, setChurch] = React.useState<ChurchProfile | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
 
   const form = useForm<ChurchProfile>({
     resolver: zodResolver(churchProfileSchema),
     defaultValues: {},
   })
 
-  const onSubmit = (data: ChurchProfile) => {
-    console.log(data)
+  const fetchProfile = React.useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/v1/igreja/perfil')
+      if (!response.ok) throw new Error('Falha ao carregar perfil.')
+      const data = await response.json()
+      setChurch(data)
+      form.reset(data)
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [form, toast])
+
+  React.useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  const onSubmit = async (data: ChurchProfile) => {
+    try {
+      const response = await fetch('/api/v1/igreja/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) throw new Error('Falha ao atualizar perfil.')
+      toast({ title: 'Sucesso', description: 'Perfil atualizado.', variant: 'success' })
+      fetchProfile()
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    }
   }
 
   if (isLoading || !church) {
@@ -562,7 +601,7 @@ export default function IgrejaProfilePage() {
             </Card>
           </TabsContent>
           <TabsContent value="configuracoes">
-            {church.id && <SettingsTab userId={church.id} />}
+            {church.userId && <SettingsTab userId={church.userId} />}
           </TabsContent>
         </Tabs>
       </div>

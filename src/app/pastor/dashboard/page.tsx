@@ -11,9 +11,14 @@ import {
   Pencil,
   DollarSign,
   ArrowRightLeft,
+  TrendingUp,
+  TrendingDown,
+  Search,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { DateRange } from 'react-day-picker'
 import {
   Bar,
   BarChart,
@@ -25,6 +30,7 @@ import {
   Pie,
   Cell,
   Legend,
+  ResponsiveContainer,
 } from 'recharts'
 
 import { Button } from '@/components/ui/button'
@@ -32,6 +38,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -85,12 +92,17 @@ const InfoItem = ({ icon: Icon, label, value }: InfoItemProps) => (
 export default function PastorDashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchData = React.useCallback(async () => {
+  const fetchData = React.useCallback(async (startDate?: string, endDate?: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/pastor/dashboard')
+      const params = new URLSearchParams()
+      if (startDate) params.append('startDate', startDate)
+      if (endDate) params.append('endDate', endDate)
+      
+      const response = await fetch(`/api/v1/pastor/dashboard?${params.toString()}`)
       if (!response.ok) {
         throw new Error('Falha ao carregar os dados do dashboard.')
       }
@@ -107,6 +119,13 @@ export default function PastorDashboardPage() {
       setIsLoading(false)
     }
   }, [toast])
+
+  const handleDateRangeChange = React.useCallback((range: DateRange | undefined) => {
+    setDateRange(range)
+    const startDate = range?.from ? format(range.from, 'yyyy-MM-dd') : undefined
+    const endDate = range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
+    fetchData(startDate, endDate)
+  }, [fetchData])
 
   React.useEffect(() => {
     fetchData()
@@ -171,14 +190,26 @@ export default function PastorDashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard do Pastor</h1>
           <p className="text-sm text-muted-foreground">
             Bem-vindo ao seu painel, Pastor {profile.firstName}.
+            {dateRange?.from && (
+              <span className="ml-2 text-primary">
+                • Período: {format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })}
+                {dateRange.to && ` até ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`}
+              </span>
+            )}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/pastor/perfil">
-            <Pencil className="mr-2 h-4 w-4" />
-            Editar Perfil
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <DateRangePicker
+            value={dateRange}
+            onChange={handleDateRangeChange}
+          />
+          <Button asChild>
+            <Link href="/pastor/perfil">
+              <Pencil className="mr-2 h-4 w-4" />
+              Editar Perfil
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {kpiDisplayData.map((kpi) => (

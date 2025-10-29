@@ -30,11 +30,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { user } = await validateRequest()
-  if (!user || !['admin', 'manager'].includes(user.role)) {
+  if (!user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
   const { id } = await params
+  
+  // Usuário pode acessar suas próprias configurações OU admin/manager/supervisor podem acessar de qualquer um
+  if (user.id !== id && !['admin', 'manager', 'supervisor'].includes(user.role)) {
+    return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
+  }
 
   try {
     const settings = await db
@@ -66,11 +71,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { user } = await validateRequest()
-  if (!user || !['admin', 'manager'].includes(user.role)) {
+  if (!user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
   const { id } = await params
+  
+  // Usuário pode atualizar suas próprias configurações OU admin/manager/supervisor podem atualizar de qualquer um
+  if (user.id !== id && !['admin', 'manager', 'supervisor'].includes(user.role)) {
+    return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
+  }
 
   try {
     const body = await request.json()

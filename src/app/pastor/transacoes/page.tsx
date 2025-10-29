@@ -1,12 +1,16 @@
 'use client'
 
 import * as React from 'react'
-import { Download, ListFilter, MoreHorizontal } from 'lucide-react'
+import { Download, ListFilter, MoreHorizontal, Search, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { DateRange } from 'react-day-picker'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,12 +45,19 @@ type Transaction = {
 export default function TransacoesPage() {
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [searchTerm, setSearchTerm] = React.useState('')
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchTransactions = React.useCallback(async () => {
+  const fetchTransactions = React.useCallback(async (search?: string, startDate?: string, endDate?: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/pastor/transacoes')
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      if (startDate) params.append('startDate', startDate)
+      if (endDate) params.append('endDate', endDate)
+      
+      const response = await fetch(`/api/v1/pastor/transacoes?${params.toString()}`)
       if (!response.ok) throw new Error('Falha ao carregar transações.')
       const data = await response.json()
       setTransactions(data.transactions)
@@ -61,6 +72,23 @@ export default function TransacoesPage() {
   React.useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
+
+  // Handlers para busca e filtros
+  const handleSearch = React.useCallback((term: string) => {
+    setSearchTerm(term)
+    if (term.length >= 3 || term.length === 0) {
+      const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
+      const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+      fetchTransactions(term || undefined, startDate, endDate)
+    }
+  }, [dateRange, fetchTransactions])
+
+  const handleDateRangeChange = React.useCallback((range: DateRange | undefined) => {
+    setDateRange(range)
+    const startDate = range?.from ? format(range.from, 'yyyy-MM-dd') : undefined
+    const endDate = range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
+    fetchTransactions(searchTerm || undefined, startDate, endDate)
+  }, [searchTerm, fetchTransactions])
 
   const statusMap: {
     [key: string]: { text: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }
@@ -80,7 +108,42 @@ export default function TransacoesPage() {
         </p>
       </div>
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle>Histórico de Contribuições</CardTitle>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Campo de Busca */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por ID, valor ou status..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-10"
+              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">?</span>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Busque por ID da transação, valor ou status</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            {/* Filtro por Data */}
+            <DateRangePicker
+              value={dateRange}
+              onChange={handleDateRangeChange}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
           <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -98,7 +161,7 @@ export default function TransacoesPage() {
                 <DropdownMenuCheckboxItem>Reembolsada</DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <DateRangePicker />
+
             <Button size="sm" variant="outline" className="gap-1">
               <Download className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only">Exportar</span>
