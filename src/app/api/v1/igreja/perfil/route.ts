@@ -42,16 +42,31 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const body = await request.json()
     const { newPassword, email, phone, titheDay, facebook, instagram, website, ...profileData } = body
 
-    const userUpdate: any = { email, phone, titheDay }
+    // Atualizar tabela users apenas se houver campos relevantes
+    const userUpdate: any = {}
+    if (email) userUpdate.email = email
+    if (phone) userUpdate.phone = phone
+    if (titheDay) userUpdate.titheDay = titheDay
     if (newPassword) {
       userUpdate.password = await bcrypt.hash(newPassword, 10)
     }
-    await db.update(users).set(userUpdate).where(eq(users.id, sessionUser.id))
+    
+    if (Object.keys(userUpdate).length > 0) {
+      await db.update(users).set(userUpdate).where(eq(users.id, sessionUser.id))
+    }
 
-    await db
-      .update(churchProfiles)
-      .set({ ...profileData, facebook, instagram, website })
-      .where(eq(churchProfiles.userId, sessionUser.id))
+    // Preparar dados do perfil, convertendo strings vazias para null
+    const profileUpdate: any = { ...profileData }
+    if (facebook !== undefined) profileUpdate.facebook = facebook || null
+    if (instagram !== undefined) profileUpdate.instagram = instagram || null
+    if (website !== undefined) profileUpdate.website = website || null
+    
+    if (Object.keys(profileUpdate).length > 0) {
+      await db
+        .update(churchProfiles)
+        .set(profileUpdate)
+        .where(eq(churchProfiles.userId, sessionUser.id))
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
