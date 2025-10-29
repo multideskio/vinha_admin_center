@@ -619,6 +619,7 @@ export default function SupervisoresPage() {
                         width={32}
                         height={32}
                         className="rounded-full object-cover"
+                        unoptimized
                       />
                       {`${supervisor.firstName} ${supervisor.lastName}`}
                     </div>
@@ -710,7 +711,7 @@ export default function SupervisoresPage() {
                     width={96}
                     height={96}
                     className="rounded-lg object-cover w-24 h-24"
-                    data-ai-hint="male person"
+                    unoptimized
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">

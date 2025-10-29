@@ -770,6 +770,7 @@ export default function IgrejasPage() {
                         width={32}
                         height={32}
                         className="rounded-full object-cover"
+                        unoptimized
                       />
                       {church.nomeFantasia}
                     </div>
@@ -841,7 +842,7 @@ export default function IgrejasPage() {
                       width={96}
                       height={96}
                       className="rounded-lg object-cover w-24 h-24"
-                      data-ai-hint="church building"
+                      unoptimized
                     />
                     <div className="flex-1 space-y-2 min-w-[200px]">
                       <h3 className="text-lg font-bold">

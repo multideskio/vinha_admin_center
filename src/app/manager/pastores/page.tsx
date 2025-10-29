@@ -686,8 +686,7 @@ export default function PastoresPage() {
                     alt={`Foto de ${pastor.firstName}`}
                     width={96}
                     height={96}
-                    className="rounded-lg object-cover w-24 h-24"
-                    data-ai-hint="person"
+                    className="rounded-lg object-cover w-24 h-24" unoptimized data-ai-hint="person"
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
