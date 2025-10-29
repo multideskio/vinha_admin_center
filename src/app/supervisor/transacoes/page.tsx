@@ -290,7 +290,67 @@ export default function TransacoesPage() {
                               Ver Detalhes
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>Reenviar Comprovante</DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(
+                                  `/api/v1/supervisor/transacoes/${transaction.id}/resend-receipt`,
+                                  { method: 'POST' }
+                                )
+                                const data = await res.json()
+                                if (res.ok) {
+                                  toast({
+                                    title: 'Sucesso',
+                                    description: data.message,
+                                    variant: 'success',
+                                  })
+                                } else {
+                                  throw new Error(data.error)
+                                }
+                              } catch (error) {
+                                toast({
+                                  title: 'Erro',
+                                  description:
+                                    error instanceof Error ? error.message : 'Erro ao reenviar comprovante',
+                                  variant: 'destructive',
+                                })
+                              }
+                            }}
+                          >
+                            Reenviar Comprovante
+                          </DropdownMenuItem>
+                          {transaction.status === 'pending' && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(
+                                    `/api/v1/supervisor/transacoes/${transaction.id}/sync`,
+                                    { method: 'POST' }
+                                  )
+                                  const data = await res.json()
+                                  if (res.ok) {
+                                    toast({
+                                      title: 'Sucesso',
+                                      description: data.message,
+                                      variant: 'success',
+                                    })
+                                    fetchTransactions()
+                                  } else {
+                                    throw new Error(data.error)
+                                  }
+                                } catch (error) {
+                                  toast({
+                                    title: 'Erro',
+                                    description:
+                                      error instanceof Error ? error.message : 'Erro ao sincronizar',
+                                    variant: 'destructive',
+                                  })
+                                }
+                              }}
+                            >
+                              Sincronizar Status
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

@@ -51,6 +51,16 @@ type TransactionDetail = {
   refundRequestReason?: string | null
 }
 
+const getStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    approved: 'Aprovado',
+    pending: 'Pendente',
+    refused: 'Recusado',
+    refunded: 'Reembolsado'
+  }
+  return labels[status] || status
+}
+
 const RefundModal = ({
   amount,
   transactionId,
@@ -147,11 +157,19 @@ export default function TransacaoDetalhePage() {
 
       const cieloData = data.transaction
 
+      // Mapear status da Cielo: 0=Pendente, 1=Autorizado, 2=Pago, 3=Negado, 10=Cancelado, 13=Estornado
+      const mapCieloStatus = (status: number): 'approved' | 'pending' | 'refused' | 'refunded' => {
+        if (status === 2) return 'approved'
+        if (status === 3) return 'refused'
+        if (status === 10 || status === 13) return 'refunded'
+        return 'pending'
+      }
+
       const formattedData: TransactionDetail = {
         id: cieloData.Payment.PaymentId,
         date: format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss'),
         amount: cieloData.Payment.Amount / 100,
-        status: 'approved', // Mapear o status da Cielo para o seu
+        status: mapCieloStatus(cieloData.Payment.Status),
         contributor: {
           name: cieloData.Customer.Name,
           email: 'email@naodisponivel.com',
@@ -184,24 +202,63 @@ export default function TransacaoDetalhePage() {
     return (
       <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
         <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
-          <Skeleton className="h-8 w-1/2" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-7 w-7 rounded-md" />
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-6 w-20 ml-auto" />
+          </div>
           <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
             <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
               <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-40 w-full" />
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-7 w-7 rounded-md" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-5 w-24" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-24 w-full" />
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
                 </CardContent>
               </Card>
             </div>
             <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
               <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-24 w-full" />
+                <CardHeader>
+                  <Skeleton className="h-6 w-28" />
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="grid gap-1">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -229,28 +286,8 @@ export default function TransacaoDetalhePage() {
             Detalhes da Transação
           </h1>
           <Badge variant="outline" className="ml-auto sm:ml-0">
-            {transaction.status}
+            {getStatusLabel(transaction.status)}
           </Badge>
-          <div className="hidden items-center gap-2 md:ml-auto md:flex">
-            <RefundModal
-              amount={transaction.amount}
-              transactionId={transaction.id}
-              onRefundSuccess={fetchTransaction}
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-3.5 w-3.5" />
-                  <span className="sr-only">Mais</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>Reenviar Comprovante</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">Marcar como Fraude</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
           <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
@@ -297,7 +334,7 @@ export default function TransacaoDetalhePage() {
                               : 'destructive'
                         }
                       >
-                        {transaction.status}
+                        {getStatusLabel(transaction.status)}
                       </Badge>
                     </div>
                   </div>

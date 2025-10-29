@@ -32,8 +32,8 @@ async function getCieloCredentials(): Promise<{
     merchantId: isProduction ? config.prodClientId : config.devClientId,
     merchantKey: isProduction ? config.prodClientSecret : config.devClientSecret,
     apiUrl: isProduction
-      ? 'https://api.cieloecommerce.cielo.com.br'
-      : 'https://apisandbox.cieloecommerce.cielo.com.br',
+      ? 'https://apiquery.cieloecommerce.cielo.com.br'
+      : 'https://apiquerysandbox.cieloecommerce.cielo.com.br',
   }
 }
 

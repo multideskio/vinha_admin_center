@@ -1,6 +1,7 @@
 import { db } from '@/db/drizzle'
 import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { logCieloRequest, logCieloResponse } from './cielo-logger'
 
 const COMPANY_ID = process.env.COMPANY_INIT || ''
 
@@ -50,6 +51,12 @@ function getCieloApiUrl(environment: 'production' | 'development'): string {
     : 'https://apisandbox.cieloecommerce.cielo.com.br'
 }
 
+function getCieloQueryApiUrl(environment: 'production' | 'development'): string {
+  return environment === 'production'
+    ? 'https://apiquery.cieloecommerce.cielo.com.br'
+    : 'https://apiquerysandbox.cieloecommerce.cielo.com.br'
+}
+
 export async function createPixPayment(amount: number, customerName: string) {
   const config = await getCieloConfig()
   if (!config) throw new Error('Configuração Cielo não encontrada')
@@ -75,6 +82,8 @@ export async function createPixPayment(amount: number, customerName: string) {
     payload,
   })
 
+  await logCieloRequest({ method: 'POST', endpoint: `${apiUrl}/1/sales/`, requestBody: payload })
+
   const response = await fetch(`${apiUrl}/1/sales/`, {
     method: 'POST',
     headers: {
@@ -86,6 +95,7 @@ export async function createPixPayment(amount: number, customerName: string) {
   })
 
   const responseText = await response.text()
+  await logCieloResponse({ method: 'POST', endpoint: `${apiUrl}/1/sales/`, statusCode: response.status, responseBody: responseText, errorMessage: !response.ok ? responseText : undefined })
   
   if (!response.ok) {
     let errorMessage = 'Erro ao criar pagamento PIX'
@@ -148,6 +158,8 @@ export async function createCreditCardPayment(
     },
   }
 
+  await logCieloRequest({ operationType: 'cartao', method: 'POST', endpoint: `${apiUrl}/1/sales`, requestBody: payload })
+
   const response = await fetch(`${apiUrl}/1/sales`, {
     method: 'POST',
     headers: {
@@ -159,6 +171,14 @@ export async function createCreditCardPayment(
   })
 
   const responseText = await response.text()
+  
+  let paymentId: string | undefined
+  try {
+    const parsed = JSON.parse(responseText)
+    paymentId = parsed.Payment?.PaymentId
+  } catch {}
+  
+  await logCieloResponse({ operationType: 'cartao', method: 'POST', endpoint: `${apiUrl}/1/sales`, statusCode: response.status, responseBody: responseText, paymentId, errorMessage: !response.ok ? responseText : undefined })
   
   if (!response.ok) {
     let errorMessage = 'Erro ao processar cartão de crédito'
@@ -225,6 +245,8 @@ export async function createBoletoPayment(
     },
   }
 
+  await logCieloRequest({ operationType: 'boleto', method: 'POST', endpoint: `${apiUrl}/1/sales`, requestBody: payload })
+
   const response = await fetch(`${apiUrl}/1/sales`, {
     method: 'POST',
     headers: {
@@ -236,6 +258,14 @@ export async function createBoletoPayment(
   })
 
   const responseText = await response.text()
+  
+  let paymentId: string | undefined
+  try {
+    const parsed = JSON.parse(responseText)
+    paymentId = parsed.Payment?.PaymentId
+  } catch {}
+  
+  await logCieloResponse({ operationType: 'boleto', method: 'POST', endpoint: `${apiUrl}/1/sales`, statusCode: response.status, responseBody: responseText, paymentId, errorMessage: !response.ok ? responseText : undefined })
   
   if (!response.ok) {
     let errorMessage = 'Erro ao gerar boleto'
@@ -258,12 +288,25 @@ export async function createBoletoPayment(
 }
 
 export async function queryPayment(paymentId: string) {
+  console.log(`[CIELO] Starting query for payment ID: ${paymentId}`)
+  
   const config = await getCieloConfig()
-  if (!config) throw new Error('Configuração Cielo não encontrada')
+  if (!config) {
+    console.error('[CIELO] Configuration not found')
+    throw new Error('Configuração Cielo não encontrada')
+  }
 
-  const apiUrl = getCieloApiUrl(config.environment)
+  const apiUrl = getCieloQueryApiUrl(config.environment)
+  console.log(`[CIELO] Using API URL: ${apiUrl}`)
+  console.log(`[CIELO] Environment: ${config.environment}`)
+  console.log(`[CIELO] MerchantId: ${config.merchantId?.substring(0, 8)}...`)
 
-  const response = await fetch(`${apiUrl}/1/sales/${paymentId}`, {
+  const requestUrl = `${apiUrl}/1/sales/${paymentId}`
+  console.log(`[CIELO] Making request to: ${requestUrl}`)
+
+  await logCieloRequest({ operationType: 'consulta', method: 'GET', endpoint: requestUrl, paymentId })
+
+  const response = await fetch(requestUrl, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -272,16 +315,41 @@ export async function queryPayment(paymentId: string) {
     },
   })
 
+  console.log(`[CIELO] Response status: ${response.status} ${response.statusText}`)
+
   const responseText = await response.text()
+  console.log(`[CIELO] Response body length: ${responseText.length} characters`)
+  
+  await logCieloResponse({ operationType: 'consulta', method: 'GET', endpoint: requestUrl, paymentId, statusCode: response.status, responseBody: responseText, errorMessage: !response.ok ? responseText : undefined })
 
   if (!response.ok) {
-    console.error('Cielo Query Error:', {
+    console.error(`[CIELO] Query failed for payment ${paymentId}:`, {
       status: response.status,
       statusText: response.statusText,
-      body: responseText,
+      body: responseText.substring(0, 500) + (responseText.length > 500 ? '...' : ''),
+      url: requestUrl
     })
+    
+    // Se for 404, pode ser que o pagamento ainda não esteja disponível na Cielo
+    // Isso é comum em PIX - o pagamento pode ter sido feito mas a API ainda não reconhece
+    if (response.status === 404) {
+      console.log(`[CIELO] Payment ${paymentId} not found (404) - returning pending status`)
+      return {
+        Payment: {
+          Status: 0, // Status pendente - continuará verificando
+          ReasonCode: 404,
+          ReasonMessage: 'Pagamento ainda não disponível para consulta na Cielo (comum em PIX)'
+        }
+      }
+    }
+    
+    console.error(`[CIELO] Throwing error for status ${response.status}`)
     throw new Error(`Erro ao consultar pagamento: ${response.status}`)
   }
 
-  return JSON.parse(responseText)
+  console.log(`[CIELO] Successful response for payment ${paymentId}`)
+  const parsedResponse = JSON.parse(responseText)
+  console.log(`[CIELO] Parsed response:`, JSON.stringify(parsedResponse, null, 2))
+  
+  return parsedResponse
 }
