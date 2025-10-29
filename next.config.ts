@@ -15,11 +15,15 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'd1v03qm1k6ud1f.cloudfront.net',
+        hostname: '**.cloudfront.net',
       },
       {
         protocol: 'https',
-        hostname: '**.cloudfront.net',
+        hostname: '**.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.s3.*.amazonaws.com',
       },
     ],
     unoptimized: false,

@@ -29,6 +29,15 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - Suporte a parcelamento de cartão de crédito (1-12x)
 - Preparação para implementação no frontend
 
+### 🖼️ **Correção de Imagens S3 em Produção**
+- **PROBLEMA RESOLVIDO**: Imagens S3 não apareciam em produção
+- Adicionado `unoptimized` prop nas imagens da listagem de gerentes
+- Corrigida geração de URL pública do S3 (AWS S3, MinIO, CloudFront)
+- Adicionado `ACL: 'public-read'` no upload para arquivos públicos
+- Método `getPublicUrl()` para URLs corretas baseadas no tipo de endpoint
+- Adicionados padrões S3 ao `next.config.ts` (`**.s3.amazonaws.com`)
+- **S3_TROUBLESHOOTING.md** - Guia completo de troubleshooting
+
 ### 🔧 **Correções de Type Safety**
 - Corrigidos erros de tipo em `relatorios/route.ts`
 - Type assertions para enums do Drizzle ORM
@@ -71,16 +80,20 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - Testes Automatizados
 - Monitoramento
 
-### 📦 **Arquivos Modificados (23 arquivos)**
+### 📦 **Arquivos Modificados (27 arquivos)**
 ```
 src/app/admin/transacoes/page.tsx
 src/app/api/v1/transacoes/route.ts
 src/app/admin/relatorios/page.tsx
 src/app/api/v1/relatorios/route.ts
+src/app/admin/gerentes/page.tsx
 src/lib/cielo.ts
 src/lib/cielo-logger.ts
+src/lib/s3-client.ts
+next.config.ts
 docs/ROADMAP.md
 docs/PENDING_IMPLEMENTATION.md (novo)
+docs/S3_TROUBLESHOOTING.md (novo)
 docs/CHANGELOG.md
 ```
 

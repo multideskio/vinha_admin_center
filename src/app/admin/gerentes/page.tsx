@@ -581,6 +581,7 @@ export default function GerentesPage() {
                         width={32}
                         height={32}
                         className="rounded-full object-cover"
+                        unoptimized
                       />
                       {`${manager.firstName} ${manager.lastName}`}
                     </div>
@@ -651,7 +652,7 @@ export default function GerentesPage() {
                     width={128}
                     height={128}
                     className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32"
-                    data-ai-hint="handshake business"
+                    unoptimized
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
                     <h3 className="text-lg font-bold">
