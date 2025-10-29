@@ -1,6 +1,6 @@
 {
   "name": "vinha-admin-center",
-  "version": "1.6.0",
+  "version": "0.1.0",
   "description": "Sistema de Administração para Gestão de Igrejas",
   "private": true,
   "scripts": {

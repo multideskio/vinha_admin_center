@@ -2,428 +2,142 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
-## [1.8.0] - 2025-01-22
-
-### Adicionado
-
-- **Sistema de Pagamentos Completo:**
-  - Integração completa com Cielo API (PIX, Cartão de Crédito, Boleto)
-  - Página de contribuições em `/manager/contribuicoes`
-  - Geração de QR Code PIX com string copia e cola
-  - Formulário de cartão de crédito com validação visual (react-credit-cards-2)
-  - Geração de boleto com linha digitável e PDF
-  - Biblioteca `src/lib/cielo.ts` com funções: createPixPayment(), createCreditCardPayment(), createBoletoPayment(), queryPayment()
-- **Webhook Cielo:**
-  - Endpoint `/api/v1/webhooks/cielo` para receber notificações automáticas
-  - Processamento de 3 tipos de eventos: mudança de status (1), boleto pago (2), recorrência (3)
-  - Mapeamento automático de status Cielo → status interno
-  - Atualização automática de transações quando pagamento confirmado
-  - Documentação completa em `WEBHOOK_CIELO.md`
-- **Configuração de Webhook no Admin:**
-  - Campo de webhook URL em `/admin/gateways/cielo`
-  - Geração automática da URL baseada no domínio
-  - Botão de copiar URL para facilitar configuração
-- **Polling PIX Otimizado:**
-  - Mudança de setTimeout (8s single check) para setInterval (3s continuous)
-  - Verificação contínua até confirmação ou timeout de 5 minutos
-  - Confirmação instantânea (1-5s) após pagamento
-  - Parada automática ao detectar sucesso
-- **Documentação de Pagamentos:**
-  - `PAYMENT_VALIDATION.md` - Guia completo de testes
-  - `WEBHOOK_CIELO.md` - Configuração e troubleshooting
-  - Cartões de teste Cielo Sandbox documentados
-  - Roteiro de testes para cada método de pagamento
-
-### Melhorias
-
-- **Experiência do Usuário:**
-  - Feedback visual instantâneo em pagamentos PIX
-  - Preview do cartão de crédito em tempo real
-  - Validação de perfil completo antes de gerar boleto
-  - Mensagens de erro claras e acionáveis
-- **Performance:**
-  - Polling PIX reduzido de 8s para 3s
-  - Confirmação de pagamento até 5x mais rápida
-  - Webhook elimina necessidade de polling em produção
-- **Segurança:**
-  - Sanitização de dados em formulários de pagamento
-  - Validação de cartão no frontend e backend
-  - Logs de todas as transações e webhooks
-
-### Corrigido
-
-- **Polling PIX:** Corrigido para verificar continuamente ao invés de uma única vez
-- **Timeout PIX:** Adicionado timeout de 5 minutos para evitar polling infinito
-- **Validação de Boleto:** Mensagem clara quando perfil está incompleto
-
-## [1.7.0] - 2025-01-20
-
-### Adicionado
-
-- **Painel Manager Completo:**
-  - Dashboard com KPIs (supervisores, pastores, igrejas, transações, arrecadação)
-  - Gráficos de arrecadação por método e igrejas por supervisor
-  - Tabelas de últimas transações e cadastros recentes
-  - API endpoint `/api/v1/manager/dashboard`
-- **Módulo de Supervisores (/manager/supervisores):**
-  - Listagem com visualização em tabela e cards
-  - Busca por nome/email e paginação
-  - Criação de novos supervisores com formulário completo
-  - Página de perfil detalhado com avatar, dados pessoais, redes sociais
-  - Aba de transações com histórico completo
-  - Aba de configurações de notificações (email/WhatsApp)
-  - Exclusão com motivo obrigatório (soft delete)
-  - APIs: `/api/v1/manager/supervisores` e `/api/v1/manager/supervisores/[id]`
-- **Módulo de Pastores (/manager/pastores):**
-  - Todas as funcionalidades do módulo de supervisores
-  - Vinculação a supervisores via dropdown
-  - Filtro automático por supervisores do manager
-  - APIs: `/api/v1/manager/pastores` e `/api/v1/manager/pastores/[id]`
-- **Módulo de Igrejas (/manager/igrejas):**
-  - CRUD completo com CNPJ, razão social, tesoureiro
-  - Consulta automática de CNPJ via ReceitaWS
-  - Perfil detalhado com todas as funcionalidades
-  - Exclusão apenas via perfil (removida da listagem)
-  - APIs: `/api/v1/manager/igrejas` e `/api/v1/manager/igrejas/[id]`
-- **Componente PhoneInput Padronizado:**
-  - Componente customizado baseado em react-phone-input-2
-  - Integração com design system (Tailwind CSS)
-  - Suporte a tipos mobile e landline
-  - Exibição automática de DDI (+55)
-  - Usado em todos os formulários do manager
-- **API de Consulta de CEP:**
-  - Endpoint `/api/v1/cep` usando ViaCEP
-  - Preenchimento automático de endereço, bairro, cidade, estado
-  - Integrado em todos os formulários de cadastro
-- **Configurações de Notificações Compartilhadas:**
-  - Endpoint `/api/v1/users/[id]/notification-settings` acessível por admin e manager
-  - Três tipos: payment_notifications, due_date_reminders, network_reports
-  - Canais: email e WhatsApp para cada tipo
-  - Integrado nas abas de configurações de todos os perfis
-
-### Melhorias
-
-- **Connection Pool do PostgreSQL:**
-  - Configurado pool com max: 20 conexões
-  - idleTimeout: 30s, connectionTimeout: 20s
-  - allowExitOnIdle: true para melhor gestão de recursos
-  - Error handler para prevenir crashes
-- **Middleware de Rotas:**
-  - Adicionadas rotas `/manager`, `/pastor`, `/supervisor` à lista de rotas permitidas
-  - Bypass de verificação de modo manutenção para essas rotas
-- **APIs com avatarUrl:**
-  - Todas as listagens (supervisores, pastores, igrejas) retornam avatarUrl
-  - Exibição de imagens de perfil em tabelas e cards
-- **Padrão de Exclusão:**
-  - Exclusão removida das listagens
-  - Disponível apenas nas páginas de perfil
-  - Motivo obrigatório para auditoria
-  - Soft delete com deletedAt, deletedBy, deletionReason
-- **Tratamento de Erros:**
-  - Try-catch em getCompanySettings() para prevenir crashes de layout
-  - Mensagens de erro padronizadas em todas as APIs
-
-### Corrigido
-
-- **Middleware Bloqueando Rotas:** Corrigido middleware que bloqueava acesso a `/manager`, `/pastor`, `/supervisor`
-- **Connection Pool Exhaustion:** Resolvido problema de esgotamento de conexões do PostgreSQL
-- **Layout Crashes:** Corrigido crash de layout quando banco de dados está indisponível
-
-### Segurança
-
-- **Filtro por Ownership:**
-  - Manager só acessa supervisores vinculados a ele (managerId)
-  - Pastores e igrejas filtrados por supervisores do manager
-  - Validação de ownership em todas as operações de edição/exclusão
-- **Validação de Sessão:**
-  - Todos os endpoints manager usam validateRequest()
-  - Verificação de role === 'manager'
-  - Redirect automático para login se sessão inválida
-
-## [1.6.0] - 2025-01-15
-
-### Adicionado
-
-- **Sistema de Notificações Automáticas:**
-  - Endpoint cron `/api/v1/cron/notifications` para processamento automático
-  - Controle de duplicação usando `notification_logs`
-  - 4 tipos de eventos: boas-vindas, pagamento recebido, lembretes, atrasos
-  - Proteção com `CRON_SECRET` para segurança
-  - Documentação completa em `docs/CRON_SETUP.md`
-  - Suporte a cron externo (cron-job.org, EasyCron, Vercel Cron)
-- **Sistema de Relatórios Completo:**
-  - Geração de relatórios em tempo real com exportação para PDF e Excel
-  - 4 tipos de relatórios: Financeiro, Membros, Igrejas e Contribuições
-  - Filtros por período com seleção de datas (início e fim)
-  - Preview do último relatório gerado com resumo de dados
-  - Consultas otimizadas ao banco de dados para agregação de dados
-  - Bibliotecas integradas: jsPDF, jsPDF-AutoTable e XLSX
-  - API endpoint `/api/v1/relatorios` para geração de relatórios
-- **Configurações da Empresa:**
-  - Upload de logo da empresa (integrado com S3)
-  - Nome da aplicação customizável
-  - Email de suporte configurável
-  - Modo de manutenção com middleware
-  - Logo e nome exibidos em header, sidebar e página de manutenção
-  - Metadata dinâmica baseada nas configurações
-- **Páginas de Documentação Dinâmicas:**
-  - Página `/admin/roadmap` renderizando `docs/ROADMAP.md` dinamicamente
-  - Página `/admin/changelog` renderizando `docs/CHANGELOG.md` dinamicamente
-  - Links adicionados no menu dropdown do perfil do usuário
-  - Integração com `react-markdown` e `remark-gfm` para renderização
-  - Estilização automática com `@tailwindcss/typography`
-- **Avatar do Usuário no Header:**
-  - Avatar do usuário logado agora é exibido no header
-  - Busca automática da imagem do perfil no banco de dados
-  - Exibição do nome completo do usuário ao invés de apenas email
-  - Fallback com iniciais quando não há avatar configurado
-
-### Melhorias
-
-- **Organização de Código:**
-  - Criado arquivo `src/db/index.ts` para centralizar exports do banco de dados
-  - Criado `src/lib/report-generator.ts` para geração de relatórios
-  - Criado `src/lib/company.ts` para buscar configurações da empresa
-  - Melhorias na estrutura de queries do banco de dados
-  - Adicionado `companyId` ao retorno de `validateRequest()`
-- **Interface do Usuário:**
-  - Menu dropdown do perfil reorganizado com novos links
-  - Ícones atualizados (MapPin para Roadmap, History para Changelog)
-  - Páginas de documentação agora leem diretamente de `docs/` (fonte única de verdade)
-  - Suporte a dark mode nas páginas de documentação
-- **Performance:**
-  - Otimização de imports com `optimizePackageImports` no Next.js config
-  - Redução de bundle size para Radix UI, lucide-react, recharts e date-fns
-
-### Corrigido
-
-- **Erro de Build:** Resolvido erro "Module not found: Can't resolve '@/db'" criando arquivo de índice na pasta db
-- **Middleware Edge Runtime:** Removida query de banco do middleware, usando API call para verificar modo manutenção
-- **TypeScript Errors:** Corrigidos todos os erros de tipagem em cron, relatórios e validação de usuário
-- **NotificationService:** Adicionados métodos `sendWhatsApp` e `sendEmail` para uso direto no cron
-
-## [1.5.0] - 2024-12-20
-
-### Adicionado
-
-- **Paridade Completa de Features:**
-  - Todas as páginas de perfil (Admin, Manager, Supervisor, Pastor, Igreja) agora possuem funcionalidades idênticas
-  - Sistema de mensagens via WhatsApp e Email em todos os perfis
-  - Upload de avatares com integração S3 para todos os usuários
-  - Gestão de redes sociais (Facebook, Instagram, Website) com auto-save
-  - Configurações de notificações personalizáveis por usuário
-  - Histórico de transações em todos os perfis
-
-### Melhorias
-
-- **Componente PhoneInput Padronizado:**
-  - Substituição de todas as instâncias diretas de `react-phone-input-2` pelo componente customizado
-  - Integração completa com design system
-  - Suporte a tipos mobile e landline
-  - TypeScript types adequados
-- **Auto-save de Redes Sociais:**
-  - Links de redes sociais salvam automaticamente ao perder foco (onBlur)
-  - Não requer submissão de formulário
-  - Feedback visual de salvamento
-
-### Corrigido
-
-- **Bug de Links de Redes Sociais:** Corrigido problema onde links não eram salvos corretamente
-- **Erros de TypeScript:** Resolvidos todos os erros de compilação relacionados a tipos
-- **Configuração CloudFront:** Corrigida integração entre S3 (upload) e CloudFront (serving)
-
-## [1.4.0] - 2024-11-15
-
-### Adicionado
-
-- **Sistema de Notificações via WhatsApp:**
-  - Integração completa com Evolution API v2
-  - Headers corretos (apikey ao invés de Bearer)
-  - Payload estruturado com delay e linkPreview
-  - Tratamento de respostas e erros
-- **Sistema de Notificações via Email:**
-  - Integração com AWS SES
-  - Templates HTML personalizáveis
-  - Suporte a variáveis dinâmicas
-- **Templates de Mensagens:**
-  - Tabela `message_templates` no banco de dados
-  - Engine de templates com suporte a variáveis ({{name}}, {{churchName}})
-  - Suporte a condicionais ({{#if variable}})
-  - Templates para boas-vindas e lembretes de pagamento
-- **Logs de Notificações:**
-  - Tabela `notification_logs` para auditoria
-  - Registro de status (sucesso/falha)
-  - Armazenamento de mensagens de erro
-
-### Melhorias
-
-- **Multi-tenant:** Todas as notificações são scoped por companyId
-- **Configurações S3:** Sistema de avisos quando credenciais não estão configuradas
-
-## [1.0.8] - 2024-08-08
-
-### Corrigido
-
-- **Erro Crítico de Servidor Interno:** Corrigido um erro que causava falha na renderização de todas as páginas autenticadas. A função `validateRequest` não estava sendo exportada corretamente do `lib/auth.ts`, impedindo que os layouts de perfil verificassem a sessão do usuário.
-- **Tipagem de Formulários e Componentes:** Ajustes finos de tipagem foram feitos para garantir que valores `null` de `react-hook-form` sejam corretamente tratados como `undefined` ou strings vazias antes de serem passados para os componentes de UI, resolvendo os últimos erros de compilação.
-- **Assinatura de Função de Logout:** A função `logoutUser` foi ajustada para ser compatível com o atributo `action` dos formulários do React.
-- **Importações Ausentes:** Adicionadas importações que faltavam em diversos componentes, como `zodResolver` e `CartesianGrid`, que causavam falhas no build.
-
-## [1.0.7] - 2024-08-05
-
-### Adicionado
-
-- **Segurança de API com API Key:**
-  - Adicionada a tabela `api_keys` ao banco de dados para armazenar chaves de API seguras.
-  - Implementado um middleware de autenticação (`src/lib/api-auth.ts`) para proteger todos os endpoints da API. Requisições sem uma chave válida no cabeçalho `Authorization` são bloqueadas.
-  - Criada a página e as rotas da API (`/api/v1/api-keys`) para o gerenciamento completo (CRUD) de chaves de API pelo painel de administrador.
-- **Conexão de Dados Reais (Admin):**
-  - Os KPIs e gráficos do dashboard do administrador (`/admin/dashboard`) agora consomem dados reais da API, incluindo o cálculo de variação percentual em relação ao mês anterior.
-  - A página de transações do administrador (`/admin/transacoes`) foi conectada ao backend, exibindo a lista de todas as transações reais do sistema.
-  - A aba "Transações" dentro do perfil de cada usuário (gerente, pastor, etc.) agora exibe o histórico de transações real e específico daquele usuário.
-- **Melhorias na Interface (Admin):**
-  - Adicionada uma nova aba "Configurações" no perfil de cada tipo de usuário (Gerente, Supervisor, Pastor, Igreja) dentro do painel do admin, preparando o local para o gerenciamento de notificações.
-
-### Corrigido
-
-- **Redirecionamento de Login do Gerente:** Corrigido o mapeamento de rota pós-login para o perfil de `manager`, que agora redireciona corretamente para `/manager` em vez de `/gerente`.
-
-### Melhorias
-
-- **Organização de Rotas da API:** As rotas de API para cada perfil foram organizadas em subdiretórios (`/api/v1/admin`, `/api/v1/manager`), melhorando a estrutura e clareza do backend.
-
-## [1.0.6] - 2024-08-02
-
-### Adicionado
-
-- **API REST para Gerentes:**
-  - Criação dos endpoints `GET` e `POST` em `/api/v1/manager/gerentes` para listar e criar gerentes.
-  - Criação dos endpoints dinâmicos `GET`, `PUT` e `DELETE` em `/api/v1/manager/gerentes/[id]` para gerenciar gerentes específicos.
-  - Criação do endpoint `GET /api/v1/manager/dashboard` para fornecer dados agregados para o painel do gerente.
-  - Criação do endpoint `GET /api/v1/manager/perfil` para buscar os dados do perfil do gerente logado.
-- **Conexão do Frontend com a API:**
-  - A página `/manager/gerentes` agora consome a nova API para listar, criar e excluir gerentes, substituindo os dados estáticos.
-  - Implementado feedback de carregamento (skeletons) e tratamento de erros com toasts em todas as páginas do painel de gerente.
-
-### Corrigido
-
-- **Erro Crítico de Metadados:** Resolvido o problema recorrente "You are attempting to export "metadata" from a component marked with "use client"", reestruturando os layouts de todos os perfis (`admin`, `manager`, `supervisor`, `pastor`, `igreja`) para isolar corretamente os Componentes de Cliente dos Componentes de Servidor.
-- **Links Quebrados (404):** Corrigidos todos os links de navegação que apontavam para a antiga rota `/gerente`, que foi migrada para `/manager`.
-- **Lógica de Perfil Incompleto:** Removida a verificação estrita do campo de endereço no alerta de "perfil incompleto" do gerente para evitar confusão.
-
-### Melhorias
-
-- **Estrutura de Rotas:** A rota do painel de gerente foi padronizada de `/gerente` para `/manager` para consistência.
-- **Componentização:** Os componentes de sidebar e header de cada perfil foram movidos para seus respectivos diretórios `_components` para uma melhor organização e escopo.
-- **Ambiente de Desenvolvimento:** Removida temporariamente a validação de sessão de todos os painéis para agilizar o desenvolvimento, com a adição de dados de fallback para evitar quebras na interface.
-
-## [1.0.5] - 2024-08-01
-
-### Adicionado
-
-- **API REST para Administradores:**
-  - Criação dos endpoints `GET` e `POST` em `/api/v1/administradores` para listar e criar administradores.
-  - Criação dos endpoints dinâmicos `GET`, `PUT` e `DELETE` em `/api/v1/administradores/[id]` para gerenciar administradores específicos.
-- **API REST para Gateways de Pagamento:**
-  - Criação do endpoint `GET /api/v1/gateways` para listar as configurações de todos os gateways.
-  - Criação de rotas dinâmicas como `/api/v1/gateways/cielo` e `/api/v1/gateways/bradesco` para buscar (`GET`) e salvar (`PUT`) configurações específicas.
-- **API para Dashboard do Admin:**
-  - Implementado o endpoint `GET /api/v1/dashboard/admin` para fornecer dados agregados (KPIs, estatísticas) para o painel principal.
-- **Documentação da API da Cielo:**
-  - Adicionado o arquivo `docs/CIELO_API_GUIDE.md` com um guia técnico completo para a integração, incluindo exemplos de cURL para Cartão de Crédito, Boleto, PIX, e instruções para cancelamento e consulta.
-
-### Corrigido
-
-- **Valores Nulos em Formulários:** Corrigido o erro "Expected string, received null" nos formulários de configuração de gateway, garantindo que valores nulos do banco de dados sejam tratados corretamente.
-
-## [1.0.4] - 2024-07-31
-
-### Adicionado
-
-- **API REST para Regiões:**
-  - Criação do endpoint `GET /api/v1/regioes` para listar todas as regiões ativas, ordenadas pela data de atualização.
-  - Criação do endpoint `POST /api/v1/regioes` para adicionar novas regiões.
-  - Criação dos endpoints dinâmicos `PUT` e `DELETE` em `/api/v1/regioes/[id]` para atualizar e excluir (soft delete) regiões específicas.
-- **Refatoração do Frontend de Regiões:**
-  - A página `/admin/regioes` foi totalmente refatorada para consumir a nova API REST, utilizando `fetch` no lado do cliente para todas as operações CRUD.
-  - As antigas Server Actions (`getRegions`, `saveRegion`, `deleteRegion`) foram removidas em favor da nova arquitetura de API.
-
-### Corrigido
-
-- **Falha na Consulta de Regiões:** Resolvido o problema crítico onde a listagem de regiões retornava um array vazio. A causa raiz era uma inconsistência no schema do Drizzle (`church_profiles`) que causava um erro em cascata, impedindo a consulta correta.
-- **Erro de "Não Autorizado":** Corrigido o erro que impedia a manipulação de regiões (criação, exclusão) ao remover a dependência de um usuário autenticado nas rotas da API durante o desenvolvimento.
-- **Atualização de `updatedAt`:** A função de atualização de região agora define corretamente o campo `updatedAt` no banco de dados.
-
-## [1.0.3] - 2024-07-31
-
-### Adicionado
-
-- **Sistema de Autenticação Completo:**
-  - Implementação do `lucia-auth` para gerenciamento de sessões seguras baseadas em cookies.
-  - Adição da tabela `sessions` ao esquema do banco de dados para armazenar sessões de usuários.
-  - Criação das Server Actions `loginUser` e `logoutUser` para lidar com o fluxo de autenticação no backend.
-- **Integração do Login:**
-  - A página de login (`/auth/login`) agora se comunica com a ação `loginUser` para autenticar os usuários.
-  - Implementação de um painel de logs na tela de login para exibir o feedback do processo de autenticação, incluindo erros detalhados do backend para facilitar a depuração.
-- **Redirecionamento Pós-Login:**
-  - Após o login bem-sucedido, os usuários são automaticamente redirecionados para o dashboard correspondente ao seu perfil (`/admin`, `/manager`, etc.).
-- **Exibição de Dados Dinâmicos:**
-  - O cabeçalho de todos os painéis agora busca e exibe dinamicamente o nome e o e-mail do usuário autenticado.
-- **Backend para Regiões:**
-  - Criação das Server Actions (`getRegions`, `saveRegion`, `deleteRegion`) para gerenciar as regiões no banco de dados.
-  - A página `/admin/regioes` foi totalmente conectada ao backend, permitindo a criação, edição e exclusão de regiões em tempo real.
-
-### Corrigido
-
-- Corrigido um problema crítico no script de `seed` onde a senha padrão não era carregada corretamente, resultando em hashes de senha inválidos.
-- Resolvido o problema de a sessão do usuário não persistir entre as navegações, ajustando a lógica de validação de sessão no `lucia.ts`.
-
-## [1.0.2] - 2024-07-30
-
-### Adicionado
-
-- **Configuração do Banco de Dados:**
-  - Configuração da conexão com o banco de dados PostgreSQL através de variáveis de ambiente seguras (`.env.local`).
-  - Criação dos arquivos `.env.example` e `.env.backup` para seguir as boas práticas de desenvolvimento.
-- **Estrutura de Dados com Drizzle ORM:**
-  - Definição do esquema completo do banco de dados em `src/db/schema.ts`.
-  - Criação da tabela `companies` para centralizar as configurações do sistema.
-  - Implementação de chaves primárias `UUID` em todas as tabelas para maior segurança.
-  - Adição de funcionalidade de "soft delete" (`deletedAt`, `deletedBy`, `deletionReason`) em tabelas críticas para permitir a recuperação de dados e auditoria.
-- **Scripts de Banco de Dados:**
-  - Adição dos comandos `npm run db:generate` e `npm run db:push` para gerenciamento de migrações.
-  - Criação do comando `npm run db:seed` para popular o banco de dados com dados de exemplo para todos os perfis de usuário.
-  - Adição do comando de conveniência `npm run db:rollback` para resetar o banco de dados durante o desenvolvimento.
-- **Segurança:**
-  - Implementação de hashing de senhas com `bcrypt` no script de seed para garantir o armazenamento seguro das credenciais.
-
-## [1.0.1] - 2024-07-30
-
-### Adicionado
-
-- **Estrutura Inicial do Projeto:**
-  - Configuração do projeto Next.js com TypeScript e Tailwind CSS.
-  - Implementação da biblioteca de componentes ShadCN/UI.
-- **Painel de Administrador (`/admin`):**
-  - Layout principal com sidebar de navegação e cabeçalho.
-  - Páginas CRUD completas para Administradores, Gerentes, Supervisores, Pastores e Igrejas.
-  - Páginas de configuração para Regiões, Gateways de Pagamento (Cielo e Bradesco) e Configurações Gerais.
-  - Dashboard com KPIs e gráficos de exemplo.
-  - Página de Relatórios e Transações.
-- **Painéis por Perfil de Usuário:**
-  - Criação de layouts e páginas dedicadas para os perfis: Gerente (`/manager`), Supervisor (`/supervisor`), Pastor (`/pastor`) e Igreja (`/igreja`).
-  - Cada painel possui dashboard, páginas de gerenciamento e perfil customizadas.
-- **Fluxo de Autenticação (`/auth`):**
-  - Criação das páginas de Login, Cadastro de Conta (Pastor e Igreja) e Recuperação de Senha.
-  - Implementação de um layout moderno de duas colunas para as telas de autenticação.
-- **Documentação:**
-  - Criação do `docs/README.md` com a visão geral do projeto.
-- Criação do `docs/CONTRIBUTING.md` com as diretrizes e regras de desenvolvimento.
-- Criação do `docs/FRONTEND_DOCS.md` com detalhes da arquitetura do frontend.
-- Início deste `docs/CHANGELOG.md`.
-
-### Corrigido
-
-- Corrigidos todos os links de navegação que resultavam em erro 404.
-- Ajustes de responsividade em toda a aplicação para garantir uma boa experiência em dispositivos móveis.
-- Refatoração da página de Regiões para usar modais, melhorando a fluidez da interface.
+## [0.1.0] - 2025-01-30 - Lançamento Inicial
+
+### 🎉 Lançamento da Versão Inicial
+
+Esta é a primeira versão estável do **Vinha Admin Center**, um sistema completo de gestão para igrejas e organizações religiosas.
+
+### ✅ **Funcionalidades Principais**
+
+#### **Sistema de Autenticação e Autorização**
+- Sistema completo de login/logout com JWT
+- 5 níveis de usuário: Admin, Manager, Supervisor, Pastor, Igreja
+- Controle de acesso baseado em roles
+- Sessões seguras com cookies httpOnly
+
+#### **Painéis Administrativos Completos**
+- **Painel Admin**: Gestão completa do sistema, usuários, configurações
+- **Painel Manager**: Supervisão de rede de supervisores, pastores e igrejas
+- **Painel Supervisor**: Gestão regional de pastores e igrejas
+- **Painel Pastor**: Perfil pessoal e contribuições
+- **Painel Igreja**: Gestão da igreja e contribuições
+
+#### **Sistema de Pagamentos Integrado**
+- Integração completa com **Cielo API**
+- Suporte a **PIX**, **Cartão de Crédito** e **Boleto**
+- Geração de QR Code PIX com copia e cola
+- Formulário de cartão com validação visual
+- Geração de boleto com linha digitável
+- Webhook para confirmação automática de pagamentos
+
+#### **Sistema de Contribuições**
+- Formulário componentizado reutilizável
+- Interface moderna e intuitiva
+- Processamento em tempo real
+- Histórico completo de transações
+
+#### **Gestão de Perfis**
+- Upload de avatares com AWS S3
+- Campos de redes sociais (Facebook, Instagram, Website)
+- Configurações de notificação personalizáveis
+- Dados pessoais completos com validação
+
+#### **Sistema de Notificações**
+- Notificações via **Email** (AWS SES)
+- Notificações via **WhatsApp** (Evolution API v2)
+- Templates personalizáveis
+- Sistema de logs para auditoria
+
+#### **Dashboards e Relatórios**
+- KPIs em tempo real para cada nível
+- Gráficos interativos com Recharts
+- Filtros por período (DateRangePicker)
+- Exportação para PDF e Excel
+- Estatísticas detalhadas de contribuições
+
+#### **Funcionalidades Avançadas**
+- Busca global inteligente
+- Filtros avançados em todas as listagens
+- Sistema de upload de arquivos
+- Consulta automática de CEP
+- Validação de CPF/CNPJ
+- Soft delete com auditoria
+
+### 🎨 **Interface e Experiência do Usuário**
+
+#### **Design System Moderno**
+- Interface baseada em **shadcn/ui** + **Radix UI**
+- Design responsivo com **Tailwind CSS**
+- Tema consistente em todo o sistema
+- 47+ componentes UI padronizados
+
+#### **UX Profissional**
+- Loading states com skeleton loaders
+- Feedback visual em todas as ações
+- Tooltips informativos
+- Navegação intuitiva
+- Layouts padronizados
+
+### 🔧 **Arquitetura Técnica**
+
+#### **Frontend**
+- **Next.js 15.5.3** com App Router
+- **React 18.3.1** com TypeScript
+- **Tailwind CSS** para estilização
+- **React Hook Form** + **Zod** para formulários
+
+#### **Backend**
+- **Next.js API Routes** para backend
+- **PostgreSQL** como banco de dados
+- **Drizzle ORM** para queries
+- **JWT** para autenticação
+
+#### **Integrações**
+- **AWS S3** para armazenamento de arquivos
+- **AWS SES** para envio de emails
+- **Evolution API v2** para WhatsApp
+- **Cielo API** para pagamentos
+- **ViaCEP** para consulta de endereços
+
+### 📊 **Estatísticas do Sistema**
+
+- **5 painéis** administrativos completos
+- **25+ formulários** estruturados
+- **47 componentes UI** padronizados
+- **50+ APIs** funcionais
+- **3 métodos de pagamento** integrados
+- **2 canais de notificação** (Email + WhatsApp)
+
+### 🚀 **Próximas Versões**
+
+#### **v0.2.0 - Melhorias e Otimizações**
+- Testes automatizados
+- Monitoramento de performance
+- Melhorias de acessibilidade
+- Funcionalidades avançadas de relatórios
+
+#### **v0.3.0 - Expansão de Funcionalidades**
+- Sistema de eventos e agenda
+- Gestão de membros avançada
+- Relatórios financeiros detalhados
+- Integração com mais gateways de pagamento
+
+### 📝 **Notas de Instalação**
+
+Para instalar e configurar o sistema, consulte:
+- `README.md` - Guia de instalação
+- `docs/BACKEND_DOCS.md` - Configuração do backend
+- `docs/FRONTEND_DOCS.md` - Configuração do frontend
+- `docs/PRODUCTION_CHECKLIST.md` - Lista para produção
+
+### 🎯 **Suporte e Documentação**
+
+- Documentação completa em `/docs`
+- Guias de integração disponíveis
+- Exemplos de configuração
+- Checklist de produção
+
+---
+
+**Vinha Admin Center v0.1.0** - Sistema completo e profissional para gestão de igrejas! 🎉
