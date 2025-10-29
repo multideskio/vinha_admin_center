@@ -57,7 +57,16 @@ export async function PUT(request: Request): Promise<NextResponse> {
     }
 
     // Preparar dados do perfil, convertendo strings vazias para null
-    const profileUpdate: any = { ...profileData }
+    const profileUpdate: any = {}
+    
+    // Adicionar campos do profileData apenas se existirem
+    Object.keys(profileData).forEach(key => {
+      if (profileData[key] !== undefined) {
+        profileUpdate[key] = profileData[key]
+      }
+    })
+    
+    // Adicionar redes sociais se foram fornecidas
     if (facebook !== undefined) profileUpdate.facebook = facebook || null
     if (instagram !== undefined) profileUpdate.instagram = instagram || null
     if (website !== undefined) profileUpdate.website = website || null

@@ -32,6 +32,15 @@ type TransactionDetail = {
   refundRequestReason?: string | null
 }
 
+const statusMap: {
+  [key: string]: { text: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }
+} = {
+  approved: { text: 'Aprovada', variant: 'success' },
+  pending: { text: 'Pendente', variant: 'warning' },
+  refused: { text: 'Recusada', variant: 'destructive' },
+  refunded: { text: 'Reembolsada', variant: 'outline' },
+}
+
 export default function TransacaoDetalhePage() {
   const [transaction, setTransaction] = React.useState<TransactionDetail | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -48,25 +57,32 @@ export default function TransacaoDetalhePage() {
       const data = await response.json()
 
       const cieloData = data.transaction
+      const payment = cieloData.Payment
+
+      // Mapear status da Cielo
+      let status: 'approved' | 'pending' | 'refused' | 'refunded' = 'pending'
+      if (payment.Status === 2) status = 'approved'
+      else if (payment.Status === 3) status = 'refused'
+      else if (payment.Status === 10 || payment.Status === 11) status = 'refunded'
 
       const formattedData: TransactionDetail = {
-        id: cieloData.Payment.PaymentId,
-        date: format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss'),
-        amount: cieloData.Payment.Amount / 100,
-        status: 'approved', // Mapear o status da Cielo para o seu
+        id: payment.PaymentId,
+        date: payment.ReceivedDate ? format(parseISO(payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss') : 'N/A',
+        amount: payment.Amount / 100,
+        status,
         contributor: {
-          name: cieloData.Customer.Name,
-          email: 'email@naodisponivel.com',
+          name: cieloData.Customer?.Name || 'N/A',
+          email: cieloData.Customer?.Email || 'N/A',
         },
         church: null,
         payment: {
-          method: cieloData.Payment.Type,
+          method: payment.Type === 'CreditCard' ? 'Cartão de Crédito' : payment.Type === 'Pix' ? 'Pix' : 'Boleto',
           details:
-            cieloData.Payment.Type === 'CreditCard'
-              ? `Cartão final ${cieloData.Payment.CreditCard.CardNumber.slice(-4)}`
-              : cieloData.Payment.ProofOfSale,
+            payment.Type === 'CreditCard' && payment.CreditCard
+              ? `${payment.CreditCard.Brand} final ${payment.CreditCard.CardNumber.slice(-4)}`
+              : payment.ProofOfSale || 'N/A',
         },
-        refundRequestReason: cieloData.Payment.VoidReason,
+        refundRequestReason: payment.VoidReason || null,
       }
 
       setTransaction(formattedData)
@@ -130,8 +146,15 @@ export default function TransacaoDetalhePage() {
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
             Detalhes da Transação
           </h1>
-          <Badge variant="outline" className="ml-auto sm:ml-0">
-            {transaction.status}
+          <Badge 
+            variant={
+              transaction.status === 'approved' ? 'success' :
+              transaction.status === 'pending' ? 'warning' :
+              transaction.status === 'refunded' ? 'outline' : 'destructive'
+            } 
+            className="ml-auto sm:ml-0"
+          >
+            {statusMap[transaction.status]?.text || transaction.status}
           </Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
             <Button variant="outline" size="sm">
@@ -149,6 +172,10 @@ export default function TransacaoDetalhePage() {
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7"
+                  onClick={() => {
+                    navigator.clipboard.writeText(transaction.id)
+                    toast({ title: 'Copiado!', description: 'ID copiado para área de transferência' })
+                  }}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
@@ -173,14 +200,12 @@ export default function TransacaoDetalhePage() {
                     <div>
                       <Badge
                         variant={
-                          transaction.status === 'approved'
-                            ? 'success'
-                            : transaction.status === 'pending'
-                              ? 'warning'
-                              : 'destructive'
+                          transaction.status === 'approved' ? 'success' :
+                          transaction.status === 'pending' ? 'warning' :
+                          transaction.status === 'refunded' ? 'outline' : 'destructive'
                         }
                       >
-                        {transaction.status}
+                        {statusMap[transaction.status]?.text || transaction.status}
                       </Badge>
                     </div>
                   </div>
