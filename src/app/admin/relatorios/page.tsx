@@ -72,7 +72,7 @@ export default function ReportsPage() {
                 const blob = ReportGenerator.generatePDF(data);
                 ReportGenerator.downloadFile(blob, `${filename}.pdf`);
             } else {
-                const blob = ReportGenerator.generateExcel(data);
+                const blob = await ReportGenerator.generateExcel(data);
                 ReportGenerator.downloadFile(blob, `${filename}.xlsx`);
             }
 

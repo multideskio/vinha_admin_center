@@ -40,8 +40,6 @@ import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import {
-  managerProfileSchema,
-  type ManagerProfile as BaseManagerProfile,
   type NotificationType,
   type UserNotificationSettings,
   type TransactionStatus,

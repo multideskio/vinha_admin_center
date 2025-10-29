@@ -47,3 +47,5 @@ firestore-debug.log
 # SQL files with credentials
 *.sql
 fix-*.sql
+
+.kiro/

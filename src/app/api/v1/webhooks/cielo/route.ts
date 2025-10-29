@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     switch (ChangeType) {
       case 1: // Payment status changed
-      case 3: // Recurrence created
+      case 3: { // Recurrence created
         // Consultar status atual na Cielo
         const { queryPayment } = await import('@/lib/cielo')
         const paymentData = await queryPayment(PaymentId)
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         else if (cieloStatus === 10 || cieloStatus === 11) newStatus = 'refunded'
         else newStatus = 'pending'
         break
+      }
 
       case 2: // Boleto status changed
         newStatus = 'approved'

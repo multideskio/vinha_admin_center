@@ -1,10 +1,11 @@
 /**
  * @fileoverview Gerador de relatórios em PDF e Excel
+ * @version 2.0 - Migrado para exceljs por segurança
  */
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 export type ReportData = {
   title: string
@@ -51,25 +52,61 @@ export const ReportGenerator = {
     return doc.output('blob')
   },
   
-  generateExcel(data: ReportData): Blob {
-    const ws = XLSX.utils.aoa_to_sheet([
-      [data.title],
-      [`Período: ${data.period}`],
-      [],
-      data.headers,
-      ...data.rows,
-    ])
+  async generateExcel(data: ReportData): Promise<Blob> {
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Relatório')
     
+    // Título
+    worksheet.addRow([data.title])
+    worksheet.getCell('A1').font = { bold: true, size: 16 }
+    
+    // Período
+    worksheet.addRow([`Período: ${data.period}`])
+    worksheet.getCell('A2').font = { italic: true }
+    
+    // Linha vazia
+    worksheet.addRow([])
+    
+    // Cabeçalhos
+    const headerRow = worksheet.addRow(data.headers)
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true }
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF428BCA' }
+      }
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    })
+    
+    // Dados
+    data.rows.forEach(row => {
+      worksheet.addRow(row)
+    })
+    
+    // Resumo
     if (data.summary && data.summary.length > 0) {
-      const summaryRows = data.summary.map(item => [item.label, item.value])
-      XLSX.utils.sheet_add_aoa(ws, [[], ['Resumo'], ...summaryRows], { origin: -1 })
+      worksheet.addRow([]) // Linha vazia
+      const summaryHeaderRow = worksheet.addRow(['Resumo'])
+      summaryHeaderRow.getCell(1).font = { bold: true, size: 14 }
+      
+      data.summary.forEach(item => {
+        worksheet.addRow([item.label, item.value])
+      })
     }
     
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Relatório')
+    // Auto-ajustar largura das colunas
+    worksheet.columns.forEach(column => {
+      if (column.values) {
+        const lengths = column.values.map(v => v ? v.toString().length : 0)
+        const maxLength = Math.max(...lengths.filter(v => typeof v === 'number'))
+        column.width = Math.min(Math.max(maxLength + 2, 10), 50)
+      }
+    })
     
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-    return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    // Gerar buffer
+    const buffer = await workbook.xlsx.writeBuffer()
+    return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   },
   
   downloadFile(blob: Blob, filename: string) {

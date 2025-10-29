@@ -14,6 +14,7 @@ import {
   Lock,
   Mail,
   Smartphone,
+  MoreHorizontal,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -38,6 +39,18 @@ import { supervisorProfileSchema } from '@/lib/types'
 import type { NotificationType, UserNotificationSettings } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 import { Switch } from '@/components/ui/switch'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import Link from 'next/link'
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
 
 const supervisorUpdateSchema = supervisorProfileSchema
   .extend({
@@ -53,6 +66,141 @@ const notificationSettingsConfig = {
   payment_notifications: 'Notificações de Pagamento',
   due_date_reminders: 'Lembretes de Vencimento',
   network_reports: 'Relatórios da Rede',
+}
+
+const TransactionsTab = ({ userId }: { userId: string }) => {
+  const [transactions, setTransactions] = React.useState<any[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const { toast } = useToast()
+
+  React.useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/v1/supervisor/transacoes?userId=${userId}`)
+        if (!response.ok) throw new Error('Falha ao carregar transações.')
+        const data = await response.json()
+        setTransactions(data.transactions || [])
+      } catch (error: unknown) {
+        toast({
+          title: 'Erro',
+          description: error instanceof Error ? error.message : 'Erro desconhecido',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTransactions()
+  }, [userId, toast])
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-64 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const statusMap: {
+    [key: string]: { text: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }
+  } = {
+    approved: { text: 'Aprovada', variant: 'success' },
+    pending: { text: 'Pendente', variant: 'warning' },
+    refused: { text: 'Recusada', variant: 'destructive' },
+    refunded: { text: 'Reembolsada', variant: 'outline' },
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Minhas Transações</CardTitle>
+        <CardDescription>Histórico das suas transações financeiras.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID da Transação</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : transactions.length > 0 ? (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                      {statusMap[transaction.status]?.text || transaction.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{transaction.date || new Date(transaction.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                  <TableCell className="text-right">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      transaction.amount,
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/supervisor/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24">
+                  Nenhuma transação encontrada para este usuário.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
 }
 
 const SettingsTab = ({ userId }: { userId: string }) => {
@@ -81,8 +229,25 @@ const SettingsTab = ({ userId }: { userId: string }) => {
   }, [userId, toast])
 
   React.useEffect(() => {
-    fetchSettings()
-  }, [fetchSettings])
+    const loadSettings = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch('/api/v1/supervisor/notification-settings')
+        if (!response.ok) throw new Error('Falha ao carregar configurações.')
+        const data = await response.json()
+        setSettings(data)
+      } catch (error: unknown) {
+        toast({
+          title: 'Erro',
+          description: error instanceof Error ? error.message : 'Erro desconhecido',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadSettings()
+  }, [toast])
 
   const handleSwitchChange = (
     type: NotificationType,
@@ -100,7 +265,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
 
   const handleSaveSettings = async () => {
     try {
-      const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
+      const response = await fetch('/api/v1/supervisor/notification-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
@@ -177,16 +342,208 @@ const SettingsTab = ({ userId }: { userId: string }) => {
 }
 
 export default function SupervisorProfilePage() {
-  const [supervisor] = React.useState<SupervisorProfile | null>(null)
-  const [isLoading] = React.useState(true)
+  const [supervisor, setSupervisor] = React.useState<SupervisorProfile | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isFetchingCep, setIsFetchingCep] = React.useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
 
   const form = useForm<SupervisorProfile>({
     resolver: zodResolver(supervisorUpdateSchema),
     defaultValues: {},
   })
 
-  const onSubmit = (data: SupervisorProfile) => {
-    console.log(data)
+  const fetchProfile = React.useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/v1/supervisor/perfil')
+      if (!response.ok) throw new Error('Falha ao carregar perfil.')
+      const data = await response.json()
+      setSupervisor(data.supervisor)
+      form.reset(data.supervisor)
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [form, toast])
+
+  React.useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  const formatCPF = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+      .slice(0, 14)
+  }
+
+  const formatCEP = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{5})(\d)/, '$1-$2')
+      .slice(0, 9)
+  }
+
+  const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value.replace(/\D/g, '')
+    if (cep.length !== 8) return
+
+    setIsFetchingCep(true)
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const data = await response.json()
+      if (!data.erro) {
+        form.setValue('address', data.logradouro)
+        form.setValue('neighborhood', data.bairro)
+        form.setValue('city', data.localidade)
+        form.setValue('state', data.uf)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
+    } finally {
+      setIsFetchingCep(false)
+    }
+  }
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingAvatar(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'avatars/supervisors')
+      formData.append('filename', file.name)
+
+      const uploadResponse = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error('Falha no upload da imagem.')
+      }
+
+      const uploadResult = await uploadResponse.json()
+      
+      if (!uploadResult.success || !uploadResult.url) {
+        throw new Error('Falha no upload da imagem.')
+      }
+
+      // Atualizar perfil com nova URL
+      const payload = { avatarUrl: uploadResult.url }
+      const response = await fetch('/api/v1/supervisor/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar avatar.')
+      }
+
+      toast({
+        title: 'Sucesso!',
+        description: 'Avatar atualizado com sucesso.',
+        variant: 'success',
+      })
+      
+      // Atualizar estado local
+      console.log('Atualizando avatar URL:', uploadResult.url)
+      setSupervisor((prev) => (prev ? { ...prev, avatarUrl: uploadResult.url } : null))
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUploadingAvatar(false)
+      // Limpar input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string,
+  ) => {
+    try {
+      const payload = { [fieldName]: value || null }
+
+      const response = await fetch('/api/v1/supervisor/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Falha ao atualizar ${fieldName}.`)
+      }
+
+      toast({
+        title: 'Sucesso!',
+        description: `Link do ${fieldName} atualizado.`,
+        variant: 'success',
+      })
+      
+      // Atualizar estado local
+      setSupervisor((prev) => (prev ? { ...prev, [fieldName]: value || null } : null))
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const onSubmit = async (data: SupervisorProfile) => {
+    try {
+      const response = await fetch('/api/v1/supervisor/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Falha ao atualizar perfil.')
+      }
+
+      toast({
+        title: 'Sucesso!',
+        description: 'Perfil atualizado com sucesso.',
+        variant: 'success',
+      })
+      
+      // Recarregar dados atualizados
+      fetchProfile()
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    }
   }
 
   if (isLoading || !supervisor) {
@@ -218,19 +575,34 @@ export default function SupervisorProfilePage() {
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <ClickableAvatar
-                src={supervisor.avatarUrl || "https://placehold.co/96x96.png"}
+                key={supervisor.avatarUrl || 'no-avatar'}
+                src={supervisor.avatarUrl || undefined}
                 alt={`${supervisor.firstName} ${supervisor.lastName}`}
                 fallback={`${supervisor.firstName?.[0] || ''}${supervisor.lastName?.[0] || ''}`}
                 className="h-24 w-24"
+                enableModal={!!supervisor.avatarUrl}
               />
               <Button
                 variant="outline"
                 size="icon"
                 className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                onClick={handleAvatarClick}
+                disabled={isUploadingAvatar}
               >
-                <Camera className="h-4 w-4" />
+                {isUploadingAvatar ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
                 <span className="sr-only">Trocar foto</span>
               </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
             </div>
             <h2 className="mt-4 text-xl font-semibold">
               {supervisor.firstName} {supervisor.lastName}
@@ -244,22 +616,25 @@ export default function SupervisorProfilePage() {
               <div className="flex items-center gap-3">
                 <Facebook className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={supervisor.facebook ?? ''}
+                  defaultValue={supervisor.facebook || ''}
                   placeholder="https://facebook.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={supervisor.instagram ?? ''}
+                  defaultValue={supervisor.instagram || ''}
                   placeholder="https://instagram.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 <Input
-                  defaultValue={supervisor.website ?? ''}
+                  defaultValue={supervisor.website || ''}
                   placeholder="https://website.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
                 />
               </div>
             </div>
@@ -272,6 +647,7 @@ export default function SupervisorProfilePage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
+            <TabsTrigger value="transacoes">Transações</TabsTrigger>
             <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
@@ -326,14 +702,36 @@ export default function SupervisorProfilePage() {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Celular</FormLabel>
+                            <FormLabel>Celular *</FormLabel>
                             <FormControl>
-                              <div className="flex items-center">
-                                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm h-10">
-                                  🇧🇷 +55
-                                </span>
-                                <Input {...field} className="rounded-l-none" />
-                              </div>
+                              <PhoneInput
+                                country={'br'}
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClass="!w-full"
+                                containerClass="phone-input-wrapper"
+                                inputStyle={{
+                                  width: '100%',
+                                  height: '40px',
+                                  fontSize: '14px',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: 'calc(var(--radius) - 2px)',
+                                  backgroundColor: 'hsl(var(--background))',
+                                  color: 'hsl(var(--foreground))',
+                                }}
+                                buttonStyle={{
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRight: 'none',
+                                  backgroundColor: 'hsl(var(--background))',
+                                  borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
+                                }}
+                                dropdownStyle={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: 'calc(var(--radius) - 2px)',
+                                  color: 'hsl(var(--foreground))',
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -375,8 +773,16 @@ export default function SupervisorProfilePage() {
                           <FormItem>
                             <FormLabel>CEP</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value || ''} />
+                              <Input
+                                {...field}
+                                value={field.value || ''}
+                                onChange={(e) => field.onChange(formatCEP(e.target.value))}
+                                onBlur={handleCepBlur}
+                                disabled={isFetchingCep}
+                                placeholder="00000-000"
+                              />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -387,8 +793,14 @@ export default function SupervisorProfilePage() {
                           <FormItem>
                             <FormLabel>Estado/UF</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value || ''} />
+                              <Input
+                                {...field}
+                                value={field.value || ''}
+                                disabled={isFetchingCep}
+                                placeholder="UF"
+                              />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -399,8 +811,14 @@ export default function SupervisorProfilePage() {
                           <FormItem>
                             <FormLabel>Cidade</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value || ''} />
+                              <Input
+                                {...field}
+                                value={field.value || ''}
+                                disabled={isFetchingCep}
+                                placeholder="Nome da cidade"
+                              />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -414,8 +832,14 @@ export default function SupervisorProfilePage() {
                           <FormItem>
                             <FormLabel>Bairro</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value || ''} />
+                              <Input
+                                {...field}
+                                value={field.value || ''}
+                                disabled={isFetchingCep}
+                                placeholder="Nome do bairro"
+                              />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -424,14 +848,16 @@ export default function SupervisorProfilePage() {
                         name="address"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Rua</FormLabel>
+                            <FormLabel>Endereço</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Complemento..."
+                                placeholder="Nome da rua"
                                 {...field}
                                 value={field.value || ''}
+                                disabled={isFetchingCep}
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -529,6 +955,9 @@ export default function SupervisorProfilePage() {
                 </Form>
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="transacoes">
+            {supervisor.id && <TransactionsTab userId={supervisor.id} />}
           </TabsContent>
           <TabsContent value="configuracoes">
             {supervisor.id && <SettingsTab userId={supervisor.id} />}

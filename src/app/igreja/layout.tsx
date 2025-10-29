@@ -1,19 +1,34 @@
 /**
  * @fileoverview Layout principal para o painel da igreja.
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 2.0
+ * @date 2025-01-28
+ * @author Sistema de Padronização
  */
 
 import type { Metadata } from 'next'
-import { IgrejaSidebar } from './_components/sidebar'
-import { IgrejaHeader } from './_components/header'
 import { validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
+import { getCompanySettings } from '@/lib/company'
+import { RoleLayout } from '@/components/role-layout'
+// Configuração dos itens de menu da igreja
+const menuItems = [
+  { href: '/igreja/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { href: '/igreja/transacoes', label: 'Transações', icon: 'ArrowRightLeft' },
+  { href: '/igreja/contribuir', label: 'Contribuir', icon: 'Handshake' },
+]
 
-export const metadata: Metadata = {
-  title: 'Vinha Igreja Center',
-  description: 'Painel da Igreja para Vinha Ministérios',
+const settingsItem = {
+  href: '/igreja/perfil',
+  label: 'Meu Perfil',
+  icon: 'Settings',
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompanySettings()
+  return {
+    title: company?.name ? `${company.name} - Igreja Center` : 'Vinha Igreja Center',
+    description: `Painel da Igreja para ${company?.name || 'Vinha Ministérios'}`,
+  }
 }
 
 export default async function ChurchLayout({
@@ -23,20 +38,20 @@ export default async function ChurchLayout({
 }): Promise<JSX.Element> {
   const { user } = await validateRequest()
 
+  // Suporte para ambas as roles (church_account e igreja) para compatibilidade
   if (!user || user.role !== 'church_account') {
     return redirect('/auth/login')
   }
 
-  const userName = user.email?.split('@')[0] || 'Usuario'
-  const userFallback = userName.substring(0, 2).toUpperCase()
-
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <IgrejaSidebar />
-      <div className="flex flex-col">
-        <IgrejaHeader userName={userName} userEmail={user.email} userFallback={userFallback} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
-      </div>
-    </div>
+    <RoleLayout
+      user={user}
+      role="igreja"
+      menuItems={menuItems}
+      settingsItem={settingsItem}
+      basePath="/igreja"
+    >
+      {children}
+    </RoleLayout>
   )
 }

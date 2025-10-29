@@ -13,22 +13,36 @@ import {
   churchProfiles,
   pastorProfiles,
 } from '@/db/schema'
-import { eq, desc, inArray } from 'drizzle-orm'
+import { eq, desc, inArray, gte, lte, and } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
-export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+export async function GET(request: Request): Promise<NextResponse> {
+  // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  if (!sessionUser || sessionUser.role !== 'supervisor') {
+  
+  if (!sessionUser) {
+    // Se não há usuário logado, tenta autenticação por API Key
+    const authResponse = await authenticateApiKey()
+    if (authResponse) return authResponse
+    
+    // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+  
+  // Verifica se o usuário tem a role correta
+  if (sessionUser.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
   }
 
   try {
+    // Extrair parâmetros de data da URL
+    const { searchParams } = new URL(request.url)
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+
     const pastorIdsResult = await db
       .select({ id: pastorProfiles.userId })
       .from(pastorProfiles)
@@ -46,6 +60,20 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ transactions: [] })
     }
 
+    // Construir condições de filtro
+    const conditions = [inArray(transactionsTable.contributorId, networkUserIds)]
+    
+    if (startDate) {
+      conditions.push(gte(transactionsTable.createdAt, new Date(startDate)))
+    }
+    
+    if (endDate) {
+      // Adicionar 1 dia para incluir transações do dia final
+      const endDateTime = new Date(endDate)
+      endDateTime.setDate(endDateTime.getDate() + 1)
+      conditions.push(lte(transactionsTable.createdAt, endDateTime))
+    }
+
     const results = await db
       .select({
         id: transactionsTable.id,
@@ -60,7 +88,7 @@ export async function GET(): Promise<NextResponse> {
       .from(transactionsTable)
       .leftJoin(users, eq(transactionsTable.contributorId, users.id))
       .leftJoin(churchProfiles, eq(transactionsTable.originChurchId, churchProfiles.userId))
-      .where(inArray(transactionsTable.contributorId, networkUserIds))
+      .where(and(...conditions))
       .orderBy(desc(transactionsTable.createdAt))
 
     const formattedTransactions = results.map((t) => ({

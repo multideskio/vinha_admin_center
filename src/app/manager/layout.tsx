@@ -16,6 +16,9 @@ import { eq } from 'drizzle-orm'
 import { getCompanySettings } from '@/lib/company'
 import { ErrorBoundary } from '@/components/error-boundary'
 
+// Força renderização dinâmica para páginas autenticadas
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   const company = await getCompanySettings()
   return {
