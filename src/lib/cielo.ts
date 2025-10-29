@@ -100,7 +100,9 @@ export async function createPixPayment(amount: number, customerName: string) {
   try {
     const parsed = JSON.parse(responseText)
     paymentId = parsed.Payment?.PaymentId
-  } catch {}
+  } catch {
+    // Ignore JSON parse errors for logging
+  }
   
   await logCieloResponse({ operationType: 'pix', method: 'POST', endpoint: `${apiUrl}/1/sales/`, statusCode: response.status, responseBody: responseText, paymentId, errorMessage: !response.ok ? responseText : undefined })
   
@@ -183,7 +185,9 @@ export async function createCreditCardPayment(
   try {
     const parsed = JSON.parse(responseText)
     paymentId = parsed.Payment?.PaymentId
-  } catch {}
+  } catch {
+    // Ignore JSON parse errors for logging
+  }
   
   await logCieloResponse({ operationType: 'cartao', method: 'POST', endpoint: `${apiUrl}/1/sales`, statusCode: response.status, responseBody: responseText, paymentId, errorMessage: !response.ok ? responseText : undefined })
   
@@ -270,7 +274,9 @@ export async function createBoletoPayment(
   try {
     const parsed = JSON.parse(responseText)
     paymentId = parsed.Payment?.PaymentId
-  } catch {}
+  } catch {
+    // Ignore JSON parse errors for logging
+  }
   
   await logCieloResponse({ operationType: 'boleto', method: 'POST', endpoint: `${apiUrl}/1/sales`, statusCode: response.status, responseBody: responseText, paymentId, errorMessage: !response.ok ? responseText : undefined })
   

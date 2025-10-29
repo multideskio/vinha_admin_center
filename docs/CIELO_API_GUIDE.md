@@ -6,10 +6,10 @@ Este documento serve como um guia técnico completo para a integração com a AP
 
 A Cielo oferece dois ambientes distintos: um para testes (Sandbox) e outro para transações reais (Produção).
 
-| Ambiente                      | URL Base da API                                  |
-| ----------------------------- | ------------------------------------------------ |
-| **Sandbox (Desenvolvimento)** | `https://apisandbox.cieloecommerce.cielo.com.br` |
-| **Produção**                  | `https://api.cieloecommerce.cielo.com.br`        |
+| Ambiente                      | URL Transações                                   | URL Consultas                                      |
+| ----------------------------- | ------------------------------------------------ | -------------------------------------------------- |
+| **Sandbox (Desenvolvimento)** | `https://apisandbox.cieloecommerce.cielo.com.br` | `https://apiquerysandbox.cieloecommerce.cielo.com.br` |
+| **Produção**                  | `https://api.cieloecommerce.cielo.com.br`        | `https://apiquery.cieloecommerce.cielo.com.br`     |
 
 **Autenticação:** Todas as requisições devem conter as suas credenciais no cabeçalho (header):
 
@@ -211,11 +211,13 @@ Use o `PaymentId` para fazer uma requisição `GET`.
 
 ```bash
 curl -X GET \
-  https://apisandbox.cieloecommerce.cielo.com.br/1/sales/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+  https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
   -H 'Content-Type: application/json' \
   -H 'MerchantId: SEU_MERCHANT_ID' \
   -H 'MerchantKey: SEU_MERCHANT_KEY'
 ```
+
+**IMPORTANTE**: Use a URL de **consultas** (`apiquery`) para verificar status, não a URL de transações.
 
 **Passo 3: Interpretar o Status**
 Analise o campo `Status` na resposta para dar a baixa no seu sistema.
@@ -241,7 +243,7 @@ Alternativamente, você pode consultar o status de uma transação usando o seu 
 
 ```bash
 curl -X GET \
-  https://apisandbox.cieloecommerce.cielo.com.br/1/sales?merchantOrderId=2024072801 \
+  https://apiquerysandbox.cieloecommerce.cielo.com.br/1/sales?merchantOrderId=2024072801 \
   -H 'Content-Type: application/json' \
   -H 'MerchantId: SEU_MERCHANT_ID' \
   -H 'MerchantKey: SEU_MERCHANT_KEY'

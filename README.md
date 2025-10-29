@@ -123,19 +123,13 @@ Igreja:     igreja@vinha.com / igreja123
 
 ## 📚 Documentação
 
-### 📖 **Documentação Principal**
-- **[Visão Geral Completa](docs/README.md)** - Documentação detalhada
-- **[Frontend](docs/FRONTEND_DOCS.md)** - Arquitetura e componentes
-- **[Backend](docs/BACKEND_DOCS.md)** - APIs e estrutura
-- **[Banco de Dados](docs/DB_DOCS.md)** - Schema e migrações
-
-### 🔧 **Guias Técnicos**
+### 📖 **Documentação Essencial**
+- **[Banco de Dados](docs/DB_DOCS.md)** - Schema e estrutura
 - **[API Cielo](docs/CIELO_API_GUIDE.md)** - Integração de pagamentos
 - **[Configuração Cron](docs/CRON_SETUP.md)** - Notificações automáticas
 - **[Checklist de Produção](docs/PRODUCTION_CHECKLIST.md)** - Deploy
 
-### 📝 **Desenvolvimento**
-- **[Como Contribuir](docs/CONTRIBUTING.md)** - Guia de contribuição
+### 📝 **Projeto**
 - **[Changelog](docs/CHANGELOG.md)** - Histórico de versões
 - **[Roadmap](docs/ROADMAP.md)** - Próximas funcionalidades
 
@@ -202,10 +196,6 @@ npm run notifications:test  # Testar notificações
 - [ ] Gestão de membros avançada
 - [ ] Relatórios financeiros detalhados
 - [ ] Mais gateways de pagamento
-
-## 🤝 **Contribuição**
-
-Este é um projeto proprietário. Para contribuições, consulte o [Guia de Contribuição](docs/CONTRIBUTING.md).
 
 ## 📞 **Suporte**
 
