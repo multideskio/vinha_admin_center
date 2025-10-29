@@ -21,7 +21,8 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ 
       ...sessionUser, 
       ...profile,
-      userId: sessionUser.id // Garantir que o userId correto está disponível
+      userId: sessionUser.id, // Garantir que o userId correto está disponível
+      avatarUrl: sessionUser.avatarUrl // Garantir que o avatarUrl está disponível
     })
   } catch (error) {
     console.error('Erro ao buscar perfil do pastor:', error)
