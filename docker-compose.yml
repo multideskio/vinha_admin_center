@@ -1,0 +1,34 @@
+version: '3.8'
+
+# Credenciais AWS, SMTP e WhatsApp vêm do banco (tabela other_settings)
+# Apenas variáveis essenciais são necessárias aqui
+
+services:
+  app:
+    build: .
+    ports:
+      - "9002:9002"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - COMPANY_INIT=${COMPANY_INIT}
+      - DEFAULT_PASSWORD=${DEFAULT_PASSWORD}
+      - CRON_SECRET=${CRON_SECRET}
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=vinha
+      - POSTGRES_PASSWORD=vinha123
+      - POSTGRES_DB=vinha_admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

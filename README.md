@@ -2,7 +2,7 @@
 
 > Sistema Completo de Gestão para Igrejas e Organizações Religiosas
 
-[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/multideskio/vinha_admin_center)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/multideskio/vinha_admin_center)
 [![Status](https://img.shields.io/badge/status-stable-green.svg)](https://github.com/multideskio/vinha_admin_center)
 [![License](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
 [![Private](https://img.shields.io/badge/access-private-red.svg)](https://github.com/multideskio/vinha_admin_center)
@@ -11,11 +11,11 @@
 
 **⚠️ AVISO:** Este é um repositório **PRIVADO** da Multidesk.io. Acesso restrito apenas à equipe autorizada.
 
-## 🎉 Versão 0.1.1 - Estrutura Profissional Completa
+## 🎉 Versão 0.1.2 - Deploy Docker
 
 Esta é a **primeira versão estável** do Vinha Admin Center, um sistema completo e profissional para gestão de igrejas, desenvolvido com as mais modernas tecnologias web.
 
-**Versão 0.1.1** inclui estrutura profissional completa com GitHub templates, CI/CD, e 8 atualizações de dependências para máxima segurança e performance.
+**Versão 0.1.2** inclui deploy completo com Docker, documentação atualizada e otimizações de produção.
 
 ## 📋 Sobre o Projeto
 
@@ -134,6 +134,7 @@ Igreja:     igreja@vinha.com / igreja123
 - **[Banco de Dados](docs/DB_DOCS.md)** - Schema e estrutura
 - **[API Cielo](docs/CIELO_API_GUIDE.md)** - Integração de pagamentos
 - **[Configuração Cron](docs/CRON_SETUP.md)** - Notificações automáticas
+- **[Deploy Docker](docs/DOCKER_DEPLOY.md)** - Deploy com Docker
 - **[Checklist de Produção](docs/PRODUCTION_CHECKLIST.md)** - Deploy
 
 ### 📝 **Projeto**
@@ -217,6 +218,6 @@ Este projeto é **proprietário** e **privado**. Todos os direitos reservados.
 
 ---
 
-**Vinha Admin Center v0.1.0** - Sistema completo e profissional para gestão de igrejas! 🎉
+**Vinha Admin Center v0.1.2** - Sistema completo e profissional para gestão de igrejas! 🎉
 
 Desenvolvido com ❤️ pela equipe MultiDesk

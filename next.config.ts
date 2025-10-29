@@ -12,16 +12,17 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'd1v03qm1k6ud1f.cloudfront.net',
-        port: '',
-        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cloudfront.net',
       },
     ],
+    unoptimized: false,
   },
   experimental: {
     optimizePackageImports: [

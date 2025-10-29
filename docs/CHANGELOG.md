@@ -2,6 +2,39 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [0.1.2] - 2025-01-30 - Deploy Docker e Limpeza de Documentação
+
+### 🐳 **Deploy com Docker**
+- **Dockerfile** multi-stage otimizado para produção
+- **docker-compose.yml** com app + PostgreSQL
+- **.dockerignore** para build otimizado
+- **docs/DOCKER_DEPLOY.md** - Guia completo de deploy
+- Configuração de variáveis de ambiente simplificada
+
+### 📚 **Limpeza de Documentação**
+- **Removidos**: BACKEND_DOCS.md, FRONTEND_DOCS.md, CONTRIBUTING.md (desnecessários para lançamento)
+- **Atualizados**: 
+  - DB_DOCS.md - Schema completo com 20+ tabelas
+  - CIELO_API_GUIDE.md - URLs corretas (api + apiquery)
+- **Mantidos**: 6 documentos essenciais
+- README.md atualizado com referências corretas
+
+### 🔧 **Correções**
+- Next.js Image: wildcard para CloudFront (**.cloudfront.net)
+- Dockerfile: removida pasta /public inexistente
+- docker-compose: variáveis essenciais (credenciais vêm do banco)
+
+### 📦 **Arquivos Docker**
+```
+Dockerfile
+.dockerignore
+docker-compose.yml
+.env.docker.example
+docs/DOCKER_DEPLOY.md
+```
+
+---
+
 ## [0.1.1] - 2025-01-30 - Estrutura Profissional Completa
 
 ### 🔧 **Melhorias de Infraestrutura**
