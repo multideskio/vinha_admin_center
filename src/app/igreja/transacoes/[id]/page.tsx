@@ -145,6 +145,10 @@ export default function TransacaoDetalhePage(): JSX.Element {
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7"
+                  onClick={() => {
+                    navigator.clipboard.writeText(transaction.id)
+                    toast({ title: 'Copiado!', description: 'ID copiado para área de transferência' })
+                  }}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>

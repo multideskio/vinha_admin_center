@@ -94,8 +94,12 @@ export default function ChurchDashboardPage() {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchData = React.useCallback(async (startDate?: string, endDate?: string) => {
-    setIsLoading(true)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
+
+  const fetchData = React.useCallback(async (startDate?: string, endDate?: string, refresh = false) => {
+    if (refresh) setIsRefreshing(true)
+    else setIsLoading(true)
+    
     try {
       const params = new URLSearchParams()
       if (startDate) params.append('startDate', startDate)
@@ -116,6 +120,7 @@ export default function ChurchDashboardPage() {
       })
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
   }, [toast])
 
@@ -198,6 +203,19 @@ export default function ChurchDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => fetchData(
+              dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+              dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
+              true
+            )}
+            disabled={isRefreshing}
+          >
+            <ArrowRightLeft className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
           <DateRangePicker
             value={dateRange}
             onChange={handleDateRangeChange}

@@ -63,7 +63,7 @@ const pastorProfileSchema = z.object({
   street: z.string(),
   number: z.string().optional(),
   complement: z.string().optional(),
-  birthDate: z.date(),
+  birthDate: z.string().optional(),
   titheDay: z.coerce.number(),
   newPassword: z.string().optional().or(z.literal('')),
   facebook: z.string().url().optional().or(z.literal('')),
@@ -206,6 +206,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
 export default function PastorProfilePage() {
   const [pastor, setPastor] = React.useState<PastorProfile | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isUploadingPhoto, setIsUploadingPhoto] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
   const { toast } = useToast()
 
@@ -259,6 +260,7 @@ export default function PastorProfilePage() {
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      setIsUploadingPhoto(true)
       try {
         const formData = new FormData()
         formData.append('file', file)
@@ -296,6 +298,8 @@ export default function PastorProfilePage() {
           description: 'Falha ao fazer upload da imagem.',
           variant: 'destructive',
         })
+      } finally {
+        setIsUploadingPhoto(false)
       }
     }
   }
@@ -362,8 +366,13 @@ export default function PastorProfilePage() {
                 src={previewImage || pastor.avatarUrl || "https://placehold.co/96x96.png"}
                 alt={`${pastor.firstName} ${pastor.lastName}`}
                 fallback={`${pastor.firstName?.[0] || ''}${pastor.lastName?.[0] || ''}`}
-                className="h-24 w-24"
+                className={cn("h-24 w-24", isUploadingPhoto && "opacity-50")}
               />
+              {isUploadingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              )}
               <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
                   <Camera className="h-4 w-4 text-muted-foreground" />
@@ -376,6 +385,7 @@ export default function PastorProfilePage() {
                 className="hidden"
                 accept="image/*"
                 onChange={handlePhotoChange}
+                disabled={isUploadingPhoto}
               />
             </div>
             <h2 className="mt-4 text-xl font-semibold">
@@ -473,40 +483,22 @@ export default function PastorProfilePage() {
                         control={form.control}
                         name="birthDate"
                         render={({ field }) => (
-                          <FormItem className="flex flex-col">
+                          <FormItem>
                             <FormLabel>Data de nascimento</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={'outline'}
-                                    className={cn(
-                                      'w-full pl-3 text-left font-normal',
-                                      !field.value && 'text-muted-foreground',
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, 'dd/MM/yyyy', { locale: ptBR })
-                                    ) : (
-                                      <span>dd/mm/aaaa</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > new Date() || date < new Date('1900-01-01')
-                                  }
-                                  initialFocus
-                                  locale={ptBR}
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <FormControl>
+                              <Input
+                                placeholder="dd/mm/aaaa"
+                                {...field}
+                                value={field.value ?? ''}
+                                onChange={(e) => {
+                                  let value = e.target.value.replace(/\D/g, '')
+                                  if (value.length >= 2) value = value.slice(0, 2) + '/' + value.slice(2)
+                                  if (value.length >= 5) value = value.slice(0, 5) + '/' + value.slice(5, 9)
+                                  field.onChange(value)
+                                }}
+                                maxLength={10}
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
