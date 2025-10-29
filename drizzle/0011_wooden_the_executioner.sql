@@ -1,1 +1,0 @@
-ALTER TABLE "other_settings" ADD COLUMN "whatsapp_api_instance" varchar;
