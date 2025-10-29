@@ -19,7 +19,10 @@ export async function middleware(request: NextRequest) {
   try {
     const maintenanceCheck = await fetch(
       new URL('/api/v1/maintenance-check', request.url),
-      { headers: { 'x-middleware-check': 'true' } }
+      { 
+        headers: { 'x-middleware-check': 'true' },
+        signal: AbortSignal.timeout(1000) // 1s timeout
+      }
     )
 
     if (maintenanceCheck.ok) {
@@ -29,7 +32,8 @@ export async function middleware(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error('Middleware error:', error)
+    // Silently fail - allow request to continue if maintenance check fails
+    // This prevents blocking the entire app if DB is down
   }
 
   return NextResponse.next()
