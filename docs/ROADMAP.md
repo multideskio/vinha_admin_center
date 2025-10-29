@@ -13,9 +13,36 @@
 - **Interface moderna** e responsiva
 - **Arquitetura robusta** e escalável
 
+## 🔧 **Versão 0.1.1 - LANÇADA** ✅
+
+### ✅ **Infraestrutura Profissional Implementada**
+- **GitHub Templates** completos (Issues, PRs, Security)
+- **CI/CD Pipeline** configurado (GitHub Actions)
+- **Dependabot** ativo para atualizações automáticas
+- **Scripts locais** de qualidade e verificação
+- **Licença proprietária** e documentação interna
+- **8 dependências** atualizadas com segurança
+- **Workflows alternativos** para limitações de billing
+
 ---
 
 ## 🚀 **Próximas Versões**
+
+### **v0.1.2 - Atualizações Pendentes** (Fevereiro 2025)
+
+#### 🔄 **Dependências Complexas**
+- [ ] **react-day-picker: 8.x → 9.x** (major update - testar cuidadosamente)
+- [ ] **lint-staged: 15.x → 16.x** (major update - verificar configuração)
+- [ ] **zod: 3.x → 4.x** (breaking changes - revisar schemas)
+- [ ] **next: 15.x → 16.x** (major update - muito arriscado, aguardar estabilidade)
+
+#### 🔧 **Melhorias de Infraestrutura**
+- [ ] **Resolver limitações de billing** do GitHub Actions
+- [ ] **Ativar CI/CD automático** quando possível
+- [ ] **Configurar auto-merge** para PRs seguras
+- [ ] **Otimizar Dependabot** para reduzir PRs
+
+---
 
 ### **v0.2.0 - Melhorias e Otimizações** (Q2 2025)
 

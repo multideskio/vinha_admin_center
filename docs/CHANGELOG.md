@@ -25,17 +25,19 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - **Workflow manual** para execução sob demanda
 - **Scripts locais** de qualidade (`npm run quality:check`)
 - **Pre-commit hooks** mantidos funcionais
-- **Dependabot** para atualizações de segurança
+- **Dependabot** para atualizações de segurança (8 PRs mergeadas com sucesso)
 
 ### 🎯 **Benefícios Adicionados**
 
 - ✅ **Organização profissional** de issues e PRs
 - ✅ **Qualidade de código** garantida por scripts locais
-- ✅ **Segurança** monitorada pelo Dependabot
-- ✅ **Dependências** sempre atualizadas
+- ✅ **Segurança** monitorada pelo Dependabot (8 atualizações aplicadas)
+- ✅ **Dependências** sempre atualizadas e testadas
 - ✅ **Documentação** estruturada para equipe
 - ✅ **Proteção legal** com licença proprietária
 - ✅ **Workflows alternativos** para limitações de billing
+- ✅ **Performance** melhorada com atualizações de dependências
+- ✅ **Vulnerabilidades** corrigidas automaticamente
 
 ### 📋 **Arquivos Adicionados**
 
@@ -69,9 +71,20 @@ CONTRIBUTING.md (guia para equipe interna)
 - **Scripts locais** implementados como alternativa
 - **Documentação** das limitações e soluções
 
+#### **Atualizações de Dependências (8 PRs mergeadas)**
+- **tsx**: 4.20.5 → 4.20.6 (correções de bugs)
+- **drizzle-orm**: 0.44.5 → 0.44.7 (melhorias de performance)
+- **typescript**: 5.9.2 → 5.9.3 (correções de segurança)
+- **@aws-sdk/client-ses**: 3.901.0 → 3.919.0 (atualizações AWS)
+- **react-hook-form**: 7.62.0 → 7.65.0 (melhorias de validação)
+- **lucide-react**: 0.475.0 → 0.548.0 (novos ícones)
+- **actions/setup-node**: 4 → 6 (GitHub Actions)
+- **actions/checkout**: 4 → 5 (GitHub Actions)
+
 #### **Comandos Adicionados**
 - `npm run quality:check` - Verificação completa local
 - `npm run pre-commit` - Verificação antes de commits
+- `npm run deps:check` - Verificação de dependências
 - Workflow manual disponível na interface do GitHub
 
 ---

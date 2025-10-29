@@ -15,6 +15,8 @@
 
 Esta é a **primeira versão estável** do Vinha Admin Center, um sistema completo e profissional para gestão de igrejas, desenvolvido com as mais modernas tecnologias web.
 
+**Versão 0.1.1** inclui estrutura profissional completa com GitHub templates, CI/CD, e 8 atualizações de dependências para máxima segurança e performance.
+
 ## 📋 Sobre o Projeto
 
 O **Vinha Admin Center** é uma plataforma completa que oferece:
