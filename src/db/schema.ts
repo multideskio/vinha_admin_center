@@ -393,6 +393,36 @@ export const notificationLogs = pgTable('notification_logs', {
   sentAt: timestamp('sent_at').defaultNow().notNull(),
 })
 
+export const userActionLogs = pgTable('user_action_logs', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: uuid('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  action: varchar('action', { length: 100 }).notNull(),
+  entityType: varchar('entity_type', { length: 50 }).notNull(),
+  entityId: uuid('entity_id').notNull(),
+  details: text('details'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const cieloLogs = pgTable('cielo_logs', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  operationType: varchar('operation_type', { length: 50 }).notNull(), // 'pix' | 'cartao' | 'boleto' | 'webhook' | 'consulta'
+  type: varchar('type', { length: 50 }).notNull(), // 'request' | 'response'
+  method: varchar('method', { length: 10 }).notNull(), // 'POST' | 'GET'
+  endpoint: varchar('endpoint', { length: 255 }).notNull(),
+  paymentId: varchar('payment_id', { length: 255 }),
+  requestBody: text('request_body'),
+  responseBody: text('response_body'),
+  statusCode: integer('status_code'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 // Relações
 
 export const companiesRelations = relations(companies, ({ many, one }) => ({
@@ -517,6 +547,10 @@ export const messageTemplatesRelations = relations(messageTemplates, ({ one }) =
 export const notificationLogsRelations = relations(notificationLogs, ({ one }) => ({
   company: one(companies, { fields: [notificationLogs.companyId], references: [companies.id] }),
   user: one(users, { fields: [notificationLogs.userId], references: [users.id] }),
+}))
+
+export const userActionLogsRelations = relations(userActionLogs, ({ one }) => ({
+  user: one(users, { fields: [userActionLogs.userId], references: [users.id] }),
 }))
 
 

@@ -1,12 +1,15 @@
 'use client'
 
 import * as React from 'react'
-import { Download, ListFilter, MoreHorizontal } from 'lucide-react'
+import { Download, ListFilter, MoreHorizontal, Search, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,12 +45,19 @@ type Transaction = {
 export default function TransacoesPage() {
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [searchTerm, setSearchTerm] = React.useState('')
+  const [dateRange, setDateRange] = React.useState<{ from?: Date; to?: Date }>({})
   const { toast } = useToast()
 
-  const fetchTransactions = React.useCallback(async () => {
+  const fetchTransactions = React.useCallback(async (search?: string, startDate?: string, endDate?: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/igreja/transacoes')
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      if (startDate) params.append('startDate', startDate)
+      if (endDate) params.append('endDate', endDate)
+      
+      const response = await fetch(`/api/v1/igreja/transacoes?${params.toString()}`)
       if (!response.ok) throw new Error('Falha ao carregar transações.')
       const data = await response.json()
       setTransactions(data.transactions)

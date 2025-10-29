@@ -71,7 +71,7 @@ const pastorProfileSchema = z.object({
   website: z.string().url().optional().or(z.literal('')),
 })
 
-type PastorProfile = z.infer<typeof pastorProfileSchema> & { id?: string; avatarUrl?: string }
+type PastorProfile = z.infer<typeof pastorProfileSchema> & { id?: string; userId?: string; avatarUrl?: string }
 
 const notificationSettingsConfig = {
   payment_notifications: 'Notificações de Pagamento',
@@ -167,7 +167,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
     <Card>
       <CardHeader>
         <CardTitle>Configurações de Notificação</CardTitle>
-        <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+        <CardDescription>Gerencie quais notificações você receberá.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {NOTIFICATION_TYPES.map((type) => (
@@ -204,16 +204,131 @@ const SettingsTab = ({ userId }: { userId: string }) => {
 }
 
 export default function PastorProfilePage() {
-  const [pastor] = React.useState<PastorProfile | null>(null)
-  const [isLoading] = React.useState(true)
+  const [pastor, setPastor] = React.useState<PastorProfile | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const { toast } = useToast()
 
   const form = useForm<PastorProfile>({
     resolver: zodResolver(pastorProfileSchema),
     defaultValues: {},
   })
 
-  const onSubmit = (data: PastorProfile) => {
-    console.log(data)
+  const fetchProfile = React.useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/v1/pastor/perfil')
+      if (!response.ok) throw new Error('Falha ao carregar perfil.')
+      const data = await response.json()
+      setPastor(data)
+      form.reset(data)
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [form, toast])
+
+  React.useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  const onSubmit = async (data: PastorProfile) => {
+    try {
+      const response = await fetch('/api/v1/pastor/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) throw new Error('Falha ao atualizar perfil.')
+      toast({ title: 'Sucesso', description: 'Perfil atualizado.', variant: 'success' })
+      fetchProfile()
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'avatars')
+        formData.append('filename', `pastor-${pastor?.id}-${file.name}`)
+
+        const response = await fetch('/api/v1/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) throw new Error('Falha no upload da imagem')
+
+        const result = await response.json()
+        
+        const updateResponse = await fetch('/api/v1/pastor/perfil', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: result.url }),
+        })
+
+        if (!updateResponse.ok) throw new Error('Falha ao atualizar avatar')
+
+        setPreviewImage(result.url)
+        setPastor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        
+        toast({
+          title: 'Sucesso',
+          description: 'Avatar atualizado com sucesso!',
+          variant: 'success',
+        })
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: 'Falha ao fazer upload da imagem.',
+          variant: 'destructive',
+        })
+      }
+    }
+  }
+
+  const handleSocialLinkBlur = async (
+    fieldName: 'facebook' | 'instagram' | 'website',
+    value: string,
+  ) => {
+    if (!value || value === pastor?.[fieldName]) return
+
+    try {
+      const response = await fetch('/api/v1/pastor/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [fieldName]: value || null }),
+      })
+
+      if (!response.ok) throw new Error(`Falha ao atualizar ${fieldName}.`)
+
+      toast({
+        title: 'Sucesso!',
+        description: `Link do ${fieldName} atualizado.`,
+        variant: 'success',
+      })
+      
+      setPastor((prev) => (prev ? { ...prev, [fieldName]: value } : null))
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    }
   }
 
   if (isLoading || !pastor) {
@@ -244,19 +359,24 @@ export default function PastorProfilePage() {
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <ClickableAvatar
-                src={pastor.avatarUrl || "https://placehold.co/96x96.png"}
+                src={previewImage || pastor.avatarUrl || "https://placehold.co/96x96.png"}
                 alt={`${pastor.firstName} ${pastor.lastName}`}
                 fallback={`${pastor.firstName?.[0] || ''}${pastor.lastName?.[0] || ''}`}
                 className="h-24 w-24"
               />
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-              >
-                <Camera className="h-4 w-4" />
+              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                </div>
                 <span className="sr-only">Trocar foto</span>
-              </Button>
+              </Label>
+              <Input
+                id="photo-upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handlePhotoChange}
+              />
             </div>
             <h2 className="mt-4 text-xl font-semibold">
               {pastor.firstName} {pastor.lastName}
@@ -272,17 +392,23 @@ export default function PastorProfilePage() {
                 <Input
                   defaultValue={pastor.facebook ?? ''}
                   placeholder="https://facebook.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
                 />
-              </div>
-              <div className="flex items-center gap-3">
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input defaultValue={pastor.website ?? ''} placeholder="https://website.com/..." />
               </div>
               <div className="flex items-center gap-3">
                 <Instagram className="h-5 w-5 text-muted-foreground" />
                 <Input
                   defaultValue={pastor.instagram ?? ''}
                   placeholder="https://instagram.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <Globe className="h-5 w-5 text-muted-foreground" />
+                <Input
+                  defaultValue={pastor.website ?? ''}
+                  placeholder="https://website.com/..."
+                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
                 />
               </div>
             </div>
@@ -309,7 +435,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Nome</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -322,7 +448,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Sobrenome</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -335,7 +461,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>CPF</FormLabel>
                             <FormControl>
-                              <Input {...field} disabled />
+                              <Input {...field} value={field.value ?? ''} disabled />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -394,7 +520,7 @@ export default function PastorProfilePage() {
                             <FormControl>
                               <PhoneInput
                                 country={'br'}
-                                value={field.value}
+                                value={field.value ?? ''}
                                 onChange={field.onChange}
                                 inputClass="!w-full"
                                 containerClass="phone-input-wrapper"
@@ -434,7 +560,7 @@ export default function PastorProfilePage() {
                             <FormControl>
                               <PhoneInput
                                 country={'br'}
-                                value={field.value}
+                                value={field.value ?? ''}
                                 onChange={field.onChange}
                                 inputClass="!w-full"
                                 containerClass="phone-input-wrapper"
@@ -475,7 +601,7 @@ export default function PastorProfilePage() {
                           <FormItem className="sm:col-span-1">
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input type="email" {...field} />
+                              <Input type="email" {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -488,7 +614,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>CEP</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -500,7 +626,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Estado/UF</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -515,7 +641,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Cidade</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -527,7 +653,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Bairro</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -539,7 +665,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Rua</FormLabel>
                             <FormControl>
-                              <Input placeholder="Complemento..." {...field} />
+                              <Input placeholder="Complemento..." {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -553,7 +679,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Número</FormLabel>
                             <FormControl>
-                              <Input placeholder="Número da casa..." {...field} />
+                              <Input placeholder="Número da casa..." {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -565,7 +691,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Complemento</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -577,7 +703,7 @@ export default function PastorProfilePage() {
                           <FormItem>
                             <FormLabel>Dia do dízimo</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input type="number" {...field} value={field.value ?? ''} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -619,6 +745,7 @@ export default function PastorProfilePage() {
                                 placeholder="Nova Senha"
                                 className="pl-9"
                                 {...field}
+                                value={field.value ?? ''}
                               />
                             </div>
                           </FormControl>
@@ -636,7 +763,7 @@ export default function PastorProfilePage() {
             </Card>
           </TabsContent>
           <TabsContent value="configuracoes">
-            {pastor.id && <SettingsTab userId={pastor.id} />}
+            {pastor.userId && <SettingsTab userId={pastor.userId} />}
           </TabsContent>
         </Tabs>
       </div>

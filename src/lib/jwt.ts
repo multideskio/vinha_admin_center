@@ -167,7 +167,7 @@ export async function validateJWTRequest(): Promise<{
  * Substitui a validateRequest do Lucia
  */
 export async function validateRequest(): Promise<{
-  user: { id: string; email: string; role: UserRole; companyId: string } | null;
+  user: { id: string; email: string; role: UserRole; companyId: string; avatarUrl: string | null } | null;
   session: { id: string } | null;
 }> {
   const token = await getJWTFromCookie();
@@ -190,6 +190,7 @@ export async function validateRequest(): Promise<{
         email: users.email,
         role: users.role,
         companyId: users.companyId,
+        avatarUrl: users.avatarUrl,
       })
       .from(users)
       .where(eq(users.id, payload.userId))
@@ -208,6 +209,7 @@ export async function validateRequest(): Promise<{
         email: dbUser.email,
         role: dbUser.role as UserRole,
         companyId: dbUser.companyId,
+        avatarUrl: dbUser.avatarUrl,
       },
       session: { id: token },
     };

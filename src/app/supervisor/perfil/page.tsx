@@ -15,6 +15,8 @@ import {
   Mail,
   Smartphone,
   MoreHorizontal,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -71,6 +73,7 @@ const notificationSettingsConfig = {
 const TransactionsTab = ({ userId }: { userId: string }) => {
   const [transactions, setTransactions] = React.useState<any[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [syncingTransactions, setSyncingTransactions] = React.useState<Set<string>>(new Set())
   const { toast } = useToast()
 
   React.useEffect(() => {
@@ -93,6 +96,50 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
     }
     fetchTransactions()
   }, [userId, toast])
+
+  const syncTransaction = async (transactionId: string) => {
+    setSyncingTransactions(prev => new Set(prev).add(transactionId))
+    
+    try {
+      const response = await fetch(`/api/v1/transacoes/${transactionId}`)
+      const data = await response.json()
+      
+      if (data.transaction?.Payment?.Status === 2) {
+        // Atualiza a transação local
+        setTransactions(prev => 
+          prev.map(t => 
+            t.id === transactionId 
+              ? { ...t, status: 'approved' }
+              : t
+          )
+        )
+        toast({
+          title: 'Sincronizado!',
+          description: 'Transação confirmada com sucesso.',
+          variant: 'success',
+        })
+      } else {
+        toast({
+          title: 'Ainda Pendente',
+          description: 'Transação ainda não foi confirmada pela Cielo.',
+          variant: 'default',
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao sincronizar transação:', error)
+      toast({
+        title: 'Erro na Sincronização',
+        description: 'Não foi possível sincronizar a transação. Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setSyncingTransactions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(transactionId)
+        return newSet
+      })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -131,9 +178,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
               <TableHead>Status</TableHead>
               <TableHead>Data</TableHead>
               <TableHead className="text-right">Valor</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
+              <TableHead className="text-right min-w-[140px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -173,19 +218,39 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
+                    <div className="flex items-center gap-2 justify-end">
+                      {transaction.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => syncTransaction(transaction.id)}
+                          disabled={syncingTransactions.has(transaction.id)}
+                          className="h-8 px-2"
+                        >
+                          {syncingTransactions.has(transaction.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3" />
+                          )}
+                          <span className="ml-1 text-xs">
+                            {syncingTransactions.has(transaction.id) ? 'Sincronizando...' : 'Sincronizar'}
+                          </span>
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/supervisor/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/supervisor/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
