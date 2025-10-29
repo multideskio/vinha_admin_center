@@ -13,12 +13,17 @@ import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { pastorProfileSchema } from '@/lib/types'
 import { validateRequest } from '@/lib/jwt'
+import { onUserDeleted } from '@/lib/notification-hooks'
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
     newPassword: z.string().optional().or(z.literal('')),
   })
   .partial()
+
+const deleteSchema = z.object({
+  deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
+})
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
@@ -68,6 +73,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       instagram: profile?.instagram,
       website: profile?.website,
       status: user.status,
+      avatarUrl: user.avatarUrl,
     })
   } catch (error) {
     console.error('Erro ao buscar pastor:', error)
@@ -96,6 +102,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.email) userUpdateData.email = validatedData.email
       if (validatedData.phone) userUpdateData.phone = validatedData.phone
       if (validatedData.titheDay !== undefined) userUpdateData.titheDay = validatedData.titheDay
+      if (validatedData.avatarUrl !== undefined) userUpdateData.avatarUrl = validatedData.avatarUrl
 
       if (validatedData.newPassword) {
         userUpdateData.password = await bcrypt.hash(validatedData.newPassword, 10)
@@ -155,16 +162,30 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const { id } = params
 
   try {
+    const body = await request.json()
+    const { deletionReason } = deleteSchema.parse(body)
+
     await db
       .update(users)
       .set({
         deletedAt: new Date(),
         status: 'inactive',
+        deletedBy: user.id,
+        deletionReason: deletionReason,
       })
       .where(eq(users.id, id))
 
+    // Enviar notificação de exclusão
+    await onUserDeleted(id, deletionReason, user.id)
+
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados de exclusão inválidos.', details: error.errors },
+        { status: 400 },
+      )
+    }
     console.error('Erro ao excluir pastor:', error)
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(

@@ -1,0 +1,22 @@
+name: Deploy Production
+
+# Workflow acionado em pushes para a branch main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout do código
+      - name: Check out code
+        uses: actions/checkout@v4.2.2
+
+      # Enviar notificação para o servidor de deployment
+      - name: Trigger Deployment
+        run: |
+          curl -X POST http://178.156.141.41:3000/api/deploy/38223dbc644aa26b29c8bd889e04bc7c9c37c4b037f9e0d4

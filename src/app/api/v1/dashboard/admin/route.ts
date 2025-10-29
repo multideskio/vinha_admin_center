@@ -31,14 +31,21 @@ const calculateChange = (current: number, previous: number): string => {
   return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`
 }
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
   try {
+    const { searchParams } = new URL(request.url)
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
+
     const now = new Date()
+    const startDate = from ? new Date(from) : startOfMonth(now)
+    const endDate = to ? new Date(to) : now
+    
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -62,12 +69,16 @@ export async function GET(): Promise<NextResponse> {
       .from(users)
       .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
 
-    // Revenue
+    // Revenue (filtered by date range)
     const revenueCurrentMonthResult = await db
       .select({ value: sum(transactions.amount) })
       .from(transactions)
       .where(
-        and(eq(transactions.status, 'approved'), gte(transactions.createdAt, startOfCurrentMonth)),
+        and(
+          eq(transactions.status, 'approved'),
+          gte(transactions.createdAt, startDate),
+          lt(transactions.createdAt, endDate)
+        ),
       )
     const revenuePreviousMonthResult = await db
       .select({ value: sum(transactions.amount) })
@@ -119,7 +130,13 @@ export async function GET(): Promise<NextResponse> {
         value: sum(transactions.amount).mapWith(Number),
       })
       .from(transactions)
-      .where(eq(transactions.status, 'approved'))
+      .where(
+        and(
+          eq(transactions.status, 'approved'),
+          gte(transactions.createdAt, startDate),
+          lt(transactions.createdAt, endDate)
+        )
+      )
       .groupBy(transactions.paymentMethod)
 
     const revenueByRegionData = await db
@@ -133,7 +150,13 @@ export async function GET(): Promise<NextResponse> {
       .innerJoin(pastorProfiles, eq(supervisorProfiles.userId, pastorProfiles.supervisorId))
       .innerJoin(users, eq(pastorProfiles.userId, users.id))
       .innerJoin(transactions, eq(users.id, transactions.contributorId))
-      .where(eq(transactions.status, 'approved'))
+      .where(
+        and(
+          eq(transactions.status, 'approved'),
+          gte(transactions.createdAt, startDate),
+          lt(transactions.createdAt, endDate)
+        )
+      )
       .groupBy(regions.id, regions.name, regions.color)
 
     const churchesByRegionData = await db
@@ -154,9 +177,17 @@ export async function GET(): Promise<NextResponse> {
         amount: transactions.amount,
         date: transactions.createdAt,
         status: transactions.status,
+        contributorId: users.id,
+        contributorRole: users.role,
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
+      .where(
+        and(
+          gte(transactions.createdAt, startDate),
+          lt(transactions.createdAt, endDate)
+        )
+      )
       .orderBy(desc(transactions.createdAt))
       .limit(10)
 

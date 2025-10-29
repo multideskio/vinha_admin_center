@@ -137,7 +137,8 @@ export async function createCreditCardPayment(
     expirationDate: string
     securityCode: string
     brand: string
-  }
+  },
+  installments: number = 1
 ) {
   const config = await getCieloConfig()
   if (!config) throw new Error('Configuração Cielo não encontrada')
@@ -155,7 +156,7 @@ export async function createCreditCardPayment(
     Payment: {
       Type: 'CreditCard',
       Amount: Math.round(amount * 100),
-      Installments: 1,
+      Installments: installments,
       SoftDescriptor: 'Contribuicao',
       CreditCard: {
         CardNumber: card.number.replace(/\s/g, ''),
@@ -298,6 +299,58 @@ export async function createBoletoPayment(
     DigitableLine: data.Payment.DigitableLine,
     BarCodeNumber: data.Payment.BarCodeNumber,
   }
+}
+
+export async function cancelPayment(paymentId: string, amount?: number) {
+  console.log(`[CIELO] Starting cancellation for payment ID: ${paymentId}`)
+  
+  const config = await getCieloConfig()
+  if (!config) {
+    throw new Error('Configuração Cielo não encontrada')
+  }
+
+  const apiUrl = getCieloApiUrl(config.environment)
+  const amountParam = amount ? `?amount=${Math.round(amount * 100)}` : ''
+  const requestUrl = `${apiUrl}/1/sales/${paymentId}/void${amountParam}`
+
+  await logCieloRequest({ operationType: 'cancelamento', method: 'PUT', endpoint: requestUrl, paymentId })
+
+  const response = await fetch(requestUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      MerchantId: config.merchantId,
+      MerchantKey: config.merchantKey,
+    },
+  })
+
+  const responseText = await response.text()
+  
+  await logCieloResponse({ 
+    operationType: 'cancelamento', 
+    method: 'PUT', 
+    endpoint: requestUrl, 
+    paymentId, 
+    statusCode: response.status, 
+    responseBody: responseText, 
+    errorMessage: !response.ok ? responseText : undefined 
+  })
+
+  if (!response.ok) {
+    let errorMessage = 'Erro ao cancelar pagamento na Cielo'
+    try {
+      const error = JSON.parse(responseText)
+      errorMessage = error.Message || error[0]?.Message || errorMessage
+    } catch {
+      errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
+    }
+    throw new Error(errorMessage)
+  }
+
+  const data = JSON.parse(responseText)
+  console.log(`[CIELO] Cancellation successful:`, data)
+  
+  return data
 }
 
 export async function queryPayment(paymentId: string) {

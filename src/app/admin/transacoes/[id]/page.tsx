@@ -1,7 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import { useParams } from 'next/navigation'
 import { ChevronLeft, Copy, MoreVertical, MessageSquareWarning } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,39 +29,83 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { Textarea } from '@/components/ui/textarea'
 
-const transaction = {
-  id: 'TRN-004',
-  date: '27 de Julho, 2024',
-  amount: 50.0,
-  status: 'Reembolsada' as 'Aprovada' | 'Pendente' | 'Recusada' | 'Reembolsada',
+type Transaction = {
+  id: string
+  date: string
+  amount: number
+  status: 'approved' | 'pending' | 'refused' | 'refunded'
   contributor: {
-    name: 'Ana Beatriz',
-    email: 'ana.beatriz@exemplo.com',
-  },
+    id: string
+    name: string
+    email: string
+    phone: string | null
+    role: string
+  }
   church: {
-    name: 'Comunidade da Graça',
-    address: 'Av. Lins de Vasconcelos, 123, São Paulo, SP',
-  },
+    name: string
+    address: string
+  } | null
   payment: {
-    method: 'Pix',
-    details: 'Chave: ana.beatriz@exemplo.com',
-  },
-  refundRequestReason: 'Contribuição duplicada por engano.',
+    method: string
+    details: string
+  }
+  refundRequestReason: string | null
 }
 
-const RefundModal = ({ amount }: { amount: number }) => {
+const RefundModal = ({ amount, status, transactionId, onSuccess }: { amount: number; status: string; transactionId: string; onSuccess: () => void }) => {
   const [refundAmount, setRefundAmount] = React.useState(amount.toFixed(2))
   const [reason, setReason] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [open, setOpen] = React.useState(false)
+  const { toast } = useToast()
 
-  const handleRefund = () => {
-    console.log(`Reembolsando: ${refundAmount}. Motivo: ${reason}`)
-    // Lógica de reembolso aqui
+  const handleRefund = async () => {
+    if (!reason.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Motivo do reembolso é obrigatório',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/v1/transacoes/${transactionId}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(refundAmount),
+          reason,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Falha ao processar reembolso')
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Reembolso processado com sucesso',
+      })
+      setOpen(false)
+      onSuccess()
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao processar reembolso',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={transaction.status !== 'Aprovada'}>
+        <Button variant="outline" size="sm" disabled={status !== 'approved'}>
           Reembolso
         </Button>
       </DialogTrigger>
@@ -97,10 +143,12 @@ const RefundModal = ({ amount }: { amount: number }) => {
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
-          </DialogClose>
-          <Button onClick={handleRefund}>Confirmar Reembolso</Button>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button onClick={handleRefund} disabled={isLoading}>
+            {isLoading ? 'Processando...' : 'Confirmar Reembolso'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -108,6 +156,38 @@ const RefundModal = ({ amount }: { amount: number }) => {
 }
 
 export default function TransacaoDetalhePage() {
+  const params = useParams()
+  const { toast } = useToast()
+  const [transaction, setTransaction] = React.useState<Transaction | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const fetchTransaction = async () => {
+      try {
+        const response = await fetch(`/api/v1/transacoes/${params.id}`)
+        if (!response.ok) throw new Error('Falha ao carregar transação')
+        const data = await response.json()
+        setTransaction(data)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTransaction()
+  }, [params.id])
+
+  if (isLoading || !transaction) {
+    return <div className="p-8">Carregando...</div>
+  }
+
+  const statusMap: Record<string, string> = {
+    approved: 'Aprovada',
+    pending: 'Pendente',
+    refused: 'Recusada',
+    refunded: 'Reembolsada',
+  }
+
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
@@ -122,10 +202,15 @@ export default function TransacaoDetalhePage() {
             Detalhes da Transação
           </h1>
           <Badge variant="outline" className="ml-auto sm:ml-0">
-            {transaction.status}
+            {statusMap[transaction.status] || transaction.status}
           </Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
-            <RefundModal amount={transaction.amount} />
+            <RefundModal 
+            amount={transaction.amount} 
+            status={transaction.status} 
+            transactionId={transaction.id}
+            onSuccess={() => window.location.reload()}
+          />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="h-8 w-8">
@@ -134,9 +219,56 @@ export default function TransacaoDetalhePage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Reenviar Comprovante</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/v1/transacoes/${params.id}/resend`, {
+                        method: 'POST',
+                      })
+                      if (!response.ok) throw new Error('Falha ao reenviar comprovante')
+                      toast({
+                        title: 'Sucesso',
+                        description: 'Comprovante reenviado com sucesso',
+                      })
+                    } catch (error) {
+                      toast({
+                        title: 'Erro',
+                        description: error instanceof Error ? error.message : 'Erro ao reenviar',
+                        variant: 'destructive',
+                      })
+                    }
+                  }}
+                  disabled={transaction.status !== 'approved'}
+                >
+                  Reenviar Comprovante
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">Marcar como Fraude</DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={async () => {
+                    if (!confirm('Tem certeza que deseja marcar esta transação como fraude? Esta ação é irreversível.')) return
+                    
+                    try {
+                      const response = await fetch(`/api/v1/transacoes/${params.id}/fraud`, {
+                        method: 'POST',
+                      })
+                      if (!response.ok) throw new Error('Falha ao marcar como fraude')
+                      toast({
+                        title: 'Sucesso',
+                        description: 'Transação marcada como fraude',
+                      })
+                      window.location.reload()
+                    } catch (error) {
+                      toast({
+                        title: 'Erro',
+                        description: error instanceof Error ? error.message : 'Erro ao marcar como fraude',
+                        variant: 'destructive',
+                      })
+                    }
+                  }}
+                >
+                  Marcar como Fraude
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -151,6 +283,13 @@ export default function TransacaoDetalhePage() {
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7"
+                  onClick={() => {
+                    navigator.clipboard.writeText(transaction.id)
+                    toast({
+                      title: 'Copiado!',
+                      description: 'ID da transação copiado para área de transferência',
+                    })
+                  }}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
@@ -175,25 +314,25 @@ export default function TransacaoDetalhePage() {
                     <div>
                       <Badge
                         variant={
-                          transaction.status === 'Aprovada'
+                          transaction.status === 'approved'
                             ? 'default'
-                            : transaction.status === 'Pendente'
+                            : transaction.status === 'pending'
                               ? 'secondary'
-                              : transaction.status === 'Reembolsada'
+                              : transaction.status === 'refunded'
                                 ? 'outline'
                                 : 'destructive'
                         }
                         className={
-                          transaction.status === 'Aprovada'
+                          transaction.status === 'approved'
                             ? 'bg-green-500/20 text-green-700 border-green-400'
-                            : transaction.status === 'Pendente'
+                            : transaction.status === 'pending'
                               ? 'bg-amber-500/20 text-amber-700 border-amber-400'
-                              : transaction.status === 'Reembolsada'
+                              : transaction.status === 'refunded'
                                 ? 'bg-blue-500/20 text-blue-700 border-blue-400'
                                 : 'bg-red-500/20 text-red-700 border-red-400'
                         }
                       >
-                        {transaction.status}
+                        {statusMap[transaction.status] || transaction.status}
                       </Badge>
                     </div>
                   </div>
@@ -236,11 +375,30 @@ export default function TransacaoDetalhePage() {
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="grid gap-1">
+                  <div className="grid gap-1 flex-1">
                     <p className="font-semibold">{transaction.contributor.name}</p>
                     <p className="text-sm text-muted-foreground">{transaction.contributor.email}</p>
+                    {transaction.contributor.phone && (
+                      <p className="text-sm text-muted-foreground">{transaction.contributor.phone}</p>
+                    )}
                   </div>
                 </div>
+                <Link
+                  href={`/admin/${
+                    transaction.contributor.role === 'manager'
+                      ? 'gerentes'
+                      : transaction.contributor.role === 'supervisor'
+                        ? 'supervisores'
+                        : transaction.contributor.role === 'pastor'
+                          ? 'pastores'
+                          : transaction.contributor.role === 'church_account'
+                            ? 'igrejas'
+                            : '#'
+                  }/${transaction.contributor.id}`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Ver perfil completo →
+                </Link>
               </CardContent>
             </Card>
             <Card>
@@ -250,8 +408,8 @@ export default function TransacaoDetalhePage() {
               <CardContent className="grid gap-4">
                 <div className="flex items-start gap-4">
                   <div className="grid gap-1">
-                    <p className="font-semibold">{transaction.church.name}</p>
-                    <p className="text-sm text-muted-foreground">{transaction.church.address}</p>
+                    <p className="font-semibold">{transaction.church?.name || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">{transaction.church?.address || '-'}</p>
                   </div>
                 </div>
               </CardContent>

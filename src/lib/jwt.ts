@@ -64,7 +64,7 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
     
     return null;
   } catch (error) {
-    console.error('Erro ao verificar JWT:', error);
+    // Silenciar erro de verificação - token inválido/expirado
     return null;
   }
 }
@@ -124,8 +124,6 @@ export async function validateJWTRequest(): Promise<{
   const payload = await verifyJWT(token);
   
   if (!payload) {
-    // Token inválido, limpar cookie
-    await clearJWTCookie();
     return { user: null, token: null };
   }
 
@@ -142,8 +140,6 @@ export async function validateJWTRequest(): Promise<{
       .limit(1);
 
     if (!dbUser) {
-      // Usuário não existe mais, limpar cookie
-      await clearJWTCookie();
       return { user: null, token: null };
     }
 
@@ -157,7 +153,6 @@ export async function validateJWTRequest(): Promise<{
     };
   } catch (error) {
     console.error('Erro ao validar usuário no banco:', error);
-    await clearJWTCookie();
     return { user: null, token: null };
   }
 }
@@ -179,7 +174,6 @@ export async function validateRequest(): Promise<{
   const payload = await verifyJWT(token);
   
   if (!payload) {
-    await clearJWTCookie();
     return { user: null, session: null };
   }
 
@@ -199,7 +193,6 @@ export async function validateRequest(): Promise<{
     const dbUser = dbUsers[0];
 
     if (!dbUser) {
-      await clearJWTCookie();
       return { user: null, session: null };
     }
 

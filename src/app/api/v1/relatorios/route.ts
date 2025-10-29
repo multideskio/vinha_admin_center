@@ -16,22 +16,24 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { reportType, startDate, endDate } = await request.json()
+    const { reportType, startDate, endDate, paymentMethod, paymentStatus } = await request.json()
 
     let data: Record<string, unknown> = {}
 
+    const filters = { startDate, endDate, paymentMethod, paymentStatus }
+    
     switch (reportType) {
       case 'fin-01':
-        data = await generateFinancialReport(user.companyId, startDate, endDate)
+        data = await generateFinancialReport(user.companyId, filters)
         break
       case 'mem-01':
-        data = await generateMembershipReport(user.companyId)
+        data = await generateMembershipReport(user.companyId, filters)
         break
       case 'ch-01':
-        data = await generateChurchesReport(user.companyId)
+        data = await generateChurchesReport(user.companyId, filters)
         break
       case 'con-01':
-        data = await generateContributionsReport(user.companyId, startDate, endDate)
+        data = await generateContributionsReport(user.companyId, filters)
         break
       default:
         return NextResponse.json({ error: 'Tipo de relatório inválido' }, { status: 400 })
@@ -44,13 +46,27 @@ export async function POST(request: Request) {
   }
 }
 
-async function generateFinancialReport(companyId: string, startDate?: string, endDate?: string) {
-  const whereClause = startDate && endDate
-    ? and(
-        eq(transactions.companyId, companyId),
-        between(transactions.createdAt, new Date(startDate), new Date(endDate))
-      )
-    : eq(transactions.companyId, companyId)
+type Filters = {
+  startDate?: string
+  endDate?: string
+  paymentMethod?: string
+  paymentStatus?: string
+}
+
+async function generateFinancialReport(companyId: string, filters: Filters) {
+  const conditions = [eq(transactions.companyId, companyId)]
+  
+  if (filters.startDate && filters.endDate) {
+    conditions.push(between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)))
+  }
+  if (filters.paymentMethod) {
+    conditions.push(eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'))
+  }
+  if (filters.paymentStatus) {
+    conditions.push(eq(transactions.status, filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded'))
+  }
+  
+  const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
 
   const txs = await db
     .select({
@@ -89,7 +105,7 @@ async function generateFinancialReport(companyId: string, startDate?: string, en
   }
 }
 
-async function generateMembershipReport(companyId: string) {
+async function generateMembershipReport(companyId: string, filters: Filters) {
   const allUsers = await db
     .select({
       id: users.id,
@@ -120,7 +136,9 @@ async function generateMembershipReport(companyId: string) {
   }
 }
 
-async function generateChurchesReport(companyId: string) {
+async function generateChurchesReport(companyId: string, filters: Filters) {
+  const whereClause = and(eq(users.companyId, companyId), eq(users.role, 'church_account'), isNull(users.deletedAt))
+  
   const churches = await db
     .select({
       id: users.id,
@@ -131,7 +149,7 @@ async function generateChurchesReport(companyId: string) {
     })
     .from(users)
     .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-    .where(and(eq(users.companyId, companyId), eq(users.role, 'church_account'), isNull(users.deletedAt)))
+    .where(whereClause)
 
   return {
     title: 'Relatório de Igrejas',
@@ -149,14 +167,20 @@ async function generateChurchesReport(companyId: string) {
   }
 }
 
-async function generateContributionsReport(companyId: string, startDate?: string, endDate?: string) {
-  const whereClause = startDate && endDate
-    ? and(
-        eq(transactions.companyId, companyId),
-        eq(transactions.status, 'approved'),
-        between(transactions.createdAt, new Date(startDate), new Date(endDate))
-      )
-    : and(eq(transactions.companyId, companyId), eq(transactions.status, 'approved'))
+async function generateContributionsReport(companyId: string, filters: Filters) {
+  const conditions = [
+    eq(transactions.companyId, companyId),
+    eq(transactions.status, (filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded') || 'approved')
+  ]
+  
+  if (filters.startDate && filters.endDate) {
+    conditions.push(between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)))
+  }
+  if (filters.paymentMethod) {
+    conditions.push(eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'))
+  }
+  
+  const whereClause = and(...conditions)
 
   const contributions = await db
     .select({

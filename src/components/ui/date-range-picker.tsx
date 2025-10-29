@@ -14,13 +14,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 interface DateRangePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   value?: DateRange | undefined
   onChange?: (dateRange: DateRange | undefined) => void
+  onDateRangeChange?: (range: { from: Date | undefined; to: Date | undefined }) => void
 }
 
 export function DateRangePicker({
   className,
   value,
   onChange,
+  onDateRangeChange,
 }: DateRangePickerProps): React.JSX.Element {
+  const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState<DateRange | undefined>(
     value || {
       from: subDays(new Date(), 7),
@@ -37,11 +40,15 @@ export function DateRangePicker({
   const handleDateChange = (newDate: DateRange | undefined) => {
     setDate(newDate)
     onChange?.(newDate)
+    onDateRangeChange?.({
+      from: newDate?.from,
+      to: newDate?.to,
+    })
   }
 
   return (
     <div className={cn('grid gap-2', className)}>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             id="date"
@@ -76,6 +83,26 @@ export function DateRangePicker({
             disabled={{ after: new Date() }}
             locale={ptBR}
           />
+          <div className="flex items-center justify-end gap-2 p-3 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDate(undefined)
+                onChange?.(undefined)
+                onDateRangeChange?.({ from: undefined, to: undefined })
+              }}
+            >
+              Limpar
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setOpen(false)}
+              disabled={!date?.from || !date?.to}
+            >
+              Aplicar
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

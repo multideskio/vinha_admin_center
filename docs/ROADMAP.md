@@ -120,6 +120,12 @@
   - Ministérios
 
 #### 💰 **Sistema Financeiro Expandido**
+- [ ] **Cielo - Funcionalidades Avançadas**
+  - Recorrência (pagamentos automáticos mensais)
+  - Tokenização (salvar cartão com segurança)
+  - Antifraude avançado
+  - Split de pagamentos
+
 - [ ] **Múltiplos Gateways**
   - PagSeguro
   - Mercado Pago

@@ -2,7 +2,7 @@ import { db } from '@/db/drizzle'
 import { cieloLogs } from '@/db/schema'
 
 export async function logCieloRequest(data: {
-  operationType: 'pix' | 'cartao' | 'boleto' | 'consulta'
+  operationType: 'pix' | 'cartao' | 'boleto' | 'consulta' | 'cancelamento'
   method: string
   endpoint: string
   paymentId?: string
@@ -23,7 +23,7 @@ export async function logCieloRequest(data: {
 }
 
 export async function logCieloResponse(data: {
-  operationType: 'pix' | 'cartao' | 'boleto' | 'consulta'
+  operationType: 'pix' | 'cartao' | 'boleto' | 'consulta' | 'cancelamento'
   method: string
   endpoint: string
   paymentId?: string

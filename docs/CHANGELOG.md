@@ -2,7 +2,42 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
-## [0.1.2] - 2025-01-30 - Deploy Docker e Limpeza de Documentação
+## [0.1.2] - 2025-01-30 - Melhorias e Análise Completa do Sistema
+
+### 🔍 **Análise e Documentação Completa**
+- **PENDING_IMPLEMENTATION.md** - Documento completo com 13 funcionalidades pendentes
+- Análise detalhada de todos os módulos do sistema (SMTP, WhatsApp, S3, Mensagens)
+- Roadmap de implementação em 4 fases (15-24 dias úteis)
+- Estimativas de tempo para cada funcionalidade
+- Priorização: Crítico, Alta, Média e Baixa
+
+### ✨ **Melhorias em Transações**
+- Adicionadas colunas "Data de Pagamento" e "Forma de Pagamento" na tabela
+- Badges coloridos para métodos de pagamento (PIX, Cartão, Boleto)
+- API atualizada para incluir nome do contribuidor (não apenas email)
+- Campo `paidAt` adicionado usando `createdAt`
+
+### 📊 **Sistema de Relatórios Aprimorado**
+- Preview de relatórios antes de exportar (até 50 registros)
+- Filtros simplificados: tipo, período, método de pagamento, status
+- Removidos filtros complexos (manager, supervisor, igreja) por questões de escalabilidade
+- KPIs de resumo antes da exportação
+- Melhor UX para geração de relatórios
+
+### 💳 **Cielo API - Parcelamento**
+- Adicionado parâmetro `installments` na função `createCreditCardPayment`
+- Suporte a parcelamento de cartão de crédito (1-12x)
+- Preparação para implementação no frontend
+
+### 🔧 **Correções de Type Safety**
+- Corrigidos erros de tipo em `relatorios/route.ts`
+- Type assertions para enums do Drizzle ORM
+- Adicionado tipo `cancelamento` no cielo-logger
+- TypeCheck passou com sucesso (0 erros)
+
+### 📚 **Roadmap Atualizado**
+- Adicionada seção "Cielo - Funcionalidades Avançadas" na v0.3.0
+- Planejamento de Recorrência, Tokenização, Antifraude e Split de pagamentos
 
 ### 🐳 **Deploy com Docker**
 - **Dockerfile** multi-stage otimizado para produção
@@ -11,27 +46,49 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - **docs/DOCKER_DEPLOY.md** - Guia completo de deploy
 - Configuração de variáveis de ambiente simplificada
 
-### 📚 **Limpeza de Documentação**
-- **Removidos**: BACKEND_DOCS.md, FRONTEND_DOCS.md, CONTRIBUTING.md (desnecessários para lançamento)
-- **Atualizados**: 
-  - DB_DOCS.md - Schema completo com 20+ tabelas
-  - CIELO_API_GUIDE.md - URLs corretas (api + apiquery)
-- **Mantidos**: 6 documentos essenciais
-- README.md atualizado com referências corretas
+### 📝 **Status dos Módulos (Análise Completa)**
 
-### 🔧 **Correções**
-- Next.js Image: wildcard para CloudFront (**.cloudfront.net)
-- Dockerfile: removida pasta /public inexistente
-- docker-compose: variáveis essenciais (credenciais vêm do banco)
+#### ✅ **100% Completos:**
+- Frontend (5 painéis administrativos)
+- Backend APIs (50+ endpoints)
+- Autenticação e Autorização
+- Sistema de Pagamentos Cielo (PIX, Cartão, Boleto)
+- Upload de Arquivos (S3)
+- Configurações (SMTP, WhatsApp, S3)
+- Banco de Dados (schema completo)
 
-### 📦 **Arquivos Docker**
+#### ⚠️ **70-95% Completos:**
+- Sistema de Notificações (Email + WhatsApp)
+- Mensagens Automáticas (CRUD completo, falta processador)
+- Relatórios (preview implementado)
+
+#### ❌ **Pendentes (0-30%):**
+- Cron Jobs / Scheduler (crítico)
+- Processador de Eventos de Notificação (crítico)
+- Recuperação de Senha
+- Workers / Filas
+- Cache
+- Testes Automatizados
+- Monitoramento
+
+### 📦 **Arquivos Modificados (23 arquivos)**
 ```
-Dockerfile
-.dockerignore
-docker-compose.yml
-.env.docker.example
-docs/DOCKER_DEPLOY.md
+src/app/admin/transacoes/page.tsx
+src/app/api/v1/transacoes/route.ts
+src/app/admin/relatorios/page.tsx
+src/app/api/v1/relatorios/route.ts
+src/lib/cielo.ts
+src/lib/cielo-logger.ts
+docs/ROADMAP.md
+docs/PENDING_IMPLEMENTATION.md (novo)
+docs/CHANGELOG.md
 ```
+
+### 🎯 **Próximos Passos Críticos**
+1. Implementar Cron Jobs para lembretes automáticos (18-36h)
+2. Criar Processador de Eventos de Notificação (6-12h)
+3. Integrar notificações em transações (4-8h)
+4. Implementar recuperação de senha (6-10h)
 
 ---
 

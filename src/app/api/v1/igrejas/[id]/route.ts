@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { churchProfileSchema, type UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
+import { onUserDeleted } from '@/lib/notification-hooks'
 
 const churchUpdateSchema = churchProfileSchema
   .extend({
@@ -178,6 +179,9 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         deletionReason: deletionReason,
       })
       .where(eq(users.id, id))
+
+    // Enviar notificação de exclusão
+    await onUserDeleted(id, deletionReason, user.id)
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
   } catch (error: unknown) {

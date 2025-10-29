@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import {
   Activity,
   DollarSign,
@@ -10,6 +11,7 @@ import {
   Building,
   User,
   RefreshCw,
+  ExternalLink,
 } from 'lucide-react'
 import {
   Bar,
@@ -70,6 +72,8 @@ type DashboardData = {
     amount: number
     date: string
     status: TransactionStatus
+    contributorId: string
+    contributorRole: string
   }[]
   recentRegistrations: { id: string; name: string; type: string; date: string; avatar: string }[]
   newMembers: { month: string; count: number }[]
@@ -78,12 +82,20 @@ type DashboardData = {
 export default function DashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  })
   const { toast } = useToast()
 
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/dashboard/admin')
+      const params = new URLSearchParams()
+      if (dateRange.from) params.append('from', dateRange.from.toISOString())
+      if (dateRange.to) params.append('to', dateRange.to.toISOString())
+      
+      const response = await fetch(`/api/v1/dashboard/admin?${params.toString()}`)
       if (!response.ok) {
         throw new Error('Falha ao carregar os dados do dashboard.')
       }
@@ -99,11 +111,15 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, dateRange])
 
   React.useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const handleDateRangeChange = React.useCallback((range: { from: Date | undefined; to: Date | undefined }) => {
+    setDateRange(range)
+  }, [])
 
   const kpiDisplayData = data
     ? [
@@ -180,7 +196,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-        <DateRangePicker />
+        <DateRangePicker onDateRangeChange={handleDateRangeChange} />
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
@@ -221,9 +237,30 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.recentTransactions.map((transaction) => (
+                {data.recentTransactions.map((transaction) => {
+                  const roleMap: Record<string, string> = {
+                    manager: 'gerentes',
+                    supervisor: 'supervisores',
+                    pastor: 'pastores',
+                    church_account: 'igrejas',
+                  }
+                  const profilePath = roleMap[transaction.contributorRole]
+                  
+                  return (
                   <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {profilePath ? (
+                        <Link 
+                          href={`/admin/${profilePath}/${transaction.contributorId}`}
+                          className="flex items-center gap-1 hover:underline text-primary"
+                        >
+                          {transaction.name}
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        transaction.name
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
@@ -239,7 +276,8 @@ export default function DashboardPage() {
                       {transaction.date}
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           </CardContent>

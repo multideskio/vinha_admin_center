@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
+import { onUserDeleted } from '@/lib/notification-hooks'
 
 const adminUpdateSchema = z
   .object({
@@ -34,6 +35,10 @@ const adminUpdateSchema = z
     avatarUrl: z.string().optional(),
   })
   .partial()
+
+const deleteSchema = z.object({
+  deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
+})
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
@@ -162,7 +167,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
 
   try {
     const body = await request.json()
-    const { deletionReason } = body
+    const { deletionReason } = deleteSchema.parse(body)
 
     await db
       .update(users)
@@ -170,12 +175,21 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         deletedAt: new Date(),
         status: 'inactive',
         deletedBy: user.id,
-        deletionReason: deletionReason || 'Não informado',
+        deletionReason: deletionReason,
       })
       .where(eq(users.id, id))
 
+    // Enviar notificação de exclusão
+    await onUserDeleted(id, deletionReason, user.id)
+
     return NextResponse.json({ success: true, message: 'Administrador excluído com sucesso.' })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados de exclusão inválidos.', details: error.errors },
+        { status: 400 },
+      )
+    }
     console.error('Erro ao excluir administrador:', error)
     return NextResponse.json(
       { error: 'Erro ao excluir administrador', details: getErrorMessage(error) },

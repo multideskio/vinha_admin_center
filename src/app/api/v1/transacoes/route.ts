@@ -31,38 +31,91 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '100')
+    const offset = (page - 1) * limit
 
-    const query = db
+    let query = db
       .select({
         id: transactions.id,
         amount: transactions.amount,
         status: transactions.status,
         createdAt: transactions.createdAt,
         paymentMethod: transactions.paymentMethod,
-        contributorId: transactions.contributorId,
-        originChurchId: transactions.originChurchId,
+        contributorId: users.id,
+        contributorRole: users.role,
+        contributorEmail: users.email,
+        churchId: transactions.originChurchId,
         refundRequestReason: transactions.refundRequestReason,
       })
       .from(transactions)
+      .innerJoin(users, eq(transactions.contributorId, users.id))
       .orderBy(desc(transactions.createdAt))
-      .limit(100)
+      .$dynamic()
 
-    const userTransactions = userId
-      ? await query.where(eq(transactions.contributorId, userId))
-      : await query
+    if (userId) {
+      query = query.where(eq(transactions.contributorId, userId))
+    }
 
-    const formattedTransactions = userTransactions.map(t => ({
-      id: t.id,
-      contributor: t.contributorId,
-      church: t.originChurchId,
-      amount: parseFloat(t.amount),
-      method: t.paymentMethod,
-      status: t.status,
-      date: t.createdAt.toISOString(),
-      refundRequestReason: t.refundRequestReason,
-    }))
+    if (from) {
+      const { gte } = await import('drizzle-orm')
+      query = query.where(gte(transactions.createdAt, new Date(from)))
+    }
 
-    return NextResponse.json({ transactions: formattedTransactions })
+    if (to) {
+      const { lt } = await import('drizzle-orm')
+      query = query.where(lt(transactions.createdAt, new Date(to)))
+    }
+
+    const userTransactions = await query.limit(limit).offset(offset)
+
+    const formattedTransactions = await Promise.all(
+      userTransactions.map(async (t) => {
+        let contributorName = t.contributorEmail
+        
+        if (t.contributorRole === 'manager') {
+          const [profile] = await db.select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
+            .from(managerProfiles).where(eq(managerProfiles.userId, t.contributorId)).limit(1)
+          if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+        } else if (t.contributorRole === 'supervisor') {
+          const [profile] = await db.select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+            .from(supervisorProfiles).where(eq(supervisorProfiles.userId, t.contributorId)).limit(1)
+          if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+        } else if (t.contributorRole === 'pastor') {
+          const [profile] = await db.select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+            .from(pastorProfiles).where(eq(pastorProfiles.userId, t.contributorId)).limit(1)
+          if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+        } else if (t.contributorRole === 'church_account') {
+          const [profile] = await db.select({ nomeFantasia: churchProfiles.nomeFantasia })
+            .from(churchProfiles).where(eq(churchProfiles.userId, t.contributorId)).limit(1)
+          if (profile) contributorName = profile.nomeFantasia
+        }
+
+        return {
+          id: t.id,
+          contributor: contributorName,
+          contributorEmail: t.contributorEmail,
+          church: t.churchId || null,
+          amount: parseFloat(t.amount),
+          method: t.paymentMethod,
+          status: t.status,
+          date: new Date(t.createdAt).toLocaleDateString('pt-BR'),
+          paidAt: new Date(t.createdAt).toISOString(),
+          refundRequestReason: t.refundRequestReason,
+        }
+      })
+    )
+
+    return NextResponse.json({ 
+      transactions: formattedTransactions,
+      pagination: {
+        page,
+        limit,
+        hasMore: formattedTransactions.length === limit,
+      },
+    })
   } catch (error) {
     console.error('Error fetching transactions:', error)
     return NextResponse.json(
