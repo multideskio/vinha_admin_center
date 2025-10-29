@@ -20,6 +20,7 @@ const reportTypes = [
     { id: 'mem-01', name: 'Relatório de Membresia', description: 'Dados demográficos, de engajamento e crescimento de membros.'},
     { id: 'ch-01', name: 'Relatório de Igrejas por Região', description: 'Performance e estatísticas de todas as igrejas, agrupadas por região.'},
     { id: 'con-01', name: 'Relatório de Contribuições por Tipo', description: 'Análise detalhada de dízimos e ofertas.'},
+    { id: 'def-01', name: 'Relatório de Inadimplência', description: 'Histórico mensal de dízimos e ofertas de pastores e igrejas.'},
 ];
 
 const paymentMethods = [

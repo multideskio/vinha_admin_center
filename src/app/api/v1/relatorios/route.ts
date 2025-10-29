@@ -4,8 +4,8 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { users, transactions, churchProfiles } from '@/db/schema'
-import { eq, and, between, isNull, desc } from 'drizzle-orm'
+import { users, transactions, churchProfiles, pastorProfiles } from '@/db/schema'
+import { eq, and, between, isNull, desc, sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 
@@ -34,6 +34,9 @@ export async function POST(request: Request) {
         break
       case 'con-01':
         data = await generateContributionsReport(user.companyId, filters)
+        break
+      case 'def-01':
+        data = await generateDefaultersReport(user.companyId, filters)
         break
       default:
         return NextResponse.json({ error: 'Tipo de relatório inválido' }, { status: 400 })
@@ -213,6 +216,129 @@ async function generateContributionsReport(companyId: string, filters: Filters) 
     summary: [
       { label: 'Total de Contribuições', value: contributions.length },
       { label: 'Valor Total Arrecadado', value: `R$ ${totalAmount.toFixed(2)}` },
+    ],
+  }
+}
+
+async function generateDefaultersReport(companyId: string, filters: Filters) {
+  // Buscar todos os pastores
+  const pastors = await db
+    .select({
+      id: users.id,
+      firstName: pastorProfiles.firstName,
+      lastName: pastorProfiles.lastName,
+      titheDay: users.titheDay,
+    })
+    .from(users)
+    .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+    .where(and(eq(users.companyId, companyId), eq(users.role, 'pastor'), isNull(users.deletedAt)))
+
+  // Buscar todas as igrejas
+  const churches = await db
+    .select({
+      id: users.id,
+      nomeFantasia: churchProfiles.nomeFantasia,
+      titheDay: users.titheDay,
+    })
+    .from(users)
+    .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+    .where(and(eq(users.companyId, companyId), eq(users.role, 'church_account'), isNull(users.deletedAt)))
+
+  const now = new Date()
+  const startDate = filters.startDate ? new Date(filters.startDate) : new Date(now.getFullYear(), 0, 1)
+  const endDate = filters.endDate ? new Date(filters.endDate) : now
+
+  const rows: string[][] = []
+  const months: string[] = []
+  
+  // Gerar lista de meses no período
+  const current = new Date(startDate)
+  while (current <= endDate) {
+    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`)
+    current.setMonth(current.getMonth() + 1)
+  }
+
+  // Verificar pastores
+  for (const pastor of pastors) {
+    const name = `${pastor.firstName} ${pastor.lastName}`
+    const monthlyStatus: string[] = []
+
+    for (const month of months) {
+      const parts = month.split('-').map(Number)
+      const year = parts[0]
+      const monthNum = parts[1]
+      if (!year || !monthNum) continue
+      const monthStart = new Date(year, monthNum - 1, 1)
+      const monthEnd = new Date(year, monthNum, 0, 23, 59, 59)
+
+      // Verificar se pagou neste mês
+      const payment = await db
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.contributorId, pastor.id),
+            eq(transactions.status, 'approved'),
+            between(transactions.createdAt, monthStart, monthEnd)
+          )
+        )
+        .limit(1)
+
+      monthlyStatus.push(payment.length > 0 ? '✓ Pago' : '✗ Não pago')
+    }
+
+    rows.push([name, 'Pastor', pastor.titheDay?.toString() || 'N/A', ...monthlyStatus])
+  }
+
+  // Verificar igrejas
+  for (const church of churches) {
+    const monthlyStatus: string[] = []
+
+    for (const month of months) {
+      const parts = month.split('-').map(Number)
+      const year = parts[0]
+      const monthNum = parts[1]
+      if (!year || !monthNum) continue
+      const monthStart = new Date(year, monthNum - 1, 1)
+      const monthEnd = new Date(year, monthNum, 0, 23, 59, 59)
+
+      const payment = await db
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.contributorId, church.id),
+            eq(transactions.status, 'approved'),
+            between(transactions.createdAt, monthStart, monthEnd)
+          )
+        )
+        .limit(1)
+
+      monthlyStatus.push(payment.length > 0 ? '✓ Pago' : '✗ Não pago')
+    }
+
+    rows.push([church.nomeFantasia || 'N/A', 'Igreja', church.titheDay?.toString() || 'N/A', ...monthlyStatus])
+  }
+
+  const totalPeople = pastors.length + churches.length
+  const monthHeaders = months.map(m => {
+    const parts = m.split('-')
+    const year = parts[0]
+    const month = parts[1]
+    if (!year || !month) return 'N/A'
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    return `${monthNames[parseInt(month) - 1]}/${year}`
+  })
+
+  return {
+    title: 'Relatório de Inadimplência',
+    headers: ['Nome', 'Tipo', 'Dia do Dízimo', ...monthHeaders],
+    rows,
+    summary: [
+      { label: 'Total de Pessoas', value: totalPeople },
+      { label: 'Pastores', value: pastors.length },
+      { label: 'Igrejas', value: churches.length },
+      { label: 'Período', value: `${monthHeaders[0]} - ${monthHeaders[monthHeaders.length - 1]}` },
     ],
   }
 }

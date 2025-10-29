@@ -232,6 +232,106 @@ export async function GET(request: Request): Promise<NextResponse> {
       count: item.count,
     }))
 
+    // --- Inadimplentes (Pastores e Igrejas que não dizimaram) ---
+    const currentDay = now.getDate()
+    const currentMonth = now.getMonth() + 1
+    const currentYear = now.getFullYear()
+
+    // Buscar pastores inadimplentes
+    const pastorsWithTitheDay = await db
+      .select({
+        id: users.id,
+        firstName: pastorProfiles.firstName,
+        lastName: pastorProfiles.lastName,
+        titheDay: users.titheDay,
+      })
+      .from(users)
+      .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
+
+    // Buscar igrejas inadimplentes
+    const churchesWithTitheDay = await db
+      .select({
+        id: users.id,
+        nomeFantasia: churchProfiles.nomeFantasia,
+        titheDay: users.titheDay,
+      })
+      .from(users)
+      .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+      .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
+
+    const defaulters = []
+
+    // Verificar pastores
+    for (const pastor of pastorsWithTitheDay) {
+      if (!pastor.titheDay) continue
+      
+      // Se o dia do dízimo já passou neste mês
+      if (currentDay > pastor.titheDay) {
+        // Buscar última transação aprovada deste mês
+        const lastPayment = await db
+          .select({ createdAt: transactions.createdAt })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.contributorId, pastor.id),
+              eq(transactions.status, 'approved'),
+              gte(transactions.createdAt, startOfCurrentMonth)
+            )
+          )
+          .orderBy(desc(transactions.createdAt))
+          .limit(1)
+
+        // Se não pagou neste mês, é inadimplente
+        if (lastPayment.length === 0) {
+          const daysLate = currentDay - pastor.titheDay
+          defaulters.push({
+            id: pastor.id,
+            name: `${pastor.firstName} ${pastor.lastName}`,
+            type: 'pastor' as const,
+            titheDay: pastor.titheDay,
+            lastPayment: null,
+            daysLate,
+          })
+        }
+      }
+    }
+
+    // Verificar igrejas
+    for (const church of churchesWithTitheDay) {
+      if (!church.titheDay) continue
+      
+      if (currentDay > church.titheDay) {
+        const lastPayment = await db
+          .select({ createdAt: transactions.createdAt })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.contributorId, church.id),
+              eq(transactions.status, 'approved'),
+              gte(transactions.createdAt, startOfCurrentMonth)
+            )
+          )
+          .orderBy(desc(transactions.createdAt))
+          .limit(1)
+
+        if (lastPayment.length === 0) {
+          const daysLate = currentDay - church.titheDay
+          defaulters.push({
+            id: church.id,
+            name: church.nomeFantasia,
+            type: 'church' as const,
+            titheDay: church.titheDay,
+            lastPayment: null,
+            daysLate,
+          })
+        }
+      }
+    }
+
+    // Ordenar por dias de atraso (maior primeiro)
+    defaulters.sort((a, b) => b.daysLate - a.daysLate)
+
     const formattedRevenueByMethod = revenueByMethod.map((item) => ({
       ...item,
       fill:
@@ -281,6 +381,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       recentTransactions,
       recentRegistrations,
       newMembers: formattedNewMembers,
+      defaulters,
     })
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)

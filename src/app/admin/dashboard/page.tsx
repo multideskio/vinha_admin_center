@@ -12,6 +12,7 @@ import {
   User,
   RefreshCw,
   ExternalLink,
+  AlertTriangle,
 } from 'lucide-react'
 import {
   Bar,
@@ -77,6 +78,7 @@ type DashboardData = {
   }[]
   recentRegistrations: { id: string; name: string; type: string; date: string; avatar: string }[]
   newMembers: { month: string; count: number }[]
+  defaulters: { id: string; name: string; type: 'pastor' | 'church'; titheDay: number; lastPayment: string | null; daysLate: number }[]
 }
 
 export default function DashboardPage() {
@@ -215,6 +217,54 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Inadimplentes do Mês
+            </CardTitle>
+            <CardDescription>
+              Pastores e igrejas que não dizimaram após o dia definido.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.defaulters.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhum inadimplente este mês! 🎉
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {data.defaulters.slice(0, 10).map((defaulter) => {
+                  const profilePath = defaulter.type === 'pastor' ? 'pastores' : 'igrejas'
+                  return (
+                    <div key={defaulter.id} className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <Link 
+                          href={`/admin/${profilePath}/${defaulter.id}`}
+                          className="text-sm font-medium hover:underline text-primary flex items-center gap-1"
+                        >
+                          {defaulter.name}
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {defaulter.type === 'pastor' ? 'Pastor' : 'Igreja'} • Dia do dízimo: {defaulter.titheDay}
+                        </p>
+                        {defaulter.lastPayment && (
+                          <p className="text-xs text-muted-foreground">
+                            Último pagamento: {defaulter.lastPayment}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant="destructive" className="ml-2">
+                        {defaulter.daysLate}d atrasado
+                      </Badge>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
