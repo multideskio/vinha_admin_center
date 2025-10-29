@@ -1,10 +1,13 @@
-name: 🔄 CI/CD Pipeline
+# CI/CD Pipeline - Desabilitado temporariamente devido a limitações de billing
+# Para reativar, descomente as linhas abaixo e remova este comentário
 
-on:
-  push:
-    branches: [ main, dev ]
-  pull_request:
-    branches: [ main, dev ]
+# name: 🔄 CI/CD Pipeline
+# 
+# on:
+#   push:
+#     branches: [ main, dev ]
+#   pull_request:
+#     branches: [ main, dev ]
 
 jobs:
   test:

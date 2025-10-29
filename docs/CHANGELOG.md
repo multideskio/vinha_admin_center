@@ -21,20 +21,21 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - **Badges atualizados**: Indicação de acesso restrito
 
 #### **🔄 Automações Implementadas**
-- **Testes automáticos** em Node.js 18.x e 20.x
-- **Linting e formatação** automática
-- **Type checking** em cada PR
-- **Build verification** antes do merge
-- **Security audit** das dependências
+- **GitHub Actions CI/CD** configurado (temporariamente desabilitado por limitações de billing)
+- **Workflow manual** para execução sob demanda
+- **Scripts locais** de qualidade (`npm run quality:check`)
+- **Pre-commit hooks** mantidos funcionais
+- **Dependabot** para atualizações de segurança
 
 ### 🎯 **Benefícios Adicionados**
 
 - ✅ **Organização profissional** de issues e PRs
-- ✅ **Qualidade de código** garantida por CI/CD
-- ✅ **Segurança** monitorada automaticamente
+- ✅ **Qualidade de código** garantida por scripts locais
+- ✅ **Segurança** monitorada pelo Dependabot
 - ✅ **Dependências** sempre atualizadas
 - ✅ **Documentação** estruturada para equipe
 - ✅ **Proteção legal** com licença proprietária
+- ✅ **Workflows alternativos** para limitações de billing
 
 ### 📋 **Arquivos Adicionados**
 
@@ -44,14 +45,34 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 │   ├── bug_report.md
 │   └── feature_request.md
 ├── workflows/
-│   └── ci.yml
+│   ├── ci.yml (desabilitado temporariamente)
+│   └── manual-ci.yml (execução manual)
 ├── SECURITY.md
 ├── PULL_REQUEST_TEMPLATE.md
 └── dependabot.yml
 
-LICENSE (atualizada)
-CONTRIBUTING.md (novo)
+scripts/
+└── quality-check.js (verificação local)
+
+docs/
+└── GITHUB_ACTIONS.md (documentação de limitações)
+
+LICENSE (atualizada para proprietária)
+CONTRIBUTING.md (guia para equipe interna)
 ```
+
+### 🔧 **Correções e Ajustes**
+
+#### **GitHub Actions - Limitações de Billing**
+- **CI/CD automático** temporariamente desabilitado
+- **Workflow manual** criado para execução sob demanda
+- **Scripts locais** implementados como alternativa
+- **Documentação** das limitações e soluções
+
+#### **Comandos Adicionados**
+- `npm run quality:check` - Verificação completa local
+- `npm run pre-commit` - Verificação antes de commits
+- Workflow manual disponível na interface do GitHub
 
 ---
 
