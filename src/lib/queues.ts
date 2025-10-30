@@ -8,7 +8,7 @@ function createRedis() {
     maxRetriesPerRequest: null as unknown as undefined,
     enableReadyCheck: false,
     connectTimeout: 5000,
-    retryStrategy: (times) => Math.min(5000, times * 200),
+    retryStrategy: (times: number) => Math.min(5000, times * 200),
     tls: isTLS ? { rejectUnauthorized: false } : undefined,
   } as any)
   client.on('error', () => {})

@@ -14,6 +14,7 @@ import {
   ExternalLink,
   AlertTriangle,
   Save,
+  Sparkles,
 } from 'lucide-react'
 import {
   Bar,
@@ -49,6 +50,8 @@ import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { type TransactionStatus } from '@/lib/types'
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 type KpiData = {
   title: string
@@ -96,6 +99,8 @@ export default function DashboardPage() {
   const { toast } = useToast()
   const [sending, setSending] = React.useState(false)
   const [lastUpdatedAt, setLastUpdatedAt] = React.useState<string | null>(null)
+  const [insightLoading, setInsightLoading] = React.useState(false)
+  const [insightText, setInsightText] = React.useState('')
 
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
@@ -147,10 +152,28 @@ export default function DashboardPage() {
     }
   }, [toast])
 
+  const handleGenerateInsights = React.useCallback(async () => {
+    setInsightLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (dateRange.from) params.append('from', dateRange.from.toISOString())
+      if (dateRange.to) params.append('to', dateRange.to.toISOString())
+      const res = await fetch(`/api/v1/dashboard/insights?${params.toString()}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Falha ao gerar insights')
+      setInsightText(data.insight || '')
+    } catch (e: unknown) {
+      setInsightText('')
+      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+    } finally {
+      setInsightLoading(false)
+    }
+  }, [dateRange, toast])
+
   const exportCsv = (rows: Array<Record<string, any>>, filename: string) => {
     try {
       if (!rows || rows.length === 0) return
-      const headers = Object.keys(rows[0])
+      const headers = Object.keys(rows[0] as Record<string, any>)
       const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
@@ -212,8 +235,9 @@ export default function DashboardPage() {
       return data.newMembers.map(m => ({ month: m.month, current: m.count }))
     }
     const out: Array<{ month: string; prev: number; current: number }> = []
-    for (let i = 1; i < data.newMembers.length; i++) {
-      out.push({ month: data.newMembers[i].month, prev: data.newMembers[i - 1].count, current: data.newMembers[i].count })
+    const nm = data!.newMembers
+    for (let i = 1; i < nm.length; i++) {
+      out.push({ month: nm[i]!.month, prev: nm[i - 1]!.count, current: nm[i]!.count })
     }
     return out
   }, [data])
@@ -380,6 +404,28 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Insights IA no topo */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Insights IA</CardTitle>
+            <CardDescription>Resumo do momento atual e recomendações automáticas.</CardDescription>
+          </div>
+          <Button onClick={handleGenerateInsights} disabled={insightLoading}>
+            {insightLoading ? 'Gerando...' : 'Gerar insights'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {insightText ? (
+            <div className="prose prose-sm dark:prose-invert">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightText}</ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Clique em “Gerar insights” para ver o resumo da IA.</p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Grid principal em 12 colunas para melhor alinhamento */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* KPIs principais (4 cards) */}
@@ -424,7 +470,7 @@ export default function DashboardPage() {
                   <CardDescription>Comparativo mês a mês (gráfico de pontos/halteres)</CardDescription>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  {data.newMembers.reduce((sum, m) => sum + m.count, 0)} novos membros
+                  {(data?.newMembers?.reduce((sum, m) => sum + m.count, 0) ?? 0)} novos membros
                 </Badge>
               </div>
             </CardHeader>
@@ -652,6 +698,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Insights IA removido daqui e movido para o topo */}
       </div>
     </div>
   )

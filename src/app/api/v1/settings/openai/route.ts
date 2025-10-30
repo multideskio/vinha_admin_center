@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({
       openaiApiKey: masked,
       hasKey: !!settings?.openaiApiKey,
-      updatedAt: settings?.updatedAt || null,
+      updatedAt: null,
     })
   } catch (e) {
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
     }
     const [existing] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, user.companyId)).limit(1)
     if (existing) {
-      await db.update(otherSettings).set({ openaiApiKey, updatedAt: new Date() }).where(eq(otherSettings.companyId, user.companyId))
+      await db.update(otherSettings).set({ openaiApiKey }).where(eq(otherSettings.companyId, user.companyId))
     } else {
       await db.insert(otherSettings).values({ companyId: user.companyId, openaiApiKey })
     }
