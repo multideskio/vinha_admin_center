@@ -99,20 +99,16 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
     // Dados para templates
     const amount = String(transaction.amount)
     const name = user.email.split('@')[0] || 'Membro'
-    const date = new Date(transaction.createdAt).toLocaleString('pt-BR')
-    const paymentMsg = `Recebemos sua contribuição de R$ ${amount} em ${date}! Obrigado por apoiar nossa igreja.`
-    // Dispara email se disponível
-    if (user.email) {
-      await notificationService.sendEmail({
-        to: user.email,
-        subject: 'Pagamento confirmado',
-        html: `<p>${paymentMsg}</p>`,
-      })
-    }
-    // Dispara WhatsApp se disponível
-    if (user.phone) {
-      await notificationService.sendWhatsApp({ phone: user.phone, message: paymentMsg })
-    }
+    const paidAt = new Date(transaction.createdAt).toLocaleString('pt-BR')
+
+    await notificationService.sendPaymentReceived(
+      user.id,
+      name,
+      amount,
+      paidAt,
+      user.phone || undefined,
+      user.email || undefined,
+    )
   } catch (e) {
     console.error('Erro ao disparar notificação de transação:', e)
   }

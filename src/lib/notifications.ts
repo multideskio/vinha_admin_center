@@ -363,6 +363,53 @@ export class NotificationService {
     return results
   }
 
+  async sendPaymentReceived(
+    userId: string,
+    name: string,
+    amount: string,
+    paidAt: string,
+    phone?: string,
+    email?: string,
+  ): Promise<{ whatsapp: boolean; email: boolean }> {
+    const results = { whatsapp: false, email: false }
+    const variables: TemplateVariables = {
+      name,
+      amount,
+      paidAt,
+      // aliases PT-BR
+      nome_usuario: name as unknown as string,
+      valor_transacao: amount as unknown as string,
+      data_pagamento: paidAt as unknown as string,
+    } as any
+
+    const [template] = await db
+      .select()
+      .from(messageTemplates)
+      .where(
+        and(
+          eq(messageTemplates.companyId, this.companyId),
+          eq(messageTemplates.templateType, 'payment_received'),
+          eq(messageTemplates.isActive, true)
+        )
+      )
+      .limit(1)
+
+    if (phone && template?.whatsappTemplate) {
+      const message = TemplateEngine.processTemplate(template.whatsappTemplate, variables)
+      results.whatsapp = await this.whatsapp.sendMessage({ number: phone, text: message })
+      await this.logNotification(userId, 'payment_received', 'whatsapp', results.whatsapp, message)
+    }
+
+    if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
+      const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
+      const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
+      results.email = await this.email.sendEmail({ to: email, subject, html })
+      await this.logNotification(userId, 'payment_received', 'email', results.email, html)
+    }
+
+    return results
+  }
+
   private async logNotification(
     userId: string,
     type: string,
