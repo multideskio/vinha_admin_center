@@ -274,6 +274,8 @@ export default function SupervisorProfilePage(): JSX.Element {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const [notif, setNotif] = React.useState<{ payment_notifications: { email: boolean; whatsapp: boolean }; due_date_reminders: { email: boolean; whatsapp: boolean }; network_reports: { email: boolean; whatsapp: boolean } } | null>(null)
+  const [savingNotif, setSavingNotif] = React.useState(false)
 
   const params = useParams()
   const router = useRouter()
@@ -289,23 +291,27 @@ export default function SupervisorProfilePage(): JSX.Element {
     if (!id) return
     setIsLoading(true)
     try {
-      const [supervisorRes, managersRes, regionsRes] = await Promise.all([
+      const [supervisorRes, managersRes, regionsRes, notifRes] = await Promise.all([
         fetch(`/api/v1/admin/supervisores/${id}`),
         fetch('/api/v1/admin/gerentes?minimal=true'),
         fetch('/api/v1/regioes?minimal=true'),
+        fetch(`/api/v1/admin/supervisores/${id}/notification-settings`)
       ])
 
       if (!supervisorRes.ok) throw new Error('Falha ao carregar dados do supervisor.')
       if (!managersRes.ok) throw new Error('Falha ao carregar gerentes.')
       if (!regionsRes.ok) throw new Error('Falha ao carregar regiões.')
+      if (!notifRes.ok) throw new Error('Falha ao carregar configurações de notificação.')
 
       const supervisorData = await supervisorRes.json()
       const managersData = await managersRes.json()
       const regionsData = await regionsRes.json()
+      const notifData = await notifRes.json()
 
       setSupervisor(supervisorData)
       setManagers(managersData.managers)
       setRegions(regionsData.regions)
+      setNotif(notifData)
       form.reset(supervisorData)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
@@ -907,11 +913,11 @@ export default function SupervisorProfilePage(): JSX.Element {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2" title="Notificar por Email">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
+                        <Switch checked={!!notif?.payment_notifications.email} onCheckedChange={(v) => setNotif((n) => n ? { ...n, payment_notifications: { ...n.payment_notifications, email: v } } : n)} />
                       </div>
                       <div className="flex items-center gap-2" title="Notificar por WhatsApp">
                         <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
+                        <Switch checked={!!notif?.payment_notifications.whatsapp} onCheckedChange={(v) => setNotif((n) => n ? { ...n, payment_notifications: { ...n.payment_notifications, whatsapp: v } } : n)} />
                       </div>
                     </div>
                   </div>
@@ -925,11 +931,11 @@ export default function SupervisorProfilePage(): JSX.Element {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2" title="Notificar por Email">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
+                        <Switch checked={!!notif?.due_date_reminders.email} onCheckedChange={(v) => setNotif((n) => n ? { ...n, due_date_reminders: { ...n.due_date_reminders, email: v } } : n)} />
                       </div>
                       <div className="flex items-center gap-2" title="Notificar por WhatsApp">
                         <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
+                        <Switch checked={!!notif?.due_date_reminders.whatsapp} onCheckedChange={(v) => setNotif((n) => n ? { ...n, due_date_reminders: { ...n.due_date_reminders, whatsapp: v } } : n)} />
                       </div>
                     </div>
                   </div>
@@ -943,16 +949,32 @@ export default function SupervisorProfilePage(): JSX.Element {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2" title="Notificar por Email">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <Switch defaultChecked />
+                        <Switch checked={!!notif?.network_reports.email} onCheckedChange={(v) => setNotif((n) => n ? { ...n, network_reports: { ...n.network_reports, email: v } } : n)} />
                       </div>
                       <div className="flex items-center gap-2" title="Notificar por WhatsApp">
                         <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <Switch />
+                        <Switch checked={!!notif?.network_reports.whatsapp} onCheckedChange={(v) => setNotif((n) => n ? { ...n, network_reports: { ...n.network_reports, whatsapp: v } } : n)} />
                       </div>
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <Button>Salvar Configurações</Button>
+                    <Button onClick={async () => {
+                      if (!notif) return
+                      setSavingNotif(true)
+                      try {
+                        const res = await fetch(`/api/v1/admin/supervisores/${id}/notification-settings`, {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notif)
+                        })
+                        if (!res.ok) throw new Error('Falha ao salvar configurações.')
+                        toast({ title: 'Sucesso', description: 'Configurações salvas.', variant: 'success' })
+                      } catch (e: unknown) {
+                        toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+                      } finally {
+                        setSavingNotif(false)
+                      }
+                    }} disabled={savingNotif}>
+                      {savingNotif ? 'Salvando...' : 'Salvar Configurações'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

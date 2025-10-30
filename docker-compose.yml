@@ -16,7 +16,13 @@ services:
       - CRON_SECRET=${CRON_SECRET}
     depends_on:
       - db
+      - redis
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9002/api/v1/maintenance-check"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
   db:
     image: postgres:14-alpine
@@ -29,6 +35,23 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vinha"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

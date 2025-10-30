@@ -63,6 +63,7 @@ async function main(): Promise<void> {
   await db.delete(schema.gatewayConfigurations)
   await db.delete(schema.transactions)
   await db.delete(schema.sessions)
+  await db.delete(schema.passwordResetTokens)
   
   // Depois deletar perfis
   await db.delete(adminProfiles)

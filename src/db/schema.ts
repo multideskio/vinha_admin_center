@@ -244,6 +244,7 @@ export const transactions = pgTable('transactions', {
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
   gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
   refundRequestReason: text('refund_request_reason'),
+  installments: integer('installments').default(1).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
   deletedBy: uuid('deleted_by'),
@@ -292,6 +293,7 @@ export const otherSettings = pgTable('other_settings', {
   s3SecretAccessKey: text('s3_secret_access_key'),
   s3ForcePathStyle: boolean('s3_force_path_style').default(false),
   s3CloudfrontUrl: text('s3_cloudfront_url'),
+  openaiApiKey: text('openai_api_key'),
 })
 
 export const notificationRules = pgTable('notification_rules', {
@@ -420,6 +422,16 @@ export const cieloLogs = pgTable('cielo_logs', {
   responseBody: text('response_body'),
   statusCode: integer('status_code'),
   errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Tabela de Tokens para Recuperação de Senha
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: varchar('token', { length: 255 }).unique().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  used: boolean('used').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

@@ -4,8 +4,9 @@
 
 import { NotificationService } from './notifications'
 import { db } from '@/db/drizzle'
-import { otherSettings, users } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { otherSettings, users, transactions, notificationRules } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { notificationQueue } from './queues';
 
 // Hook para quando um novo usuário é criado
 export async function onUserCreated(userId: string): Promise<void> {
@@ -60,8 +61,61 @@ export async function onUserCreated(userId: string): Promise<void> {
 
 // Hook para quando uma transação é criada
 export async function onTransactionCreated(transactionId: string): Promise<void> {
-  // Implementar lógica para notificar sobre nova transação
-  console.log(`Transaction created: ${transactionId}`)
+  // Busca transação e usuário
+  try {
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.id, transactionId))
+      .limit(1)
+    if (!transaction) return
+
+    // Busca usuário doador
+    const [user] = await db.select().from(users).where(eq(users.id, transaction.contributorId)).limit(1)
+    if (!user) return
+
+    // Busca settings da empresa
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, transaction.companyId))
+      .limit(1)
+    if (!settings) return
+
+    // Só notifica se transação aprovada
+    if (transaction.status !== 'approved') return
+
+    // Prepara notification service
+    const notificationService = new NotificationService({
+      whatsappApiUrl: settings.whatsappApiUrl || undefined,
+      whatsappApiKey: settings.whatsappApiKey || undefined,
+      whatsappApiInstance: settings.whatsappApiInstance || undefined,
+      sesRegion: settings.s3Region || undefined,
+      sesAccessKeyId: settings.s3AccessKeyId || undefined,
+      sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+      fromEmail: settings.smtpFrom || undefined,
+      companyId: transaction.companyId,
+    })
+    // Dados para templates
+    const amount = String(transaction.amount)
+    const name = user.email.split('@')[0] || 'Membro'
+    const date = new Date(transaction.createdAt).toLocaleString('pt-BR')
+    const paymentMsg = `Recebemos sua contribuição de R$ ${amount} em ${date}! Obrigado por apoiar nossa igreja.`
+    // Dispara email se disponível
+    if (user.email) {
+      await notificationService.sendEmail({
+        to: user.email,
+        subject: 'Pagamento confirmado',
+        html: `<p>${paymentMsg}</p>`,
+      })
+    }
+    // Dispara WhatsApp se disponível
+    if (user.phone) {
+      await notificationService.sendWhatsApp({ phone: user.phone, message: paymentMsg })
+    }
+  } catch (e) {
+    console.error('Erro ao disparar notificação de transação:', e)
+  }
 }
 
 // Hook para quando uma transação falha
@@ -136,6 +190,63 @@ export async function onUserDeleted(userId: string, deletionReason: string, dele
   } catch (error) {
     console.error('Error in onUserDeleted hook:', error)
   }
+}
+
+// Central Notification Event Processor
+export async function processNotificationEvent(eventType: string, data: Record<string, any>): Promise<void> {
+  // eventType: Ex: 'user_registered', 'payment_received', etc
+  // data: userId, amount, transactionId, email, phone, etc
+  try {
+    const userId = data.userId
+    if (!userId) return
+    // Busca usuário e settings
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+    if (!user) return
+    const [settings] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, user.companyId)).limit(1)
+    if (!settings) return
+    // Busca regras ativas para o evento
+    const activeRules = await db
+      .select()
+      .from(notificationRules)
+      .where(and(eq(notificationRules.isActive, true), eq(notificationRules.eventTrigger, eventType as any)))
+    for (const rule of activeRules) {
+      // Monta mensagem a partir do template da regra (substitui variáveis)
+      let variables: Record<string, string> = {
+        nome_usuario: user.email.split('@')[0] || '',
+        ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+      }
+      let message = rule.messageTemplate
+      message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
+      // Usa serviço central (envia preferencial/dos dados)
+      const notificationService = new NotificationService({
+        whatsappApiUrl: settings.whatsappApiUrl || undefined,
+        whatsappApiKey: settings.whatsappApiKey || undefined,
+        whatsappApiInstance: settings.whatsappApiInstance || undefined,
+        sesRegion: settings.s3Region || undefined,
+        sesAccessKeyId: settings.s3AccessKeyId || undefined,
+        sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+        fromEmail: settings.smtpFrom || undefined,
+        companyId: user.companyId,
+      })
+      // Email
+      if (rule.sendViaEmail && user.email)
+        await notificationService.sendEmail({
+          to: user.email,
+          subject: eventType.replace('_', ' ').toUpperCase(),
+          html: `<p>${message}</p>`,
+        })
+      // WhatsApp
+      if (rule.sendViaWhatsapp && user.phone)
+        await notificationService.sendWhatsApp({ phone: user.phone, message })
+    }
+  } catch (err) {
+    console.error('Erro no processNotificationEvent:', err)
+  }
+}
+
+// Producer: Enfileira job de notificação
+export async function addNotificationJob(eventType: string, data: Record<string, any>) {
+  await notificationQueue.add('send', { eventType, data })
 }
 
 // Função utilitária para testar notificações

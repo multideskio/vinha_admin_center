@@ -13,6 +13,7 @@ import {
   RefreshCw,
   ExternalLink,
   AlertTriangle,
+  Save,
 } from 'lucide-react'
 import {
   Bar,
@@ -25,6 +26,9 @@ import {
   Cell,
   Legend,
   CartesianGrid,
+  ComposedChart,
+  Scatter,
+  Line,
 } from 'recharts'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -44,6 +48,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { type TransactionStatus } from '@/lib/types'
+import { cn } from '@/lib/utils';
 
 type KpiData = {
   title: string
@@ -89,6 +94,8 @@ export default function DashboardPage() {
     to: undefined,
   })
   const { toast } = useToast()
+  const [sending, setSending] = React.useState(false)
+  const [lastUpdatedAt, setLastUpdatedAt] = React.useState<string | null>(null)
 
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
@@ -103,6 +110,7 @@ export default function DashboardPage() {
       }
       const dashboardData: DashboardData = await response.json()
       setData(dashboardData)
+      setLastUpdatedAt(new Date().toLocaleString('pt-BR'))
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
@@ -123,6 +131,67 @@ export default function DashboardPage() {
     setDateRange(range)
   }, [])
 
+  const handleSendReminders = React.useCallback(async () => {
+    setSending(true)
+    try {
+      const response = await fetch('/api/v1/admin/send-reminders', { method: 'POST' })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error || 'Falha ao enviar lembretes.')
+      }
+      toast({ title: 'Lembretes enviados', description: `${data.sent} enviados, ${data.skipped} ignorados.`, variant: 'success' })
+    } catch (e: unknown) {
+      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+    } finally {
+      setSending(false)
+    }
+  }, [toast])
+
+  const exportCsv = (rows: Array<Record<string, any>>, filename: string) => {
+    try {
+      if (!rows || rows.length === 0) return
+      const headers = Object.keys(rows[0])
+      const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o CSV.', variant: 'destructive' })
+    }
+  }
+
+  const handleExportDefaulters = () => {
+    if (!data || !data.defaulters?.length) return
+    const rows = data.defaulters.map(d => ({
+      id: d.id,
+      nome: d.name,
+      tipo: d.type,
+      dia_vencimento: d.titheDay,
+      dias_atraso: d.daysLate,
+      ultimo_pagamento: d.lastPayment || '',
+    }))
+    exportCsv(rows, `inadimplentes-${new Date().toISOString().slice(0,10)}.csv`)
+  }
+
+  const handleExportTransactions = () => {
+    if (!data || !data.recentTransactions?.length) return
+    const rows = data.recentTransactions.map(t => ({
+      id: t.id,
+      contribuinte: t.name,
+      valor: t.amount,
+      status: t.status,
+      data: t.date,
+      role: t.contributorRole,
+    }))
+    exportCsv(rows, `transacoes-${new Date().toISOString().slice(0,10)}.csv`)
+  }
+
   const kpiDisplayData = data
     ? [
         { title: 'Arrecadação no Mês', ...data.kpis.totalRevenue, icon: DollarSign },
@@ -134,6 +203,20 @@ export default function DashboardPage() {
         { title: 'Total de Gerentes', ...data.kpis.totalManagers, icon: UserCheck },
       ]
     : []
+
+  // Dados para gráfico de halteres (prev vs current por mês)
+  const dumbbellData = React.useMemo(() => {
+    if (!data?.newMembers) return [] as Array<{ month: string; prev?: number; current: number }>
+    if (data.newMembers.length < 2) {
+      // fallback: mostra apenas pontos do mês atual
+      return data.newMembers.map(m => ({ month: m.month, current: m.count }))
+    }
+    const out: Array<{ month: string; prev: number; current: number }> = []
+    for (let i = 1; i < data.newMembers.length; i++) {
+      out.push({ month: data.newMembers[i].month, prev: data.newMembers[i - 1].count, current: data.newMembers[i].count })
+    }
+    return out
+  }, [data])
 
   const statusMap: {
     [key in TransactionStatus]: {
@@ -278,6 +361,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Header e ações */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
@@ -290,313 +374,284 @@ export default function DashboardPage() {
           <Button variant="outline" size="icon" onClick={fetchData} title="Atualizar">
             <RefreshCw className="h-4 w-4" />
           </Button>
+          <Button onClick={handleSendReminders} disabled={sending} title="Enviar lembretes por e-mail">
+            {sending ? 'Enviando...' : 'Enviar lembretes'}
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {kpiDisplayData.slice(0, 4).map((kpi, index) => (
-          <Card key={kpi.title} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
-              <div className={cn(
-                "p-2 rounded-lg",
-                index === 0 && "bg-green-100 dark:bg-green-900/20",
-                index === 1 && "bg-blue-100 dark:bg-blue-900/20",
-                index === 2 && "bg-purple-100 dark:bg-purple-900/20",
-                index === 3 && "bg-orange-100 dark:bg-orange-900/20"
-              )}>
-                <kpi.icon className={cn(
-                  "h-4 w-4",
-                  index === 0 && "text-green-600 dark:text-green-400",
-                  index === 1 && "text-blue-600 dark:text-blue-400",
-                  index === 2 && "text-purple-600 dark:text-purple-400",
-                  index === 3 && "text-orange-600 dark:text-orange-400"
-                )} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="col-span-full">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Progresso de Crescimento</CardTitle>
-              <CardDescription>Evolução mensal de novos membros nos últimos 6 meses</CardDescription>
-            </div>
-            <Badge variant="outline" className="text-xs">
-              {data.newMembers.reduce((sum, m) => sum + m.count, 0)} novos membros
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={{}} className="h-[300px] w-full">
-            <BarChart data={data.newMembers} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-              <XAxis 
-                dataKey="month" 
-                tickLine={false} 
-                axisLine={false} 
-                tickMargin={8}
-                className="text-xs"
-              />
-              <YAxis 
-                tickLine={false} 
-                axisLine={false} 
-                tickMargin={8}
-                className="text-xs"
-              />
-              <Tooltip content={<ChartTooltipContent indicator="dot" />} />
-              <Bar 
-                dataKey="count" 
-                fill="hsl(var(--primary))" 
-                radius={[8, 8, 0, 0]}
-                className="fill-primary"
-              />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {kpiDisplayData.slice(4).map((kpi, index) => (
-          <Card key={kpi.title} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
-              <div className={cn(
-                "p-2 rounded-lg",
-                index === 0 && "bg-cyan-100 dark:bg-cyan-900/20",
-                index === 1 && "bg-pink-100 dark:bg-pink-900/20",
-                index === 2 && "bg-amber-100 dark:bg-amber-900/20"
-              )}>
-                <kpi.icon className={cn(
-                  "h-4 w-4",
-                  index === 0 && "text-cyan-600 dark:text-cyan-400",
-                  index === 1 && "text-pink-600 dark:text-pink-400",
-                  index === 2 && "text-amber-600 dark:text-amber-400"
-                )} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Inadimplentes do Mês
-            </CardTitle>
-            <CardDescription>
-              Pastores e igrejas que não dizimaram após o dia definido.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data.defaulters.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Nenhum inadimplente este mês! 🎉
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.defaulters.slice(0, 10).map((defaulter) => {
-                  const profilePath = defaulter.type === 'pastor' ? 'pastores' : 'igrejas'
-                  return (
-                    <div key={defaulter.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex-1">
-                        <Link 
-                          href={`/admin/${profilePath}/${defaulter.id}`}
-                          className="text-sm font-medium hover:underline text-primary flex items-center gap-1"
-                        >
-                          {defaulter.name}
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
-                        <p className="text-xs text-muted-foreground">
-                          {defaulter.type === 'pastor' ? 'Pastor' : 'Igreja'} • Dia {defaulter.titheDay}
-                        </p>
-                      </div>
-                      <Badge variant="destructive" className="ml-2">
-                        {defaulter.daysLate}d
-                      </Badge>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Últimas Transações</CardTitle>
-              <CardDescription>As 10 transações mais recentes.</CardDescription>
-            </div>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={fetchData}>
-              <RefreshCw className="h-4 w-4" />
-              <span className="sr-only">Atualizar</span>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Contribuinte</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.recentTransactions.map((transaction) => {
-                  const roleMap: Record<string, string> = {
-                    manager: 'gerentes',
-                    supervisor: 'supervisores',
-                    pastor: 'pastores',
-                    church_account: 'igrejas',
-                  }
-                  const profilePath = roleMap[transaction.contributorRole]
-                  
-                  return (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">
-                      {profilePath ? (
-                        <Link 
-                          href={`/admin/${profilePath}/${transaction.contributorId}`}
-                          className="flex items-center gap-1 hover:underline text-primary"
-                        >
-                          {transaction.name}
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
-                      ) : (
-                        transaction.name
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(transaction.amount)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                        {statusMap[transaction.status]?.text || transaction.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {transaction.date}
-                    </TableCell>
-                  </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Cadastros Recentes</CardTitle>
-            <CardDescription>Os 10 últimos usuários cadastrados.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {data.recentRegistrations.map((user) => (
-                <div key={user.id} className="flex items-center">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage
-                      src={`https://placehold.co/36x36.png`}
-                      alt="Avatar"
-                      data-ai-hint="person symbol"
-                    />
-                    <AvatarFallback>{user.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.type}</p>
+      {/* Grid principal em 12 colunas para melhor alinhamento */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* KPIs principais (4 cards) */}
+        <div className="lg:col-span-12">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+            {kpiDisplayData.slice(0, 4).map((kpi, index) => (
+              <Card key={kpi.title} className="hover:shadow-md transition-shadow h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+                  <div className={cn(
+                    "p-2 rounded-lg",
+                    index === 0 && "bg-green-100 dark:bg-green-900/20",
+                    index === 1 && "bg-blue-100 dark:bg-blue-900/20",
+                    index === 2 && "bg-purple-100 dark:bg-purple-900/20",
+                    index === 3 && "bg-orange-100 dark:bg-orange-900/20"
+                  )}>
+                    <kpi.icon className={cn(
+                      "h-4 w-4",
+                      index === 0 && "text-green-600 dark:text-green-400",
+                      index === 1 && "text-blue-600 dark:text-blue-400",
+                      index === 2 && "text-purple-600 dark:text-purple-400",
+                      index === 3 && "text-orange-600 dark:text-orange-400"
+                    )} />
                   </div>
-                  <div className="ml-auto font-medium text-muted-foreground text-sm">
-                    {user.date}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{kpi.value}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Progresso de Crescimento (full width) */}
+        <div className="lg:col-span-12">
+          <Card className="h-full">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Progresso de Crescimento</CardTitle>
+                  <CardDescription>Comparativo mês a mês (gráfico de pontos/halteres)</CardDescription>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {data.newMembers.reduce((sum, m) => sum + m.count, 0)} novos membros
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}} className="h-[320px] w-full">
+                <ComposedChart data={dumbbellData} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  {/* Fallback: quando só existe current */}
+                  <Line type="linear" dataKey="prev" stroke="transparent" dot={dumbbellData.some(d => (d as any).prev !== undefined) ? { r: 5, fill: '#94a3b8' } : false} />
+                  <Line type="linear" dataKey="current" stroke="transparent" dot={{ r: 5, fill: 'hsl(var(--primary))' }} />
+                </ComposedChart>
+              </ChartContainer>
+              {(!dumbbellData || dumbbellData.length === 0) && (
+                <p className="text-xs text-muted-foreground mt-2">Sem dados suficientes para exibir o gráfico.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Ações rápidas */}
+        <div className="lg:col-span-12">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Ações rápidas</CardTitle>
+                <CardDescription>Operações administrativas frequentes</CardDescription>
+              </div>
+              {lastUpdatedAt && (
+                <span className="text-xs text-muted-foreground">Atualizado: {lastUpdatedAt}</span>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleSendReminders} disabled={sending}>
+                  {sending ? 'Enviando...' : 'Enviar lembretes (e-mail)'}
+                </Button>
+                <Link href="/admin/configuracoes/mensagens">
+                  <Button variant="outline">Configurar mensagens</Button>
+                </Link>
+                <Button variant="outline" onClick={handleExportDefaulters}>
+                  <Save className="h-4 w-4 mr-2" /> Exportar inadimplentes (CSV)
+                </Button>
+                <Button variant="outline" onClick={handleExportTransactions}>
+                  <Save className="h-4 w-4 mr-2" /> Exportar transações (CSV)
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Inadimplentes (8 col) + Últimas transações (4 col) */}
+        <div className="lg:col-span-8">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Inadimplentes do Mês
+              </CardTitle>
+              <CardDescription>Pastores e igrejas que não dizimaram após o dia definido.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.defaulters.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhum inadimplente este mês! 🎉</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {data.defaulters.slice(0, 10).map((defaulter) => {
+                    const profilePath = defaulter.type === 'pastor' ? 'pastores' : 'igrejas'
+                    return (
+                      <div key={defaulter.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex-1">
+                          <Link href={`/admin/${profilePath}/${defaulter.id}`} className="text-sm font-medium hover:underline text-primary flex items-center gap-1">
+                            {defaulter.name}
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                          <p className="text-xs text-muted-foreground">
+                            {defaulter.type === 'pastor' ? 'Pastor' : 'Igreja'} • Dia {defaulter.titheDay}
+                          </p>
+                        </div>
+                        <Badge variant="destructive" className="ml-2">{defaulter.daysLate}d</Badge>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-4">
+          <Card className="h-full">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Últimas Transações</CardTitle>
+                <CardDescription>As 10 transações mais recentes.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={fetchData}>
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="sr-only">Atualizar</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportTransactions}>
+                  <Save className="h-4 w-4 mr-1" /> CSV
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Contribuinte</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.recentTransactions.map((transaction) => {
+                    const roleMap: Record<string, string> = {
+                      manager: 'gerentes',
+                      supervisor: 'supervisores',
+                      pastor: 'pastores',
+                      church_account: 'igrejas',
+                    }
+                    const profilePath = roleMap[transaction.contributorRole]
+                    return (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium">
+                          {profilePath ? (
+                            <Link href={`/admin/${profilePath}/${transaction.contributorId}`} className="flex items-center gap-1 hover:underline text-primary">
+                              {transaction.name}
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          ) : (
+                            transaction.name
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                            {statusMap[transaction.status]?.text || transaction.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">{transaction.date}</TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Arrecadação por método (4 col) + Regiões (8 col) */}
+        <div className="lg:col-span-4">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer className="h-[300px] w-full" config={{}}>
+                <PieChart>
+                  <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
+                  <Legend content={<ChartLegendContent nameKey="method" />} />
+                  <Pie data={data.revenueByMethod} dataKey="value" nameKey="method" innerRadius={60}>
+                    {data.revenueByMethod.map((entry) => (
+                      <Cell key={entry.method} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-8">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Distribuição por Região</CardTitle>
+              <CardDescription>Arrecadação e quantidade de igrejas por região</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {data.revenueByRegion && data.revenueByRegion.length > 0 ? (
+                  <ChartContainer config={{}} className="h-[260px] w-full">
+                    <PieChart>
+                      <Tooltip content={<ChartTooltipContent hideLabel />} />
+                      <Legend content={<ChartLegendContent nameKey="name" />} />
+                      <Pie data={data.revenueByRegion} dataKey="revenue" nameKey="name" innerRadius={50}>
+                        {data.revenueByRegion.map((entry, index) => (
+                          <Cell key={`cell-revenue-${index}`} fill={entry.fill || '#8884d8'} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[260px] w-full border rounded-md text-sm text-muted-foreground">
+                    Sem dados de arrecadação por região
+                  </div>
+                )}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">Regiões (lista)</h4>
+                  <div className="divide-y">
+                    {(data.revenueByRegion || []).map((r) => (
+                      <div key={r.name} className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: r.fill || '#8884d8' }} />
+                          <span className="text-sm">{r.name}</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.revenue || 0)}
+                        </span>
+                      </div>
+                    ))}
+                    {(!data.revenueByRegion || data.revenueByRegion.length === 0) && (
+                      <div className="py-2 text-sm text-muted-foreground">Nenhuma região encontrada</div>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                value: { label: 'Valor' },
-                pix: { label: 'Pix', color: '#10b981' },
-                credito: { label: 'Crédito', color: '#3b82f6' },
-                boleto: { label: 'Boleto', color: '#f59e0b' },
-              }}
-              className="h-[300px] w-full"
-            >
-              <PieChart>
-                <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
-                <Legend content={<ChartLegendContent nameKey="method" />} />
-                <Pie data={data.revenueByMethod} dataKey="value" nameKey="method" innerRadius={60}>
-                  {data.revenueByMethod.map((entry) => (
-                    <Cell key={entry.method} fill={entry.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Distribuição por Região</CardTitle>
-            <CardDescription>Arrecadação e quantidade de igrejas por região</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-sm font-medium mb-4">Arrecadação</h4>
-                <ChartContainer config={{}} className="h-[250px] w-full">
-                  <PieChart>
-                    <Tooltip content={<ChartTooltipContent hideLabel />} />
-                    <Legend content={<ChartLegendContent nameKey="name" />} />
-                    <Pie data={data.revenueByRegion} dataKey="revenue" nameKey="name" innerRadius={50}>
-                      {data.revenueByRegion.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
               </div>
-              <div>
-                <h4 className="text-sm font-medium mb-4">Igrejas</h4>
-                <ChartContainer config={{}} className="h-[250px] w-full">
-                  <PieChart>
-                    <Tooltip content={<ChartTooltipContent hideLabel />} />
-                    <Legend content={<ChartLegendContent nameKey="name" />} />
-                    <Pie data={data.churchesByRegion} dataKey="count" nameKey="name" innerRadius={50}>
-                      {data.churchesByRegion.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

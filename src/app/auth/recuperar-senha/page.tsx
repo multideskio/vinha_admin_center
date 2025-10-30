@@ -22,6 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { useState } from 'react';
 
 const recoverySchema = z.object({
   email: z.string().email({ message: 'E-mail inválido.' }),
@@ -57,9 +58,27 @@ export default function RecuperarSenhaPage() {
     },
   });
 
-  const onSubmit = (data: RecoveryFormValues) => {
-    console.log(data);
-    // Handle password recovery logic
+  const [success, setSuccess] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const onSubmit = async (data: RecoveryFormValues) => {
+    setFormError(null)
+    setSuccess(false)
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      if (res.ok) {
+        setSuccess(true)
+      } else {
+        const json = await res.json()
+        setFormError(json.error || 'Erro ao enviar e-mail.')
+      }
+    } catch {
+      setFormError('Erro de conexão.');
+    }
   };
 
   return (
@@ -98,6 +117,14 @@ export default function RecuperarSenhaPage() {
             </Button>
             </form>
         </Form>
+        {success ? (
+          <div className="mt-2 text-green-600 text-center text-sm">
+            Se o e-mail estiver cadastrado, enviaremos um link de recuperação.
+          </div>
+        ) : null}
+        {formError ? (
+          <div className="mt-2 text-red-600 text-center text-sm">{formError}</div>
+        ) : null}
         <div className="mt-4 text-center text-sm">
             <Link href="/auth/login" className="underline">
             Voltar para o login

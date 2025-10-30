@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { PlusCircle, Trash2, Pencil, Info, Loader2, Mail, Smartphone } from 'lucide-react'
+import { PlusCircle, Trash2, Pencil, Info, Loader2, Mail, Smartphone, Wand2 } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -161,6 +161,25 @@ const NotificationFormModal = ({
     }
   }
 
+  const suggestWithAI = async () => {
+    try {
+      const payload = {
+        eventTrigger: form.getValues('eventTrigger'),
+        daysOffset: Number(form.getValues('daysOffset') || 0),
+        variables: ['{nome_usuario}', '{valor_transacao}', '{data_vencimento}', '{link_pagamento}'],
+        tone: 'respeitoso e objetivo',
+      }
+      const res = await fetch('/api/v1/templates/ai-suggest', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Falha ao gerar sugestão')
+      form.setValue('messageTemplate', data.suggestion || '')
+    } catch (e: unknown) {
+      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+    }
+  }
+
   const eventTrigger = form.watch('eventTrigger')
 
   const renderDaysOffsetLabel = () => {
@@ -248,7 +267,12 @@ const NotificationFormModal = ({
               name="messageTemplate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Modelo da Mensagem</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Modelo da Mensagem</FormLabel>
+                    <Button type="button" variant="outline" size="sm" onClick={suggestWithAI}>
+                      <Wand2 className="h-4 w-4 mr-2" /> Assistente IA
+                    </Button>
+                  </div>
                   <FormControl>
                     <Textarea
                       placeholder="Olá {nome_usuario}, sua fatura de R${valor_transacao} vence em {data_vencimento}."
@@ -348,6 +372,21 @@ export default function MessagesSettingsPage() {
     }
   }, [toast])
 
+  const handleBootstrap = React.useCallback(async () => {
+    try {
+      const response = await fetch('/api/v1/notification-rules/bootstrap', { method: 'POST' })
+      if (!response.ok) throw new Error('Falha ao gerar mensagens automáticas.')
+      toast({ title: 'Sucesso!', description: 'Mensagens e regras padrão geradas.', variant: 'success' })
+      fetchRules()
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    }
+  }, [toast, fetchRules])
+
   React.useEffect(() => {
     fetchRules()
   }, [fetchRules])
@@ -408,12 +447,17 @@ export default function MessagesSettingsPage() {
           <CardTitle>Mensagens Automáticas</CardTitle>
           <CardDescription>Gerencie as regras de comunicação com os usuários.</CardDescription>
         </div>
-        <NotificationFormModal onSave={fetchRules}>
-          <Button>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Adicionar Mensagem
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleBootstrap}>
+            Gerar mensagens automáticas
           </Button>
-        </NotificationFormModal>
+          <NotificationFormModal onSave={fetchRules}>
+            <Button>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Adicionar Mensagem
+            </Button>
+          </NotificationFormModal>
+        </div>
       </div>
 
       <Alert>

@@ -11,22 +11,17 @@ import { apiKeys } from '@/db/schema'
 import { eq, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
-import { authenticateApiKey } from '@/lib/api-auth'
-
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('A variável de ambiente COMPANY_INIT não está definida.')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
+import { validateRequest } from '@/lib/jwt'
 
 const newKeySchema = z.object({
   name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.' }),
 })
 
 export async function GET(): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
   try {
     const allKeys = await db
       .select({
@@ -38,7 +33,7 @@ export async function GET(): Promise<NextResponse> {
         lastUsedAt: apiKeys.lastUsedAt,
       })
       .from(apiKeys)
-      .where(eq(apiKeys.companyId, VALIDATED_COMPANY_ID))
+      .where(eq(apiKeys.companyId, user.companyId))
       .orderBy(desc(apiKeys.createdAt))
 
     return NextResponse.json({ keys: allKeys })
@@ -49,9 +44,10 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
-
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
   try {
     const body = await request.json()
     const validatedData = newKeySchema.parse(body)
@@ -61,7 +57,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const [newKeyRecord] = await db
       .insert(apiKeys)
       .values({
-        companyId: VALIDATED_COMPANY_ID,
+        companyId: user.companyId,
         name: validatedData.name,
         key: newRawKey, // Em um cenário real, você faria o hash disso
         status: 'active',

@@ -104,7 +104,7 @@ export interface PixPaymentProps {
 
 export interface CreditCardPaymentProps {
   amount: number
-  onSubmit: (cardData: CardData) => void
+  onSubmit: (cardData: CardData, installments: number) => void
   onBack: () => void
   isLoading?: boolean
 }

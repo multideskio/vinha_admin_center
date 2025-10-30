@@ -156,12 +156,13 @@ export default function useContribution(options: UseContributionOptions = {}): U
   }, [updateFormData, setCurrentStep, toast, onError])
 
   // Pagamento com cartão
-  const handleCardPayment = useCallback(async (cardData: CardData) => {
-    devLog('Card payment started:', { holder: cardData.holder })
+  const handleCardPayment = useCallback(async (cardData: CardData, installments?: number) => {
+    devLog('Card payment started:', { holder: cardData.holder, installments })
     
     const payload = {
       ...formData,
-      card: cardData
+      card: cardData,
+      installments: installments || 1,
     }
     
     setPaymentState(prev => ({ ...prev, isProcessing: true }))

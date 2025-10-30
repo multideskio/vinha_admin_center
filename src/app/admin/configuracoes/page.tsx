@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Cloud,
   CreditCard,
+  KeyRound,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -59,6 +60,12 @@ const settingsLinks = [
     icon: Cloud,
     title: 'Armazenamento (S3)',
     description: 'Configure o local para armazenamento de arquivos (ex: S3, MinIO).',
+  },
+  {
+    href: '/admin/configuracoes/openai',
+    icon: KeyRound,
+    title: 'API (OpenAI)',
+    description: 'Configure a chave da OpenAI para agentes/IA.',
   },
   // {
   //   href: '/admin/configuracoes/api',

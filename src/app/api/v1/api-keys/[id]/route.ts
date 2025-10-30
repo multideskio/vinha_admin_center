@@ -10,14 +10,8 @@ import { db } from '@/db/drizzle'
 import { apiKeys } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
-import { authenticateApiKey } from '@/lib/api-auth'
+import { validateRequest } from '@/lib/jwt'
 import { type ApiKeyStatus } from '@/lib/types'
-
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
 
 const updateKeySchema = z.object({
   status: z.enum(['active', 'inactive']),
@@ -25,8 +19,10 @@ const updateKeySchema = z.object({
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
 
   const { id } = params
   try {
@@ -36,7 +32,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const [updatedKey] = await db
       .update(apiKeys)
       .set({ status: validatedData.status as ApiKeyStatus })
-      .where(and(eq(apiKeys.id, id), eq(apiKeys.companyId, VALIDATED_COMPANY_ID)))
+      .where(and(eq(apiKeys.id, id), eq(apiKeys.companyId, user.companyId)))
       .returning()
 
     if (!updatedKey) {
@@ -58,14 +54,16 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
 
   const { id } = params
   try {
     const [deletedKey] = await db
       .delete(apiKeys)
-      .where(and(eq(apiKeys.id, id), eq(apiKeys.companyId, VALIDATED_COMPANY_ID)))
+      .where(and(eq(apiKeys.id, id), eq(apiKeys.companyId, user.companyId)))
       .returning()
 
     if (!deletedKey) {

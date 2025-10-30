@@ -14,12 +14,6 @@ import { validateRequest } from '@/lib/jwt'
 import { NOTIFICATION_EVENT_TRIGGERS } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
-
 const notificationRuleSchema = z.object({
   name: z.string().min(1, 'O nome da automação é obrigatório.'),
   eventTrigger: z.enum(NOTIFICATION_EVENT_TRIGGERS),
@@ -40,7 +34,7 @@ export async function GET(): Promise<NextResponse> {
     const allRules = await db
       .select()
       .from(notificationRules)
-      .where(eq(notificationRules.companyId, VALIDATED_COMPANY_ID))
+      .where(eq(notificationRules.companyId, user.companyId))
       .orderBy(desc(notificationRules.createdAt))
 
     return NextResponse.json({ rules: allRules })
@@ -68,7 +62,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       .insert(notificationRules)
       .values({
         ...validatedData,
-        companyId: VALIDATED_COMPANY_ID,
+        companyId: user.companyId,
       })
       .returning()
 

@@ -20,6 +20,7 @@ const transactionSchema = z.object({
     securityCode: z.string(),
     brand: z.string(),
   }).optional(),
+  installments: z.number().min(1).max(12).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -207,11 +208,13 @@ export async function POST(request: NextRequest) {
     if (data.paymentMethod === 'pix') {
       paymentResult = await createPixPayment(data.amount, userName as string)
     } else if (data.paymentMethod === 'credit_card' && data.card) {
+      const installments = data.installments || 1
       paymentResult = await createCreditCardPayment(
         data.amount,
         String(userName),
         userData.email,
-        data.card
+        data.card,
+        installments
       )
       status = paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
     } else if (data.paymentMethod === 'boleto') {
@@ -242,6 +245,7 @@ export async function POST(request: NextRequest) {
         amount: data.amount.toString(),
         status,
         paymentMethod: data.paymentMethod,
+        installments: data.installments || 1,
         gatewayTransactionId: (paymentResult?.PaymentId as string) || null,
       })
       .returning()

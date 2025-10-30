@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { createJWT, setJWTCookie } from '@/lib/jwt';
 import { z } from 'zod';
+import { rateLimit } from '@/lib/rate-limit';
 
 const loginSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -13,6 +14,12 @@ const loginSchema = z.object({
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
+    const rl = await rateLimit('api:auth:login', ip, 5, 60)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Muitas tentativas. Tente novamente em 1 minuto.' }, { status: 429 })
+    }
+
     const body = await request.json();
     const { email, password } = loginSchema.parse(body);
 

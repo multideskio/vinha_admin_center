@@ -20,6 +20,7 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
+import { getCache, setCache } from '@/lib/cache'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -41,6 +42,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { searchParams } = new URL(request.url)
     const from = searchParams.get('from')
     const to = searchParams.get('to')
+    const cacheKey = `dashboard:admin:${user.id}:from:${from || 'null'}:to:${to || 'null'}`
+    const cached = await getCache(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
     const now = new Date()
     const startDate = from ? new Date(from) : startOfMonth(now)
@@ -139,17 +145,18 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
       .groupBy(transactions.paymentMethod)
 
-    const revenueByRegionData = await db
+    // Revenue por região: considerar transações de pastores e igrejas, somando por região do supervisor
+    const revenueByRegionPastors = await db
       .select({
         name: regions.name,
         color: regions.color,
         revenue: sql<number>`sum(${transactions.amount})`.mapWith(Number),
       })
-      .from(supervisorProfiles)
-      .innerJoin(regions, eq(supervisorProfiles.regionId, regions.id))
-      .innerJoin(pastorProfiles, eq(supervisorProfiles.userId, pastorProfiles.supervisorId))
+      .from(pastorProfiles)
       .innerJoin(users, eq(pastorProfiles.userId, users.id))
       .innerJoin(transactions, eq(users.id, transactions.contributorId))
+      .innerJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+      .innerJoin(regions, eq(supervisorProfiles.regionId, regions.id))
       .where(
         and(
           eq(transactions.status, 'approved'),
@@ -158,6 +165,38 @@ export async function GET(request: Request): Promise<NextResponse> {
         )
       )
       .groupBy(regions.id, regions.name, regions.color)
+
+    const revenueByRegionChurches = await db
+      .select({
+        name: regions.name,
+        color: regions.color,
+        revenue: sql<number>`sum(${transactions.amount})`.mapWith(Number),
+      })
+      .from(churchProfiles)
+      .innerJoin(users, eq(churchProfiles.userId, users.id))
+      .innerJoin(transactions, eq(users.id, transactions.contributorId))
+      .innerJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
+      .innerJoin(regions, eq(supervisorProfiles.regionId, regions.id))
+      .where(
+        and(
+          eq(transactions.status, 'approved'),
+          gte(transactions.createdAt, startDate),
+          lt(transactions.createdAt, endDate)
+        )
+      )
+      .groupBy(regions.id, regions.name, regions.color)
+
+    const revenueByRegionMap = new Map<string, { name: string; color: string | null; revenue: number }>()
+    for (const row of [...revenueByRegionPastors, ...revenueByRegionChurches]) {
+      const key = row.name
+      const existing = revenueByRegionMap.get(key)
+      if (existing) {
+        existing.revenue += Number(row.revenue || 0)
+      } else {
+        revenueByRegionMap.set(key, { name: row.name, color: row.color, revenue: Number(row.revenue || 0) })
+      }
+    }
+    const revenueByRegionData = Array.from(revenueByRegionMap.values())
 
     const churchesByRegionData = await db
       .select({
@@ -369,20 +408,18 @@ export async function GET(request: Request): Promise<NextResponse> {
       date: format(new Date(u.date), 'dd/MM/yyyy'),
     }))
 
-    return NextResponse.json({
+    const result = {
       kpis,
       revenueByMethod: formattedRevenueByMethod,
-      revenueByRegion: revenueByRegionData.map((r) => ({
-        ...r,
-        revenue: Number(r.revenue),
-        fill: r.color ?? '#000000',
-      })),
+      revenueByRegion: revenueByRegionData.map((r) => ({ ...r, revenue: Number(r.revenue), fill: r.color ?? '#000000' })),
       churchesByRegion: churchesByRegionData.map((r) => ({ ...r, fill: r.color ?? '#000000' })),
       recentTransactions,
       recentRegistrations,
       newMembers: formattedNewMembers,
       defaulters,
-    })
+    }
+    await setCache(cacheKey, result, 120)
+    return NextResponse.json(result)
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
     console.error('Erro ao buscar dados para o dashboard do admin:', error)

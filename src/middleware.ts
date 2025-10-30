@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Enforce HTTPS in production
+  if (process.env.NODE_ENV === 'production') {
+    const proto = request.headers.get('x-forwarded-proto')
+    if (proto && proto !== 'https') {
+      const url = new URL(request.url)
+      url.protocol = 'https:'
+      return NextResponse.redirect(url, 301)
+    }
+  }
+
   // Skip maintenance check for admin, manager, pastor, supervisor routes, API, and static files
   if (
     request.nextUrl.pathname.startsWith('/admin') ||
@@ -12,7 +22,13 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname === '/maintenance'
   ) {
-    return NextResponse.next()
+    const res = NextResponse.next()
+    // Security headers
+    res.headers.set('X-Content-Type-Options', 'nosniff')
+    res.headers.set('X-Frame-Options', 'SAMEORIGIN')
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    res.headers.set('X-XSS-Protection', '1; mode=block')
+    return res
   }
 
   // Check maintenance mode via API call
@@ -21,7 +37,7 @@ export async function middleware(request: NextRequest) {
       new URL('/api/v1/maintenance-check', request.url),
       { 
         headers: { 'x-middleware-check': 'true' },
-        signal: AbortSignal.timeout(1000) // 1s timeout
+        signal: AbortSignal.timeout(1000)
       }
     )
 
@@ -33,10 +49,15 @@ export async function middleware(request: NextRequest) {
     }
   } catch (error) {
     // Silently fail - allow request to continue if maintenance check fails
-    // This prevents blocking the entire app if DB is down
   }
 
-  return NextResponse.next()
+  const res = NextResponse.next()
+  // Security headers
+  res.headers.set('X-Content-Type-Options', 'nosniff')
+  res.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.headers.set('X-XSS-Protection', '1; mode=block')
+  return res
 }
 
 export const config = {

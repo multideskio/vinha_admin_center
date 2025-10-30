@@ -201,7 +201,13 @@ export class NotificationService {
     email?: string
   ): Promise<{ whatsapp: boolean; email: boolean }> {
     const results = { whatsapp: false, email: false }
-    const variables: TemplateVariables = { name, churchName }
+    const variables: TemplateVariables = {
+      name,
+      churchName,
+      // aliases PT-BR
+      nome_usuario: name as unknown as string,
+      nome_igreja: churchName as unknown as string,
+    } as any
 
     // Buscar templates personalizados
     const [template] = await db
@@ -252,7 +258,17 @@ export class NotificationService {
     paymentLink?: string
   ): Promise<{ whatsapp: boolean; email: boolean }> {
     const results = { whatsapp: false, email: false }
-    const variables: TemplateVariables = { name, amount, dueDate, paymentLink }
+    const variables: TemplateVariables = {
+      name,
+      amount,
+      dueDate,
+      paymentLink,
+      // aliases PT-BR
+      nome_usuario: name as unknown as string,
+      valor_transacao: amount as unknown as string,
+      data_vencimento: dueDate as unknown as string,
+      link_pagamento: (paymentLink || '') as unknown as string,
+    } as any
 
     // Buscar templates personalizados
     const [template] = await db
@@ -288,6 +304,60 @@ export class NotificationService {
       })
       
       await this.logNotification(userId, 'payment_reminder', 'email', results.email, html)
+    }
+
+    return results
+  }
+
+  async sendPaymentOverdue(
+    userId: string,
+    name: string,
+    amount: string,
+    dueDate: string,
+    phone?: string,
+    email?: string,
+    paymentLink?: string
+  ): Promise<{ whatsapp: boolean; email: boolean }> {
+    const results = { whatsapp: false, email: false }
+    const variables: TemplateVariables = {
+      name,
+      amount,
+      dueDate,
+      paymentLink,
+      // aliases PT-BR
+      nome_usuario: name as unknown as string,
+      valor_transacao: amount as unknown as string,
+      data_vencimento: dueDate as unknown as string,
+      link_pagamento: (paymentLink || '') as unknown as string,
+    } as any
+
+    // Buscar templates personalizados
+    const [template] = await db
+      .select()
+      .from(messageTemplates)
+      .where(
+        and(
+          eq(messageTemplates.companyId, this.companyId),
+          eq(messageTemplates.templateType, 'payment_overdue'),
+          eq(messageTemplates.isActive, true)
+        )
+      )
+      .limit(1)
+
+    if (phone && template?.whatsappTemplate) {
+      const message = TemplateEngine.processTemplate(template.whatsappTemplate, variables)
+      results.whatsapp = await this.whatsapp.sendMessage({
+        number: phone,
+        text: message,
+      })
+      await this.logNotification(userId, 'payment_overdue', 'whatsapp', results.whatsapp, message)
+    }
+
+    if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
+      const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
+      const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
+      results.email = await this.email.sendEmail({ to: email, subject, html })
+      await this.logNotification(userId, 'payment_overdue', 'email', results.email, html)
     }
 
     return results

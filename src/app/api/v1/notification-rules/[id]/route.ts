@@ -3,14 +3,8 @@ import { db } from '@/db/drizzle'
 import { notificationRules } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
-import { authenticateApiKey } from '@/lib/api-auth'
+import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
-
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
 
 const notificationRuleSchema = z.object({
   name: z.string().min(1, 'O nome da automação é obrigatório.').optional(),
@@ -26,8 +20,10 @@ const notificationRuleSchema = z.object({
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
 
   const { id } = params
   try {
@@ -38,7 +34,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       .update(notificationRules)
       .set({ ...validatedData, updatedAt: new Date() })
       .where(
-        and(eq(notificationRules.id, id), eq(notificationRules.companyId, VALIDATED_COMPANY_ID)),
+        and(eq(notificationRules.id, id), eq(notificationRules.companyId, user.companyId)),
       )
       .returning()
 
@@ -61,15 +57,17 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const authResponse = await authenticateApiKey()
-  if (authResponse) return authResponse
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
 
   const { id } = params
   try {
     const [deletedRule] = await db
       .delete(notificationRules)
       .where(
-        and(eq(notificationRules.id, id), eq(notificationRules.companyId, VALIDATED_COMPANY_ID)),
+        and(eq(notificationRules.id, id), eq(notificationRules.companyId, user.companyId)),
       )
       .returning()
 

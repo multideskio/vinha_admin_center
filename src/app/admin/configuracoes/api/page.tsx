@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { PlusCircle, MoreHorizontal, Copy, Loader2, KeyRound, AlertTriangle } from 'lucide-react'
+import { PlusCircle, MoreHorizontal, Copy, Loader2, KeyRound, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -126,7 +126,7 @@ const NewKeyModal = ({ onKeyCreated }: { onKeyCreated: () => void }) => {
       }}
     >
       <DialogTrigger asChild>
-        <Button disabled>
+        <Button>
           <PlusCircle className="h-4 w-4 mr-2" />
           Criar nova chave
         </Button>
@@ -205,16 +205,52 @@ export default function ApiKeysPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const { toast } = useToast()
 
+  const [openaiKeyMasked, setOpenaiKeyMasked] = React.useState('')
+  const [openaiInput, setOpenaiInput] = React.useState('')
+  const [showOpenai, setShowOpenai] = React.useState(false)
+  const [savingOpenai, setSavingOpenai] = React.useState(false)
+
+  const fetchOpenAI = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/settings/openai')
+      if (!res.ok) return
+      const data = await res.json()
+      setOpenaiKeyMasked(data.openaiApiKey || '')
+    } catch {}
+  }, [])
+
+  const saveOpenAI = React.useCallback(async () => {
+    setSavingOpenai(true)
+    try {
+      const res = await fetch('/api/v1/settings/openai', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openaiApiKey: openaiInput }) })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Falha ao salvar chave OpenAI.')
+      toast({ title: 'Sucesso', description: 'Chave OpenAI salva.', variant: 'success' })
+      setOpenaiInput('')
+      fetchOpenAI()
+    } catch (e: unknown) {
+      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+    } finally {
+      setSavingOpenai(false)
+    }
+  }, [openaiInput, toast, fetchOpenAI])
+
   const fetchKeys = React.useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/v1/api-keys')
+      if (response.status === 401) {
+        setKeys([])
+        return
+      }
       if (!response.ok) throw new Error('Falha ao carregar chaves de API.')
       const data = await response.json()
       setKeys(data.keys)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+      // Silencioso para não poluir a UI quando endpoint estiver desabilitado/restrito
+      console.warn('API Keys fetch:', errorMessage)
+      setKeys([])
     } finally {
       setIsLoading(false)
     }
@@ -222,7 +258,8 @@ export default function ApiKeysPage() {
 
   React.useEffect(() => {
     fetchKeys()
-  }, [fetchKeys])
+    fetchOpenAI()
+  }, [fetchKeys, fetchOpenAI])
 
   const handleToggleStatus = async (id: string, currentStatus: 'active' | 'inactive') => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
@@ -269,15 +306,34 @@ export default function ApiKeysPage() {
         <NewKeyModal onKeyCreated={fetchKeys} />
       </div>
 
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Funcionalidade em Desenvolvimento</AlertTitle>
-        <AlertDescription>
-          O sistema de chaves de API está temporariamente desabilitado devido a melhorias de segurança pendentes.
-          As chaves atualmente são armazenadas sem criptografia adequada e precisam de refatoração antes do uso em produção.
-          <span className="block mt-2 text-xs">Status: <strong>Em Standby</strong> | Prioridade: <strong>Baixa</strong></span>
-        </AlertDescription>
-      </Alert>
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">OpenAI API Key</p>
+              <p className="text-sm text-muted-foreground">Configure a chave para agentes/IA.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Input
+                  type={showOpenai ? 'text' : 'password'}
+                  placeholder={openaiKeyMasked || 'sk-...'}
+                  value={openaiInput}
+                  onChange={(e) => setOpenaiInput(e.target.value)}
+                  className="w-64"
+                />
+                <Button variant="ghost" size="icon" className="absolute top-1/2 -translate-y-1/2 right-1" onClick={() => setShowOpenai((s) => !s)}>
+                  {showOpenai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <Button onClick={saveOpenAI} disabled={savingOpenai || !openaiInput.trim()}>
+                {savingOpenai ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="pt-6">
