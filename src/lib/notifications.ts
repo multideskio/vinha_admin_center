@@ -6,7 +6,7 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { EvolutionSendTextRequest, EvolutionResponse } from './evolution-api-types'
 import { TemplateEngine, TemplateVariables } from './template-engine'
 import { db } from '@/db/drizzle'
-import { messageTemplates, notificationLogs } from '@/db/schema'
+import { messageTemplates, notificationLogs, emailBlacklist } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 // Types
@@ -92,10 +92,28 @@ export class EmailService {
     }
   }
 
-  async sendEmail({ to, subject, html, text }: EmailMessage): Promise<boolean> {
+  async sendEmail({ to, subject, html, text }: EmailMessage, companyId?: string): Promise<{ success: boolean; error?: string; errorCode?: string }> {
     if (!this.sesClient || !this.config.fromEmail) {
-      console.warn('Email configuration missing')
-      return false
+      return { success: false, error: 'Email configuration missing' }
+    }
+
+    // Verificar blacklist
+    if (companyId) {
+      const [blacklisted] = await db
+        .select()
+        .from(emailBlacklist)
+        .where(
+          and(
+            eq(emailBlacklist.companyId, companyId),
+            eq(emailBlacklist.email, to),
+            eq(emailBlacklist.isActive, true)
+          )
+        )
+        .limit(1)
+
+      if (blacklisted) {
+        return { success: false, error: `Email bloqueado: ${blacklisted.reason}`, errorCode: 'BLACKLISTED' }
+      }
     }
 
     try {
@@ -112,10 +130,65 @@ export class EmailService {
       })
 
       await this.sesClient.send(command)
-      return true
+      return { success: true }
+    } catch (error: any) {
+      const errorCode = error.name || error.Code || 'UNKNOWN'
+      const errorMessage = error.message || String(error)
+      
+      // Adicionar à blacklist se for erro permanente
+      if (companyId && this.shouldBlacklist(errorCode)) {
+        await this.addToBlacklist(companyId, to, errorCode, errorMessage)
+      }
+      
+      return { success: false, error: errorMessage, errorCode }
+    }
+  }
+
+  private shouldBlacklist(errorCode: string): boolean {
+    const permanentErrors = [
+      'MessageRejected',
+      'MailFromDomainNotVerified',
+      'InvalidParameterValue',
+      'AccountSendingPausedException',
+    ]
+    return permanentErrors.includes(errorCode) || errorCode.includes('Bounce') || errorCode.includes('Complaint')
+  }
+
+  private async addToBlacklist(companyId: string, email: string, errorCode: string, errorMessage: string) {
+    try {
+      const [existing] = await db
+        .select()
+        .from(emailBlacklist)
+        .where(
+          and(
+            eq(emailBlacklist.companyId, companyId),
+            eq(emailBlacklist.email, email)
+          )
+        )
+        .limit(1)
+
+      if (existing) {
+        await db
+          .update(emailBlacklist)
+          .set({
+            lastAttemptAt: new Date(),
+            attemptCount: existing.attemptCount + 1,
+            errorCode,
+            errorMessage,
+            isActive: true,
+          })
+          .where(eq(emailBlacklist.id, existing.id))
+      } else {
+        await db.insert(emailBlacklist).values({
+          companyId,
+          email,
+          reason: errorCode.includes('Bounce') ? 'bounce' : errorCode.includes('Complaint') ? 'complaint' : 'error',
+          errorCode,
+          errorMessage,
+        })
+      }
     } catch (error) {
-      console.error('Email send error:', error)
-      return false
+      console.error('Erro ao adicionar email à blacklist:', error)
     }
   }
 }
@@ -190,7 +263,8 @@ export class NotificationService {
   }
 
   async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
-    return await this.email.sendEmail({ to, subject, html })
+    const result = await this.email.sendEmail({ to, subject, html }, this.companyId)
+    return result.success
   }
 
   async sendWelcome(
@@ -236,13 +310,14 @@ export class NotificationService {
       const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
       
-      results.email = await this.email.sendEmail({
+      const emailResult = await this.email.sendEmail({
         to: email,
         subject,
         html,
-      })
+      }, this.companyId)
+      results.email = emailResult.success
       
-      await this.logNotification(userId, 'welcome', 'email', results.email, html)
+      await this.logNotification(userId, 'welcome', 'email', results.email, html, undefined, email, subject)
     }
 
     return results
@@ -297,13 +372,14 @@ export class NotificationService {
       const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
       
-      results.email = await this.email.sendEmail({
+      const emailResult = await this.email.sendEmail({
         to: email,
         subject,
         html,
-      })
+      }, this.companyId)
+      results.email = emailResult.success
       
-      await this.logNotification(userId, 'payment_reminder', 'email', results.email, html)
+      await this.logNotification(userId, 'payment_reminder', 'email', results.email, html, undefined, email, subject)
     }
 
     return results
@@ -356,8 +432,9 @@ export class NotificationService {
     if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
       const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
-      results.email = await this.email.sendEmail({ to: email, subject, html })
-      await this.logNotification(userId, 'payment_overdue', 'email', results.email, html)
+      const emailResult = await this.email.sendEmail({ to: email, subject, html }, this.companyId)
+      results.email = emailResult.success
+      await this.logNotification(userId, 'payment_overdue', 'email', results.email, html, undefined, email, subject)
     }
 
     return results
@@ -403,8 +480,9 @@ export class NotificationService {
     if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
       const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
-      results.email = await this.email.sendEmail({ to: email, subject, html })
-      await this.logNotification(userId, 'payment_received', 'email', results.email, html)
+      const emailResult = await this.email.sendEmail({ to: email, subject, html }, this.companyId)
+      results.email = emailResult.success
+      await this.logNotification(userId, 'payment_received', 'email', results.email, html, undefined, email, subject)
     }
 
     return results
@@ -416,7 +494,9 @@ export class NotificationService {
     channel: string,
     success: boolean,
     content: string,
-    error?: string
+    error?: string,
+    recipient?: string,
+    subject?: string
   ): Promise<void> {
     try {
       await db.insert(notificationLogs).values({
@@ -425,6 +505,8 @@ export class NotificationService {
         notificationType: type,
         channel,
         status: success ? 'sent' : 'failed',
+        recipient,
+        subject,
         messageContent: content,
         errorMessage: error,
       })

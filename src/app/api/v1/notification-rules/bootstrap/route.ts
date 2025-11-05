@@ -4,7 +4,7 @@ import { notificationRules, messageTemplates } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const { user } = await validateRequest()
     if (!user || user.role !== 'admin') {

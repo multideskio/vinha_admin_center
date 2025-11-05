@@ -12,7 +12,6 @@ import { eq } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { ApiError } from '@/lib/errors'
-import type { UserRole } from '@/lib/types'
 
 async function getCieloCredentials(): Promise<{
   merchantId: string | null

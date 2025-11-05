@@ -1,17 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { ChevronLeft, Copy, MessageSquareWarning, MoreVertical } from 'lucide-react'
+import { ChevronLeft, Copy, MessageSquareWarning } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
+
 import {
   Dialog,
   DialogContent,

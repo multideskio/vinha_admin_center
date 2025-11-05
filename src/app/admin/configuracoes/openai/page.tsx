@@ -24,7 +24,9 @@ export default function OpenAISettingsPage() {
       setMasked(data.openaiApiKey || '')
       setHasKey(!!data.hasKey)
       setUpdatedAt(data.updatedAt ? new Date(data.updatedAt).toLocaleString('pt-BR') : null)
-    } catch {}
+    } catch (error) {
+      console.error('Error loading OpenAI settings:', error)
+    }
   }, [])
 
   React.useEffect(() => {

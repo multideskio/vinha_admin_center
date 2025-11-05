@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { PlusCircle, MoreHorizontal, Copy, Loader2, KeyRound, AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import { PlusCircle, MoreHorizontal, Copy, Loader2, KeyRound, Eye, EyeOff } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -58,7 +58,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertTitle } from '@/components/ui/alert'
 
 type ApiKey = {
   id: string
@@ -216,7 +216,9 @@ export default function ApiKeysPage() {
       if (!res.ok) return
       const data = await res.json()
       setOpenaiKeyMasked(data.openaiApiKey || '')
-    } catch {}
+    } catch (error) {
+      console.error('Error fetching OpenAI settings:', error)
+    }
   }, [])
 
   const saveOpenAI = React.useCallback(async () => {

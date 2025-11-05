@@ -17,8 +17,6 @@ import {
   Sparkles,
 } from 'lucide-react'
 import {
-  Bar,
-  BarChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -28,7 +26,6 @@ import {
   Legend,
   CartesianGrid,
   ComposedChart,
-  Scatter,
   Line,
 } from 'recharts'
 
@@ -44,7 +41,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'

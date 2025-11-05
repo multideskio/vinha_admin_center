@@ -1,10 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Download, ListFilter, MoreHorizontal, Search, Calendar } from 'lucide-react'
+import { Download, ListFilter, MoreHorizontal, Search } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
 
 import { Badge } from '@/components/ui/badge'

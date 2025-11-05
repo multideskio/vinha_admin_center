@@ -13,8 +13,7 @@ import {
   PaymentStep,
   PixStatus,
   UseContributionOptions,
-  UseContributionReturn,
-  CieloPaymentResponse
+  UseContributionReturn
 } from '../types'
 import { devLog, generateTransactionId } from '../utils'
 

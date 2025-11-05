@@ -5,7 +5,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, transactions, churchProfiles, pastorProfiles } from '@/db/schema'
-import { eq, and, between, isNull, desc, sql } from 'drizzle-orm'
+import { eq, and, between, isNull, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 

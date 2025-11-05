@@ -207,7 +207,7 @@ export async function processNotificationEvent(eventType: string, data: Record<s
       .where(and(eq(notificationRules.isActive, true), eq(notificationRules.eventTrigger, eventType as any)))
     for (const rule of activeRules) {
       // Monta mensagem a partir do template da regra (substitui variáveis)
-      let variables: Record<string, string> = {
+      const variables: Record<string, string> = {
         nome_usuario: user.email.split('@')[0] || '',
         ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
       }

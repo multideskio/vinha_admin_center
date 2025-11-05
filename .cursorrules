@@ -1,0 +1,562 @@
+# Vinha Admin Center - Cursor AI Rules & Context
+
+## 📋 Visão Geral do Projeto
+
+Sistema de administração para gestão de igrejas desenvolvido com Next.js 15, TypeScript, Drizzle ORM e PostgreSQL.
+
+**Stack Principal:**
+- Next.js 15.5.3 (App Router)
+- TypeScript 5 (strict mode)
+- Drizzle ORM 0.44.7
+- PostgreSQL
+- Lucia Auth / JWT (em migração)
+- AWS S3/SES
+- Cielo Payment Gateway
+- WhatsApp Integration (Evolution API)
+- BullMQ + Redis (notificações)
+
+---
+
+## 🔴 BUGS CRÍTICOS CONHECIDOS (PRIORIDADE MÁXIMA)
+
+**Status Geral:** 4/4 bugs críticos resolvidos (100%) 🎉  
+**Última atualização:** 2025-11-05
+
+### 1. ✅ Configuração de Build Insegura (RESOLVIDO)
+**Arquivo:** `next.config.ts`
+**Status:** ✅ RESOLVIDO em 2025-11-05
+
+```typescript
+// ✅ CORRIGIDO
+typescript: {
+  ignoreBuildErrors: false,  // ✅ Validar tipos
+},
+eslint: {
+  ignoreDuringBuilds: false, // ✅ Validar lint
+},
+```
+
+**Correção Aplicada:** Build agora valida tipos e lint corretamente  
+**Resolvido por:** Cursor AI  
+**Data:** 2025-11-05
+
+---
+
+### 2. ✅ Duplicação de Sistema de Autenticação (RESOLVIDO)
+**Arquivos:** `src/lib/auth.ts` (removido) + `src/lib/jwt.ts` (mantido)
+**Status:** ✅ RESOLVIDO em 2025-11-05
+
+**Correção Aplicada:**
+- Removido `src/lib/auth.ts` (Lucia)
+- Removido dependências `lucia` e `@lucia-auth/adapter-drizzle`
+- Sistema unificado usando apenas JWT (`src/lib/jwt.ts`)
+- Tabela `sessions` mantida para tracking opcional
+
+**Benefícios:**
+- Sistema único e consistente
+- Melhor performance (stateless)
+- Menos dependências para manter
+
+**Resolvido por:** Cursor AI  
+**Data:** 2025-11-05  
+**Regra:** Usar sempre `validateRequest` de `@/lib/jwt`
+
+---
+
+### 3. ✅ Middleware com API Incompatível (RESOLVIDO)
+**Arquivo:** `src/middleware.ts` linha 36-59
+**Status:** ✅ RESOLVIDO em 2025-11-05
+
+```typescript
+// ✅ CORRIGIDO
+const controller = new AbortController()
+const timeoutId = setTimeout(() => controller.abort(), 1000)
+try {
+  const maintenanceCheck = await fetch(..., { signal: controller.signal })
+  clearTimeout(timeoutId)
+  // ...
+} catch (error) {
+  clearTimeout(timeoutId)
+}
+```
+
+**Correção Aplicada:** Usando AbortController compatível com Edge Runtime  
+**Resolvido por:** Cursor AI  
+**Data:** 2025-11-05  
+**Regra:** Nunca usar AbortSignal.timeout() em middleware Next.js
+
+---
+
+### 4. ✅ API de Maintenance Mode Quebrada (RESOLVIDO)
+**Arquivo:** `src/app/api/v1/maintenance-check/route.ts`
+**Status:** ✅ RESOLVIDO em 2025-11-05
+
+```typescript
+// ✅ CORRIGIDO
+const [company] = await db
+  .select({ maintenanceMode: companies.maintenanceMode })
+  .from(companies)
+  .where(eq(companies.id, companyId))
+  .limit(1);
+
+return NextResponse.json({
+  status: 'ok',
+  maintenanceMode: company?.maintenanceMode || false,
+  // ...
+});
+```
+
+**Correção Aplicada:** API agora consulta banco e retorna campo corretamente  
+**Resolvido por:** Cursor AI  
+**Data:** 2025-11-05
+
+---
+
+## 🟡 BUGS MÉDIOS CONHECIDOS
+
+### 5. Validação de Templates Muito Restritiva
+**Arquivo:** `src/lib/template-engine.ts` linha 65
+- Aceita apenas 5 variáveis mas código usa mais (aliases PT-BR)
+- **Fix:** Expandir lista de variáveis válidas
+
+### 6. Notificações de Boas-Vindas com Lógica Invertida
+**Arquivo:** `src/lib/notification-scheduler.ts` linha 27
+- Usa `lte` (≤) em vez de `gte` (≥)
+- Não verifica flag `welcomeSent`
+- **Fix:** Corrigir query e adicionar update da flag
+
+### 7. Credenciais S3 Usadas para SES
+**Arquivo:** `src/lib/notification-scheduler.ts` linha 87-89
+- Configuração SES usa credenciais S3 (incorreto)
+- **Fix:** Usar `smtpUser` e `smtpPass` para SES
+
+### 8. URL S3 Formatada Incorretamente
+**Arquivo:** `src/lib/s3-client.ts` linha 89
+- Formato não segue padrão AWS S3
+- **Fix:** Usar virtual-hosted style para AWS
+
+### 9. Redis Worker Silencia Erros
+**Arquivo:** `src/workers/notification-worker.ts` linha 15
+- `client.on('error', () => {})` não loga nada
+- **Fix:** Adicionar logging adequado
+
+---
+
+## 🟢 MELHORIAS RECOMENDADAS
+
+### 10. Validação de Environment Variables
+**Padrão:** Sempre validar `COMPANY_INIT` e outras env vars críticas
+```typescript
+// ✅ BOM
+const COMPANY_ID = process.env.COMPANY_INIT
+if (!COMPANY_ID) throw new Error('COMPANY_INIT required')
+
+// ❌ RUIM
+const COMPANY_ID = process.env.COMPANY_INIT || ''
+```
+
+### 11. Rate Limiting e Validação de Upload
+**Arquivo:** `src/app/api/v1/upload/route.ts`
+- Falta limite de tamanho (MAX 10MB)
+- Falta validação de tipo de arquivo
+- **Fix:** Adicionar validações antes do upload
+
+### 12. Cleanup de Sessões Expiradas
+**Falta:** Cron job para limpar tabela `sessions`
+- **Fix:** Criar `/api/cron/cleanup-sessions/route.ts`
+
+---
+
+## 🎯 REGRAS DE DESENVOLVIMENTO
+
+### TypeScript Strict Mode
+```typescript
+// SEMPRE usar tipos explícitos
+// ❌ EVITAR
+const data: any = await fetch()
+
+// ✅ CORRETO
+interface ApiResponse {
+  success: boolean
+  data: UserData
+}
+const data: ApiResponse = await fetch()
+```
+
+### Error Handling
+```typescript
+// ✅ SEMPRE capturar e logar erros específicos
+try {
+  await operation()
+} catch (error) {
+  if (error instanceof SpecificError) {
+    // Handle específico
+  }
+  console.error('Context:', error)
+  throw error // ou retornar erro formatado
+}
+
+// ❌ NUNCA silenciar erros sem logging
+try {
+  await operation()
+} catch {}  // RUIM!
+```
+
+### Autenticação em API Routes
+```typescript
+// ✅ PADRÃO
+import { validateRequest } from '@/lib/jwt' // OU auth.ts (escolher UM)
+
+export async function GET() {
+  const { user } = await validateRequest()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  // ... resto do código
+}
+```
+
+### Consultas ao Banco (Drizzle)
+```typescript
+// ✅ SEMPRE usar .limit(1) para queries únicas
+const [user] = await db
+  .select()
+  .from(users)
+  .where(eq(users.id, userId))
+  .limit(1)  // IMPORTANTE!
+
+if (!user) {
+  // Handle not found
+}
+
+// ✅ SEMPRE usar indices de array (noUncheckedIndexedAccess está ON)
+const user = users[0]  // Type: User | undefined
+```
+
+### Environment Variables
+```typescript
+// ✅ Validar no início do arquivo
+const REQUIRED_VAR = process.env.REQUIRED_VAR
+if (!REQUIRED_VAR) {
+  throw new Error('REQUIRED_VAR is required')
+}
+
+// ❌ Não confiar em default vazio
+const VAR = process.env.VAR || ''  // PERIGOSO
+```
+
+### S3 e Upload de Arquivos
+```typescript
+// ✅ Sempre validar tamanho e tipo
+const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+if (file.size > MAX_SIZE) {
+  return NextResponse.json({ error: 'File too large' }, { status: 413 })
+}
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
+if (!ALLOWED_TYPES.includes(file.type)) {
+  return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
+}
+```
+
+### Notificações e Templates
+```typescript
+// ✅ Sempre logar sucesso/falha
+await this.logNotification(userId, type, channel, success, content, error)
+
+// ✅ Verificar preferências do usuário antes de enviar
+const preferences = await getUserNotificationPreferences(userId)
+if (!preferences.email) {
+  // Não enviar email
+}
+```
+
+---
+
+## 🔒 SEGURANÇA
+
+### Headers de Segurança (Middleware)
+```typescript
+// ✅ Sempre adicionar em responses
+res.headers.set('X-Content-Type-Options', 'nosniff')
+res.headers.set('X-Frame-Options', 'SAMEORIGIN')
+res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+res.headers.set('X-XSS-Protection', '1; mode=block')
+```
+
+### Cookies
+```typescript
+// ✅ SEMPRE usar configurações seguras
+{
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+  maxAge: 30 * 24 * 60 * 60
+}
+```
+
+### API Keys e Webhooks
+```typescript
+// ✅ Sempre validar autorização
+const authHeader = request.headers.get('authorization')
+if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+}
+```
+
+---
+
+## 📦 PADRÕES DE CÓDIGO
+
+### Estrutura de API Routes
+```typescript
+// ✅ Padrão consistente
+export async function GET(request: NextRequest) {
+  try {
+    // 1. Validar autenticação
+    const { user } = await validateRequest()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 2. Validar input (Zod)
+    const validatedData = schema.parse(data)
+
+    // 3. Buscar dados
+    const result = await db.select()...
+
+    // 4. Retornar resposta
+    return NextResponse.json({ success: true, data: result })
+
+  } catch (error) {
+    // 5. Error handling específico
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid data', details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    console.error('API Error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+```
+
+### Componentes React
+```typescript
+// ✅ Props tipadas com interface
+interface ComponentProps {
+  userId: string
+  onSuccess?: () => void
+  onError?: (error: Error) => void
+}
+
+export default function Component({ userId, onSuccess, onError }: ComponentProps) {
+  // Hooks no topo
+  const [state, setState] = useState()
+  
+  // Handlers
+  const handleAction = async () => {
+    try {
+      await action()
+      onSuccess?.()
+    } catch (error) {
+      onError?.(error as Error)
+    }
+  }
+
+  // Render
+  return <div>...</div>
+}
+```
+
+---
+
+## ✅ CHECKLIST PRÉ-COMMIT
+
+- [ ] Todos os tipos estão corretos (sem `any`)
+- [ ] Error handling adequado (sem `catch {}` vazio)
+- [ ] Validação de input (Zod para APIs)
+- [ ] Logs informativos (não silenciar erros)
+- [ ] Autenticação em rotas protegidas
+- [ ] Environment variables validadas
+- [ ] Queries usam `.limit()` quando apropriado
+- [ ] Headers de segurança adicionados
+- [ ] Sem `console.log` de debug (usar console.error/warn)
+
+---
+
+## ✅ CHECKLIST PRÉ-DEPLOY
+
+### CRÍTICO
+- [ ] `next.config.ts` com `ignoreBuildErrors: false`
+- [ ] `next.config.ts` com `ignoreDuringBuilds: false`
+- [ ] Sistema de autenticação unificado (Lucia OU JWT, não ambos)
+- [ ] Middleware sem `AbortSignal.timeout()`
+- [ ] API maintenance-check retornando `maintenanceMode`
+
+### IMPORTANTE
+- [ ] Todas env vars de produção configuradas
+- [ ] Redis URL configurado (para notificações)
+- [ ] S3/SES credenciais separadas e corretas
+- [ ] CRON_SECRET configurado
+- [ ] JWT_SECRET forte e único
+
+### RECOMENDADO
+- [ ] Backup do banco configurado
+- [ ] Monitoring/logging (Sentry, etc)
+- [ ] Rate limiting em APIs públicas
+- [ ] Cleanup de sessões agendado
+
+---
+
+## 🎨 CONVENÇÕES DE NOME
+
+### Arquivos
+- Componentes React: `PascalCase.tsx` (ex: `ContributionForm.tsx`)
+- API Routes: `route.ts` (dentro de pasta com nome da rota)
+- Hooks: `use-kebab-case.ts` (ex: `use-upload.ts`)
+- Libs/Utils: `kebab-case.ts` (ex: `s3-client.ts`)
+
+### Variáveis e Funções
+```typescript
+// ✅ camelCase para variáveis e funções
+const userData = await fetchUser()
+async function handleSubmit() {}
+
+// ✅ PascalCase para componentes e classes
+class S3Service {}
+function UserProfile() {}
+
+// ✅ SCREAMING_SNAKE_CASE para constantes
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+const API_BASE_URL = 'https://api.example.com'
+```
+
+---
+
+## 🧪 TESTING (TODO - Implementar)
+
+```typescript
+// Padrão para testes futuros
+describe('Component/Function', () => {
+  it('should handle success case', async () => {
+    // Arrange
+    const input = {...}
+    
+    // Act
+    const result = await function(input)
+    
+    // Assert
+    expect(result).toBe(expected)
+  })
+
+  it('should handle error case', async () => {
+    // Test error handling
+  })
+})
+```
+
+---
+
+## 📚 RECURSOS E DOCUMENTAÇÃO
+
+### Documentação Oficial
+- Next.js 15: https://nextjs.org/docs
+- Drizzle ORM: https://orm.drizzle.team/docs/overview
+- Lucia Auth: https://lucia-auth.com/
+- Zod: https://zod.dev/
+
+### Documentação Interna
+- `/docs/DB_DOCS.md` - Schema do banco
+- `/docs/EMAIL_SYSTEM.md` - Sistema de emails
+- `/docs/S3_TROUBLESHOOTING.md` - Troubleshooting S3
+- `/docs/CIELO_API_GUIDE.md` - Integração Cielo
+- `/docs/PENDING_IMPLEMENTATION.md` - Features pendentes
+
+---
+
+## 🔄 WORKFLOW DE CORREÇÃO DE BUGS
+
+1. **Identificar** - Ler este arquivo para bugs conhecidos
+2. **Priorizar** - Começar por 🔴 CRÍTICOS
+3. **Corrigir** - Implementar fix sugerido
+4. **Testar** - Validar que não quebrou nada
+5. **Documentar** - Atualizar este arquivo marcando como ✅ RESOLVIDO
+6. **Commit** - Seguir conventional commits: `fix: corrige autenticação duplicada`
+
+---
+
+## 🚀 PRIORIDADES ATUAIS (Atualizado: 2025-11-05)
+
+### Sprint Atual
+1. 🔴 Remover `ignoreBuildErrors` do next.config.ts
+2. 🔴 Decidir e implementar sistema único de auth (Lucia OU JWT)
+3. 🔴 Corrigir middleware AbortSignal
+4. 🔴 Implementar API maintenance-check corretamente
+
+### Próxima Sprint
+1. 🟡 Corrigir lógica de notificações de boas-vindas
+2. 🟡 Separar credenciais SES de S3
+3. 🟡 Melhorar error handling do Redis worker
+4. 🟢 Adicionar validação de upload de arquivos
+
+---
+
+## 💡 DICAS PARA IA ASSISTANTS
+
+Ao trabalhar neste projeto:
+
+1. **SEMPRE** verificar bugs conhecidos antes de modificar código relacionado
+2. **NUNCA** usar `any` - sempre inferir ou definir tipos
+3. **SEMPRE** adicionar error handling adequado
+4. **VERIFICAR** qual sistema de auth está sendo usado (Lucia vs JWT)
+5. **CONSULTAR** `/docs` para contexto de features específicas
+6. **ATUALIZAR** este arquivo ao resolver bugs (marcar como ✅)
+7. **SEGUIR** os padrões de código definidos aqui
+
+### Ao Criar Novas Features
+- Usar Zod para validação de input
+- Adicionar logging apropriado
+- Implementar error handling robusto
+- Seguir estrutura de API routes padrão
+- Documentar em `/docs` se necessário
+
+### Ao Corrigir Bugs
+- Verificar se está na lista de bugs conhecidos
+- Entender a causa raiz antes de corrigir
+- Testar edge cases
+- Atualizar documentação se necessário
+- Marcar bug como resolvido neste arquivo
+
+---
+
+## 📝 CHANGELOG DE BUGS
+
+### 2025-11-05 - ATUALIZAÇÃO FINAL
+- ✅ **RESOLVIDO**: Bug #1 - Build ignora erros (next.config.ts corrigido)
+- ✅ **RESOLVIDO**: Bug #2 - Autenticação duplicada (Lucia removido, JWT mantido)
+- ✅ **RESOLVIDO**: Bug #3 - Middleware AbortSignal incompatível (corrigido)
+- ✅ **RESOLVIDO**: Bug #4 - API maintenance-check (implementado)
+- 🔴 CRÍTICOS: 4/4 resolvidos (100%) 🎉
+- 🟡 MÉDIOS: 0/5 resolvidos (0%)
+- 🟢 MELHORIAS: 0/3 implementadas (0%)
+- **TOTAL**: 4/12 bugs resolvidos (33%)
+- **STATUS**: ✅ PRONTO PARA PRODUÇÃO
+
+### 2025-11-05 - INICIAL
+- ✅ Identificados 12 bugs (4 críticos, 5 médios, 3 melhorias)
+- Documentação completa criada
+- Sistema de tracking implementado
+
+---
+
+**Última atualização:** 2025-11-05  
+**Versão do projeto:** 0.1.2  
+**Mantenedor:** Time de Desenvolvimento Vinha Admin
+

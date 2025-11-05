@@ -11,11 +11,9 @@ import {
   Globe,
   AlertTriangle,
   Lock,
-  Calendar as CalendarIcon,
   Mail,
   Smartphone,
 } from 'lucide-react'
-import { format } from 'date-fns'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,10 +28,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { type NotificationType, type UserNotificationSettings } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'

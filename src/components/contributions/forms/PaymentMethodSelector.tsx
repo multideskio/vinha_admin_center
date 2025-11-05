@@ -7,7 +7,7 @@ import { Banknote, CreditCard, QrCode } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { cn } from '@/lib/utils'
-import { PaymentMethodSelectorProps, PaymentMethod } from '../types'
+import { PaymentMethodSelectorProps } from '../types'
 import { PAYMENT_METHODS } from '../types'
 
 // Mapeamento de ícones

@@ -11,9 +11,6 @@ import {
   Pencil,
   DollarSign,
   ArrowRightLeft,
-  TrendingUp,
-  TrendingDown,
-  Search,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -30,7 +27,6 @@ import {
   Pie,
   Cell,
   Legend,
-  ResponsiveContainer,
 } from 'recharts'
 
 import { Button } from '@/components/ui/button'

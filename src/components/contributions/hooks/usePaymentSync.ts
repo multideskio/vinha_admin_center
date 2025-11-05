@@ -6,9 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import {
   UsePaymentSyncOptions,
-  UsePaymentSyncReturn,
-  PaymentMethod,
-  PixStatus
+  UsePaymentSyncReturn
 } from '../types'
 import {
   PIX_MAX_ATTEMPTS,

@@ -32,14 +32,20 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check maintenance mode via API call
+  // ✅ CORRIGIDO: Usar AbortController em vez de AbortSignal.timeout (compatível com Edge Runtime)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 1000)
+
   try {
     const maintenanceCheck = await fetch(
       new URL('/api/v1/maintenance-check', request.url),
       { 
         headers: { 'x-middleware-check': 'true' },
-        signal: AbortSignal.timeout(1000)
+        signal: controller.signal
       }
     )
+    
+    clearTimeout(timeoutId)
 
     if (maintenanceCheck.ok) {
       const { maintenanceMode } = await maintenanceCheck.json()
@@ -48,6 +54,7 @@ export async function middleware(request: NextRequest) {
       }
     }
   } catch (error) {
+    clearTimeout(timeoutId)
     // Silently fail - allow request to continue if maintenance check fails
   }
 

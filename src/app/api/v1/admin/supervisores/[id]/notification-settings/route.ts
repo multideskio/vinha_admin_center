@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { userNotificationSettings } from '@/db/schema'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { NOTIFICATION_TYPES } from '@/lib/types'

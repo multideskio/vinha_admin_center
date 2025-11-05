@@ -18,7 +18,7 @@ function createRedis(): IORedis | null {
   }
 }
 
-let redis: IORedis | null = createRedis()
+const redis: IORedis | null = createRedis()
 
 export async function setCache(key: string, value: any, ttlSeconds = 60) {
   if (!redis) return

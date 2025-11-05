@@ -1,7 +1,7 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { db } from '@/db/drizzle'
-import { otherSettings } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { otherSettings, emailBlacklist, notificationLogs } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
 
 const COMPANY_ID = process.env.COMPANY_INIT || ''
 
@@ -9,11 +9,36 @@ export async function sendEmail({
   to,
   subject,
   html,
+  userId,
+  notificationType = 'general',
 }: {
   to: string
   subject: string
   html: string
+  userId?: string
+  notificationType?: string
 }) {
+  // Verificar blacklist
+  const [blacklisted] = await db
+    .select()
+    .from(emailBlacklist)
+    .where(
+      and(
+        eq(emailBlacklist.companyId, COMPANY_ID),
+        eq(emailBlacklist.email, to),
+        eq(emailBlacklist.isActive, true)
+      )
+    )
+    .limit(1)
+
+  if (blacklisted) {
+    const error = `Email bloqueado: ${blacklisted.reason}`
+    if (userId) {
+      await logEmail(userId, to, subject, html, false, error, blacklisted.errorCode || 'BLACKLISTED', notificationType)
+    }
+    throw new Error(error)
+  }
+
   const [settings] = await db
     .select()
     .from(otherSettings)
@@ -53,5 +78,99 @@ export async function sendEmail({
     },
   })
 
-  await sesClient.send(command)
+  try {
+    await sesClient.send(command)
+    if (userId) {
+      await logEmail(userId, to, subject, html, true, undefined, undefined, notificationType)
+    }
+  } catch (error: any) {
+    const errorCode = error.name || error.Code || 'UNKNOWN'
+    const errorMessage = error.message || String(error)
+    
+    // Adicionar à blacklist se for erro permanente
+    if (shouldBlacklist(errorCode)) {
+      await addToBlacklist(to, errorCode, errorMessage)
+    }
+    
+    if (userId) {
+      await logEmail(userId, to, subject, html, false, errorMessage, errorCode, notificationType)
+    }
+    throw error
+  }
+}
+
+function shouldBlacklist(errorCode: string): boolean {
+  const permanentErrors = [
+    'MessageRejected',
+    'MailFromDomainNotVerified',
+    'InvalidParameterValue',
+    'AccountSendingPausedException',
+  ]
+  return permanentErrors.includes(errorCode) || errorCode.includes('Bounce') || errorCode.includes('Complaint')
+}
+
+async function addToBlacklist(email: string, errorCode: string, errorMessage: string) {
+  try {
+    const [existing] = await db
+      .select()
+      .from(emailBlacklist)
+      .where(
+        and(
+          eq(emailBlacklist.companyId, COMPANY_ID),
+          eq(emailBlacklist.email, email)
+        )
+      )
+      .limit(1)
+
+    if (existing) {
+      await db
+        .update(emailBlacklist)
+        .set({
+          lastAttemptAt: new Date(),
+          attemptCount: existing.attemptCount + 1,
+          errorCode,
+          errorMessage,
+          isActive: true,
+        })
+        .where(eq(emailBlacklist.id, existing.id))
+    } else {
+      await db.insert(emailBlacklist).values({
+        companyId: COMPANY_ID,
+        email,
+        reason: errorCode.includes('Bounce') ? 'bounce' : errorCode.includes('Complaint') ? 'complaint' : 'error',
+        errorCode,
+        errorMessage,
+      })
+    }
+  } catch (error) {
+    console.error('Erro ao adicionar email à blacklist:', error)
+  }
+}
+
+async function logEmail(
+  userId: string,
+  recipient: string,
+  subject: string,
+  content: string,
+  success: boolean,
+  errorMessage?: string,
+  errorCode?: string,
+  notificationType?: string
+) {
+  try {
+    await db.insert(notificationLogs).values({
+      companyId: COMPANY_ID,
+      userId,
+      notificationType: notificationType || 'general',
+      channel: 'email',
+      status: success ? 'sent' : 'failed',
+      recipient,
+      subject,
+      messageContent: content,
+      errorMessage,
+      errorCode,
+    })
+  } catch (error) {
+    console.error('Erro ao logar email:', error)
+  }
 }

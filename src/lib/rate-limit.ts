@@ -18,7 +18,7 @@ function createRedis(): IORedis | null {
   }
 }
 
-let redis: IORedis | null = createRedis()
+const redis: IORedis | null = createRedis()
 
 export async function rateLimit(routeKey: string, ip: string, limit = 10, windowSec = 60): Promise<{ allowed: boolean; remaining: number }> {
   if (!redis) return { allowed: true, remaining: limit }

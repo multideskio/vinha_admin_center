@@ -4,7 +4,7 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { ProgressIndicatorProps, PaymentStep } from '../types'
+import { ProgressIndicatorProps } from '../types'
 
 const steps = [
   { number: 1, label: 'Dados' },

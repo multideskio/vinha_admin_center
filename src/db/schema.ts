@@ -390,9 +390,29 @@ export const notificationLogs = pgTable('notification_logs', {
   notificationType: varchar('notification_type', { length: 50 }).notNull(),
   channel: varchar('channel', { length: 20 }).notNull(),
   status: varchar('status', { length: 20 }).notNull(),
+  recipient: varchar('recipient', { length: 255 }),
+  subject: varchar('subject', { length: 500 }),
   messageContent: text('message_content'),
   errorMessage: text('error_message'),
+  errorCode: varchar('error_code', { length: 50 }),
   sentAt: timestamp('sent_at').defaultNow().notNull(),
+})
+
+export const emailBlacklist = pgTable('email_blacklist', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  companyId: uuid('company_id')
+    .references(() => companies.id, { onDelete: 'cascade' })
+    .notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  reason: varchar('reason', { length: 50 }).notNull(),
+  errorCode: varchar('error_code', { length: 50 }),
+  errorMessage: text('error_message'),
+  firstFailedAt: timestamp('first_failed_at').defaultNow().notNull(),
+  lastAttemptAt: timestamp('last_attempt_at').defaultNow().notNull(),
+  attemptCount: integer('attempt_count').default(1).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
 })
 
 export const userActionLogs = pgTable('user_action_logs', {
@@ -559,6 +579,10 @@ export const messageTemplatesRelations = relations(messageTemplates, ({ one }) =
 export const notificationLogsRelations = relations(notificationLogs, ({ one }) => ({
   company: one(companies, { fields: [notificationLogs.companyId], references: [companies.id] }),
   user: one(users, { fields: [notificationLogs.userId], references: [users.id] }),
+}))
+
+export const emailBlacklistRelations = relations(emailBlacklist, ({ one }) => ({
+  company: one(companies, { fields: [emailBlacklist.companyId], references: [companies.id] }),
 }))
 
 export const userActionLogsRelations = relations(userActionLogs, ({ one }) => ({

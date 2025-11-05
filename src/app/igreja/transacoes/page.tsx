@@ -1,16 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { Download, ListFilter, MoreHorizontal, Search, Calendar } from 'lucide-react'
+import { Download, ListFilter, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -2,10 +2,11 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false, // ✅ Validar tipos no build (MANTIDO)
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: true, // ⚠️ Temporário: código legado tem muitos erros de lint
+    // TODO: Corrigir gradualmente e voltar para false
   },
   images: {
     remotePatterns: [

@@ -40,8 +40,8 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-    const startDateParam = searchParams.get('startDate')
-    const endDateParam = searchParams.get('endDate')
+    // const startDateParam = searchParams.get('startDate')
+    // const endDateParam = searchParams.get('endDate')
 
     const now = new Date()
     const startOfCurrentMonth = startOfMonth(now)

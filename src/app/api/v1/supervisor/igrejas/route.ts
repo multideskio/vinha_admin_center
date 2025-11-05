@@ -13,7 +13,6 @@ import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
-import { type UserRole } from '@/lib/types'
 
 import { getCompanyId } from '@/lib/utils'
 
