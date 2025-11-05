@@ -1,13 +1,13 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, PlusCircle } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, Map, Palette, Edit, Trash2, RefreshCw } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,7 @@ import {
   DialogTrigger,
   DialogClose,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import {
   AlertDialog,
@@ -54,6 +55,8 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 const regionSchema = z.object({
   id: z.string().uuid().optional(),
@@ -89,7 +92,7 @@ const RegionFormModal = ({
     resolver: zodResolver(regionSchema),
     defaultValues: region || {
       name: '',
-      color: '#000000',
+      color: '#3F51B5',
     },
   })
 
@@ -98,7 +101,7 @@ const RegionFormModal = ({
       form.reset(
         region || {
           name: '',
-          color: '#000000',
+          color: '#3F51B5',
         },
       )
     }
@@ -143,7 +146,13 @@ const RegionFormModal = ({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{region ? 'Editar Região' : 'Nova Região'}</DialogTitle>
+          <DialogTitle className="text-xl flex items-center gap-2">
+            <Palette className="h-5 w-5 text-videira-blue" />
+            {region ? 'Editar Região' : 'Nova Região'}
+          </DialogTitle>
+          <DialogDescription>
+            {region ? 'Atualize as informações da região' : 'Adicione uma nova região ao sistema'}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
@@ -154,7 +163,7 @@ const RegionFormModal = ({
                 <FormItem>
                   <FormLabel>Nome da Região</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Nordeste" />
+                    <Input {...field} placeholder="Ex: Nordeste, Sul, Centro-Oeste" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -166,21 +175,36 @@ const RegionFormModal = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cor da Região</FormLabel>
-                  <FormControl>
-                    <Input type="color" {...field} className="h-10" />
-                  </FormControl>
+                  <div className="flex gap-3">
+                    <FormControl>
+                      <Input type="color" {...field} className="h-12 w-20 cursor-pointer" />
+                    </FormControl>
+                    <Input 
+                      value={field.value} 
+                      onChange={field.onChange}
+                      placeholder="#RRGGBB"
+                      className="flex-1 font-mono"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Escolha uma cor que identifique esta região nos gráficos e relatórios
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <DialogClose asChild>
                 <Button variant="outline" type="button">
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Salvando...' : 'Salvar'}
+              <Button 
+                type="submit" 
+                disabled={form.formState.isSubmitting}
+                className="bg-videira-blue hover:bg-videira-blue/90 text-white"
+              >
+                {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Região'}
               </Button>
             </DialogFooter>
           </form>
@@ -245,109 +269,261 @@ export default function RegioesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Regiões</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie as regiões e suas respectivas cores.
-          </p>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                <Map className="h-8 w-8" />
+                Regiões
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Gerencie as regiões e suas respectivas cores para organização
+              </p>
+              <p className="text-sm text-white/70 mt-1">
+                {regions.length} {regions.length === 1 ? 'região cadastrada' : 'regiões cadastradas'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                size="icon"
+                onClick={fetchRegions}
+                className="h-10 w-10 bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-lg"
+              >
+                <RefreshCw className="h-5 w-5" />
+              </Button>
+              <RegionFormModal onSave={fetchRegions}>
+                <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
+                  <PlusCircle className="h-5 w-5" />
+                  <span>Nova Região</span>
+                </Button>
+              </RegionFormModal>
+            </div>
+          </div>
         </div>
-        <RegionFormModal onSave={fetchRegions}>
-          <Button size="sm" className="gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Região</span>
-          </Button>
-        </RegionFormModal>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cor</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>
-                  <span className="sr-only">Ações</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-6 w-6 rounded-full" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-32" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-8" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : regions.map((region) => (
-                    <TableRow key={region.id}>
-                      <TableCell>
-                        <div
-                          className="h-6 w-6 rounded-full border"
-                          style={{ backgroundColor: region.color }}
-                        ></div>
-                      </TableCell>
-                      <TableCell className="font-medium">{region.name}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <RegionFormModal region={region} onSave={fetchRegions}>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                Editar
-                              </DropdownMenuItem>
-                            </RegionFormModal>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                  className="text-red-500"
-                                  onSelect={(e) => e.preventDefault()}
+      {/* Cards de Estatísticas */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Total de Regiões
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+              <Map className="h-5 w-5 text-videira-cyan" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-videira-cyan">{regions.length}</div>
+            <p className="text-sm text-muted-foreground mt-1">Ativas no sistema</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-t-4 border-t-videira-blue hover:shadow-xl transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Cores Únicas
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <Palette className="h-5 w-5 text-videira-blue" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-videira-blue">
+              {new Set(regions.map(r => r.color)).size}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">Paleta de cores</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-t-4 border-t-videira-purple hover:shadow-xl transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Última Atualização
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+              <RefreshCw className="h-5 w-5 text-videira-purple" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold text-videira-purple">
+              {regions.length > 0 ? 'Recente' : '-'}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">Sistema atualizado</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabela de Regiões */}
+      <Card className="shadow-lg border-l-4 border-l-videira-blue">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                  <Map className="h-5 w-5 text-videira-blue" />
+                </div>
+                Lista de Regiões
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Gerencie as regiões para organizar igrejas e supervisores
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
+                  <TableHead className="w-[80px] font-semibold">Cor</TableHead>
+                  <TableHead className="font-semibold">Nome da Região</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    Ações
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-48" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-8 w-8 ml-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  : regions.length > 0 ? (
+                      regions.map((region) => (
+                        <TableRow key={region.id} className="hover:bg-muted/50">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="h-10 w-10 rounded-full border-2 border-white shadow-md ring-2 ring-offset-2 ring-offset-background"
+                                style={{ 
+                                  backgroundColor: region.color,
+                                  boxShadow: `0 0 20px ${region.color}40`
+                                }}
+                              />
+                              <code className="text-xs font-mono text-muted-foreground">
+                                {region.color}
+                              </code>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold text-lg">{region.name}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <RegionFormModal region={region} onSave={fetchRegions}>
+                                <Button 
+                                  size="sm"
+                                  className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                                 >
-                                  Excluir
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Essa ação não pode ser desfeita. Isso excluirá permanentemente a
-                                    região.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => region.id && handleDelete(region.id)}
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
+                              </RegionFormModal>
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    size="sm"
+                                    className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                                   >
-                                    Sim, excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-            </TableBody>
-          </Table>
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Excluir
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Essa ação não pode ser desfeita. Isso excluirá permanentemente a região <strong>{region.name}</strong>.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => region.id && handleDelete(region.id)}
+                                      className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                      Sim, excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center h-32">
+                          <div className="flex flex-col items-center gap-3 py-8">
+                            <Map className="h-12 w-12 text-muted-foreground" />
+                            <div>
+                              <p className="text-lg font-medium text-muted-foreground">
+                                Nenhuma região cadastrada
+                              </p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Clique em "Nova Região" para começar
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Paleta de Cores Sugeridas */}
+      {regions.length > 0 && (
+        <Card className="shadow-lg border-l-4 border-l-videira-purple bg-gradient-to-br from-videira-purple/5 to-background">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+                <Palette className="h-5 w-5 text-videira-purple" />
+              </div>
+              Paleta de Cores das Regiões
+            </CardTitle>
+            <CardDescription>Todas as cores atualmente em uso</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {regions.map((region) => (
+                <div key={region.id} className="flex flex-col items-center gap-2">
+                  <div
+                    className="h-16 w-16 rounded-xl border-2 border-white shadow-lg ring-2 ring-offset-2 ring-offset-background transition-transform hover:scale-110"
+                    style={{ 
+                      backgroundColor: region.color,
+                      boxShadow: `0 0 30px ${region.color}60`
+                    }}
+                  />
+                  <div className="text-center">
+                    <p className="text-sm font-semibold">{region.name}</p>
+                    <code className="text-xs text-muted-foreground font-mono">{region.color}</code>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

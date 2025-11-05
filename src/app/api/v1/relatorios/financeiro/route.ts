@@ -38,11 +38,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ]
 
     if (method && method !== 'all') {
-      conditions.push(eq(transactions.paymentMethod, method))
+      if (method === 'pix' || method === 'credit_card' || method === 'boleto') {
+        conditions.push(eq(transactions.paymentMethod, method))
+      }
     }
 
     if (status && status !== 'all') {
-      conditions.push(eq(transactions.status, status as any))
+      if (status === 'approved' || status === 'pending' || status === 'refused' || status === 'refunded') {
+        conditions.push(eq(transactions.status, status))
+      }
     }
 
     // Buscar transações
@@ -127,8 +131,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       if (!acc[t.method]) {
         acc[t.method] = { count: 0, total: 0 }
       }
-      acc[t.method].count++
-      acc[t.method].total += t.amount
+      const methodData = acc[t.method]
+      if (methodData) {
+        methodData.count++
+        methodData.total += t.amount
+      }
       return acc
     }, {} as Record<string, { count: number; total: number }>)
 

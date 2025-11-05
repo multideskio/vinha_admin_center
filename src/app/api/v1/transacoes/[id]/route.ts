@@ -47,8 +47,8 @@ export async function GET(
         .select({
           name: churchProfiles.nomeFantasia,
           address: churchProfiles.address,
-          city: churchProfiles.cidade,
-          state: churchProfiles.estado,
+          city: churchProfiles.city,
+          state: churchProfiles.state,
         })
         .from(churchProfiles)
         .innerJoin(users, eq(churchProfiles.userId, users.id))

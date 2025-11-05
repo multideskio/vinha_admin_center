@@ -42,8 +42,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         id: users.id,
         nomeFantasia: churchProfiles.nomeFantasia,
         cnpj: churchProfiles.cnpj,
-        cidade: churchProfiles.cidade,
-        estado: churchProfiles.estado,
+        city: churchProfiles.city,
+        state: churchProfiles.state,
         regionId: supervisorProfiles.regionId,
         regionName: regions.name,
         supervisorId: churchProfiles.supervisorId,
@@ -115,8 +115,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           id: church.id,
           nomeFantasia: church.nomeFantasia,
           cnpj: church.cnpj,
-          cidade: church.cidade,
-          estado: church.estado,
+          cidade: church.city,
+          estado: church.state,
           regionName: church.regionName,
           totalRevenue: revenueResult?.total || 0,
           transactionCount: transactionCount?.count || 0,
@@ -140,9 +140,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           churches: [],
         }
       }
-      acc[church.regionName].count++
-      acc[church.regionName].totalRevenue += church.totalRevenue
-      acc[church.regionName].churches.push(church)
+      const regionData = acc[church.regionName]
+      if (regionData) {
+        regionData.count++
+        regionData.totalRevenue += church.totalRevenue
+        regionData.churches.push(church)
+      }
       return acc
     }, {} as Record<string, { count: number; totalRevenue: number; churches: typeof enrichedChurches }>)
 

@@ -82,7 +82,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             const churchData = await db
               .select({
                 nomeFantasia: churchProfiles.nomeFantasia,
-                cidade: churchProfiles.cidade,
+                city: churchProfiles.city,
               })
               .from(churchProfiles)
               .where(eq(churchProfiles.userId, c.contributorId))
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             
             if (churchData.length > 0 && churchData[0]) {
               name = churchData[0].nomeFantasia
-              extraInfo = churchData[0].cidade || ''
+              extraInfo = churchData[0].city || ''
             }
           } else if (c.contributorRole === 'supervisor') {
             // Buscar nome do supervisor

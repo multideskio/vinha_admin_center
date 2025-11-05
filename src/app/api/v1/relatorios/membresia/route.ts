@@ -97,14 +97,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           const [church] = await db
             .select({
               nomeFantasia: churchProfiles.nomeFantasia,
-              cidade: churchProfiles.cidade,
+              city: churchProfiles.city,
             })
             .from(churchProfiles)
             .where(eq(churchProfiles.userId, member.id))
             .limit(1)
           if (church) {
             name = church.nomeFantasia
-            extraInfo = church.cidade || ''
+            extraInfo = church.city || ''
           }
         } else if (member.role === 'supervisor') {
           const [supervisor] = await db
