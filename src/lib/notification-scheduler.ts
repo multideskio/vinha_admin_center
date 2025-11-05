@@ -5,13 +5,13 @@
 import { db } from '@/db/drizzle'
 import { users, otherSettings, userNotificationSettings } from '@/db/schema'
 import { NotificationService } from './notifications'
-import { eq, and, isNull, lte } from 'drizzle-orm'
+import { eq, and, isNull, lte, gte } from 'drizzle-orm'
 import { addDays, format } from 'date-fns'
 
 export class NotificationScheduler {
   async processWelcomeNotifications(): Promise<void> {
     try {
-      // Buscar usuários criados nas últimas 24h que ainda não receberam boas-vindas
+      // ✅ CORRIGIDO: Buscar usuários criados nas ÚLTIMAS 24h (gte, não lte) que ainda NÃO receberam boas-vindas
       const newUsers = await db
         .select({
           id: users.id,
@@ -24,13 +24,20 @@ export class NotificationScheduler {
         .from(users)
         .where(
           and(
-            lte(users.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
+            gte(users.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)), // ✅ gte = últimas 24h
+            eq(users.welcomeSent, false), // ✅ Apenas quem NÃO recebeu
             isNull(users.deletedAt)
           )
         )
 
       for (const user of newUsers) {
         await this.sendWelcomeNotification(user)
+        
+        // ✅ CORRIGIDO: Marcar como enviado após sucesso
+        await db
+          .update(users)
+          .set({ welcomeSent: true })
+          .where(eq(users.id, user.id))
       }
     } catch (error) {
       console.error('Error processing welcome notifications:', error)
@@ -84,9 +91,9 @@ export class NotificationScheduler {
         whatsappApiUrl: settings.whatsappApiUrl || undefined,
         whatsappApiKey: settings.whatsappApiKey || undefined,
         whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: settings.s3Region || undefined,
-        sesAccessKeyId: settings.s3AccessKeyId || undefined,
-        sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region
+        sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Credenciais SES
+        sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Credenciais SES
         fromEmail: settings.smtpFrom || undefined,
         companyId: user.companyId,
       })
@@ -121,9 +128,9 @@ export class NotificationScheduler {
         whatsappApiUrl: settings.whatsappApiUrl || undefined,
         whatsappApiKey: settings.whatsappApiKey || undefined,
         whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: settings.s3Region || undefined,
-        sesAccessKeyId: settings.s3AccessKeyId || undefined,
-        sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region
+        sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Credenciais SES
+        sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Credenciais SES
         fromEmail: settings.smtpFrom || undefined,
         companyId: user.companyId,
       })

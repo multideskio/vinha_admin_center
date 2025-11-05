@@ -58,11 +58,18 @@ export function validateTemplate(template: string): { isValid: boolean; errors: 
     errors.push('Tags condicionais não estão balanceadas')
   }
 
-  // Verificar variáveis válidas
+  // ✅ CORRIGIDO: Lista expandida de variáveis válidas (incluindo aliases PT-BR)
+  const validVariables = [
+    'name', 'churchName', 'amount', 'dueDate', 'paymentLink', 'paidAt',
+    // Aliases PT-BR
+    'nome_usuario', 'nome_igreja', 'valor_transacao', 'data_vencimento', 
+    'link_pagamento', 'data_pagamento'
+  ]
+  
   const variables = template.match(/{{(\w+)}}/g) || []
   const invalidVars = variables.filter(v => {
     const varName = v.replace(/[{}]/g, '')
-    return !['name', 'churchName', 'amount', 'dueDate', 'paymentLink'].includes(varName)
+    return !validVariables.includes(varName)
   })
 
   if (invalidVars.length > 0) {

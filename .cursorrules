@@ -19,7 +19,9 @@ Sistema de administração para gestão de igrejas desenvolvido com Next.js 15, 
 
 ## 🔴 BUGS CRÍTICOS CONHECIDOS (PRIORIDADE MÁXIMA)
 
-**Status Geral:** 4/4 bugs críticos resolvidos (100%) 🎉  
+**Status Geral:** 9/12 bugs resolvidos (75% total) 🎉  
+**Bugs Críticos:** 4/4 resolvidos (100%)  
+**Bugs Médios:** 5/5 resolvidos (100%)  
 **Última atualização:** 2025-11-05
 
 ### 1. ✅ Configuração de Build Insegura (RESOLVIDO)

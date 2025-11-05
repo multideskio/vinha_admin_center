@@ -81,12 +81,25 @@ export class S3Service {
 
     await this.client.send(command)
     
-    // Retornar URL do CloudFront se configurado, senão URL do S3
+    // Retornar URL do CloudFront se configurado
     if (this.config.cloudfrontUrl) {
       return `${this.config.cloudfrontUrl}/${key}`
     }
     
-    return `${this.config.endpoint}/${this.config.bucket}/${key}`
+    // ✅ CORRIGIDO: Formato correto de URL S3
+    const isAwsS3 = this.config.endpoint.includes('amazonaws.com') || 
+                    this.config.endpoint === 's3.amazonaws.com'
+    
+    if (isAwsS3) {
+      // Virtual-hosted style (padrão AWS)
+      return `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`
+    }
+    
+    // Para S3-compatible (MinIO, DigitalOcean Spaces, etc)
+    const endpoint = this.config.endpoint.replace(/\/$/, '') // Remove trailing slash
+    return this.config.forcePathStyle 
+      ? `${endpoint}/${this.config.bucket}/${key}`
+      : `${endpoint}/${key}`
   }
 
   async deleteFile(key: string): Promise<void> {
