@@ -40,7 +40,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   const minimal = url.searchParams.get('minimal') === 'true'
 
   if (minimal) {
-    const result = await db
+    // ✅ Paginação e busca para evitar retornar milhares de registros
+    const search = url.searchParams.get('search') || ''
+    const limit = parseInt(url.searchParams.get('limit') || '50', 10)
+    const offset = parseInt(url.searchParams.get('offset') || '0', 10)
+
+    let query = db
       .select({
         id: users.id,
         firstName: supervisorProfiles.firstName,
@@ -50,6 +55,33 @@ export async function GET(request: Request): Promise<NextResponse> {
       .innerJoin(users, eq(users.id, supervisorProfiles.userId))
       .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt))
+      .limit(limit)
+      .offset(offset)
+
+    // ✅ Busca por nome (case-insensitive)
+    if (search) {
+      const searchPattern = `%${search.toLowerCase()}%`
+      query = db
+        .select({
+          id: users.id,
+          firstName: supervisorProfiles.firstName,
+          lastName: supervisorProfiles.lastName,
+        })
+        .from(supervisorProfiles)
+        .innerJoin(users, eq(users.id, supervisorProfiles.userId))
+        .where(
+          and(
+            eq(users.role, 'supervisor'),
+            isNull(users.deletedAt),
+            sql`(LOWER(${supervisorProfiles.firstName}) LIKE ${searchPattern} OR LOWER(${supervisorProfiles.lastName}) LIKE ${searchPattern})`
+          )
+        )
+        .orderBy(desc(users.createdAt))
+        .limit(limit)
+        .offset(offset)
+    }
+
+    const result = await query
     return NextResponse.json({ supervisors: result })
   }
 

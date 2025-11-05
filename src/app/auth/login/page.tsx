@@ -106,15 +106,21 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm border-none shadow-none">
-        <CardHeader className="text-center">
-            <div className="flex justify-center items-center mb-4">
-                    <Logo className="h-8 w-8 text-primary" />
+    <Card className="w-full max-w-sm border-t-4 border-t-videira-cyan shadow-xl">
+        <CardHeader className="text-center space-y-4 pb-6">
+            <div className="flex justify-center items-center">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-videira-cyan/20 to-videira-blue/20 ring-4 ring-videira-cyan/30 shadow-lg">
+                    <Logo className="h-10 w-10 text-videira-cyan" />
+                </div>
             </div>
-        <CardTitle className="text-2xl">Login</CardTitle>
-        <CardDescription>
-            Acesse seu painel com seu e-mail e senha.
-        </CardDescription>
+            <div>
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-videira-cyan via-videira-blue to-videira-purple bg-clip-text text-transparent">
+                    Bem-vindo de Volta
+                </CardTitle>
+                <CardDescription className="text-base mt-2">
+                    Acesse seu painel com seu e-mail e senha
+                </CardDescription>
+            </div>
         </CardHeader>
         <CardContent>
         <Form {...form}>
@@ -124,11 +130,12 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="font-semibold">Email</FormLabel>
                     <FormControl>
                     <Input
                         type="email"
-                        placeholder="m@example.com"
+                        placeholder="seu@email.com"
+                        className="border-2 focus:border-videira-cyan"
                         {...field}
                     />
                     </FormControl>
@@ -141,41 +148,63 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                 <FormItem>
-                    <div className="flex items-center">
-                    <FormLabel>Senha</FormLabel>
-                    <Link
-                        href="/auth/recuperar-senha"
-                        className="ml-auto inline-block text-sm underline"
-                    >
-                        Esqueceu sua senha?
-                    </Link>
+                    <div className="flex items-center justify-between">
+                        <FormLabel className="font-semibold">Senha</FormLabel>
+                        <Link
+                            href="/auth/recuperar-senha"
+                            className="text-sm text-videira-blue hover:text-videira-cyan font-medium transition-colors"
+                        >
+                            Esqueceu a senha?
+                        </Link>
                     </div>
                     <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="border-2 focus:border-videira-cyan"
+                        {...field} 
+                    />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
                 )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || isLogging}>
-                {isLogging ? 'Verificando...' : 'Login'}
+            <Button 
+                type="submit" 
+                className="w-full bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all" 
+                size="lg"
+                disabled={form.formState.isSubmitting || isLogging}
+            >
+                {isLogging ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verificando...
+                    </>
+                ) : (
+                    'Entrar'
+                )}
             </Button>
             </form>
         </Form>
         {logs.length > 0 && (
-            <Card className="mt-6">
-                <CardHeader>
-                    <CardTitle className="text-base">Logs de Autenticação</CardTitle>
+            <Card className="mt-6 border-2 border-videira-blue/30 bg-videira-blue/5">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold text-videira-blue flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-videira-blue animate-pulse"></div>
+                        Status de Autenticação
+                    </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm font-mono">
+                <CardContent className="space-y-2 text-sm">
                     {logs.map((log, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                            {log.status === 'pending' && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                        <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-background/50">
+                            {log.status === 'pending' && <Loader2 className="h-4 w-4 animate-spin text-videira-blue" />}
                             {log.status === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
                             {log.status === 'error' && <XCircle className="h-4 w-4 text-destructive" />}
                             <span className={cn(
-                                'break-words',
-                                log.status === 'error' && 'text-destructive'
+                                'break-words font-medium',
+                                log.status === 'error' && 'text-destructive',
+                                log.status === 'success' && 'text-green-600',
+                                log.status === 'pending' && 'text-muted-foreground'
                             )}>
                                 {log.message}
                             </span>
@@ -184,11 +213,13 @@ export default function LoginPage() {
                 </CardContent>
             </Card>
         )}
-        <div className="mt-4 text-center text-sm">
-            Não tem uma conta?{' '}
-            <Link href="/auth/nova-conta" className="underline">
-            Cadastre-se
-            </Link>
+        <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+                Não tem uma conta?{' '}
+                <Link href="/auth/nova-conta" className="text-videira-blue hover:text-videira-cyan font-semibold transition-colors">
+                    Cadastre-se aqui
+                </Link>
+            </p>
         </div>
         </CardContent>
     </Card>

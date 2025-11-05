@@ -11,7 +11,7 @@ import * as React from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Calendar as CalendarIcon, Building, User } from 'lucide-react'
+import { Calendar as CalendarIcon, Building, User, Loader2, ChevronsUpDown, Check } from 'lucide-react'
 import { format, subYears } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
@@ -27,16 +27,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -61,7 +55,15 @@ type PastorFormValues = z.infer<typeof pastorSchema>
 type ChurchFormValues = z.infer<typeof churchSchema>
 type Supervisor = { id: string; name: string }
 
-const PastorForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
+const PastorForm = ({ 
+  supervisors, 
+  onSearchChange 
+}: { 
+  supervisors: Supervisor[]
+  onSearchChange: (search: string) => void
+}) => {
+  const [openSupervisor, setOpenSupervisor] = React.useState(false)
+  
   const form = useForm<PastorFormValues>({
     resolver: zodResolver(pastorSchema),
     defaultValues: {
@@ -89,8 +91,13 @@ const PastorForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <CardHeader className="px-0">
-          <CardTitle>Informações Iniciais do Pastor</CardTitle>
+        <CardHeader className="px-0 pb-6">
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <User className="h-5 w-5 text-videira-blue" />
+            </div>
+            Informações do Pastor
+          </CardTitle>
         </CardHeader>
         <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
           <FormField
@@ -192,22 +199,59 @@ const PastorForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
             control={form.control}
             name="supervisorId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Supervisor</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolha um supervisor..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {supervisors.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openSupervisor} onOpenChange={setOpenSupervisor}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'w-full justify-between border-2',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                      >
+                        {field.value
+                          ? supervisors.find((s) => s.id === field.value)?.name
+                          : 'Escolha um supervisor...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput 
+                        placeholder="Buscar supervisor..." 
+                        onValueChange={onSearchChange}
+                      />
+                      <CommandList>
+                        <CommandEmpty>Nenhum supervisor encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {supervisors.map((supervisor: Supervisor) => (
+                            <CommandItem
+                              key={supervisor.id}
+                              value={supervisor.id}
+                              onSelect={() => {
+                                form.setValue('supervisorId', supervisor.id)
+                                setOpenSupervisor(false)
+                                onSearchChange('')
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  field.value === supervisor.id ? 'opacity-100' : 'opacity-0'
+                                )}
+                              />
+                              {supervisor.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -221,7 +265,15 @@ const PastorForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
   )
 }
 
-const ChurchForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
+const ChurchForm = ({ 
+  supervisors,
+  onSearchChange 
+}: { 
+  supervisors: Supervisor[]
+  onSearchChange: (search: string) => void
+}) => {
+  const [openSupervisor, setOpenSupervisor] = React.useState(false)
+  
   const form = useForm<ChurchFormValues>({
     resolver: zodResolver(churchSchema),
     defaultValues: {
@@ -250,8 +302,13 @@ const ChurchForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <CardHeader className="px-0">
-          <CardTitle>Informações Iniciais da Igreja</CardTitle>
+        <CardHeader className="px-0 pb-6">
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+              <Building className="h-5 w-5 text-videira-purple" />
+            </div>
+            Informações da Igreja
+          </CardTitle>
         </CardHeader>
         <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
           <FormField
@@ -314,22 +371,59 @@ const ChurchForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
             control={form.control}
             name="supervisorId"
             render={({ field }) => (
-              <FormItem className="sm:col-span-2">
+              <FormItem className="sm:col-span-2 flex flex-col">
                 <FormLabel>Supervisor</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolha um supervisor..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {supervisors.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openSupervisor} onOpenChange={setOpenSupervisor}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'w-full justify-between border-2',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                      >
+                        {field.value
+                          ? supervisors.find((s) => s.id === field.value)?.name
+                          : 'Escolha um supervisor...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput 
+                        placeholder="Buscar supervisor..." 
+                        onValueChange={onSearchChange}
+                      />
+                      <CommandList>
+                        <CommandEmpty>Nenhum supervisor encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {supervisors.map((supervisor: Supervisor) => (
+                            <CommandItem
+                              key={supervisor.id}
+                              value={supervisor.id}
+                              onSelect={() => {
+                                form.setValue('supervisorId', supervisor.id)
+                                setOpenSupervisor(false)
+                                onSearchChange('')
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  field.value === supervisor.id ? 'opacity-100' : 'opacity-0'
+                                )}
+                              />
+                              {supervisor.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -346,11 +440,14 @@ const ChurchForm = ({ supervisors }: { supervisors: Supervisor[] }) => {
 export default function NovaContaPage() {
   const [supervisors, setSupervisors] = React.useState<Supervisor[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const [isSearching, setIsSearching] = React.useState(false)
 
+  // Fetch inicial
   React.useEffect(() => {
     async function fetchSupervisors(): Promise<void> {
       try {
-        const response = await fetch('/api/v1/supervisores?minimal=true')
+        const response = await fetch('/api/v1/supervisores?minimal=true&limit=50')
         if (!response.ok) throw new Error('Falha ao carregar supervisores')
         const data = await response.json()
         const formattedData = data.supervisors.map(
@@ -369,39 +466,112 @@ export default function NovaContaPage() {
     fetchSupervisors()
   }, [])
 
+  // Busca server-side com debounce
+  React.useEffect(() => {
+    if (!searchQuery) {
+      // Se limpar a busca, recarrega os primeiros 50
+      async function resetSupervisors(): Promise<void> {
+        setIsSearching(true)
+        try {
+          const response = await fetch('/api/v1/supervisores?minimal=true&limit=50')
+          if (!response.ok) throw new Error('Falha ao carregar supervisores')
+          const data = await response.json()
+          const formattedData = data.supervisors.map(
+            (s: { id: string; firstName: string; lastName: string }) => ({
+              id: s.id,
+              name: `${s.firstName} ${s.lastName}`,
+            }),
+          )
+          setSupervisors(formattedData)
+        } catch (error) {
+          console.error(error)
+        } finally {
+          setIsSearching(false)
+        }
+      }
+      resetSupervisors()
+      return
+    }
+
+    // Debounce de 300ms
+    const timer = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const response = await fetch(
+          `/api/v1/supervisores?minimal=true&search=${encodeURIComponent(searchQuery)}&limit=100`
+        )
+        if (!response.ok) throw new Error('Falha ao buscar supervisores')
+        const data = await response.json()
+        const formattedData = data.supervisors.map(
+          (s: { id: string; firstName: string; lastName: string }) => ({
+            id: s.id,
+            name: `${s.firstName} ${s.lastName}`,
+          }),
+        )
+        setSupervisors(formattedData)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   return (
-    <Card className="w-full max-w-2xl border-none shadow-none">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Qual cadastro iremos fazer hoje?</CardTitle>
+    <Card className="w-full max-w-2xl border-t-4 border-t-videira-purple shadow-xl">
+      <CardHeader className="text-center space-y-4 pb-6">
+        <div>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-videira-purple via-videira-blue to-videira-cyan bg-clip-text text-transparent">
+            Criar Nova Conta
+          </CardTitle>
+          <p className="text-muted-foreground mt-2">
+            Escolha o tipo de cadastro que deseja realizar
+          </p>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <Skeleton className="h-32 w-full" />
+            <div className="text-center space-y-3">
+              <Loader2 className="h-8 w-8 animate-spin text-videira-purple mx-auto" />
+              <p className="text-sm text-muted-foreground">Carregando supervisores...</p>
+            </div>
           </div>
         ) : (
           <Tabs defaultValue="pastor">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="pastor" className="gap-2">
-                <User /> Cadastro de Pastor
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 h-auto">
+              <TabsTrigger 
+                value="pastor" 
+                className="gap-2 data-[state=active]:bg-videira-blue data-[state=active]:text-white font-semibold py-3"
+              >
+                <User className="h-4 w-4" /> 
+                Cadastro de Pastor
               </TabsTrigger>
-              <TabsTrigger value="igreja" className="gap-2">
-                <Building /> Cadastro de Igreja
+              <TabsTrigger 
+                value="igreja" 
+                className="gap-2 data-[state=active]:bg-videira-purple data-[state=active]:text-white font-semibold py-3"
+              >
+                <Building className="h-4 w-4" /> 
+                Cadastro de Igreja
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="pastor">
-              <PastorForm supervisors={supervisors} />
+            <TabsContent value="pastor" className="mt-6">
+              <PastorForm supervisors={supervisors} onSearchChange={setSearchQuery} />
             </TabsContent>
-            <TabsContent value="igreja">
-              <ChurchForm supervisors={supervisors} />
+            <TabsContent value="igreja" className="mt-6">
+              <ChurchForm supervisors={supervisors} onSearchChange={setSearchQuery} />
             </TabsContent>
           </Tabs>
         )}
-        <div className="mt-6 text-center text-sm">
-          Já tem uma conta?{' '}
-          <Link href="/auth/login" className="underline">
-            Faça o login
-          </Link>
+        <div className="mt-6 text-center border-t pt-6">
+          <p className="text-sm text-muted-foreground">
+            Já tem uma conta?{' '}
+            <Link href="/auth/login" className="text-videira-blue hover:text-videira-cyan font-semibold transition-colors">
+              Faça o login
+            </Link>
+          </p>
         </div>
       </CardContent>
     </Card>

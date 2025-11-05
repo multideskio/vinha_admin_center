@@ -82,15 +82,21 @@ export default function RecuperarSenhaPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm border-none shadow-none">
-        <CardHeader className="text-center">
-            <div className="flex justify-center items-center mb-4">
-                    <Logo className="h-8 w-8 text-primary" />
+    <Card className="w-full max-w-sm border-t-4 border-t-videira-purple shadow-xl">
+        <CardHeader className="text-center space-y-4 pb-6">
+            <div className="flex justify-center items-center">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-videira-purple/20 to-videira-blue/20 ring-4 ring-videira-purple/30 shadow-lg">
+                    <Logo className="h-10 w-10 text-videira-purple" />
+                </div>
             </div>
-        <CardTitle className="text-2xl">Recuperar Senha</CardTitle>
-        <CardDescription>
-            Digite seu e-mail para receber um link de recuperação.
-        </CardDescription>
+            <div>
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-videira-purple via-videira-blue to-videira-cyan bg-clip-text text-transparent">
+                    Recuperar Senha
+                </CardTitle>
+                <CardDescription className="text-base mt-2">
+                    Digite seu e-mail para receber um link de recuperação
+                </CardDescription>
+            </div>
         </CardHeader>
         <CardContent>
         <Form {...form}>
@@ -100,11 +106,12 @@ export default function RecuperarSenhaPage() {
                 name="email"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="font-semibold">Email</FormLabel>
                     <FormControl>
                     <Input
                         type="email"
-                        placeholder="m@example.com"
+                        placeholder="seu@email.com"
+                        className="border-2 focus:border-videira-purple"
                         {...field}
                     />
                     </FormControl>
@@ -112,23 +119,40 @@ export default function RecuperarSenhaPage() {
                 </FormItem>
                 )}
             />
-            <Button type="submit" className="w-full">
-                Enviar link de recuperação
+            <Button 
+                type="submit" 
+                className="w-full bg-videira-purple hover:bg-videira-purple/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                size="lg"
+                disabled={form.formState.isSubmitting}
+            >
+                {form.formState.isSubmitting ? (
+                    <>
+                        <span className="mr-2">Enviando...</span>
+                    </>
+                ) : (
+                    'Enviar Link de Recuperação'
+                )}
             </Button>
             </form>
         </Form>
         {success ? (
-          <div className="mt-2 text-green-600 text-center text-sm">
-            Se o e-mail estiver cadastrado, enviaremos um link de recuperação.
+          <div className="mt-4 p-3 rounded-lg bg-green-500/10 border-2 border-green-500/30 text-center">
+            <p className="text-sm font-medium text-green-600">
+              ✓ Se o e-mail estiver cadastrado, enviaremos um link de recuperação.
+            </p>
           </div>
         ) : null}
         {formError ? (
-          <div className="mt-2 text-red-600 text-center text-sm">{formError}</div>
+          <div className="mt-4 p-3 rounded-lg bg-destructive/10 border-2 border-destructive/30 text-center">
+            <p className="text-sm font-medium text-destructive">{formError}</p>
+          </div>
         ) : null}
-        <div className="mt-4 text-center text-sm">
-            <Link href="/auth/login" className="underline">
-            Voltar para o login
-            </Link>
+        <div className="mt-6 text-center border-t pt-6">
+            <p className="text-sm text-muted-foreground">
+                <Link href="/auth/login" className="text-videira-blue hover:text-videira-cyan font-semibold transition-colors">
+                    ← Voltar para o login
+                </Link>
+            </p>
         </div>
         </CardContent>
     </Card>
