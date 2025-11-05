@@ -163,12 +163,32 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
 
         {/* Settings no Footer */}
         <div className="mt-auto border-t border-border/40 p-4 bg-muted/30">
-          <nav className="px-3">
+          <nav className="px-3 space-y-1">
             <div className="pb-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Sistema
               </p>
             </div>
+            <Link
+              href="/admin/perfil"
+              data-active={pathname === '/admin/perfil'}
+              className={cn(
+                'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+                'border-l-3 border-l-transparent',
+                'hover:shadow-sm hover:bg-videira-blue/10',
+                pathname === '/admin/perfil'
+                  ? 'bg-videira-blue/15 border-l-4 border-l-videira-blue font-semibold text-videira-blue'
+                  : 'font-medium text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <User 
+                className={cn(
+                  'h-5 w-5 transition-all',
+                  pathname === '/admin/perfil' ? 'text-videira-blue' : 'text-muted-foreground group-hover:text-foreground'
+                )} 
+              />
+              <span className="text-base">Meu Perfil</span>
+            </Link>
             <Link
               href={settingsItem.href}
               data-active={pathname.startsWith(settingsItem.href)}
