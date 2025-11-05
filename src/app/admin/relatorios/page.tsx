@@ -104,7 +104,10 @@ export default function RelatoriosPage() {
             Acesse relatórios detalhados e análises da plataforma
           </p>
         </div>
-        <Button variant="outline" asChild>
+        <Button 
+          asChild
+          className="bg-videira-gradient hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all font-semibold"
+        >
           <Link href="/admin/relatorios/geral">
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Gerar Relatório Personalizado
@@ -176,12 +179,12 @@ export default function RelatoriosPage() {
                 </CardHeader>
                 <CardContent className="relative z-10">
                   <Button 
-                    variant="ghost" 
                     className={cn(
-                      "w-full justify-between group-hover:shadow-md transition-all",
-                      index % 3 === 0 && "group-hover:bg-videira-cyan/10 group-hover:text-videira-cyan group-hover:border-videira-cyan/20 border",
-                      index % 3 === 1 && "group-hover:bg-videira-blue/10 group-hover:text-videira-blue group-hover:border-videira-blue/20 border",
-                      index % 3 === 2 && "group-hover:bg-videira-purple/10 group-hover:text-videira-purple group-hover:border-videira-purple/20 border"
+                      "w-full justify-between transition-all duration-300 shadow-md font-semibold",
+                      "bg-white dark:bg-background border-2",
+                      index % 3 === 0 && "border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white hover:shadow-lg",
+                      index % 3 === 1 && "border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white hover:shadow-lg",
+                      index % 3 === 2 && "border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white hover:shadow-lg"
                     )}
                   >
                     <span className="font-semibold">Acessar Relatório</span>

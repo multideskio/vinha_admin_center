@@ -596,26 +596,26 @@ export default function DashboardPage() {
                 <Button 
                   onClick={handleSendReminders} 
                   disabled={sending}
-                  className="bg-videira-blue hover:bg-videira-blue/90 text-white shadow-md"
+                  className="bg-videira-blue hover:bg-videira-blue/90 text-white shadow-md hover:shadow-lg transition-all font-semibold"
                 >
                   {sending ? 'Enviando...' : 'Enviar lembretes (e-mail)'}
                 </Button>
                 <Link href="/admin/configuracoes/mensagens">
-                  <Button variant="outline" className="border-videira-purple text-videira-purple hover:bg-videira-purple/10">
+                  <Button 
+                    className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                  >
                     Configurar mensagens
                   </Button>
                 </Link>
                 <Button 
-                  variant="outline" 
                   onClick={handleExportDefaulters}
-                  className="border-videira-cyan text-videira-cyan hover:bg-videira-cyan/10"
+                  className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
                   <Save className="h-4 w-4 mr-2" /> Exportar inadimplentes
                 </Button>
                 <Button 
-                  variant="outline" 
                   onClick={handleExportTransactions}
-                  className="border-videira-blue text-videira-blue hover:bg-videira-blue/10"
+                  className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
                   <Save className="h-4 w-4 mr-2" /> Exportar transações
                 </Button>
@@ -640,7 +640,10 @@ export default function DashboardPage() {
                 </div>
                 {data.defaulters.length > 6 && (
                   <Link href="/admin/relatorios/inadimplentes">
-                    <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10">
+                    <Button 
+                      size="sm" 
+                      className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                    >
                       Ver todos ({data.defaulters.length})
                       <ExternalLink className="h-3 w-3 ml-2" />
                     </Button>
@@ -675,7 +678,9 @@ export default function DashboardPage() {
                   {data.defaulters.length > 6 && (
                     <div className="mt-4 pt-4 border-t">
                       <Link href="/admin/relatorios/inadimplentes">
-                        <Button variant="outline" className="w-full">
+                        <Button 
+                          className="w-full bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                        >
                           Ver lista completa ({data.defaulters.length} inadimplentes)
                           <ExternalLink className="h-4 w-4 ml-2" />
                         </Button>
@@ -700,19 +705,17 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Button 
-                  variant="outline" 
                   size="icon" 
-                  className="h-8 w-8 border-videira-purple text-videira-purple hover:bg-videira-purple/10" 
+                  className="h-8 w-8 bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md" 
                   onClick={fetchData}
                 >
                   <RefreshCw className="h-4 w-4" />
                   <span className="sr-only">Atualizar</span>
                 </Button>
                 <Button 
-                  variant="outline" 
                   size="sm" 
                   onClick={handleExportTransactions}
-                  className="border-videira-purple text-videira-purple hover:bg-videira-purple/10"
+                  className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
                   <Save className="h-4 w-4 mr-1" /> CSV
                 </Button>
