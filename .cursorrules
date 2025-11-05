@@ -114,33 +114,48 @@ return NextResponse.json({
 
 ---
 
-## 🟡 BUGS MÉDIOS CONHECIDOS
+## 🟡 BUGS MÉDIOS CONHECIDOS (TODOS RESOLVIDOS)
 
-### 5. Validação de Templates Muito Restritiva
-**Arquivo:** `src/lib/template-engine.ts` linha 65
-- Aceita apenas 5 variáveis mas código usa mais (aliases PT-BR)
-- **Fix:** Expandir lista de variáveis válidas
+### 5. ✅ Validação de Templates Muito Restritiva (RESOLVIDO)
+**Arquivo:** `src/lib/template-engine.ts` linha 61-73
+**Status:** ✅ RESOLVIDO em 2025-11-05
 
-### 6. Notificações de Boas-Vindas com Lógica Invertida
-**Arquivo:** `src/lib/notification-scheduler.ts` linha 27
-- Usa `lte` (≤) em vez de `gte` (≥)
-- Não verifica flag `welcomeSent`
-- **Fix:** Corrigir query e adicionar update da flag
+**Correção:** Expandida lista de variáveis válidas incluindo aliases PT-BR
+- Adicionado: `nome_usuario`, `nome_igreja`, `valor_transacao`, `data_vencimento`, `link_pagamento`, `data_pagamento`
 
-### 7. Credenciais S3 Usadas para SES
-**Arquivo:** `src/lib/notification-scheduler.ts` linha 87-89
-- Configuração SES usa credenciais S3 (incorreto)
-- **Fix:** Usar `smtpUser` e `smtpPass` para SES
+### 6. ✅ Notificações de Boas-Vindas com Lógica Invertida (RESOLVIDO)
+**Arquivo:** `src/lib/notification-scheduler.ts` linha 27-40
+**Status:** ✅ RESOLVIDO em 2025-11-05
 
-### 8. URL S3 Formatada Incorretamente
-**Arquivo:** `src/lib/s3-client.ts` linha 89
-- Formato não segue padrão AWS S3
-- **Fix:** Usar virtual-hosted style para AWS
+**Correções aplicadas:**
+- Mudado `lte` para `gte` (busca usuários das ÚLTIMAS 24h)
+- Adicionado filtro `eq(users.welcomeSent, false)`
+- Adicionado update da flag após envio
 
-### 9. Redis Worker Silencia Erros
-**Arquivo:** `src/workers/notification-worker.ts` linha 15
-- `client.on('error', () => {})` não loga nada
-- **Fix:** Adicionar logging adequado
+### 7. ✅ Credenciais S3 Usadas para SES (RESOLVIDO)
+**Arquivo:** `src/lib/notification-scheduler.ts` linha 84-86
+**Status:** ✅ RESOLVIDO em 2025-11-05
+
+**Correção:** Usando credenciais SES corretas
+- `sesAccessKeyId: settings.smtpUser`
+- `sesSecretAccessKey: settings.smtpPass`
+
+### 8. ✅ URL S3 Formatada Incorretamente (RESOLVIDO)
+**Arquivo:** `src/lib/s3-client.ts` linha 89-102
+**Status:** ✅ RESOLVIDO em 2025-11-05
+
+**Correção:** Implementado formato correto AWS S3 virtual-hosted style
+- AWS S3: `https://{bucket}.s3.{region}.amazonaws.com/{key}`
+- S3-compatible: suporta path-style e virtual-hosted
+
+### 9. ✅ Redis Worker Silencia Erros (RESOLVIDO)
+**Arquivo:** `src/workers/notification-worker.ts` linha 5-35
+**Status:** ✅ RESOLVIDO em 2025-11-05
+
+**Correções aplicadas:**
+- Adicionado logging em `error`, `connect`, `ready` events
+- Adicionado logging no retryStrategy
+- Removido uso de `as any`
 
 ---
 
@@ -545,11 +560,16 @@ Ao trabalhar neste projeto:
 - ✅ **RESOLVIDO**: Bug #2 - Autenticação duplicada (Lucia removido, JWT mantido)
 - ✅ **RESOLVIDO**: Bug #3 - Middleware AbortSignal incompatível (corrigido)
 - ✅ **RESOLVIDO**: Bug #4 - API maintenance-check (implementado)
+- ✅ **RESOLVIDO**: Bug #5 - Validação de templates (expandida)
+- ✅ **RESOLVIDO**: Bug #6 - Notificações boas-vindas (lógica corrigida)
+- ✅ **RESOLVIDO**: Bug #7 - Credenciais SES (separadas do S3)
+- ✅ **RESOLVIDO**: Bug #8 - URL S3 (formato AWS correto)
+- ✅ **RESOLVIDO**: Bug #9 - Redis worker (logging implementado)
 - 🔴 CRÍTICOS: 4/4 resolvidos (100%) 🎉
-- 🟡 MÉDIOS: 0/5 resolvidos (0%)
+- 🟡 MÉDIOS: 5/5 resolvidos (100%) 🎉
 - 🟢 MELHORIAS: 0/3 implementadas (0%)
-- **TOTAL**: 4/12 bugs resolvidos (33%)
-- **STATUS**: ✅ PRONTO PARA PRODUÇÃO
+- **TOTAL**: 9/12 bugs resolvidos (75%)
+- **STATUS**: ✅ TOTALMENTE PRONTO PARA PRODUÇÃO
 
 ### 2025-11-05 - INICIAL
 - ✅ Identificados 12 bugs (4 críticos, 5 médios, 3 melhorias)

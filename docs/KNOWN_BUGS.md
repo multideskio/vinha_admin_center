@@ -12,13 +12,13 @@ Este documento mantém registro de todos os bugs conhecidos no projeto, organiza
 | Prioridade | Total | Resolvidos | Pendentes | % Conclusão |
 |------------|-------|------------|-----------|-------------|
 | 🔴 CRÍTICA | 4     | 4          | 0         | 100% 🎉     |
-| 🟡 MÉDIA   | 5     | 0          | 5         | 0%          |
+| 🟡 MÉDIA   | 5     | 5          | 0         | 100% 🎉     |
 | 🟢 BAIXA   | 3     | 0          | 3         | 0%          |
-| **TOTAL**  | **12**| **4**      | **8**     | **33%**     |
+| **TOTAL**  | **12**| **9**      | **3**     | **75%** 🚀  |
 
 **Última atualização:** 2025-11-05  
-**Bugs corrigidos hoje:** 4 (Bug #1, #2, #3, #4)  
-**Status:** ✅ TODOS OS BUGS CRÍTICOS RESOLVIDOS
+**Bugs corrigidos hoje:** 9 (Bugs #1-9)  
+**Status:** ✅ TODOS OS BUGS CRÍTICOS E MÉDIOS RESOLVIDOS - PRONTO PARA PRODUÇÃO!
 
 ---
 
@@ -414,10 +414,12 @@ return NextResponse.json({
 
 ### Bug #5: Validação de Templates Muito Restritiva
 
-**Status:** ❌ NÃO RESOLVIDO  
+**Status:** ✅ RESOLVIDO  
 **Prioridade:** 🟡 MÉDIA  
 **Descoberto em:** 2025-11-05  
-**Arquivo:** `src/lib/template-engine.ts` (linha 61-70)
+**Resolvido em:** 2025-11-05  
+**Arquivo:** `src/lib/template-engine.ts` (linha 61-73)  
+**Resolvido por:** Cursor AI
 
 #### Descrição
 A validação de templates aceita apenas 5 variáveis específicas, mas o código usa muitas mais (aliases PT-BR), fazendo templates personalizados serem rejeitados incorretamente.
@@ -467,10 +469,12 @@ Ver `.cursorrules` seção "Bug #5" para código completo.
 
 ### Bug #6: Notificações de Boas-Vindas com Lógica Invertida
 
-**Status:** ❌ NÃO RESOLVIDO  
+**Status:** ✅ RESOLVIDO  
 **Prioridade:** 🟡 MÉDIA  
 **Descoberto em:** 2025-11-05  
-**Arquivo:** `src/lib/notification-scheduler.ts` (linha 24-30)
+**Resolvido em:** 2025-11-05  
+**Arquivo:** `src/lib/notification-scheduler.ts` (linha 14-41)  
+**Resolvido por:** Cursor AI
 
 #### Descrição
 A query que busca usuários para enviar boas-vindas tem lógica invertida e não verifica se já foi enviado, causando envios duplicados ou ausentes.
@@ -502,10 +506,12 @@ Ver `.cursorrules` seção "Bug #6" para código completo.
 
 ### Bug #7: Credenciais S3 Usadas para SES
 
-**Status:** ❌ NÃO RESOLVIDO  
+**Status:** ✅ RESOLVIDO  
 **Prioridade:** 🟡 MÉDIA  
 **Descoberto em:** 2025-11-05  
-**Arquivo:** `src/lib/notification-scheduler.ts` (linha 87-89)
+**Resolvido em:** 2025-11-05  
+**Arquivo:** `src/lib/notification-scheduler.ts` (linha 84-86)  
+**Resolvido por:** Cursor AI
 
 #### Descrição
 Configuração do SES (serviço de email) usa credenciais do S3 (serviço de armazenamento), que são serviços AWS diferentes e não devem compartilhar credenciais.
@@ -536,10 +542,12 @@ sesSecretAccessKey: settings.smtpPass || undefined,
 
 ### Bug #8: URL S3 Formatada Incorretamente
 
-**Status:** ❌ NÃO RESOLVIDO  
+**Status:** ✅ RESOLVIDO  
 **Prioridade:** 🟡 MÉDIA  
 **Descoberto em:** 2025-11-05  
-**Arquivo:** `src/lib/s3-client.ts` (linha 84-89)
+**Resolvido em:** 2025-11-05  
+**Arquivo:** `src/lib/s3-client.ts` (linha 84-103)  
+**Resolvido por:** Cursor AI
 
 #### Descrição
 URL retornada após upload não segue padrão AWS S3, podendo causar falha ao carregar imagens/arquivos.
@@ -555,10 +563,12 @@ Ver `.cursorrules` seção "Bug #8" para código completo.
 
 ### Bug #9: Redis Worker Silencia Todos os Erros
 
-**Status:** ❌ NÃO RESOLVIDO  
+**Status:** ✅ RESOLVIDO  
 **Prioridade:** 🟡 MÉDIA  
 **Descoberto em:** 2025-11-05  
-**Arquivo:** `src/workers/notification-worker.ts` (linha 15)
+**Resolvido em:** 2025-11-05  
+**Arquivo:** `src/workers/notification-worker.ts` (linha 5-35)  
+**Resolvido por:** Cursor AI
 
 #### Descrição
 Worker de notificações silencia completamente erros do Redis, impossibilitando debugging.
