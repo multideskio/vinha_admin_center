@@ -97,23 +97,38 @@ export default function RelatoriosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Relatórios</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Acesse relatórios detalhados e análises da plataforma
-          </p>
+      {/* Header Moderno com Gradiente */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                <FileText className="h-8 w-8" />
+                Relatórios
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Análises detalhadas e insights da organização
+              </p>
+              <p className="text-sm text-white/70 mt-1">
+                {reportCards.length} tipos de relatórios disponíveis
+              </p>
+            </div>
+            <Button 
+              asChild
+              className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2"
+            >
+              <Link href="/admin/relatorios/geral">
+                <FileSpreadsheet className="h-5 w-5" />
+                Relatório Personalizado
+              </Link>
+            </Button>
+          </div>
         </div>
-        <Button 
-          asChild
-          className="bg-videira-gradient hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all font-semibold"
-        >
-          <Link href="/admin/relatorios/geral">
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Gerar Relatório Personalizado
-          </Link>
-        </Button>
       </div>
 
       {/* Cards de Relatórios - Design Premium */}
@@ -198,34 +213,40 @@ export default function RelatoriosPage() {
         })}
       </div>
 
-      {/* Informações adicionais */}
-      <Card className="bg-muted/50">
+      {/* Informações adicionais com estilo Videira */}
+      <Card className="shadow-lg border-l-4 border-l-videira-blue bg-gradient-to-br from-videira-blue/5 to-transparent">
         <CardHeader>
-          <CardTitle className="text-lg">Dicas para Relatórios</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <FileText className="h-5 w-5 text-videira-blue" />
+            </div>
+            Dicas para Relatórios
+          </CardTitle>
+          <CardDescription>Aproveite ao máximo os recursos de análise</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-start gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+        <CardContent className="space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
             <p className="text-sm text-muted-foreground">
-              Use filtros de data para analisar períodos específicos e identificar tendências
+              Use <span className="font-semibold text-foreground">filtros de data</span> para analisar períodos específicos e identificar tendências
             </p>
           </div>
-          <div className="flex items-start gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+          <div className="flex items-start gap-3">
+            <div className="h-2 w-2 rounded-full bg-videira-blue mt-2 ring-2 ring-videira-blue/30" />
             <p className="text-sm text-muted-foreground">
-              Exporte relatórios em PDF ou Excel para compartilhar com a equipe
+              Exporte relatórios em <span className="font-semibold text-foreground">CSV</span> para compartilhar com a equipe
             </p>
           </div>
-          <div className="flex items-start gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+          <div className="flex items-start gap-3">
+            <div className="h-2 w-2 rounded-full bg-videira-purple mt-2 ring-2 ring-videira-purple/30" />
             <p className="text-sm text-muted-foreground">
-              O relatório de inadimplentes é atualizado em tempo real
+              O relatório de <span className="font-semibold text-foreground">inadimplentes</span> é atualizado em tempo real
             </p>
           </div>
-          <div className="flex items-start gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+          <div className="flex items-start gap-3">
+            <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
             <p className="text-sm text-muted-foreground">
-              Combine diferentes relatórios para uma análise completa da organização
+              Combine diferentes relatórios para uma <span className="font-semibold text-foreground">análise completa</span> da organização
             </p>
           </div>
         </CardContent>

@@ -171,28 +171,48 @@ export default function RelatorioIgrejasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/relatorios">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ChevronLeft className="h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Voltar
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Church className="h-7 w-7 text-purple-600 dark:text-purple-400" />
-              Relatório de Igrejas
-            </h1>
           </div>
-          <p className="text-sm text-muted-foreground mt-1 ml-12">
-            Performance e estatísticas por região • {period.from} até {period.to}
-          </p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                <Church className="h-8 w-8" />
+                Relatório de Igrejas
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Performance e estatísticas por região
+              </p>
+              <p className="text-sm text-white/70 mt-1">
+                Período: {period.from} até {period.to}
+              </p>
+            </div>
+            <Button 
+              onClick={handleExportCSV}
+              className="bg-white text-videira-purple hover:bg-white/90 shadow-lg font-semibold gap-2"
+            >
+              <Download className="h-5 w-5" />
+              Exportar CSV
+            </Button>
+          </div>
         </div>
-        <Button onClick={handleExportCSV} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Exportar CSV
-        </Button>
       </div>
 
       {/* Filtros */}

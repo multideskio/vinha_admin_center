@@ -140,29 +140,48 @@ export default function ReportsGeralPage() {
     };
 
   return (
-    <div className="grid gap-6">
-        <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Link href="/admin/relatorios">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                    Relatórios Gerais
-                </h1>
-              </div>
-              <p className="text-sm text-muted-foreground ml-12">
-                  Gere e exporte relatórios personalizados com filtros avançados.
-              </p>
-            </div>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/admin/relatorios">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            </Link>
+          </div>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+              <FileSpreadsheet className="h-8 w-8" />
+              Relatório Personalizado
+            </h1>
+            <p className="text-base text-white/90 mt-2 font-medium">
+              Gere relatórios customizados com filtros avançados
+            </p>
+          </div>
+        </div>
       </div>
 
-      <Card>
+      <Card className="shadow-lg border-t-4 border-t-videira-blue">
         <CardHeader>
-            <CardTitle>Gerar Novo Relatório</CardTitle>
-            <CardDescription>Selecione o tipo de relatório e o período desejado.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                <FileText className="h-5 w-5 text-videira-blue" />
+              </div>
+              Configurar Relatório
+            </CardTitle>
+            <CardDescription>Selecione o tipo de relatório, período e filtros desejados</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -235,42 +254,66 @@ export default function ReportsGeralPage() {
                     </Select>
                 </div>
             </div>
-            <div className="flex gap-2">
-                <Button onClick={handlePreview} disabled={isLoading}>
-                    {isLoading ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : null}
-                    Gerar Preview
+            <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={handlePreview} 
+                  disabled={isLoading}
+                  className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className='h-4 w-4 mr-2' />
+                        Gerar Preview
+                      </>
+                    )}
                 </Button>
             </div>
         </CardContent>
       </Card>
 
       {previewData && (
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardHeader>
-            <CardTitle>Preview do Relatório</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+                <FileSpreadsheet className="h-5 w-5 text-videira-cyan" />
+              </div>
+              Preview do Relatório
+            </CardTitle>
             <CardDescription>{previewData.title} - {previewData.period}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold mb-2">Resumo:</h4>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <div className="h-1 w-8 bg-gradient-to-r from-videira-cyan to-videira-blue rounded-full" />
+                  Resumo Executivo
+                </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   {previewData.summary?.map((item, index) => (
-                    <div key={index} className="p-3 border rounded-lg">
-                      <p className="text-sm text-muted-foreground">{item.label}</p>
-                      <p className="text-lg font-semibold">{item.value}</p>
+                    <div key={index} className="p-4 border-2 border-muted rounded-lg hover:border-videira-blue transition-colors hover:shadow-md">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">{item.label}</p>
+                      <p className="text-xl font-bold text-videira-blue mt-1">{item.value}</p>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Dados ({previewData.rows?.length || 0} registros):</h4>
-                <div className="border rounded-lg overflow-auto max-h-96">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <div className="h-1 w-8 bg-gradient-to-r from-videira-cyan to-videira-blue rounded-full" />
+                  Dados ({previewData.rows?.length || 0} registros)
+                </h4>
+                <div className="border-2 rounded-lg overflow-auto max-h-96 shadow-inner">
                   <table className="w-full">
-                    <thead className="bg-muted">
+                    <thead className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10 sticky top-0">
                       <tr>
                         {previewData.headers?.map((header, index) => (
-                          <th key={index} className="px-4 py-2 text-left text-sm font-medium">{header}</th>
+                          <th key={index} className="px-4 py-3 text-left text-sm font-semibold">{header}</th>
                         ))}
                       </tr>
                     </thead>
@@ -291,12 +334,20 @@ export default function ReportsGeralPage() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={() => handleGenerateReport('pdf')} disabled={isGenerating}>
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  onClick={() => handleGenerateReport('pdf')} 
+                  disabled={isGenerating}
+                  className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                >
                   {isGenerating ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : <FileText className='h-4 w-4 mr-2' />}
                   Baixar PDF
                 </Button>
-                <Button variant="outline" onClick={() => handleGenerateReport('excel')} disabled={isGenerating}>
+                <Button 
+                  onClick={() => handleGenerateReport('excel')} 
+                  disabled={isGenerating}
+                  className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                >
                   {isGenerating ? <Loader2 className='h-4 w-4 animate-spin mr-2' /> : <FileSpreadsheet className='h-4 w-4 mr-2' />}
                   Baixar Excel
                 </Button>
