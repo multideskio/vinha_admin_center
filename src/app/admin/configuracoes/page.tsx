@@ -78,34 +78,98 @@ const settingsLinks = [
 
 export default function SettingsPage() {
   return (
-    <div className="grid gap-6">
-       <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                Configurações
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+              <Settings className="h-8 w-8" />
+              Configurações
             </h1>
-            <p className="text-sm text-muted-foreground">
-                Gerencie as configurações e integrações da plataforma.
+            <p className="text-base text-white/90 mt-2 font-medium">
+              Gerencie as configurações e integrações da plataforma
             </p>
+            <p className="text-sm text-white/70 mt-1">
+              {settingsLinks.length} configurações disponíveis
+            </p>
+          </div>
         </div>
+      </div>
 
-      {settingsLinks.map((link) => (
-        <Link href={link.href} key={link.href} className="group">
-          <Card className="hover:border-primary/50 transition-colors">
-            <div className="flex items-center justify-between p-6">
-                <div className="flex items-center gap-4">
-                    <link.icon className="h-6 w-6 text-muted-foreground" />
-                    <div>
-                        <h3 className="font-semibold">{link.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                        {link.description}
-                        </p>
+      {/* Cards de Configuração Premium */}
+      <div className="grid gap-4">
+        {settingsLinks.map((link, index) => {
+          const borderColors = [
+            'border-l-videira-cyan',
+            'border-l-videira-blue',
+            'border-l-videira-purple',
+            'border-l-videira-cyan',
+            'border-l-videira-blue',
+            'border-l-videira-purple',
+            'border-l-videira-cyan',
+          ];
+          
+          const iconColors = [
+            'text-videira-cyan',
+            'text-videira-blue',
+            'text-videira-purple',
+            'text-videira-cyan',
+            'text-videira-blue',
+            'text-videira-purple',
+            'text-videira-cyan',
+          ];
+          
+          return (
+            <Link href={link.href} key={link.href} className="group">
+              <Card className={`hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-l-4 ${borderColors[index]} relative overflow-hidden`}>
+                {/* Fundo com gradiente sutil */}
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
+                  index % 3 === 0 && "bg-gradient-to-r from-videira-cyan/5 to-transparent"
+                } ${
+                  index % 3 === 1 && "bg-gradient-to-r from-videira-blue/5 to-transparent"
+                } ${
+                  index % 3 === 2 && "bg-gradient-to-r from-videira-purple/5 to-transparent"
+                }`} />
+                
+                <div className="flex items-center justify-between p-6 relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl shadow-md transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${
+                      index % 3 === 0 && "bg-videira-cyan/15 ring-2 ring-videira-cyan/30"
+                    } ${
+                      index % 3 === 1 && "bg-videira-blue/15 ring-2 ring-videira-blue/30"
+                    } ${
+                      index % 3 === 2 && "bg-videira-purple/15 ring-2 ring-videira-purple/30"
+                    }`}>
+                      <link.icon className={`h-6 w-6 ${iconColors[index]}`} />
                     </div>
+                    <div>
+                      <h3 className={`font-semibold text-lg transition-colors duration-300 ${
+                        index % 3 === 0 && "group-hover:text-videira-cyan"
+                      } ${
+                        index % 3 === 1 && "group-hover:text-videira-blue"
+                      } ${
+                        index % 3 === 2 && "group-hover:text-videira-purple"
+                      }`}>
+                        {link.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {link.description}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className={`h-6 w-6 ${iconColors[index]} group-hover:translate-x-2 transition-transform duration-300`} />
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Card>
-        </Link>
-      ))}
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

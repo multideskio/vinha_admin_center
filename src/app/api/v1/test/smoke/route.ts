@@ -31,9 +31,9 @@ export async function GET(request: NextRequest) {
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
       whatsappApiKey: settings.whatsappApiKey || undefined,
       whatsappApiInstance: settings.whatsappApiInstance || undefined,
-      sesRegion: settings.s3Region || undefined,
-      sesAccessKeyId: settings.s3AccessKeyId || undefined,
-      sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+      sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+      sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+      sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
       fromEmail: settings.smtpFrom || undefined,
       companyId: user.companyId,
     })

@@ -74,16 +74,36 @@ async function processNewUsers(rule: { messageTemplate: string; sendViaEmail: bo
 
   for (const user of recentUsers) {
     const notificationService = new NotificationService({ companyId: user.companyId })
+    
+    // ✅ CORRIGIDO: Usar template configurado da regra
+    const variables: Record<string, string> = {
+      nome_usuario: user.email.split('@')[0] || 'Membro',
+      nome_igreja: 'Nossa Igreja',
+      valor_transacao: '0,00',
+      data_vencimento: new Date().toLocaleDateString('pt-BR'),
+      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+    }
+
+    let message = rule.messageTemplate
+    message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
+
     try {
-      // Utiliza templates via NotificationService (se configurados)
-      await notificationService.sendWelcome(
-        user.id,
-        user.email.split('@')[0] || 'Membro',
-        'Nossa Igreja',
-        user.phone || undefined,
-        user.email || undefined
-      )
-      // Marcar como enviado APENAS se sucesso (não temos retorno granular por canal aqui)
+      // ✅ CORRIGIDO: Enviar via canais configurados
+      if (rule.sendViaEmail && user.email) {
+        await notificationService.sendEmail({
+          to: user.email,
+          subject: 'Bem-vindo(a)!',
+          html: `<p>${message.replace(/\n/g, '<br>')}</p>`,
+        })
+      }
+
+      if (rule.sendViaWhatsapp && user.phone) {
+        await notificationService.sendWhatsApp({
+          phone: user.phone,
+          message: message,
+        })
+      }
+
       await db.update(users).set({ welcomeSent: true }).where(eq(users.id, user.id))
     } catch (error) {
       console.error(`Failed to send welcome to user ${user.id}:`, error)
@@ -120,18 +140,34 @@ async function processPayments(rule: { messageTemplate: string; sendViaEmail: bo
 
     const notificationService = new NotificationService({ companyId: user.companyId })
 
+    // ✅ CORRIGIDO: Usar template configurado da regra
+    const variables: Record<string, string> = {
+      nome_usuario: user.email.split('@')[0] || 'Membro',
+      nome_igreja: 'Nossa Igreja',
+      valor_transacao: String(transaction.amount),
+      data_pagamento: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
+      data_vencimento: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
+      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+    }
+
+    let message = rule.messageTemplate
+    message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
+
     try {
-      // Envio manual (mantemos conforme regra), templates podem ser adicionados no futuro
+      // ✅ CORRIGIDO: Enviar via canais configurados com template
       if (rule.sendViaEmail && user.email) {
         await notificationService.sendEmail({
           to: user.email,
           subject: 'Pagamento Confirmado',
-          html: `<p>Pagamento confirmado! Valor: R$ ${transaction.amount}</p>`,
+          html: `<p>${message.replace(/\n/g, '<br>')}</p>`,
         })
       }
 
       if (rule.sendViaWhatsapp && user.phone) {
-        await notificationService.sendWhatsApp({ phone: user.phone, message: `Pagamento confirmado! Valor: R$ ${transaction.amount}` })
+        await notificationService.sendWhatsApp({ 
+          phone: user.phone, 
+          message: message 
+        })
       }
 
       await db.insert(notificationLogs).values({
@@ -140,7 +176,7 @@ async function processPayments(rule: { messageTemplate: string; sendViaEmail: bo
         notificationType: `payment_received_${transaction.id}`,
         channel: rule.sendViaWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
-        messageContent: `Pagamento confirmado! Valor: R$ ${transaction.amount}`,
+        messageContent: message,
       })
     } catch (error) {
       console.error(`Failed to send payment notification:`, error)
@@ -178,15 +214,35 @@ async function processReminders(rule: { id: string; messageTemplate: string; sen
     const name = user.email.split('@')[0] || 'Membro'
     const amount = '100,00' // valor default; pode ser ajustado conforme regra/consulta
 
+    // ✅ CORRIGIDO: Usar o template configurado da regra, não templates fixos
+    const variables: Record<string, string> = {
+      nome_usuario: name,
+      valor_transacao: amount,
+      data_vencimento: dueDate,
+      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      nome_igreja: 'Nossa Igreja',
+    }
+
+    let message = rule.messageTemplate
+    // Substituir variáveis no template
+    message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
+
     try {
-      await notificationService.sendPaymentReminder(
-        user.id,
-        name,
-        amount,
-        dueDate,
-        user.phone || undefined,
-        user.email || undefined
-      )
+      // ✅ CORRIGIDO: Enviar via canais configurados na regra
+      if (rule.sendViaEmail && user.email) {
+        await notificationService.sendEmail({
+          to: user.email,
+          subject: `Lembrete: Vencimento em ${dueDate}`,
+          html: `<p>${message.replace(/\n/g, '<br>')}</p>`,
+        })
+      }
+
+      if (rule.sendViaWhatsapp && user.phone) {
+        await notificationService.sendWhatsApp({
+          phone: user.phone,
+          message: message,
+        })
+      }
 
       await db.insert(notificationLogs).values({
         companyId: user.companyId,
@@ -194,7 +250,7 @@ async function processReminders(rule: { id: string; messageTemplate: string; sen
         notificationType: `reminder_${rule.id}_${today}`,
         channel: rule.sendViaWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
-        messageContent: `Lembrete de pagamento - vencimento ${dueDate}`,
+        messageContent: message,
       })
     } catch (error) {
       console.error(`Failed to send reminder:`, error)
@@ -230,17 +286,36 @@ async function processOverdue(rule: { id: string; messageTemplate: string; sendV
     const notificationService = new NotificationService({ companyId: user.companyId })
     const dueDate = targetDate.toLocaleDateString('pt-BR')
     const name = user.email.split('@')[0] || 'Membro'
-    const amount = '100,00'
+    const amount = '100,00' // valor default
+
+    // ✅ CORRIGIDO: Usar o template configurado da regra
+    const variables: Record<string, string> = {
+      nome_usuario: name,
+      valor_transacao: amount,
+      data_vencimento: dueDate,
+      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      nome_igreja: 'Nossa Igreja',
+    }
+
+    let message = rule.messageTemplate
+    message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
 
     try {
-      await notificationService.sendPaymentOverdue(
-        user.id,
-        name,
-        amount,
-        dueDate,
-        user.phone || undefined,
-        user.email || undefined
-      )
+      // ✅ CORRIGIDO: Enviar via canais configurados
+      if (rule.sendViaEmail && user.email) {
+        await notificationService.sendEmail({
+          to: user.email,
+          subject: `Aviso: Pagamento em atraso desde ${dueDate}`,
+          html: `<p>${message.replace(/\n/g, '<br>')}</p>`,
+        })
+      }
+
+      if (rule.sendViaWhatsapp && user.phone) {
+        await notificationService.sendWhatsApp({
+          phone: user.phone,
+          message: message,
+        })
+      }
 
       await db.insert(notificationLogs).values({
         companyId: user.companyId,
@@ -248,7 +323,7 @@ async function processOverdue(rule: { id: string; messageTemplate: string; sendV
         notificationType: `overdue_${rule.id}_${today}`,
         channel: rule.sendViaWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
-        messageContent: `Pagamento em atraso - vencimento ${dueDate}`,
+        messageContent: message,
       })
     } catch (error) {
       console.error(`Failed to send overdue notification:`, error)

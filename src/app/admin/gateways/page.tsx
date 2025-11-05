@@ -1,12 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, PlusCircle } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, CreditCard, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,39 +70,75 @@ export default function GatewaysPage() {
   }, [fetchGateways])
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Gateways de Pagamento
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie os gateways para processamento de transações.
-          </p>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                <CreditCard className="h-8 w-8" />
+                Gateways de Pagamento
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Gerencie os gateways para processamento de transações
+              </p>
+              <p className="text-sm text-white/70 mt-1">
+                {gateways.length} {gateways.length === 1 ? 'gateway configurado' : 'gateways configurados'}
+              </p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
+                  <Plus className="h-5 w-5" />
+                  Novo Gateway
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Selecione um Gateway</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/gateways/cielo" className="cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-videira-cyan" />
+                      <span>Configurar Cielo</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/gateways/bradesco" className="cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-videira-blue" />
+                      <span>Configurar Bradesco</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" className="gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Novo Gateway</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Selecione um Gateway</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href="/admin/gateways/cielo">Configurar Cielo</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/admin/gateways/bradesco">Configurar Bradesco</Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="shadow-lg border-t-4 border-t-videira-blue">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <CreditCard className="h-5 w-5 text-videira-blue" />
+            </div>
+            Gateways Configurados
+          </CardTitle>
+          <CardDescription>
+            Gerencie credenciais e configure métodos de pagamento aceitos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           {isLoading ? (
-            <Table>
+            <div className="rounded-md border-2">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
@@ -136,8 +172,10 @@ export default function GatewaysPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           ) : gateways.length > 0 ? (
-            <Table>
+            <div className="rounded-md border-2">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
@@ -151,14 +189,14 @@ export default function GatewaysPage() {
               </TableHeader>
               <TableBody>
                 {gateways.map((gateway) => (
-                  <TableRow key={gateway.id}>
-                    <TableCell className="font-medium">{gateway.name}</TableCell>
+                  <TableRow key={gateway.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium text-lg">{gateway.name}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-2">
                         {(gateway.acceptedPaymentMethods || '').split(',').map(
                           (method) =>
                             method.trim() && (
-                              <Badge key={method} variant="secondary">
+                              <Badge key={method} variant="secondary" className="font-medium">
                                 {method}
                               </Badge>
                             ),
@@ -168,42 +206,76 @@ export default function GatewaysPage() {
                     <TableCell>
                       <Badge
                         variant={gateway.environment === 'production' ? 'destructive' : 'warning'}
+                        className="font-semibold"
                       >
                         {gateway.environment === 'production' ? 'Produção' : 'Desenvolvimento'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={gateway.isActive ? 'success' : 'secondary'}>
+                      <Badge variant={gateway.isActive ? 'success' : 'secondary'} className="font-semibold">
                         {gateway.isActive ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={gateway.href}>
+                          <Button 
+                            size="sm"
+                            className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                          >
+                            Configurar
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={gateway.href}>Configurar</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            {gateway.isActive ? 'Desativar' : 'Ativar'}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              {gateway.isActive ? 'Desativar' : 'Ativar'}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </div>
           ) : (
-            <div className="text-center text-muted-foreground p-12">
-              <h3 className="text-lg font-semibold">Nenhum Gateway Encontrado</h3>
-              <p>Clique em &quot;Novo Gateway&quot; para configurar um método de pagamento.</p>
+            <div className="text-center p-12">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 rounded-full bg-muted">
+                  <CreditCard className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Nenhum Gateway Configurado</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Configure um gateway de pagamento para começar a processar transações
+                  </p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Gateway
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-56">
+                      <DropdownMenuLabel>Selecione um Gateway</DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/gateways/cielo">Configurar Cielo</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/gateways/bradesco">Configurar Bradesco</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

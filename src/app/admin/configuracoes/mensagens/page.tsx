@@ -1,14 +1,15 @@
 'use client'
 
 import * as React from 'react'
-import { PlusCircle, Trash2, Pencil, Info, Loader2, Mail, Smartphone, Wand2 } from 'lucide-react'
+import { PlusCircle, Trash2, Pencil, Info, Loader2, Mail, Smartphone, Wand2, MessageSquare, ChevronLeft, Save, Send, Plus } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import Link from 'next/link'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -441,45 +442,94 @@ export default function MessagesSettingsPage() {
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <CardTitle>Mensagens Automáticas</CardTitle>
-          <CardDescription>Gerencie as regras de comunicação com os usuários.</CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleBootstrap}>
-            Gerar mensagens automáticas
-          </Button>
-          <NotificationFormModal onSave={fetchRules}>
-            <Button>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Adicionar Mensagem
-            </Button>
-          </NotificationFormModal>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/admin/configuracoes">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            </Link>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                <MessageSquare className="h-8 w-8" />
+                Mensagens Automáticas
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Configure regras para envio automático de notificações
+              </p>
+              <p className="text-sm text-white/70 mt-1">
+                {rules.length} {rules.length === 1 ? 'regra configurada' : 'regras configuradas'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleBootstrap}
+                className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/50 font-semibold shadow-lg backdrop-blur-sm"
+              >
+                <Wand2 className="mr-2 h-4 w-4" />
+                Gerar Padrões
+              </Button>
+              <NotificationFormModal onSave={fetchRules}>
+                <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Nova Regra
+                </Button>
+              </NotificationFormModal>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          Crie regras personalizadas para cada evento. Lembretes usam números negativos para
-          &quot;dias antes&quot; (ex: -5) e avisos usam números positivos.
+      {/* Alerta Informativo */}
+      <Alert className="shadow-lg border-l-4 border-l-videira-purple bg-gradient-to-br from-videira-purple/5 to-transparent">
+        <Info className="h-4 w-4 text-videira-purple" />
+        <AlertDescription className="text-foreground">
+          <strong>Dica:</strong> Configure regras para cada evento. Use variáveis como{' '}
+          <code className="bg-muted px-1 rounded">{'{nome_usuario}'}</code>,{' '}
+          <code className="bg-muted px-1 rounded">{'{valor_transacao}'}</code> e{' '}
+          <code className="bg-muted px-1 rounded">{'{data_vencimento}'}</code> nos templates.
         </AlertDescription>
       </Alert>
 
-      <Card>
-        <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Gatilho</TableHead>
-                <TableHead className="hidden sm:table-cell">Canais</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
+      <Card className="shadow-lg border-t-4 border-t-videira-blue">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <MessageSquare className="h-5 w-5 text-videira-blue" />
+            </div>
+            Regras Ativas
+          </CardTitle>
+          <CardDescription>
+            Gerencie as regras de notificação automática por evento
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border-2">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                  <TableHead className="font-semibold">Nome</TableHead>
+                  <TableHead className="font-semibold">Gatilho</TableHead>
+                  <TableHead className="hidden sm:table-cell font-semibold">Canais</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="text-right font-semibold">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
@@ -568,6 +618,7 @@ export default function MessagesSettingsPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

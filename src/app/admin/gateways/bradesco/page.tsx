@@ -4,7 +4,8 @@ import * as React from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Upload, Loader2 } from 'lucide-react'
+import { Upload, Loader2, CreditCard, ChevronLeft, Save } from 'lucide-react'
+import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -133,13 +134,51 @@ export default function BradescoGatewayPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>BRADESCO</CardTitle>
-        <CardDescription>
-          Configure as credenciais e opções para o gateway Bradesco.
-        </CardDescription>
-      </CardHeader>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/admin/gateways">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            </Link>
+          </div>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+              <CreditCard className="h-8 w-8" />
+              Gateway Bradesco
+            </h1>
+            <p className="text-base text-white/90 mt-2 font-medium">
+              Configure credenciais e certificados
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="shadow-lg border-t-4 border-t-videira-blue">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <CreditCard className="h-5 w-5 text-videira-blue" />
+            </div>
+            Configuração Bradesco
+          </CardTitle>
+          <CardDescription>
+            Configure as credenciais da API e certificados de segurança
+          </CardDescription>
+        </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -313,14 +352,28 @@ export default function BradescoGatewayPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar Configurações
+              <Button 
+                type="submit" 
+                disabled={isSaving}
+                className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar Configurações
+                  </>
+                )}
               </Button>
             </div>
           </form>
         </Form>
       </CardContent>
     </Card>
+    </div>
   )
 }

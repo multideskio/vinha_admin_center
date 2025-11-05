@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Form,
   FormControl,
@@ -19,8 +20,9 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Cloud, ChevronLeft, Save, CheckCircle, AlertTriangle } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import Link from 'next/link'
 
 const s3SettingsSchema = z.object({
   endpoint: z.string().min(1, 'Endpoint é obrigatório.'),
@@ -152,15 +154,84 @@ export default function S3SettingsPage() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid gap-6">
-          <Card>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/admin/configuracoes">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            </Link>
+          </div>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+              <Cloud className="h-8 w-8" />
+              Armazenamento S3
+            </h1>
+            <p className="text-base text-white/90 mt-2 font-medium">
+              Configure o provedor de armazenamento de objetos
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Card Informativo sobre S3 */}
+      <Card className="shadow-lg border-l-4 border-l-videira-purple bg-gradient-to-br from-videira-purple/5 to-transparent">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-videira-purple">
+            <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+              <CheckCircle className="h-5 w-5 text-videira-purple" />
+            </div>
+            Sistema de Upload Configurado
+          </CardTitle>
+          <CardDescription>Usando S3 para armazenamento de arquivos</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">Avatares de usuários</span> - Fotos de perfil de pastores, supervisores, gerentes
+            </p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="h-2 w-2 rounded-full bg-videira-blue mt-2 ring-2 ring-videira-blue/30" />
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">Logos da empresa</span> - Logotipo da organização
+            </p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="h-2 w-2 rounded-full bg-videira-purple mt-2 ring-2 ring-videira-purple/30" />
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">Arquivos gerais</span> - Uploads via API /api/v1/upload
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Card className="shadow-lg border-t-4 border-t-videira-blue">
             <CardHeader>
-              <CardTitle>Configuração de Armazenamento (S3)</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                  <Cloud className="h-5 w-5 text-videira-blue" />
+                </div>
+                Credenciais S3 / S3-Compatible
+              </CardTitle>
               <CardDescription>
-                Configure o provedor de armazenamento de objetos (ex: AWS S3, MinIO) para salvar
-                arquivos.
+                Configure AWS S3, MinIO, DigitalOcean Spaces ou outro provedor S3-compatible
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -259,25 +330,54 @@ export default function S3SettingsPage() {
                 )}
               />
               <Separator />
-              <div className="flex justify-end gap-2">
+              <Alert className="bg-videira-blue/10 border-videira-blue/30">
+                <AlertTriangle className="h-4 w-4 text-videira-blue" />
+                <AlertDescription className="text-videira-blue">
+                  <strong>AWS S3:</strong> Use <code className="bg-white px-1 rounded">s3.amazonaws.com</code> como endpoint.
+                  Para MinIO ou DigitalOcean, use a URL completa (ex: <code className="bg-white px-1 rounded">https://minio.seuservidor.com</code>).
+                </AlertDescription>
+              </Alert>
+              <div className="flex justify-end gap-3 pt-4">
                 <Button
                   type="button"
-                  variant="outline"
                   onClick={handleTestConnection}
                   disabled={isTesting}
+                  className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
-                  {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Testar Conexão
+                  {isTesting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Testando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Testar Conexão
+                    </>
+                  )}
                 </Button>
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Salvar Configurações
+                <Button 
+                  type="submit" 
+                  disabled={isSaving}
+                  className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Salvar Configurações
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </div>
   )
 }

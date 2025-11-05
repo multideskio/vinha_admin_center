@@ -20,9 +20,11 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Loader2, Smartphone, CheckCircle, XCircle, QrCode, RefreshCw, LogOut, RotateCcw } from 'lucide-react'
+import { Loader2, Smartphone, CheckCircle, XCircle, QrCode, RefreshCw, LogOut, RotateCcw, ChevronLeft, Save, Send, AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import Link from 'next/link'
 
 const whatsappSettingsSchema = z.object({
   apiUrl: z.string().url('URL da API inválida.'),
@@ -534,18 +536,64 @@ export default function WhatsappSettingsPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-      {/* Configurações - 70% */}
-      <div className="lg:col-span-7">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuração do WhatsApp</CardTitle>
-                <CardDescription>
-                  Configure as credenciais para integração com a API do WhatsApp.
-                </CardDescription>
-              </CardHeader>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/admin/configuracoes">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            </Link>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                <Smartphone className="h-8 w-8" />
+                Configuração WhatsApp
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Integração com Evolution API para envio de mensagens
+              </p>
+            </div>
+            {connectionStatus === 'connected' && (
+              <Badge className="bg-green-500 text-white border-green-400 px-6 py-2 text-sm font-bold shadow-xl">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                WhatsApp Conectado
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+        {/* Configurações - 70% */}
+        <div className="lg:col-span-7 space-y-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="shadow-lg border-t-4 border-t-videira-blue">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                      <Smartphone className="h-5 w-5 text-videira-blue" />
+                    </div>
+                    Credenciais Evolution API
+                  </CardTitle>
+                  <CardDescription>
+                    Configure a URL, API Key e nome da instância do WhatsApp
+                  </CardDescription>
+                </CardHeader>
               <CardContent className="space-y-6">
               <div className="space-y-4">
                 <FormField
@@ -600,59 +648,105 @@ export default function WhatsappSettingsPage() {
                     </FormItem>
                   )}
                 />
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar Configurações
+                <div className="flex justify-end pt-4">
+                  <Button 
+                    type="submit" 
+                    disabled={isSaving}
+                    className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Salvar Configurações
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
-              <Separator />
+              </CardContent>
+            </Card>
+          </form>
+        </Form>
               
-              <div>
-                <h3 className="text-lg font-medium mb-2">Testar Envio</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Número de Telefone (com DDI)</Label>
-                    <Input
-                      placeholder="Ex: 5562981154120"
-                      value={testPhone}
-                      onChange={(e) => setTestPhone(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Mensagem</Label>
-                    <Textarea
-                      placeholder="Digite sua mensagem de teste..."
-                      value={testMessage}
-                      onChange={(e) => setTestMessage(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleSendTestMessage}
-                      disabled={isTesting}
-                    >
-                      {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Testar Envio
-                    </Button>
-                  </div>
-                </div>
+        {/* Card de Teste */}
+        <Card className="shadow-lg border-t-4 border-t-green-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30">
+                <Send className="h-5 w-5 text-green-600" />
               </div>
-            </CardContent>
-          </Card>
-        </form>
-      </Form>
-    </div>
+              Testar Envio de Mensagem
+            </CardTitle>
+            <CardDescription>
+              Envie uma mensagem de teste para validar a configuração
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-semibold">Número de Telefone (com DDI)</Label>
+              <Input
+                placeholder="Ex: 5562981154120"
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+                className="border-2"
+              />
+              <p className="text-xs text-muted-foreground">
+                Formato: DDI + DDD + Número (sem espaços ou caracteres especiais)
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-semibold">Mensagem</Label>
+              <Textarea
+                placeholder="Digite sua mensagem de teste..."
+                value={testMessage}
+                onChange={(e) => setTestMessage(e.target.value)}
+                rows={4}
+                className="border-2"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleSendTestMessage}
+                disabled={isTesting || connectionStatus !== 'connected'}
+                className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+              >
+                {isTesting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Enviar Mensagem de Teste
+                  </>
+                )}
+              </Button>
+            </div>
+            {connectionStatus !== 'connected' && (
+              <Alert className="bg-amber-500/10 border-amber-500/30">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-600">
+                  <strong>WhatsApp desconectado.</strong> Conecte primeiro para testar o envio.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-    {/* Status WhatsApp - 30% */}
-    <div className="lg:col-span-3">
-      <div className="sticky top-4">
-        {/* Mockup de Celular */}
-        <div className="mx-auto max-w-sm">
-          <div className="relative bg-gray-900 rounded-[2.5rem] p-2 shadow-xl">
+      {/* Status WhatsApp - 30% */}
+      <div className="lg:col-span-3">
+        <div className="sticky top-4">
+          {/* Mockup de Celular com estilo Videira */}
+          <div className="mx-auto max-w-sm">
+            <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-[2.5rem] p-2 shadow-2xl ring-4 ring-videira-cyan/20">
             {/* Tela do celular */}
             <div className="bg-white rounded-[2rem] overflow-hidden h-[600px] flex flex-col">
               {/* Header do WhatsApp */}
@@ -848,6 +942,7 @@ export default function WhatsappSettingsPage() {
         </div>
       </div>
     </div>
-  </div>
+    </div>
+    </div>
   )
 }

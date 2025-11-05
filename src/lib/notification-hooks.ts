@@ -36,9 +36,9 @@ export async function onUserCreated(userId: string): Promise<void> {
         whatsappApiUrl: settings.whatsappApiUrl || undefined,
         whatsappApiKey: settings.whatsappApiKey || undefined,
         whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: settings.s3Region || undefined,
-        sesAccessKeyId: settings.s3AccessKeyId || undefined,
-        sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+        sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+        sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         fromEmail: settings.smtpFrom || undefined,
         companyId: user.companyId,
       })
@@ -90,9 +90,9 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
       whatsappApiKey: settings.whatsappApiKey || undefined,
       whatsappApiInstance: settings.whatsappApiInstance || undefined,
-      sesRegion: settings.s3Region || undefined,
-      sesAccessKeyId: settings.s3AccessKeyId || undefined,
-      sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+      sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+      sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+      sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
       fromEmail: settings.smtpFrom || undefined,
       companyId: transaction.companyId,
     })
@@ -169,9 +169,9 @@ export async function onUserDeleted(userId: string, deletionReason: string, dele
     // Enviar notificação por email para o administrador que fez a exclusão
     if (deletedByUser.email) {
       const emailService = new (await import('./notifications')).EmailService({
-        sesRegion: settings.s3Region || undefined,
-        sesAccessKeyId: settings.s3AccessKeyId || undefined,
-        sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+        sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+        sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         fromEmail: settings.smtpFrom || undefined,
       })
       
@@ -218,9 +218,9 @@ export async function processNotificationEvent(eventType: string, data: Record<s
         whatsappApiUrl: settings.whatsappApiUrl || undefined,
         whatsappApiKey: settings.whatsappApiKey || undefined,
         whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: settings.s3Region || undefined,
-        sesAccessKeyId: settings.s3AccessKeyId || undefined,
-        sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+        sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+        sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         fromEmail: settings.smtpFrom || undefined,
         companyId: user.companyId,
       })
@@ -262,9 +262,9 @@ export async function testNotifications(companyId: string): Promise<void> {
     whatsappApiUrl: settings.whatsappApiUrl || undefined,
     whatsappApiKey: settings.whatsappApiKey || undefined,
     whatsappApiInstance: settings.whatsappApiInstance || undefined,
-    sesRegion: settings.s3Region || undefined,
-    sesAccessKeyId: settings.s3AccessKeyId || undefined,
-    sesSecretAccessKey: settings.s3SecretAccessKey || undefined,
+    sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+    sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+    sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
     fromEmail: settings.smtpFrom || undefined,
     companyId: companyId,
   })

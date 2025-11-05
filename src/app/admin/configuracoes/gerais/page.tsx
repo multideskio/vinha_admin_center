@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Upload, Loader2 } from 'lucide-react'
+import { Upload, Loader2, Settings, ChevronLeft, Save } from 'lucide-react'
+import Link from 'next/link'
 import {
   Form,
   FormControl,
@@ -138,11 +139,48 @@ export default function GeneralSettingsPage() {
   }
 
   return (
-    <div className="grid gap-6">
-      <Card>
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/admin/configuracoes">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            </Link>
+          </div>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+              <Settings className="h-8 w-8" />
+              Configurações Gerais
+            </h1>
+            <p className="text-base text-white/90 mt-2 font-medium">
+              Ajustes gerais da plataforma
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="shadow-lg border-t-4 border-t-videira-blue">
         <CardHeader>
-          <CardTitle>Configurações Gerais</CardTitle>
-          <CardDescription>Ajustes gerais da plataforma.</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <Settings className="h-5 w-5 text-videira-blue" />
+            </div>
+            Configurações da Empresa
+          </CardTitle>
+          <CardDescription>Configure nome, logo e modo de manutenção</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -223,9 +261,22 @@ export default function GeneralSettingsPage() {
               />
             </CardContent>
             <CardContent>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar Alterações
+              <Button 
+                type="submit" 
+                disabled={isSaving}
+                className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar Alterações
+                  </>
+                )}
               </Button>
             </CardContent>
           </form>
