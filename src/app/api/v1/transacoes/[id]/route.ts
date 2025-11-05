@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles } from '@/db/schema'
+import { transactions, users, churchProfiles, pastorProfiles, supervisorProfiles, managerProfiles, adminProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
@@ -39,6 +39,7 @@ export async function GET(
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
+    // Buscar nome da igreja se houver
     let churchName = null
     let churchAddress = null
     if (transaction.churchId) {
@@ -46,8 +47,8 @@ export async function GET(
         .select({
           name: churchProfiles.nomeFantasia,
           address: churchProfiles.address,
-          city: churchProfiles.city,
-          state: churchProfiles.state,
+          city: churchProfiles.cidade,
+          state: churchProfiles.estado,
         })
         .from(churchProfiles)
         .innerJoin(users, eq(churchProfiles.userId, users.id))
@@ -56,8 +57,54 @@ export async function GET(
 
       if (church) {
         churchName = church.name
-        churchAddress = `${church.address}, ${church.city}, ${church.state}`
+        churchAddress = church.address && church.city 
+          ? `${church.address}, ${church.city}, ${church.state}` 
+          : null
       }
+    }
+
+    // Buscar nome real do contribuinte baseado no role
+    let contributorName = transaction.contributorEmail.split('@')[0]
+    
+    try {
+      if (transaction.contributorRole === 'pastor') {
+        const [profile] = await db
+          .select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+          .from(pastorProfiles)
+          .where(eq(pastorProfiles.userId, transaction.contributorId))
+          .limit(1)
+        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+      } else if (transaction.contributorRole === 'supervisor') {
+        const [profile] = await db
+          .select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+          .from(supervisorProfiles)
+          .where(eq(supervisorProfiles.userId, transaction.contributorId))
+          .limit(1)
+        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+      } else if (transaction.contributorRole === 'manager') {
+        const [profile] = await db
+          .select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
+          .from(managerProfiles)
+          .where(eq(managerProfiles.userId, transaction.contributorId))
+          .limit(1)
+        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+      } else if (transaction.contributorRole === 'church_account') {
+        const [profile] = await db
+          .select({ nomeFantasia: churchProfiles.nomeFantasia })
+          .from(churchProfiles)
+          .where(eq(churchProfiles.userId, transaction.contributorId))
+          .limit(1)
+        if (profile) contributorName = profile.nomeFantasia
+      } else if (transaction.contributorRole === 'admin') {
+        const [profile] = await db
+          .select({ firstName: adminProfiles.firstName, lastName: adminProfiles.lastName })
+          .from(adminProfiles)
+          .where(eq(adminProfiles.userId, transaction.contributorId))
+          .limit(1)
+        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+      }
+    } catch (error) {
+      console.error('Erro ao buscar nome do contribuinte:', error)
     }
 
     return NextResponse.json({
@@ -66,12 +113,14 @@ export async function GET(
         day: '2-digit',
         month: 'long',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       }),
       amount: parseFloat(transaction.amount),
       status: transaction.status,
       contributor: {
         id: transaction.contributorId,
-        name: transaction.contributorEmail.split('@')[0],
+        name: contributorName,
         email: transaction.contributorEmail,
         phone: transaction.contributorPhone,
         role: transaction.contributorRole,
@@ -85,7 +134,7 @@ export async function GET(
       payment: {
         method:
           transaction.paymentMethod === 'pix'
-            ? 'Pix'
+            ? 'PIX'
             : transaction.paymentMethod === 'credit_card'
               ? 'Cartão de Crédito'
               : 'Boleto',
