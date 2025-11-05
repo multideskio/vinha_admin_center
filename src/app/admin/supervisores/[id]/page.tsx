@@ -22,8 +22,19 @@ import {
   Mail,
   Smartphone,
   MoreHorizontal,
+  UserCog,
+  ArrowLeft,
+  CreditCard,
+  Settings,
+  Trash2,
+  Save,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -83,7 +94,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import Link from 'next/link'
 
 const supervisorUpdateSchema = supervisorProfileSchema
   .extend({
@@ -119,27 +129,43 @@ type Transaction = {
 const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
   const [reason, setReason] = React.useState('')
   return (
-    <AlertDialogContent>
+    <AlertDialogContent className="border-2 border-destructive/30">
       <AlertDialogHeader>
-        <AlertDialogTitle>Excluir Cadastro</AlertDialogTitle>
+        <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+          <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+          </div>
+          Confirmar Exclusão do Cadastro
+        </AlertDialogTitle>
         <AlertDialogDescription>
-          Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste perfil para
-          fins de auditoria.
+          Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo 
+          detalhado para a exclusão deste supervisor.
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <div className="space-y-2">
-        <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+      <div className="space-y-3">
+        <Label htmlFor="deletion-reason" className="font-semibold">
+          Motivo da Exclusão *
+        </Label>
         <Textarea
           id="deletion-reason"
-          placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
+          placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, desligamento da organização, etc."
           value={reason}
           onChange={(e) => setReason(e.target.value)}
+          className="min-h-[100px] border-destructive/30 focus:border-destructive"
         />
+        <p className="text-xs text-muted-foreground">
+          Este motivo será armazenado permanentemente no sistema.
+        </p>
       </div>
       <AlertDialogFooter>
         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-        <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>
-          Excluir permanentemente
+        <AlertDialogAction 
+          onClick={() => onConfirm(reason)} 
+          disabled={!reason.trim()}
+          className="bg-destructive hover:bg-destructive/90 font-semibold"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Confirmar Exclusão
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
@@ -182,22 +208,26 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-cyan">
       <CardHeader>
-        <CardTitle>Transações do Usuário</CardTitle>
-        <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+            <CreditCard className="h-5 w-5 text-videira-cyan" />
+          </div>
+          Transações do Supervisor
+        </CardTitle>
+        <CardDescription>Histórico completo de transações financeiras</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
+        <div className="rounded-md border">
+          <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>ID da Transação</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
+            <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
+              <TableHead className="font-semibold">ID da Transação</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Data</TableHead>
+              <TableHead className="text-right font-semibold">Valor</TableHead>
+              <TableHead className="text-right font-semibold">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -222,46 +252,53 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                 </TableRow>
               ))
             ) : transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                      {statusMap[transaction.status]?.text || transaction.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{transaction.date}</TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      transaction.amount,
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
+              transactions.map((transaction) => {
+                const statusInfo = statusMap[transaction.status] || { text: transaction.status, variant: 'default' as const }
+                const StatusIcon = transaction.status === 'approved' ? CheckCircle2 : transaction.status === 'pending' ? Clock : XCircle
+                
+                return (
+                  <TableRow key={transaction.id} className="hover:bg-muted/50">
+                    <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusInfo.variant} className="flex items-center gap-1 w-fit">
+                        <StatusIcon className="h-3 w-3" />
+                        {statusInfo.text}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{transaction.date}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                        transaction.amount,
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/admin/transacoes/${transaction.id}`}>
+                        <Button 
+                          size="sm"
+                          className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                        >
+                          Ver Detalhes
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
-                  Nenhuma transação encontrada para este usuário.
+                <TableCell colSpan={5} className="text-center h-32">
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <CreditCard className="h-12 w-12 text-muted-foreground" />
+                    <p className="text-lg font-medium text-muted-foreground">
+                      Nenhuma transação encontrada
+                    </p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -462,34 +499,121 @@ export default function SupervisorProfilePage(): JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-        <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-96 w-full" />
-            </CardContent>
-          </Card>
+      <div className="flex flex-col gap-6">
+        {/* Header Skeleton */}
+        <Card className="shadow-lg border-l-4 border-l-videira-blue">
+          <CardContent className="pt-6">
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+        
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-1">
+            <Card className="shadow-lg border-t-4 border-t-videira-cyan">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <Skeleton className="h-24 w-24 rounded-full" />
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-8 w-20" />
+                  </div>
+                </div>
+                <Separator className="my-6" />
+                <div className="space-y-3">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-2">
+            <Card className="shadow-lg border-t-4 border-t-videira-blue">
+              <CardContent className="pt-6">
+                <Skeleton className="h-96 w-full" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
   }
 
   if (!supervisor) {
-    return <p>Supervisor não encontrado.</p>
+    return (
+      <div className="flex flex-col gap-6">
+        <Card className="shadow-lg border-l-4 border-l-destructive">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-4 py-12">
+              <XCircle className="h-16 w-16 text-destructive" />
+              <h2 className="text-2xl font-bold">Supervisor não encontrado</h2>
+              <p className="text-muted-foreground">O supervisor solicitado não existe ou foi removido.</p>
+              <Link href="/admin/supervisores">
+                <Button className="mt-4">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar para Supervisores
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
     <AlertDialog>
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <Card>
+      <div className="flex flex-col gap-6">
+        {/* Header Moderno com Gradiente Videira */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg">
+          <div className="absolute inset-0 videira-gradient opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+          
+          <div className="relative z-10 p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <Link href="/admin/supervisores">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-white/90 hover:text-white hover:bg-white/20 mb-3 -ml-2"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar para Supervisores
+                  </Button>
+                </Link>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                  <UserCog className="h-8 w-8" />
+                  Perfil do Supervisor
+                </h1>
+                <p className="text-base text-white/90 mt-2 font-medium">
+                  {supervisor.firstName} {supervisor.lastName}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={supervisor.status === 'active' ? 'success' : 'destructive'}
+                  className={cn(
+                    "text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all",
+                    supervisor.status === 'active' 
+                      ? "bg-green-500 text-white border-green-400 hover:bg-green-600" 
+                      : "bg-red-500 text-white border-red-400 hover:bg-red-600"
+                  )}
+                >
+                  {supervisor.status === 'active' ? '✓ Ativo' : '✗ Inativo'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-1">
+            <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
             <CardContent className="flex flex-col items-center pt-6 text-center">
               <div className="relative">
                 <Avatar className="h-24 w-24">
@@ -520,8 +644,8 @@ export default function SupervisorProfilePage(): JSX.Element {
               <h2 className="mt-4 text-xl font-semibold">
                 {supervisor.firstName} {supervisor.lastName}
               </h2>
-              <p className="text-muted-foreground">Supervisor</p>
-              <div className="flex gap-2 mt-3">
+              <p className="text-sm text-muted-foreground font-medium">Supervisor</p>
+              <div className="flex gap-2 mt-4">
                 <SendMessageDialog
                   recipientName={`${supervisor.firstName} ${supervisor.lastName}`}
                   recipientEmail={supervisor.email || ''}
@@ -529,50 +653,56 @@ export default function SupervisorProfilePage(): JSX.Element {
                 >
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="flex items-center gap-1"
+                    className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                   >
-                    <Mail className="h-3 w-3" />
+                    <Mail className="h-4 w-4 mr-1" />
                     Mensagem
                   </Button>
                 </SendMessageDialog>
                 <Button
                   size="sm"
-                  variant="outline"
                   onClick={() => window.open(`https://wa.me/55${supervisor.phone?.replace(/\D/g, '')}`, '_blank')}
-                  className="flex items-center gap-1"
+                  className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
-                  <Smartphone className="h-3 w-3" />
+                  <Smartphone className="h-4 w-4 mr-1" />
                   WhatsApp
                 </Button>
               </div>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">
-              <h3 className="mb-4 font-semibold">Redes sociais</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+                  <Globe className="h-4 w-4 text-videira-purple" />
+                </div>
+                <h3 className="font-semibold">Redes Sociais</h3>
+              </div>
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Facebook className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 group">
+                  <Facebook className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
                   <Input
                     defaultValue={supervisor.facebook ?? ''}
                     placeholder="https://facebook.com/..."
                     onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                    className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Instagram className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 group">
+                  <Instagram className="h-5 w-5 text-pink-600 group-hover:scale-110 transition-transform" />
                   <Input
                     defaultValue={supervisor.instagram ?? ''}
                     placeholder="https://instagram.com/..."
                     onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                    className="border-pink-200 focus:border-pink-400"
                   />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 group">
+                  <Globe className="h-5 w-5 text-videira-purple group-hover:scale-110 transition-transform" />
                   <Input
                     defaultValue={supervisor.website ?? ''}
                     placeholder="https://website.com/..."
                     onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                    className="border-videira-purple/30 focus:border-videira-purple"
                   />
                 </div>
               </div>
@@ -581,16 +711,49 @@ export default function SupervisorProfilePage(): JSX.Element {
         </div>
 
         <div className="lg:col-span-2">
-          <Tabs defaultValue="profile">
-            <TabsList>
-              <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-              <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
-              <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-              <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
+          <Tabs defaultValue="profile" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 gap-2 bg-muted/50 p-1 rounded-lg">
+              <TabsTrigger 
+                value="profile"
+                className="data-[state=active]:bg-videira-blue data-[state=active]:text-white font-semibold"
+              >
+                <UserCog className="h-4 w-4 mr-2" />
+                Perfil
+              </TabsTrigger>
+              <TabsTrigger 
+                value="transactions"
+                className="data-[state=active]:bg-videira-cyan data-[state=active]:text-white font-semibold"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Transações
+              </TabsTrigger>
+              <TabsTrigger 
+                value="configuracoes"
+                className="data-[state=active]:bg-videira-purple data-[state=active]:text-white font-semibold"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
+              </TabsTrigger>
+              <TabsTrigger 
+                value="delete"
+                className="data-[state=active]:bg-destructive data-[state=active]:text-white font-semibold"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
-              <Card>
-                <CardContent className="pt-6">
+              <Card className="shadow-lg border-t-4 border-t-videira-blue">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                      <UserCog className="h-5 w-5 text-videira-blue" />
+                    </div>
+                    Dados do Perfil
+                  </CardTitle>
+                  <CardDescription>Atualize as informações pessoais do supervisor</CardDescription>
+                </CardHeader>
+                <CardContent>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -846,12 +1009,9 @@ export default function SupervisorProfilePage(): JSX.Element {
                         />
                       </div>
 
-                      <Alert
-                        variant="destructive"
-                        className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
-                      >
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        <AlertDescription>
+                      <Alert className="bg-warning/10 border-warning/30">
+                        <AlertTriangle className="h-4 w-4 text-warning" />
+                        <AlertDescription className="text-warning">
                           <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá
                           acessar usando a senha anterior.
                         </AlertDescription>
@@ -881,9 +1041,22 @@ export default function SupervisorProfilePage(): JSX.Element {
                       />
 
                       <div className="flex justify-end">
-                        <Button type="submit" disabled={isSaving}>
-                          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Alterar cadastro
+                        <Button 
+                          type="submit" 
+                          disabled={isSaving}
+                          className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                        >
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="mr-2 h-4 w-4" />
+                              Salvar Alterações
+                            </>
+                          )}
                         </Button>
                       </div>
                     </form>
@@ -895,107 +1068,149 @@ export default function SupervisorProfilePage(): JSX.Element {
               <TransactionsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="configuracoes">
-              <Card>
+              <Card className="shadow-lg border-t-4 border-t-videira-purple">
                 <CardHeader>
-                  <CardTitle>Configurações de Notificação</CardTitle>
-                  <CardDescription>
-                    Gerencie quais notificações este usuário receberá.
-                  </CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+                      <Settings className="h-5 w-5 text-videira-purple" />
+                    </div>
+                    Configurações de Notificação
+                  </CardTitle>
+                  <CardDescription>Gerencie os canais de notificação preferidos do supervisor</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between rounded-lg border p-4">
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between rounded-lg border-2 border-videira-cyan/30 hover:border-videira-cyan p-4 transition-all hover:shadow-md">
                     <div>
-                      <p className="font-medium">Notificações de Pagamento</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber avisos sobre pagamentos recebidos, recusados, etc.
+                      <p className="font-semibold">Notificações de Pagamento</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Escolha os canais de comunicação
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-6">
+                      <div className="flex flex-col items-center gap-2">
+                        <Mail className="h-5 w-5 text-videira-blue" />
                         <Switch checked={!!notif?.payment_notifications.email} onCheckedChange={(v) => setNotif((n) => n ? { ...n, payment_notifications: { ...n.payment_notifications, email: v } } : n)} />
+                        <span className="text-xs text-muted-foreground">Email</span>
                       </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex flex-col items-center gap-2">
+                        <Smartphone className="h-5 w-5 text-green-600" />
                         <Switch checked={!!notif?.payment_notifications.whatsapp} onCheckedChange={(v) => setNotif((n) => n ? { ...n, payment_notifications: { ...n.payment_notifications, whatsapp: v } } : n)} />
+                        <span className="text-xs text-muted-foreground">WhatsApp</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="flex items-center justify-between rounded-lg border-2 border-videira-blue/30 hover:border-videira-blue p-4 transition-all hover:shadow-md">
                     <div>
-                      <p className="font-medium">Lembretes de Vencimento</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber lembretes sobre pagamentos próximos do vencimento.
+                      <p className="font-semibold">Lembretes de Vencimento</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Escolha os canais de comunicação
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-6">
+                      <div className="flex flex-col items-center gap-2">
+                        <Mail className="h-5 w-5 text-videira-blue" />
                         <Switch checked={!!notif?.due_date_reminders.email} onCheckedChange={(v) => setNotif((n) => n ? { ...n, due_date_reminders: { ...n.due_date_reminders, email: v } } : n)} />
+                        <span className="text-xs text-muted-foreground">Email</span>
                       </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex flex-col items-center gap-2">
+                        <Smartphone className="h-5 w-5 text-green-600" />
                         <Switch checked={!!notif?.due_date_reminders.whatsapp} onCheckedChange={(v) => setNotif((n) => n ? { ...n, due_date_reminders: { ...n.due_date_reminders, whatsapp: v } } : n)} />
+                        <span className="text-xs text-muted-foreground">WhatsApp</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="flex items-center justify-between rounded-lg border-2 border-videira-purple/30 hover:border-videira-purple p-4 transition-all hover:shadow-md">
                     <div>
-                      <p className="font-medium">Novos Cadastros na Rede</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receber notificações sobre novos pastores ou igrejas na sua supervisão.
+                      <p className="font-semibold">Novos Cadastros na Rede</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Escolha os canais de comunicação
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2" title="Notificar por Email">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-6">
+                      <div className="flex flex-col items-center gap-2">
+                        <Mail className="h-5 w-5 text-videira-blue" />
                         <Switch checked={!!notif?.network_reports.email} onCheckedChange={(v) => setNotif((n) => n ? { ...n, network_reports: { ...n.network_reports, email: v } } : n)} />
+                        <span className="text-xs text-muted-foreground">Email</span>
                       </div>
-                      <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex flex-col items-center gap-2">
+                        <Smartphone className="h-5 w-5 text-green-600" />
                         <Switch checked={!!notif?.network_reports.whatsapp} onCheckedChange={(v) => setNotif((n) => n ? { ...n, network_reports: { ...n.network_reports, whatsapp: v } } : n)} />
+                        <span className="text-xs text-muted-foreground">WhatsApp</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    <Button onClick={async () => {
-                      if (!notif) return
-                      setSavingNotif(true)
-                      try {
-                        const res = await fetch(`/api/v1/admin/supervisores/${id}/notification-settings`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notif)
-                        })
-                        if (!res.ok) throw new Error('Falha ao salvar configurações.')
-                        toast({ title: 'Sucesso', description: 'Configurações salvas.', variant: 'success' })
-                      } catch (e: unknown) {
-                        toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
-                      } finally {
-                        setSavingNotif(false)
-                      }
-                    }} disabled={savingNotif}>
-                      {savingNotif ? 'Salvando...' : 'Salvar Configurações'}
+                  <div className="flex justify-end pt-4">
+                    <Button 
+                      onClick={async () => {
+                        if (!notif) return
+                        setSavingNotif(true)
+                        try {
+                          const res = await fetch(`/api/v1/admin/supervisores/${id}/notification-settings`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notif)
+                          })
+                          if (!res.ok) throw new Error('Falha ao salvar configurações.')
+                          toast({ title: 'Sucesso', description: 'Configurações salvas.', variant: 'success' })
+                        } catch (e: unknown) {
+                          toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+                        } finally {
+                          setSavingNotif(false)
+                        }
+                      }} 
+                      disabled={savingNotif}
+                      className="bg-videira-purple hover:bg-videira-purple/90 text-white font-semibold shadow-lg"
+                    >
+                      {savingNotif ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Salvar Configurações
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
             <TabsContent value="delete">
-              <Card className="border-destructive">
+              <Card className="shadow-lg border-t-4 border-t-destructive">
                 <CardHeader>
-                  <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
+                  <CardTitle className="text-destructive flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
+                      <Trash2 className="h-5 w-5 text-destructive" />
+                    </div>
+                    Excluir Cadastro
+                  </CardTitle>
                   <CardDescription>
                     Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente
-                    este cadastro.
+                    este cadastro. Um motivo será solicitado para fins de auditoria.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <Alert className="mb-6 bg-destructive/10 border-destructive/30">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <AlertDescription className="text-destructive">
+                      <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados associados
+                      a este supervisor serão marcados como excluídos.
+                    </AlertDescription>
+                  </Alert>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Excluir permanentemente</Button>
+                    <Button 
+                      variant="destructive" 
+                      className="font-semibold shadow-lg"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir Permanentemente
+                    </Button>
                   </AlertDialogTrigger>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
+        </div>
         </div>
         <DeleteProfileDialog onConfirm={handleDelete} />
       </div>
