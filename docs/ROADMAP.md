@@ -24,11 +24,58 @@
 - **8 dependências** atualizadas com segurança
 - **Workflows alternativos** para limitações de billing
 
+## 📦 **Versão 0.1.2 - LANÇADA** ✅
+
+### ✅ **Melhorias e Análise Completa**
+- **Deploy com Docker** completo e documentado
+- **S3 Troubleshooting** - Correção de URLs e ACL
+- **Análise completa** de funcionalidades pendentes
+- **Cielo parcelamento** implementado
+- **Relatórios com preview** antes de exportar
+- **Type safety** melhorado em todo o sistema
+
+---
+
+## 🎨 **Versão 0.2.0 - LANÇADA** ✅ (Novembro 2025)
+
+### ✅ **Design System Videira - Identidade Visual Única**
+- [x] **Paleta de cores Videira** extraída do logo
+- [x] **Gradientes dinâmicos** em todos os headers
+- [x] **100% das páginas /admin** redesenhadas
+- [x] **Sidebar moderna** com menu maior e hover effects
+- [x] **Cards premium** com bordas coloridas
+- [x] **Botões estilizados** com hover effects sofisticados
+- [x] **Skeleton loaders** detalhados
+- [x] **KPIs redesenhados** com visual moderno
+
+### ✅ **Auditoria Completa da Infraestrutura**
+- [x] **35 arquivos auditados** (libs, actions, workers, hooks)
+- [x] **5 documentos de auditoria** criados
+- [x] **10 bugs corrigidos** (1 novo + 9 do backlog)
+- [x] **Sistema SES** - 27 correções aplicadas
+- [x] **Sistema WhatsApp** - Validado e documentado
+- [x] **Sistema S3** - Validado e documentado
+- [x] **Sistema OpenAI** - Validado e documentado
+- [x] **Redis logging** - Correção aplicada
+
+### ✅ **Funcionalidades Novas**
+- [x] **Página de perfil** do admin logado (`/admin/perfil`)
+- [x] **Relatórios paginados** (4 páginas completas)
+- [x] **Exportação CSV** com filtros
+- [x] **Greeting personalizado** no dashboard
+- [x] **Notificações customizadas** via templates
+
+### ✅ **Qualidade e Estabilidade**
+- [x] **100% TypeCheck** sem erros
+- [x] **100% Linter** sem erros
+- [x] **97% Code quality** (35/36 arquivos)
+- [x] **Todos os bugs críticos** resolvidos
+
 ---
 
 ## 🚀 **Próximas Versões**
 
-### **v0.1.2 - Atualizações Pendentes** (Fevereiro 2025)
+### **v0.3.0 - Testes e Monitoramento** (Q1 2026)
 
 #### 🔄 **Dependências Complexas**
 - [ ] **react-day-picker: 8.x → 9.x** (major update - testar cuidadosamente)
@@ -44,7 +91,7 @@
 
 ---
 
-### **v0.2.0 - Melhorias e Otimizações** (Q2 2025)
+### **v0.3.0 - Testes e Monitoramento** (Q1 2026)
 
 #### 🔧 **Melhorias Técnicas**
 - [ ] **Testes Automatizados**
@@ -91,7 +138,7 @@
   - Agendamento de envios
   - Métricas de entrega
 
-### **v0.3.0 - Expansão de Funcionalidades** (Q3 2025)
+### **v0.4.0 - Expansão de Funcionalidades** (Q2 2026)
 
 #### 📅 **Sistema de Eventos**
 - [ ] **Gestão de Eventos**
@@ -138,7 +185,7 @@
   - Conciliação bancária
   - Fluxo de caixa
 
-### **v0.4.0 - Mobile e PWA** (Q4 2025)
+### **v0.5.0 - Mobile e PWA** (Q3 2026)
 
 #### 📱 **Progressive Web App**
 - [ ] **PWA Completo**
@@ -160,7 +207,7 @@
   - Resolução de conflitos
   - Backup local
 
-### **v0.5.0 - Inteligência e Analytics** (Q1 2026)
+### **v0.6.0 - Inteligência e Analytics** (Q4 2026)
 
 #### 📈 **Business Intelligence**
 - [ ] **Analytics Avançado**
