@@ -15,6 +15,11 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  UserCheck,
+  RefreshCw,
+  Users,
 } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -24,7 +29,7 @@ import Image from 'next/image'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +48,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -76,6 +82,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 const DeleteManagerDialog = ({ managerId, onConfirm }: { managerId: string; onConfirm: (id: string, reason: string) => void }) => {
   const [reason, setReason] = React.useState('')
@@ -110,7 +117,11 @@ const DeleteManagerDialog = ({ managerId, onConfirm }: { managerId: string; onCo
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} disabled={!reason.trim()}>
+          <AlertDialogAction 
+            onClick={handleConfirm} 
+            disabled={!reason.trim()}
+            className="bg-destructive hover:bg-destructive/90"
+          >
             Excluir permanentemente
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -247,23 +258,25 @@ const GerenteFormModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cadastro de gerente</DialogTitle>
+          <DialogTitle className="text-xl flex items-center gap-2">
+            <UserCheck className="h-5 w-5 text-videira-blue" />
+            Cadastro de Gerente
+          </DialogTitle>
+          <DialogDescription>
+            Preencha os dados do novo gerente. A senha padrão será 123456.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSave)}
-            className="space-y-4 p-4 overflow-y-auto max-h-[80vh]"
+            className="space-y-4 p-4"
           >
-            <Alert
-              variant="default"
-              className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
-            >
-              <AlertTriangle className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-blue-700 dark:text-blue-300">
+            <Alert className="bg-videira-blue/10 border-videira-blue/30">
+              <AlertTriangle className="h-4 w-4 text-videira-blue" />
+              <AlertDescription className="text-videira-blue">
                 A senha padrão é <strong>123456</strong> até o usuário cadastrar uma nova senha.
-                Você também pode alterar a senha no menu de perfil da pessoa cadastrada.
               </AlertDescription>
             </Alert>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -390,7 +403,7 @@ const GerenteFormModal = ({
                   <FormLabel>Endereço</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="O restante do endereço"
+                      placeholder="Rua, número, complemento"
                       {...field}
                       disabled={isFetchingCep}
                     />
@@ -453,8 +466,12 @@ const GerenteFormModal = ({
               <DialogClose asChild>
                 <Button variant="outline">Cancelar</Button>
               </DialogClose>
-              <Button type="submit" disabled={isFetchingCep}>
-                {isFetchingCep ? 'Buscando CEP...' : 'Salvar'}
+              <Button 
+                type="submit" 
+                disabled={isFetchingCep}
+                className="bg-videira-blue hover:bg-videira-blue/90 text-white"
+              >
+                {isFetchingCep ? 'Buscando CEP...' : 'Cadastrar Gerente'}
               </Button>
             </DialogFooter>
           </form>
@@ -470,7 +487,7 @@ export default function GerentesPage() {
   const [viewMode, setViewMode] = React.useState<'table' | 'card'>('table')
   const [searchTerm, setSearchTerm] = React.useState('')
   const [currentPage, setCurrentPage] = React.useState(1)
-  const itemsPerPage = viewMode === 'table' ? 10 : 9
+  const itemsPerPage = viewMode === 'table' ? 20 : 12
 
   const { toast } = useToast()
 
@@ -513,7 +530,8 @@ export default function GerentesPage() {
   }
 
   const filteredManagers = managers.filter((manager) =>
-    `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()),
+    `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    manager.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const totalPages = Math.ceil(filteredManagers.length / itemsPerPage)
@@ -522,109 +540,118 @@ export default function GerentesPage() {
     currentPage * itemsPerPage,
   )
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
-  }
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
-  }
-
   const TableView = () => (
-    <Card>
-      <CardContent className="pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Celular</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : paginatedManagers.length > 0 ? (
-              paginatedManagers.map((manager) => (
-                <TableRow key={manager.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={manager.avatarUrl || 'https://placehold.co/32x32.png'}
-                        alt={`${manager.firstName} ${manager.lastName}`}
-                        width={32}
-                        height={32}
-                        className="rounded-full object-cover"
-                        unoptimized
-                      />
-                      {`${manager.firstName} ${manager.lastName}`}
+    <Card className="shadow-lg border-l-4 border-l-videira-blue">
+      <CardHeader>
+        <CardTitle className="text-xl flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+            <List className="h-5 w-5 text-videira-blue" />
+          </div>
+          Lista de Gerentes
+        </CardTitle>
+        <CardDescription>{filteredManagers.length} gerentes encontrados</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
+                <TableHead className="font-semibold">Nome</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Email</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Celular</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-48" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : paginatedManagers.length > 0 ? (
+                paginatedManagers.map((manager) => (
+                  <TableRow key={manager.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={manager.avatarUrl || 'https://placehold.co/32x32.png'}
+                          alt={`${manager.firstName} ${manager.lastName}`}
+                          width={32}
+                          height={32}
+                          className="rounded-full object-cover"
+                          unoptimized
+                        />
+                        {`${manager.firstName} ${manager.lastName}`}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {manager.email}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {manager.phone}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={manager.status === 'active' ? 'success' : 'destructive'}>
+                        {manager.status === 'active' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/admin/gerentes/${manager.id}`}>
+                          <Button 
+                            size="sm"
+                            className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                          >
+                            <Pencil className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DeleteManagerDialog managerId={manager.id} onConfirm={handleDelete} />
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-32">
+                    <div className="flex flex-col items-center gap-3 py-8">
+                      <UserCheck className="h-12 w-12 text-muted-foreground" />
+                      <p className="text-lg font-medium text-muted-foreground">
+                        Nenhum gerente encontrado
+                      </p>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {manager.email}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {manager.phone}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Badge variant={manager.status === 'active' ? 'success' : 'destructive'}>
-                      {manager.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/gerentes/${manager.id}`}>Editar</Link>
-                        </DropdownMenuItem>
-                        <DeleteManagerDialog managerId={manager.id} onConfirm={handleDelete} />
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  Nenhum gerente encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        </div>
         <PaginationControls />
       </CardContent>
     </Card>
@@ -632,7 +659,7 @@ export default function GerentesPage() {
 
   const CardView = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i}>
@@ -643,7 +670,15 @@ export default function GerentesPage() {
           ))
         ) : paginatedManagers.length > 0 ? (
           paginatedManagers.map((manager, index) => (
-            <Card key={manager.id}>
+            <Card 
+              key={manager.id} 
+              className={cn(
+                "shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4",
+                index % 3 === 0 && "border-t-videira-cyan",
+                index % 3 === 1 && "border-t-videira-blue",
+                index % 3 === 2 && "border-t-videira-purple"
+              )}
+            >
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Image
@@ -651,13 +686,18 @@ export default function GerentesPage() {
                     alt={`Foto de ${manager.firstName}`}
                     width={128}
                     height={128}
-                    className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32"
+                    className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32 ring-2 ring-offset-2 ring-offset-background ring-muted"
                     unoptimized
                   />
                   <div className="flex-1 space-y-2 min-w-[200px]">
-                    <h3 className="text-lg font-bold">
-                      #{index + 1} - {manager.firstName} {manager.lastName}
-                    </h3>
+                    <div className="flex items-start justify-between">
+                      <h3 className="text-lg font-bold">
+                        {manager.firstName} {manager.lastName}
+                      </h3>
+                      <Badge variant={manager.status === 'active' ? 'success' : 'destructive'}>
+                        {manager.status === 'active' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p className="flex items-center gap-2">
                         <FileText size={14} /> <span>{manager.cpf}</span>
@@ -666,10 +706,10 @@ export default function GerentesPage() {
                         <Phone size={14} /> <span>{manager.phone}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <Mail size={14} /> <span>{manager.email}</span>
+                        <Mail size={14} /> <span className="truncate">{manager.email}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <MapPin size={14} />{' '}
+                        <MapPin size={14} />
                         <span>
                           {manager.city} - {manager.state}
                         </span>
@@ -677,19 +717,25 @@ export default function GerentesPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end mt-4">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/gerentes/${manager.id}`}>
+                <div className="flex justify-end mt-4 gap-2">
+                  <Link href={`/admin/gerentes/${manager.id}`}>
+                    <Button 
+                      size="sm"
+                      className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                    >
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
           ))
         ) : (
-          <div className="col-span-full text-center">Nenhum gerente encontrado.</div>
+          <div className="col-span-full flex flex-col items-center gap-3 py-16">
+            <UserCheck className="h-16 w-16 text-muted-foreground" />
+            <p className="text-lg font-medium text-muted-foreground">Nenhum gerente encontrado</p>
+          </div>
         )}
       </div>
       <PaginationControls />
@@ -697,87 +743,214 @@ export default function GerentesPage() {
   )
 
   const PaginationControls = () => (
-    <div className="flex items-center justify-end space-x-2 py-4">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handlePreviousPage}
-        disabled={currentPage === 1 || isLoading}
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Anterior
-      </Button>
-      <span className="text-sm text-muted-foreground">
-        Página {currentPage} de {totalPages}
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleNextPage}
-        disabled={currentPage === totalPages || isLoading}
-      >
-        Próximo
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+    <div className="flex items-center justify-between mt-6">
+      <div className="text-sm text-muted-foreground">
+        Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredManagers.length)} de {filteredManagers.length} resultados
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setCurrentPage(1)}
+          disabled={currentPage === 1 || isLoading}
+          className="h-8 w-8"
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          disabled={currentPage === 1 || isLoading}
+          className="h-8 w-8"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex items-center gap-2 px-4">
+          <span className="text-sm font-medium">
+            Página {currentPage} de {totalPages || 1}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages || isLoading}
+          className="h-8 w-8"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setCurrentPage(totalPages)}
+          disabled={currentPage === totalPages || isLoading}
+          className="h-8 w-8"
+        >
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Gerentes</h1>
-          <p className="text-sm text-muted-foreground">
-            Exibindo {filteredManagers.length} de {managers.length} resultados
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                <UserCheck className="h-8 w-8" />
+                Gerentes
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Gerencie os gerentes da organização
+              </p>
+              <p className="text-sm text-white/70 mt-1">
+                {managers.length} {managers.length === 1 ? 'gerente cadastrado' : 'gerentes cadastrados'}
+              </p>
+            </div>
+            <GerenteFormModal onSave={fetchManagers}>
+              <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
+                <PlusCircle className="h-5 w-5" />
+                <span>Novo Gerente</span>
+              </Button>
+            </GerenteFormModal>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 w-8"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em tabela</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('card')}
-                  className="h-8 w-8"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em cards</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <GerenteFormModal onSave={fetchManagers}>
-            <Button size="sm" className="gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Novo Gerente</span>
-            </Button>
-          </GerenteFormModal>
         </div>
       </div>
+
+      {/* KPIs */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Total de Gerentes
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+              <Users className="h-5 w-5 text-videira-cyan" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-videira-cyan">{managers.length}</div>
+            <p className="text-sm text-muted-foreground mt-1">Cadastrados</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-t-4 border-t-videira-blue hover:shadow-xl transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Gerentes Ativos
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+              <UserCheck className="h-5 w-5 text-videira-blue" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-videira-blue">
+              {managers.filter(m => m.status === 'active').length}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">No sistema</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-t-4 border-t-videira-purple hover:shadow-xl transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Gerentes Inativos
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+              <AlertTriangle className="h-5 w-5 text-videira-purple" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-videira-purple">
+              {managers.filter(m => m.status === 'inactive').length}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">Desativados</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros e Controles */}
+      <Card className="shadow-lg border-l-4 border-l-videira-cyan">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+                  <Search className="h-5 w-5 text-videira-cyan" />
+                </div>
+                Busca e Visualização
+              </CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="pl-8"
+              />
+            </div>
+            <Button
+              onClick={fetchManagers}
+              size="icon"
+              className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => setViewMode('table')}
+                    className={cn(
+                      "h-10 w-10 transition-all",
+                      viewMode === 'table' && "bg-videira-blue text-white"
+                    )}
+                  >
+                    <List className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Visualizar em tabela</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'card' ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => setViewMode('card')}
+                    className={cn(
+                      "h-10 w-10 transition-all",
+                      viewMode === 'card' && "bg-videira-blue text-white"
+                    )}
+                  >
+                    <Grid3x3 className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Visualizar em cards</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </CardContent>
+      </Card>
+
       {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   )
