@@ -6,58 +6,102 @@
 
 @layer base {
   :root {
+    /* Tema Claro - Paleta Videira */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 210 28% 24%;          /* Dark Indigo #2C3E50 */
+    
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 28% 24%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 28% 24%;
+    
+    /* Primary - Azul Vibrante do Logo */
+    --primary: 231 48% 48%;             /* Vibrant Blue #3F51B5 */
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Roxo Rico do Logo */
+    --secondary: 262 52% 47%;           /* Rich Purple #673AB7 */
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Accent - Cyan do Topo do Logo */
+    --accent: 188 100% 42%;             /* Teal/Cyan #00B8D4 */
+    --accent-foreground: 0 0% 100%;
+    
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 207 24% 38%;    /* Muted Indigo #4A607A */
+    
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
+    
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 231 48% 48%;                /* Primary para focus ring */
+    
     --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    
+    /* Charts - Usando cores do gradiente Videira */
+    --chart-1: 188 100% 42%;            /* Cyan */
+    --chart-2: 231 48% 48%;             /* Blue */
+    --chart-3: 262 52% 47%;             /* Purple */
+    --chart-4: 142 76% 36%;             /* Green (complementar) */
+    --chart-5: 25 95% 53%;              /* Orange (complementar) */
+    
+    /* Success, Warning, Info */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 188 100% 42%;
+    --info-foreground: 0 0% 100%;
   }
 
   .dark {
+    /* Tema Escuro - Paleta Videira */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    
+    --card: 222.2 84% 7%;
     --card-foreground: 210 40% 98%;
+    
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
+    
+    /* Primary - Cyan brilhante em dark mode */
+    --primary: 188 100% 42%;            /* Cyan #00B8D4 - Mais visível no escuro */
+    --primary-foreground: 222.2 47.4% 11.2%;
+    
+    /* Secondary - Roxo vibrante */
+    --secondary: 262 52% 47%;           /* Purple #673AB7 */
     --secondary-foreground: 210 40% 98%;
+    
+    /* Accent - Azul vibrante */
+    --accent: 231 48% 58%;              /* Blue mais claro para dark */
+    --accent-foreground: 210 40% 98%;
+    
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+    
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --ring: 188 100% 42%;               /* Cyan para focus ring */
+    
+    /* Charts - Cores mais vibrantes para dark mode */
+    --chart-1: 188 100% 42%;            /* Cyan */
+    --chart-2: 231 48% 58%;             /* Blue */
+    --chart-3: 262 52% 57%;             /* Purple */
+    --chart-4: 142 76% 46%;             /* Green */
+    --chart-5: 25 95% 63%;              /* Orange */
+    
+    --success: 142 76% 46%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 60%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+    --info: 188 100% 42%;
+    --info-foreground: 222.2 47.4% 11.2%;
   }
 }
 
@@ -67,6 +111,42 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Classe de gradiente Videira */
+  .videira-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(188 100% 42%) 0%,      /* Cyan */
+      hsl(231 48% 48%) 50%,       /* Blue */
+      hsl(262 52% 47%) 100%       /* Purple */
+    );
+  }
+  
+  .videira-gradient-text {
+    background: linear-gradient(
+      135deg,
+      hsl(188 100% 42%) 0%,
+      hsl(231 48% 48%) 50%,
+      hsl(262 52% 47%) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Hover effect sutil com cores da marca */
+  .videira-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .videira-hover:hover {
+    background: linear-gradient(
+      135deg,
+      hsla(188 100% 42% / 0.1) 0%,
+      hsla(231 48% 48% / 0.1) 50%,
+      hsla(262 52% 47% / 0.1) 100%
+    );
   }
 }
 

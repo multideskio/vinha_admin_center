@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   Save,
   Sparkles,
+  TrendingUp,
+  LayoutDashboard,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -97,6 +99,7 @@ export default function DashboardPage() {
   const [lastUpdatedAt, setLastUpdatedAt] = React.useState<string | null>(null)
   const [insightLoading, setInsightLoading] = React.useState(false)
   const [insightText, setInsightText] = React.useState('')
+  const [userName, setUserName] = React.useState<string>('')
 
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
@@ -126,6 +129,20 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     fetchData()
+    
+    // Buscar dados do usuário
+    fetch('/api/v1/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.firstName) {
+          setUserName(data.firstName)
+        } else if (data.displayName) {
+          setUserName(data.displayName)
+        }
+      })
+      .catch(() => {
+        // Silenciar erro, não é crítico
+      })
   }, [fetchData])
 
   const handleDateRangeChange = React.useCallback((range: { from: Date | undefined; to: Date | undefined }) => {
@@ -381,75 +398,145 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header e ações */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Visão geral do sistema e estatísticas em tempo real
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <DateRangePicker onDateRangeChange={handleDateRangeChange} />
-          <Button variant="outline" size="icon" onClick={fetchData} title="Atualizar">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button onClick={handleSendReminders} disabled={sending} title="Enviar lembretes por e-mail">
-            {sending ? 'Enviando...' : 'Enviar lembretes'}
-          </Button>
+      {/* Header Moderno com Gradiente */}
+      <div className="relative overflow-hidden rounded-2xl p-8 mb-2">
+        {/* Fundo com gradiente */}
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        
+        {/* Efeitos decorativos */}
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            {userName && (
+              <p className="text-lg text-white/80 mb-2 font-medium">
+                Olá, <span className="text-white font-bold">{userName}</span> 👋
+              </p>
+            )}
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+              <LayoutDashboard className="h-8 w-8" />
+              Dashboard
+            </h1>
+            <p className="text-base text-white/90 mt-2 font-medium">
+              Visão geral do sistema e estatísticas em tempo real
+            </p>
+            {lastUpdatedAt && (
+              <p className="text-sm text-white/70 mt-1">
+                Atualizado em {lastUpdatedAt}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+            <Button 
+              variant="secondary" 
+              size="icon" 
+              onClick={fetchData} 
+              title="Atualizar"
+              className="bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-lg"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={handleSendReminders} 
+              disabled={sending}
+              className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
+            >
+              {sending ? 'Enviando...' : 'Enviar lembretes'}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Insights IA no topo */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      {/* Insights IA no topo - Estilo Premium */}
+      <Card className="relative overflow-hidden border-2 border-videira-purple/20 shadow-lg hover:shadow-2xl transition-all duration-300">
+        {/* Fundo decorativo com gradiente */}
+        <div className="absolute inset-0 bg-gradient-to-br from-videira-purple/5 via-videira-blue/5 to-videira-cyan/5 pointer-events-none" />
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-videira-purple/10 blur-3xl pointer-events-none" />
+        <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-videira-cyan/10 blur-3xl pointer-events-none" />
+        
+        <CardHeader className="flex flex-row items-center justify-between relative z-10">
           <div>
-            <CardTitle className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Insights IA</CardTitle>
-            <CardDescription>Resumo do momento atual e recomendações automáticas.</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+                <Sparkles className="h-5 w-5 text-videira-purple" />
+              </div>
+              <span className="videira-gradient-text">Insights IA</span>
+            </CardTitle>
+            <CardDescription className="mt-1">Resumo do momento atual e recomendações automáticas.</CardDescription>
           </div>
-          <Button onClick={handleGenerateInsights} disabled={insightLoading}>
+          <Button 
+            onClick={handleGenerateInsights} 
+            disabled={insightLoading}
+            className="videira-gradient hover:opacity-90 text-white shadow-lg"
+          >
             {insightLoading ? 'Gerando...' : 'Gerar insights'}
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative z-10">
           {insightText ? (
-            <div className="prose prose-sm dark:prose-invert">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightText}</ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Clique em “Gerar insights” para ver o resumo da IA.</p>
+            <p className="text-sm text-muted-foreground">Clique em "Gerar insights" para ver o resumo da IA.</p>
           )}
         </CardContent>
       </Card>
 
       {/* Grid principal em 12 colunas para melhor alinhamento */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* KPIs principais (4 cards) */}
+        {/* KPIs principais (4 cards) - Estilo Videira */}
         <div className="lg:col-span-12">
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
             {kpiDisplayData.slice(0, 4).map((kpi, index) => (
-              <Card key={kpi.title} className="hover:shadow-md transition-shadow h-full">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+              <Card 
+                key={kpi.title} 
+                className={cn(
+                  "hover:shadow-2xl transition-all duration-300 h-full hover:scale-[1.05] relative overflow-hidden group",
+                  "border-t-4",
+                  index === 0 && "border-t-videira-cyan bg-gradient-to-br from-videira-cyan/5 via-background to-background",
+                  index === 1 && "border-t-videira-blue bg-gradient-to-br from-videira-blue/5 via-background to-background",
+                  index === 2 && "border-t-videira-purple bg-gradient-to-br from-videira-purple/5 via-background to-background",
+                  index === 3 && "border-t-orange-500 bg-gradient-to-br from-orange-500/5 via-background to-background"
+                )}
+              >
+                {/* Efeito de brilho no hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    {kpi.title}
+                  </CardTitle>
                   <div className={cn(
-                    "p-2 rounded-lg",
-                    index === 0 && "bg-green-100 dark:bg-green-900/20",
-                    index === 1 && "bg-blue-100 dark:bg-blue-900/20",
-                    index === 2 && "bg-purple-100 dark:bg-purple-900/20",
-                    index === 3 && "bg-orange-100 dark:bg-orange-900/20"
+                    "p-3 rounded-xl shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6",
+                    index === 0 && "bg-videira-cyan/15 ring-2 ring-videira-cyan/30",
+                    index === 1 && "bg-videira-blue/15 ring-2 ring-videira-blue/30",
+                    index === 2 && "bg-videira-purple/15 ring-2 ring-videira-purple/30",
+                    index === 3 && "bg-orange-500/15 ring-2 ring-orange-500/30"
                   )}>
                     <kpi.icon className={cn(
-                      "h-4 w-4",
-                      index === 0 && "text-green-600 dark:text-green-400",
-                      index === 1 && "text-blue-600 dark:text-blue-400",
-                      index === 2 && "text-purple-600 dark:text-purple-400",
+                      "h-5 w-5",
+                      index === 0 && "text-videira-cyan",
+                      index === 1 && "text-videira-blue",
+                      index === 2 && "text-videira-purple",
                       index === 3 && "text-orange-600 dark:text-orange-400"
                     )} />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{kpi.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+                  <div className={cn(
+                    "text-3xl font-bold mb-2 tracking-tight",
+                    index === 0 && "text-videira-cyan",
+                    index === 1 && "text-videira-blue",
+                    index === 2 && "text-videira-purple",
+                    index === 3 && "text-orange-600 dark:text-orange-400"
+                  )}>
+                    {kpi.value}
+                  </div>
+                  <p className="text-sm text-muted-foreground font-medium">{kpi.change}</p>
                 </CardContent>
               </Card>
             ))}
@@ -458,14 +545,17 @@ export default function DashboardPage() {
 
         {/* Progresso de Crescimento (full width) */}
         <div className="lg:col-span-12">
-          <Card className="h-full">
+          <Card className="h-full shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Progresso de Crescimento</CardTitle>
-                  <CardDescription>Comparativo mês a mês (gráfico de pontos/halteres)</CardDescription>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-videira-blue" />
+                    Progresso de Crescimento
+                  </CardTitle>
+                  <CardDescription className="mt-1">Comparativo mês a mês (gráfico de pontos/halteres)</CardDescription>
                 </div>
-                <Badge variant="outline" className="text-xs">
+                <Badge className="bg-videira-blue text-white shadow-md">
                   {(data?.newMembers?.reduce((sum, m) => sum + m.count, 0) ?? 0)} novos membros
                 </Badge>
               </div>
@@ -489,31 +579,45 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Ações rápidas */}
+        {/* Ações rápidas - Estilo Moderno */}
         <div className="lg:col-span-12">
-          <Card>
+          <Card className="shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Ações rápidas</CardTitle>
-                <CardDescription>Operações administrativas frequentes</CardDescription>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-videira-cyan" />
+                  Ações Rápidas
+                </CardTitle>
+                <CardDescription className="mt-1">Operações administrativas frequentes</CardDescription>
               </div>
-              {lastUpdatedAt && (
-                <span className="text-xs text-muted-foreground">Atualizado: {lastUpdatedAt}</span>
-              )}
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={handleSendReminders} disabled={sending}>
+              <div className="flex flex-wrap gap-3">
+                <Button 
+                  onClick={handleSendReminders} 
+                  disabled={sending}
+                  className="bg-videira-blue hover:bg-videira-blue/90 text-white shadow-md"
+                >
                   {sending ? 'Enviando...' : 'Enviar lembretes (e-mail)'}
                 </Button>
                 <Link href="/admin/configuracoes/mensagens">
-                  <Button variant="outline">Configurar mensagens</Button>
+                  <Button variant="outline" className="border-videira-purple text-videira-purple hover:bg-videira-purple/10">
+                    Configurar mensagens
+                  </Button>
                 </Link>
-                <Button variant="outline" onClick={handleExportDefaulters}>
-                  <Save className="h-4 w-4 mr-2" /> Exportar inadimplentes (CSV)
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportDefaulters}
+                  className="border-videira-cyan text-videira-cyan hover:bg-videira-cyan/10"
+                >
+                  <Save className="h-4 w-4 mr-2" /> Exportar inadimplentes
                 </Button>
-                <Button variant="outline" onClick={handleExportTransactions}>
-                  <Save className="h-4 w-4 mr-2" /> Exportar transações (CSV)
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportTransactions}
+                  className="border-videira-blue text-videira-blue hover:bg-videira-blue/10"
+                >
+                  <Save className="h-4 w-4 mr-2" /> Exportar transações
                 </Button>
               </div>
             </CardContent>
@@ -522,55 +626,94 @@ export default function DashboardPage() {
 
         {/* Inadimplentes (8 col) + Últimas transações (4 col) */}
         <div className="lg:col-span-8">
-          <Card className="h-full">
+          <Card className="h-full shadow-lg border-t-4 border-t-destructive hover:shadow-xl transition-all bg-gradient-to-br from-destructive/5 to-background">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                Inadimplentes do Mês
-              </CardTitle>
-              <CardDescription>Pastores e igrejas que não dizimaram após o dia definido.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                    </div>
+                    Inadimplentes (3 meses)
+                  </CardTitle>
+                  <CardDescription className="mt-1">Pastores e igrejas que não contribuíram nos últimos 3 meses.</CardDescription>
+                </div>
+                {data.defaulters.length > 6 && (
+                  <Link href="/admin/relatorios/inadimplentes">
+                    <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10">
+                      Ver todos ({data.defaulters.length})
+                      <ExternalLink className="h-3 w-3 ml-2" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {data.defaulters.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum inadimplente este mês! 🎉</p>
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhum inadimplente nos últimos 3 meses! 🎉</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {data.defaulters.slice(0, 10).map((defaulter) => {
-                    const profilePath = defaulter.type === 'pastor' ? 'pastores' : 'igrejas'
-                    return (
-                      <div key={defaulter.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex-1">
-                          <Link href={`/admin/${profilePath}/${defaulter.id}`} className="text-sm font-medium hover:underline text-primary flex items-center gap-1">
-                            {defaulter.name}
-                            <ExternalLink className="h-3 w-3" />
-                          </Link>
-                          <p className="text-xs text-muted-foreground">
-                            {defaulter.type === 'pastor' ? 'Pastor' : 'Igreja'} • Dia {defaulter.titheDay}
-                          </p>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.defaulters.slice(0, 6).map((defaulter) => {
+                      const profilePath = defaulter.type === 'pastor' ? 'pastores' : 'igrejas'
+                      return (
+                        <div key={defaulter.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex-1">
+                            <Link href={`/admin/${profilePath}/${defaulter.id}`} className="text-sm font-medium hover:underline text-primary flex items-center gap-1">
+                              {defaulter.name}
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                            <p className="text-xs text-muted-foreground">
+                              {defaulter.type === 'pastor' ? 'Pastor' : 'Igreja'} • Dia {defaulter.titheDay}
+                            </p>
+                          </div>
+                          <Badge variant="destructive" className="ml-2">{defaulter.daysLate}d</Badge>
                         </div>
-                        <Badge variant="destructive" className="ml-2">{defaulter.daysLate}d</Badge>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                  {data.defaulters.length > 6 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Link href="/admin/relatorios/inadimplentes">
+                        <Button variant="outline" className="w-full">
+                          Ver lista completa ({data.defaulters.length} inadimplentes)
+                          <ExternalLink className="h-4 w-4 ml-2" />
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
         </div>
 
         <div className="lg:col-span-4">
-          <Card className="h-full">
+          <Card className="h-full shadow-lg border-t-4 border-t-videira-purple hover:shadow-xl transition-all">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Últimas Transações</CardTitle>
-                <CardDescription>As 10 transações mais recentes.</CardDescription>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-videira-purple" />
+                  Últimas Transações
+                </CardTitle>
+                <CardDescription className="mt-1">As 10 transações mais recentes.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={fetchData}>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8 border-videira-purple text-videira-purple hover:bg-videira-purple/10" 
+                  onClick={fetchData}
+                >
                   <RefreshCw className="h-4 w-4" />
                   <span className="sr-only">Atualizar</span>
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleExportTransactions}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleExportTransactions}
+                  className="border-videira-purple text-videira-purple hover:bg-videira-purple/10"
+                >
                   <Save className="h-4 w-4 mr-1" /> CSV
                 </Button>
               </div>

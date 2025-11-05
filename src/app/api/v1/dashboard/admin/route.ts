@@ -271,10 +271,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       count: item.count,
     }))
 
-    // --- Inadimplentes (Pastores e Igrejas que não dizimaram) ---
-    const currentDay = now.getDate()
-    const currentMonth = now.getMonth() + 1
-    const currentYear = now.getFullYear()
+    // --- Inadimplentes (Pastores e Igrejas que não contribuíram nos últimos 3 meses) ---
+    const threeMonthsAgo = startOfMonth(subMonths(now, 3))
 
     // Buscar pastores inadimplentes
     const pastorsWithTitheDay = await db
@@ -303,34 +301,46 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Verificar pastores
     for (const pastor of pastorsWithTitheDay) {
-      if (!pastor.titheDay) continue
-      
-      // Se o dia do dízimo já passou neste mês
-      if (currentDay > pastor.titheDay) {
-        // Buscar última transação aprovada deste mês
-        const lastPayment = await db
-          .select({ createdAt: transactions.createdAt })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.contributorId, pastor.id),
-              eq(transactions.status, 'approved'),
-              gte(transactions.createdAt, startOfCurrentMonth)
-            )
+      // Buscar última transação aprovada nos últimos 3 meses
+      const lastPayment = await db
+        .select({ createdAt: transactions.createdAt })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.contributorId, pastor.id),
+            eq(transactions.status, 'approved'),
+            gte(transactions.createdAt, threeMonthsAgo)
           )
-          .orderBy(desc(transactions.createdAt))
-          .limit(1)
+        )
+        .orderBy(desc(transactions.createdAt))
+        .limit(1)
 
-        // Se não pagou neste mês, é inadimplente
-        if (lastPayment.length === 0) {
-          const daysLate = currentDay - pastor.titheDay
+      // Se não pagou nos últimos 3 meses, é inadimplente
+      if (lastPayment.length === 0) {
+        // Calcular dias desde o início dos 3 meses
+        const daysSinceThreeMonths = Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
+        
+        defaulters.push({
+          id: pastor.id,
+          name: `${pastor.firstName} ${pastor.lastName}`,
+          type: 'pastor' as const,
+          titheDay: pastor.titheDay,
+          lastPayment: null,
+          daysLate: daysSinceThreeMonths,
+        })
+      } else {
+        // Verificar se o último pagamento foi há mais de 3 meses
+        const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
+        if (lastPaymentDate < threeMonthsAgo) {
+          const daysSinceLastPayment = Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
+          
           defaulters.push({
             id: pastor.id,
             name: `${pastor.firstName} ${pastor.lastName}`,
             type: 'pastor' as const,
             titheDay: pastor.titheDay,
-            lastPayment: null,
-            daysLate,
+            lastPayment: format(lastPaymentDate, 'dd/MM/yyyy'),
+            daysLate: daysSinceLastPayment,
           })
         }
       }
@@ -338,31 +348,45 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Verificar igrejas
     for (const church of churchesWithTitheDay) {
-      if (!church.titheDay) continue
-      
-      if (currentDay > church.titheDay) {
-        const lastPayment = await db
-          .select({ createdAt: transactions.createdAt })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.contributorId, church.id),
-              eq(transactions.status, 'approved'),
-              gte(transactions.createdAt, startOfCurrentMonth)
-            )
+      // Buscar última transação aprovada nos últimos 3 meses
+      const lastPayment = await db
+        .select({ createdAt: transactions.createdAt })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.contributorId, church.id),
+            eq(transactions.status, 'approved'),
+            gte(transactions.createdAt, threeMonthsAgo)
           )
-          .orderBy(desc(transactions.createdAt))
-          .limit(1)
+        )
+        .orderBy(desc(transactions.createdAt))
+        .limit(1)
 
-        if (lastPayment.length === 0) {
-          const daysLate = currentDay - church.titheDay
+      // Se não pagou nos últimos 3 meses, é inadimplente
+      if (lastPayment.length === 0) {
+        const daysSinceThreeMonths = Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
+        
+        defaulters.push({
+          id: church.id,
+          name: church.nomeFantasia,
+          type: 'church' as const,
+          titheDay: church.titheDay,
+          lastPayment: null,
+          daysLate: daysSinceThreeMonths,
+        })
+      } else {
+        // Verificar se o último pagamento foi há mais de 3 meses
+        const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
+        if (lastPaymentDate < threeMonthsAgo) {
+          const daysSinceLastPayment = Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
+          
           defaulters.push({
             id: church.id,
             name: church.nomeFantasia,
             type: 'church' as const,
             titheDay: church.titheDay,
-            lastPayment: null,
-            daysLate,
+            lastPayment: format(lastPaymentDate, 'dd/MM/yyyy'),
+            daysLate: daysSinceLastPayment,
           })
         }
       }

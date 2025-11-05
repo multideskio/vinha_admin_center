@@ -48,6 +48,29 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        
+        /* Cores customizadas da marca Videira */
+        videira: {
+          cyan: 'hsl(188 100% 42%)',       /* #00B8D4 */
+          blue: 'hsl(231 48% 48%)',        /* #3F51B5 */
+          purple: 'hsl(262 52% 47%)',      /* #673AB7 */
+          'dark-indigo': 'hsl(210 28% 24%)', /* #2C3E50 */
+          'muted-indigo': 'hsl(207 24% 38%)', /* #4A607A */
+        },
+        
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+        },
+        
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',
