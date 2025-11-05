@@ -23,6 +23,16 @@ import {
   Mail,
   Smartphone,
   MoreHorizontal,
+  UserCog,
+  ArrowLeft,
+  CreditCard,
+  Settings,
+  Trash2,
+  Save,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Building2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -116,27 +126,43 @@ type Transaction = {
 const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
   const [reason, setReason] = React.useState('')
   return (
-    <AlertDialogContent>
+    <AlertDialogContent className="border-2 border-destructive/30">
       <AlertDialogHeader>
-        <AlertDialogTitle>Excluir Cadastro</AlertDialogTitle>
+        <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+          <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+          </div>
+          Confirmar Exclusão do Cadastro
+        </AlertDialogTitle>
         <AlertDialogDescription>
-          Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste perfil para
-          fins de auditoria.
+          Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo 
+          detalhado para a exclusão desta igreja.
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <div className="space-y-2">
-        <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
+      <div className="space-y-3">
+        <Label htmlFor="deletion-reason" className="font-semibold">
+          Motivo da Exclusão *
+        </Label>
         <Textarea
           id="deletion-reason"
-          placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
+          placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, fechamento da igreja, etc."
           value={reason}
           onChange={(e) => setReason(e.target.value)}
+          className="min-h-[100px] border-destructive/30 focus:border-destructive"
         />
+        <p className="text-xs text-muted-foreground">
+          Este motivo será armazenado permanentemente no sistema.
+        </p>
       </div>
       <AlertDialogFooter>
         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-        <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>
-          Excluir permanentemente
+        <AlertDialogAction 
+          onClick={() => onConfirm(reason)} 
+          disabled={!reason.trim()}
+          className="bg-destructive hover:bg-destructive/90 font-semibold"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Confirmar Exclusão
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
@@ -179,24 +205,28 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-cyan">
       <CardHeader>
-        <CardTitle>Transações do Usuário</CardTitle>
-        <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+            <CreditCard className="h-5 w-5 text-videira-cyan" />
+          </div>
+          Transações da Igreja
+        </CardTitle>
+        <CardDescription>Histórico completo de transações financeiras</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID da Transação</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
+                <TableHead className="font-semibold">ID da Transação</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Data</TableHead>
+                <TableHead className="text-right font-semibold">Valor</TableHead>
+                <TableHead className="text-right font-semibold">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -219,46 +249,53 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                 </TableRow>
               ))
             ) : transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                      {statusMap[transaction.status]?.text || transaction.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{transaction.date}</TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      transaction.amount,
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
+              transactions.map((transaction) => {
+                const statusInfo = statusMap[transaction.status] || { text: transaction.status, variant: 'default' as const }
+                const StatusIcon = transaction.status === 'approved' ? CheckCircle2 : transaction.status === 'pending' ? Clock : XCircle
+                
+                return (
+                  <TableRow key={transaction.id} className="hover:bg-muted/50">
+                    <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusInfo.variant} className="flex items-center gap-1 w-fit">
+                        <StatusIcon className="h-3 w-3" />
+                        {statusInfo.text}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{transaction.date}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                        transaction.amount,
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/admin/transacoes/${transaction.id}`}>
+                        <Button 
+                          size="sm"
+                          className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                        >
+                          Ver Detalhes
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
-                  Nenhuma transação encontrada para este usuário.
+                <TableCell colSpan={5} className="text-center h-32">
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <CreditCard className="h-12 w-12 text-muted-foreground" />
+                    <p className="text-lg font-medium text-muted-foreground">
+                      Nenhuma transação encontrada
+                    </p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -333,7 +370,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-lg border-t-4 border-t-videira-purple">
         <CardHeader>
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-72" />
@@ -348,39 +385,63 @@ const SettingsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-purple">
       <CardHeader>
-        <CardTitle>Configurações de Notificação</CardTitle>
-        <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+            <Settings className="h-5 w-5 text-videira-purple" />
+          </div>
+          Configurações de Notificação
+        </CardTitle>
+        <CardDescription>Gerencie os canais de notificação preferidos da igreja</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {NOTIFICATION_TYPES.map((type) => (
-          <div key={type} className="flex items-center justify-between rounded-lg border p-4">
+      <CardContent className="space-y-4">
+        {NOTIFICATION_TYPES.map((type, index) => (
+          <div 
+            key={type} 
+            className={cn(
+              "flex items-center justify-between rounded-lg border-2 p-4 transition-all hover:shadow-md",
+              index === 0 && "border-videira-cyan/30 hover:border-videira-cyan",
+              index === 1 && "border-videira-blue/30 hover:border-videira-blue",
+              index === 2 && "border-videira-purple/30 hover:border-videira-purple"
+            )}
+          >
             <div>
-              <p className="font-medium">
+              <p className="font-semibold">
                 {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
               </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Escolha os canais de comunicação
+              </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2" title="Notificar por Email">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-center gap-2">
+                <Mail className="h-5 w-5 text-videira-blue" />
                 <Switch
                   checked={settings[type]?.email ?? false}
                   onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
                 />
+                <span className="text-xs text-muted-foreground">Email</span>
               </div>
-              <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-2">
+                <Smartphone className="h-5 w-5 text-green-600" />
                 <Switch
                   checked={settings[type]?.whatsapp ?? false}
                   onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
                 />
+                <span className="text-xs text-muted-foreground">WhatsApp</span>
               </div>
             </div>
           </div>
         ))}
-        <div className="flex justify-end">
-          <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
+        <div className="flex justify-end pt-4">
+          <Button 
+            onClick={handleSaveSettings}
+            className="bg-videira-purple hover:bg-videira-purple/90 text-white font-semibold shadow-lg"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Salvar Configurações
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -573,36 +634,123 @@ export default function IgrejaProfilePage(): JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-        <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-96 w-full" />
-            </CardContent>
-          </Card>
+      <div className="flex flex-col gap-6">
+        {/* Header Skeleton */}
+        <Card className="shadow-lg border-l-4 border-l-videira-blue">
+          <CardContent className="pt-6">
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+        
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-1">
+            <Card className="shadow-lg border-t-4 border-t-videira-cyan">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <Skeleton className="h-24 w-24 rounded-full" />
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-8 w-20" />
+                  </div>
+                </div>
+                <Separator className="my-6" />
+                <div className="space-y-3">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-2">
+            <Card className="shadow-lg border-t-4 border-t-videira-blue">
+              <CardContent className="pt-6">
+                <Skeleton className="h-96 w-full" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
   }
 
   if (!church) {
-    return <p>Igreja não encontrada.</p>
+    return (
+      <div className="flex flex-col gap-6">
+        <Card className="shadow-lg border-l-4 border-l-destructive">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-4 py-12">
+              <XCircle className="h-16 w-16 text-destructive" />
+              <h2 className="text-2xl font-bold">Igreja não encontrada</h2>
+              <p className="text-muted-foreground">A igreja solicitada não existe ou foi removida.</p>
+              <Link href="/admin/igrejas">
+                <Button className="mt-4">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar para Igrejas
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
     <AlertDialog>
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left Column: Profile Card */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardContent className="flex flex-col items-center pt-6 text-center">
+      <div className="flex flex-col gap-6">
+        {/* Header Moderno com Gradiente Videira */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg">
+          <div className="absolute inset-0 videira-gradient opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+          
+          <div className="relative z-10 p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <Link href="/admin/igrejas">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-white/90 hover:text-white hover:bg-white/20 mb-3 -ml-2"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar para Igrejas
+                  </Button>
+                </Link>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                  <Building2 className="h-8 w-8" />
+                  Perfil da Igreja
+                </h1>
+                <p className="text-base text-white/90 mt-2 font-medium">
+                  {church.nomeFantasia}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={church.status === 'active' ? 'success' : 'destructive'}
+                  className={cn(
+                    "text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all",
+                    church.status === 'active' 
+                      ? "bg-green-500 text-white border-green-400 hover:bg-green-600" 
+                      : "bg-red-500 text-white border-red-400 hover:bg-red-600"
+                  )}
+                >
+                  {church.status === 'active' ? '✓ Ativo' : '✗ Inativo'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Left Column: Profile Card */}
+          <div className="lg:col-span-1">
+            <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
+              <CardContent className="flex flex-col items-center pt-6 text-center">
               <div className="relative">
                 <Avatar className="h-24 w-24">
                   <AvatarImage
@@ -626,67 +774,119 @@ export default function IgrejaProfilePage(): JSX.Element {
                   onChange={handlePhotoChange}
                 />
               </div>
-              <h2 className="mt-4 text-xl font-semibold">{church.nomeFantasia}</h2>
-              <p className="text-muted-foreground">Igreja</p>
-              
-              <div className="flex gap-2 mt-4">
-                <SendMessageDialog
-                  recipientName={church.nomeFantasia || ''}
-                  recipientEmail={church.email || ''}
-                  recipientPhone={church.phone || ''}
-                >
-                  <Button variant="outline" size="sm">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Mensagem
+                <h2 className="mt-4 text-xl font-semibold">{church.nomeFantasia}</h2>
+                <p className="text-sm text-muted-foreground font-medium">Igreja</p>
+                
+                <div className="flex gap-2 mt-4">
+                  <SendMessageDialog
+                    recipientName={church.nomeFantasia || ''}
+                    recipientEmail={church.email || ''}
+                    recipientPhone={church.phone || ''}
+                  >
+                    <Button 
+                      size="sm"
+                      className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                    >
+                      <Mail className="h-4 w-4 mr-1" />
+                      Mensagem
+                    </Button>
+                  </SendMessageDialog>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open(`https://wa.me/55${church.phone?.replace(/\D/g, '')}`, '_blank')}
+                    className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                  >
+                    <Smartphone className="h-4 w-4 mr-1" />
+                    WhatsApp
                   </Button>
-                </SendMessageDialog>
-              </div>
-            </CardContent>
-            <Separator />
-            <CardContent className="pt-6">
-              <h3 className="mb-4 font-semibold">Redes sociais</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Facebook className="h-5 w-5 text-muted-foreground" />
-                  <Input
-                    defaultValue={church.facebook ?? ''}
-                    placeholder="https://facebook.com/..."
-                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
-                  />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Instagram className="h-5 w-5 text-muted-foreground" />
-                  <Input
-                    defaultValue={church.instagram ?? ''}
-                    placeholder="https://instagram.com/..."
-                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
-                  />
+              </CardContent>
+              <Separator />
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+                    <Globe className="h-4 w-4 text-videira-purple" />
+                  </div>
+                  <h3 className="font-semibold">Redes Sociais</h3>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-muted-foreground" />
-                  <Input
-                    defaultValue={church.website ?? ''}
-                    placeholder="https://website.com/..."
-                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 group">
+                    <Facebook className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                    <Input
+                      defaultValue={church.facebook ?? ''}
+                      placeholder="https://facebook.com/..."
+                      onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                      className="border-blue-200 focus:border-blue-400"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 group">
+                    <Instagram className="h-5 w-5 text-pink-600 group-hover:scale-110 transition-transform" />
+                    <Input
+                      defaultValue={church.instagram ?? ''}
+                      placeholder="https://instagram.com/..."
+                      onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                      className="border-pink-200 focus:border-pink-400"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 group">
+                    <Globe className="h-5 w-5 text-videira-purple group-hover:scale-110 transition-transform" />
+                    <Input
+                      defaultValue={church.website ?? ''}
+                      placeholder="https://website.com/..."
+                      onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                      className="border-videira-purple/30 focus:border-videira-purple"
+                    />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Right Column: Tabs and Form */}
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="profile">
-            <TabsList>
-              <TabsTrigger value="profile">Dados da Igreja</TabsTrigger>
-              <TabsTrigger value="transactions">Transações</TabsTrigger>
-              <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-              <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
-            </TabsList>
+          {/* Right Column: Tabs and Form */}
+          <div className="lg:col-span-2">
+            <Tabs defaultValue="profile" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4 gap-2 bg-muted/50 p-1 rounded-lg">
+                <TabsTrigger 
+                  value="profile"
+                  className="data-[state=active]:bg-videira-blue data-[state=active]:text-white font-semibold"
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Dados
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="transactions"
+                  className="data-[state=active]:bg-videira-cyan data-[state=active]:text-white font-semibold"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Transações
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="configuracoes"
+                  className="data-[state=active]:bg-videira-purple data-[state=active]:text-white font-semibold"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurações
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="delete"
+                  className="data-[state=active]:bg-destructive data-[state=active]:text-white font-semibold"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </TabsTrigger>
+              </TabsList>
             <TabsContent value="profile">
-              <Card>
-                <CardContent className="pt-6">
+              <Card className="shadow-lg border-t-4 border-t-videira-blue">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                      <Building2 className="h-5 w-5 text-videira-blue" />
+                    </div>
+                    Dados da Igreja
+                  </CardTitle>
+                  <CardDescription>Atualize as informações da igreja</CardDescription>
+                </CardHeader>
+                <CardContent>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       <FormField
@@ -986,9 +1186,22 @@ export default function IgrejaProfilePage(): JSX.Element {
                       />
 
                       <div className="flex justify-end">
-                        <Button type="submit" disabled={isSaving}>
-                          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Alterar cadastro
+                        <Button 
+                          type="submit" 
+                          disabled={isSaving}
+                          className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                        >
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="mr-2 h-4 w-4" />
+                              Salvar Alterações
+                            </>
+                          )}
                         </Button>
                       </div>
                     </form>
@@ -1003,22 +1216,41 @@ export default function IgrejaProfilePage(): JSX.Element {
               <SettingsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="delete">
-              <Card className="border-destructive">
+              <Card className="shadow-lg border-t-4 border-t-destructive">
                 <CardHeader>
-                  <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
+                  <CardTitle className="text-destructive flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
+                      <Trash2 className="h-5 w-5 text-destructive" />
+                    </div>
+                    Excluir Cadastro
+                  </CardTitle>
                   <CardDescription>
                     Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente
-                    esta igreja.
+                    esta igreja. Um motivo será solicitado para fins de auditoria.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <Alert className="mb-6 bg-destructive/10 border-destructive/30">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <AlertDescription className="text-destructive">
+                      <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados associados
+                      a esta igreja serão marcados como excluídos.
+                    </AlertDescription>
+                  </Alert>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Excluir permanentemente</Button>
+                    <Button 
+                      variant="destructive" 
+                      className="font-semibold shadow-lg"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir Permanentemente
+                    </Button>
                   </AlertDialogTrigger>
                 </CardContent>
               </Card>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </div>
         <DeleteProfileDialog onConfirm={handleDelete} />
       </div>
