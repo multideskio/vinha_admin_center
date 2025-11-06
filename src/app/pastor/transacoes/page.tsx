@@ -132,33 +132,36 @@ export default function TransacoesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Minhas Contribuições</h1>
-        <p className="text-sm text-muted-foreground">
-          Visualize seu histórico de dízimos e ofertas.
-        </p>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Contribuições</CardTitle>
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Campo de Busca */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por ID, valor ou status..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
-              />
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+                Minhas Contribuições
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Visualize seu histórico de dízimos e ofertas
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">?</span>
-                      </div>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/60" />
+                      <Input
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="pl-8 bg-white/20 border-white/30 text-white placeholder:text-white/60 backdrop-blur-sm"
+                      />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -166,67 +169,66 @@ export default function TransacoesPage() {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              <DateRangePicker
+                value={dateRange}
+                onChange={handleDateRangeChange}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-10 bg-white/20 hover:bg-white/30 text-white border-white/30">
+                    <ListFilter className="h-4 w-4 mr-2" />
+                    Filtro
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem 
+                    checked={statusFilters.includes('approved')}
+                    onCheckedChange={() => toggleStatusFilter('approved')}
+                  >
+                    Aprovada
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem 
+                    checked={statusFilters.includes('pending')}
+                    onCheckedChange={() => toggleStatusFilter('pending')}
+                  >
+                    Pendente
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem 
+                    checked={statusFilters.includes('refused')}
+                    onCheckedChange={() => toggleStatusFilter('refused')}
+                  >
+                    Recusada
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem 
+                    checked={statusFilters.includes('refunded')}
+                    onCheckedChange={() => toggleStatusFilter('refunded')}
+                  >
+                    Reembolsada
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button size="sm" variant="outline" onClick={exportToCSV} className="h-10 bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
             </div>
-
-            {/* Filtro por Data */}
-            <DateRangePicker
-              value={dateRange}
-              onChange={handleDateRangeChange}
-            />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only">Filtro</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem 
-                  checked={statusFilters.includes('approved')}
-                  onCheckedChange={() => toggleStatusFilter('approved')}
-                >
-                  Aprovada
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={statusFilters.includes('pending')}
-                  onCheckedChange={() => toggleStatusFilter('pending')}
-                >
-                  Pendente
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={statusFilters.includes('refused')}
-                  onCheckedChange={() => toggleStatusFilter('refused')}
-                >
-                  Recusada
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={statusFilters.includes('refunded')}
-                  onCheckedChange={() => toggleStatusFilter('refunded')}
-                >
-                  Reembolsada
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        </div>
+      </div>
 
-            <Button size="sm" variant="outline" className="gap-1" onClick={exportToCSV}>
-              <Download className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only">Exportar</span>
-            </Button>
-          </div>
+      <Card className="shadow-lg border-t-4 border-t-videira-cyan">
+        <CardContent className="pt-6">
+          <div className="rounded-md border-2">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead className="hidden md:table-cell">Descrição</TableHead>
-                <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="hidden md:table-cell">Data</TableHead>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                <TableHead className="font-semibold">ID</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Descrição</TableHead>
+                <TableHead className="hidden md:table-cell text-right font-semibold">Valor</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Data</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -320,6 +322,7 @@ export default function TransacoesPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

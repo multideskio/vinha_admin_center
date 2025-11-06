@@ -12,7 +12,9 @@ import {
   Settings,
   ArrowRightLeft,
   Handshake,
+  Grape,
 } from 'lucide-react';
+import packageJson from '../../../../package.json';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -64,29 +66,43 @@ type HeaderProps = {
     userName: string;
     userEmail: string;
     userFallback: string;
+    avatarUrl?: string;
 }
 
-export function PastorHeader({ userName, userEmail, userFallback }: HeaderProps) {
+export function PastorHeader({ userName, userEmail, userFallback, avatarUrl }: HeaderProps) {
     return (
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
+        <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
             <Sheet>
                 <SheetTrigger asChild>
                 <Button
                     variant="outline"
                     size="icon"
-                    className="shrink-0 md:hidden"
+                    className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10"
                 >
                     <PanelLeft className="h-5 w-5" />
                     <span className="sr-only">Toggle navigation menu</span>
                 </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="flex flex-col">
+                  {/* Mobile Header com Gradiente */}
+                  <div className="relative overflow-hidden rounded-xl mb-4 -mx-6 -mt-6 p-4">
+                    <div className="absolute inset-0 videira-gradient opacity-90" />
+                    <div className="relative z-10 flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-lg">
+                        <Grape className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-base font-bold text-white drop-shadow-lg">Vinha Ministérios</span>
+                        <p className="text-xs text-white/80 font-medium">Painel Pastor - v{packageJson.version}</p>
+                      </div>
+                    </div>
+                  </div>
                 <nav className="grid gap-2 text-lg font-medium">
                     <Link
                     href="/pastor/dashboard"
                     className="flex items-center gap-2 text-lg font-semibold"
                     >
-                    <Logo className="h-6 w-6 text-primary" />
+                    <Grape className="h-6 w-6 text-primary" />
                     <span className="sr-only">Vinha Ministérios</span>
                     </Link>
                     {menuItems.map(item => (
@@ -124,14 +140,14 @@ export function PastorHeader({ userName, userEmail, userFallback }: HeaderProps)
             <ThemeToggle />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" className="rounded-full">
-                    <Avatar className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-videira-blue/10">
+                    <Avatar className="h-9 w-9 ring-2 ring-videira-blue/30 hover:ring-videira-blue/50 transition-all">
                     <AvatarImage
-                        src="https://placehold.co/32x32.png"
+                        src={avatarUrl || 'https://placehold.co/36x36.png'}
                         alt={`@${userName}`}
                         data-ai-hint="user avatar"
                     />
-                    <AvatarFallback>{userFallback}</AvatarFallback>
+                    <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">{userFallback}</AvatarFallback>
                     </Avatar>
                     <span className="sr-only">Toggle user menu</span>
                 </Button>

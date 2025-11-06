@@ -14,6 +14,8 @@ import {
   Lock,
   Mail,
   Smartphone,
+  User,
+  ArrowRightLeft,
 } from 'lucide-react'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
@@ -159,9 +161,12 @@ const SettingsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-green-500">
       <CardHeader>
-        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="h-5 w-5 text-green-500" />
+          Configurações de Notificação
+        </CardTitle>
         <CardDescription>Gerencie quais notificações você receberá.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -352,9 +357,27 @@ export default function PastorProfilePage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      <div className="lg:col-span-1">
-        <Card>
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+            Meu Perfil
+          </h1>
+          <p className="text-base text-white/90 mt-2 font-medium">
+            Gerencie suas informações pessoais e preferências
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <ClickableAvatar
@@ -421,14 +444,20 @@ export default function PastorProfilePage() {
         </Card>
       </div>
 
-      <div className="lg:col-span-2">
-        <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
-            <Card>
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="profile">
+            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-videira-cyan/10 to-videira-blue/10">
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Dados do perfil
+              </TabsTrigger>
+              <TabsTrigger value="configuracoes" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Configurações
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+              <Card className="shadow-lg border-t-4 border-t-videira-blue">
               <CardContent className="pt-6">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -753,6 +782,7 @@ export default function PastorProfilePage() {
             {pastor.userId && <SettingsTab userId={pastor.userId} />}
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   )
