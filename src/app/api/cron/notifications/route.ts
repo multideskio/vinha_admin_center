@@ -6,14 +6,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { runNotificationScheduler } from '@/lib/notification-scheduler'
 import { timingSafeEqual } from 'crypto'
 
-// ✅ CORRIGIDO: Validar CRON_SECRET no início
-const CRON_SECRET = process.env.CRON_SECRET
-if (!CRON_SECRET) {
-  throw new Error('CRON_SECRET environment variable is required')
-}
-
 export async function GET(request: NextRequest) {
   try {
+    // ✅ CORRIGIDO: Validar CRON_SECRET (runtime, não build time)
+    const CRON_SECRET = process.env.CRON_SECRET
+    if (!CRON_SECRET) {
+      console.error('[CRON] CRON_SECRET not configured')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
     // ✅ CORRIGIDO: Verificar autenticação com timing-safe comparison
     const authHeader = request.headers.get('authorization')
     
