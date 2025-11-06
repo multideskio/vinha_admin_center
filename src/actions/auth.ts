@@ -62,13 +62,12 @@ export async function loginUser(
   }
 }
 
-export async function logoutUser(): Promise<void> {
-  const { session } = await validateRequest()
-  if (!session) {
-    redirect('/auth/login')
-    return
+export async function logoutUser(): Promise<{ success: boolean }> {
+  try {
+    await clearJWTCookie()
+    return { success: true }
+  } catch (error) {
+    console.error('Logout error:', error)
+    return { success: false }
   }
-
-  await clearJWTCookie()
-  redirect('/auth/login')
 }

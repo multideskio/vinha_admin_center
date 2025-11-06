@@ -256,8 +256,21 @@ export async function POST(request: NextRequest) {
       data: paymentResult,
     })
   } catch (error) {
-    console.error('Error creating transaction:', error)
     const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento'
+    
+    // Erros de validação/negócio (esperados) = warning
+    // Erros de sistema (inesperados) = error
+    if (
+      errorMessage.includes('not enabled') || 
+      errorMessage.includes('não está habilitado') ||
+      errorMessage.includes('perfil completo') ||
+      errorMessage.includes('Configure em')
+    ) {
+      console.warn('Validation/Business error in transaction:', errorMessage)
+    } else {
+      console.error('System error creating transaction:', error)
+    }
+    
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

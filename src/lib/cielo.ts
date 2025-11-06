@@ -289,6 +289,12 @@ export async function createBoletoPayment(
     } catch {
       errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
     }
+    
+    // Mensagem específica para método não habilitado na Cielo
+    if (errorMessage.toLowerCase().includes('payment method is not enabled')) {
+      throw new Error('Boleto não está habilitado na sua conta Cielo. Por favor, use PIX ou Cartão de Crédito, ou entre em contato com o suporte da Cielo para ativar o produto "Boleto".')
+    }
+    
     throw new Error(errorMessage)
   }
 

@@ -22,8 +22,13 @@ import {
   Mail,
   Smartphone,
   MoreHorizontal,
+  User as UserIcon,
+  ArrowLeft,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -82,7 +87,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import Link from 'next/link'
 import { sanitizeText } from '@/lib/sanitize'
 
 const pastorUpdateSchema = pastorProfileSchema
@@ -208,14 +212,19 @@ const SettingsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-cyan">
       <CardHeader>
-        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+            <Mail className="h-5 w-5 text-videira-cyan" />
+          </div>
+          Configurações de Notificação
+        </CardTitle>
         <CardDescription>
-          Gerencie quais notificações este usuário receberá.
+          Gerencie quais notificações este usuário receberá
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         <div className="flex items-center justify-between rounded-lg border p-4">
           <div>
             <p className="font-medium">Notificações de Pagamento</p>
@@ -288,8 +297,12 @@ const SettingsTab = ({ userId }: { userId: string }) => {
             </div>
           </div>
         </div>
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={isSaving}>
+        <div className="flex justify-end pt-2">
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg"
+          >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar Configurações
           </Button>
@@ -335,24 +348,30 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-blue">
       <CardHeader>
-        <CardTitle>Transações do Usuário</CardTitle>
-        <CardDescription>Histórico de transações financeiras do usuário.</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+            <ArrowRightLeft className="h-5 w-5 text-videira-blue" />
+          </div>
+          Transações do Usuário
+        </CardTitle>
+        <CardDescription>Histórico de transações financeiras do usuário</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID da Transação</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+        <div className="rounded-md border-2">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                <TableHead className="font-semibold">ID da Transação</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Data</TableHead>
+                <TableHead className="text-right font-semibold">Valor</TableHead>
+                <TableHead>
+                  <span className="sr-only">Ações</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -376,7 +395,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
               ))
             ) : transactions.length > 0 ? (
               transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
+                <TableRow key={transaction.id} className="hover:bg-muted/50">
                   <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
                   <TableCell>
                     <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
@@ -384,7 +403,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                     </Badge>
                   </TableCell>
                   <TableCell>{transaction.date}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-semibold">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                       transaction.amount,
                     )}
@@ -414,7 +433,8 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
               </TableRow>
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -661,25 +681,71 @@ export default function PastorProfilePage(): JSX.Element {
 
   return (
     <AlertDialog>
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="flex flex-col gap-6">
+        {/* Header Moderno com Gradiente Videira */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg">
+          <div className="absolute inset-0 videira-gradient opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+          
+          <div className="relative z-10 p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <Link href="/manager/pastores">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-white/90 hover:text-white hover:bg-white/20 mb-3 -ml-2"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar para Pastores
+                  </Button>
+                </Link>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                  <UserIcon className="h-8 w-8" />
+                  {pastor.firstName} {pastor.lastName}
+                </h1>
+                <p className="text-base text-white/90 mt-2 font-medium">
+                  Perfil do Pastor
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={pastor.status === 'active' ? 'success' : 'destructive'}
+                  className={cn(
+                    "text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all",
+                    pastor.status === 'active' 
+                      ? "bg-green-500 text-white border-green-400 hover:bg-green-600" 
+                      : "bg-red-500 text-white border-red-400 hover:bg-red-600"
+                  )}
+                >
+                  {pastor.status === 'active' ? '✓ Ativo' : '✗ Inativo'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
-          <Card>
+          <Card className="shadow-lg border-t-4 border-t-videira-purple hover:shadow-xl transition-all">
             <CardContent className="flex flex-col items-center pt-6 text-center">
               <div className="relative">
-                <Avatar className="h-24 w-24">
+                <Avatar className="h-24 w-24 ring-4 ring-videira-purple/30">
                   <AvatarImage
                     src={previewImage || pastor.avatarUrl || 'https://placehold.co/96x96.png'}
                     alt={pastor.firstName ?? ''}
                     data-ai-hint="male person"
                   />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-videira-purple/10 text-videira-purple font-bold text-lg">
                     {pastor.firstName?.[0]}
                     {pastor.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-videira-purple text-white border-2 border-white hover:bg-videira-purple/90 shadow-lg transition-all">
+                    <Camera className="h-4 w-4" />
                   </div>
                   <span className="sr-only">Trocar foto</span>
                 </Label>
@@ -691,37 +757,45 @@ export default function PastorProfilePage(): JSX.Element {
                   onChange={handlePhotoChange}
                 />
               </div>
-              <h2 className="mt-4 text-xl font-semibold">
+              <h2 className="mt-4 text-xl font-bold">
                 {pastor.firstName} {pastor.lastName}
               </h2>
-              <p className="text-muted-foreground">Pastor</p>
+              <p className="text-sm text-muted-foreground font-medium">Pastor</p>
             </CardContent>
             <Separator />
             <CardContent className="pt-6">
-              <h3 className="mb-4 font-semibold">Redes sociais</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+                  <Globe className="h-4 w-4 text-videira-cyan" />
+                </div>
+                <h3 className="font-semibold">Redes Sociais</h3>
+              </div>
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Facebook className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 group">
+                  <Facebook className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
                   <Input
                     defaultValue={pastor.facebook ?? ''}
                     placeholder="https://facebook.com/..."
                     onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                    className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Instagram className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 group">
+                  <Instagram className="h-5 w-5 text-pink-600 group-hover:scale-110 transition-transform" />
                   <Input
                     defaultValue={pastor.instagram ?? ''}
                     placeholder="https://instagram.com/..."
                     onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                    className="border-pink-200 focus:border-pink-400"
                   />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 group">
+                  <Globe className="h-5 w-5 text-videira-cyan group-hover:scale-110 transition-transform" />
                   <Input
                     defaultValue={pastor.website ?? ''}
                     placeholder="https://website.com/..."
                     onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                    className="border-videira-cyan/30 focus:border-videira-cyan"
                   />
                 </div>
               </div>
@@ -730,16 +804,40 @@ export default function PastorProfilePage(): JSX.Element {
         </div>
 
         <div className="lg:col-span-2">
-          <Tabs defaultValue="profile">
-            <TabsList>
-              <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-              <TabsTrigger value="transactions">Transações do usuário</TabsTrigger>
-              <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-              <TabsTrigger value="delete">Excluir cadastro</TabsTrigger>
+          <Tabs defaultValue="profile" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 gap-2 bg-muted/50 p-1">
+              <TabsTrigger 
+                value="profile"
+                className="data-[state=active]:bg-videira-purple data-[state=active]:text-white font-semibold"
+              >
+                Dados do perfil
+              </TabsTrigger>
+              <TabsTrigger 
+                value="transactions"
+                className="data-[state=active]:bg-videira-blue data-[state=active]:text-white font-semibold"
+              >
+                Transações
+              </TabsTrigger>
+              <TabsTrigger 
+                value="configuracoes"
+                className="data-[state=active]:bg-videira-cyan data-[state=active]:text-white font-semibold"
+              >
+                Configurações
+              </TabsTrigger>
+              <TabsTrigger 
+                value="delete"
+                className="data-[state=active]:bg-destructive data-[state=active]:text-white font-semibold"
+              >
+                Excluir
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
-              <Card>
-                <CardContent className="pt-6">
+              <Card className="shadow-lg border-t-4 border-t-videira-purple">
+                <CardHeader>
+                  <CardTitle>Dados do Pastor</CardTitle>
+                  <CardDescription>Atualize as informações do perfil</CardDescription>
+                </CardHeader>
+                <CardContent>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       <FormField
@@ -1008,9 +1106,13 @@ export default function PastorProfilePage(): JSX.Element {
                       />
 
                       <div className="flex justify-end">
-                        <Button type="submit" disabled={isSaving}>
+                        <Button 
+                          type="submit" 
+                          disabled={isSaving}
+                          className="bg-videira-purple hover:bg-videira-purple/90 text-white font-semibold shadow-lg"
+                        >
                           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Alterar cadastro
+                          Salvar Alterações
                         </Button>
                       </div>
                     </form>
@@ -1025,9 +1127,11 @@ export default function PastorProfilePage(): JSX.Element {
               <SettingsTab userId={id as string} />
             </TabsContent>
             <TabsContent value="delete">
-              <Card className="border-destructive">
+              <Card className="border-l-4 border-l-destructive shadow-lg bg-gradient-to-br from-destructive/5 to-transparent">
                 <CardHeader>
-                  <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
+                  <CardTitle className="text-destructive flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Excluir Cadastro</CardTitle>
                   <CardDescription>
                     Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente
                     este cadastro.
@@ -1035,7 +1139,9 @@ export default function PastorProfilePage(): JSX.Element {
                 </CardHeader>
                 <CardContent>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Excluir permanentemente</Button>
+                    <Button variant="destructive" className="font-semibold shadow-lg">
+                      Excluir Permanentemente
+                    </Button>
                   </AlertDialogTrigger>
                 </CardContent>
               </Card>
@@ -1043,6 +1149,7 @@ export default function PastorProfilePage(): JSX.Element {
           </Tabs>
         </div>
         <DeleteProfileDialog onConfirm={handleDelete} />
+        </div>
       </div>
     </AlertDialog>
   )

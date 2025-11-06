@@ -11,28 +11,10 @@ import {
   Settings,
   ArrowRightLeft,
   Handshake,
+  Grape,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-      <path d="M12 2v2" />
-      <path d="M12 18v-8" />
-      <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    </svg>
-  );
+import packageJson from '../../../../package.json';
 
 const menuItems = [
     { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -63,49 +45,90 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
   };
 
   return (
-    <div className="hidden border-r bg-muted/40 md:block sticky top-0 h-screen">
-      <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/manager/dashboard" className="flex items-center gap-2 font-semibold">
-            {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
-            ) : (
-              <Logo className="h-6 w-6 text-primary" />
-            )}
-            <span className="">{companyName || 'Vinha Ministérios'}</span>
-          </Link>
+    <div className="hidden border-r bg-gradient-to-b from-background via-muted/20 to-background md:block sticky top-0 h-screen shadow-xl">
+      <div className="flex h-full max-h-screen flex-col">
+        {/* Header com gradiente Videira */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 videira-gradient opacity-90" />
+          <div className="relative z-10 flex h-16 items-center px-6 lg:h-20">
+            <Link href="/manager/dashboard" className="flex items-center gap-3 group">
+              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 group-hover:ring-white/50 transition-all shadow-lg">
+                {companyLogo ? (
+                  <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
+                ) : (
+                  <Grape className="h-6 w-6 text-white" />
+                )}
+              </div>
+              <div>
+                <span className="text-base font-bold text-white drop-shadow-lg">
+                  {companyName || 'Vinha Ministérios'}
+                </span>
+                <p className="text-xs text-white/80 font-medium">Painel Gerente - v{packageJson.version}</p>
+              </div>
+            </Link>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+
+        {/* Menu principal */}
+        <div className="flex-1 overflow-y-auto py-6">
+          <nav className="px-3 space-y-1">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
+                data-active={pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))) &&
-                    'bg-muted text-primary'
+                  'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+                  'border-l-3 border-l-transparent',
+                  'hover:shadow-sm',
+                  (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href)))
+                    ? 'bg-videira-blue/15 border-l-4 border-l-videira-blue font-semibold text-videira-blue hover:bg-videira-blue/20'
+                    : 'font-medium text-muted-foreground hover:text-foreground hover:bg-videira-blue/10'
                 )}
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
+                <item.icon 
+                  className={cn(
+                    'h-5 w-5 transition-all',
+                    (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href)))
+                      ? 'text-videira-blue'
+                      : 'text-muted-foreground group-hover:text-foreground'
+                  )} 
+                />
+                <span className="text-base">{item.label}</span>
               </Link>
             ))}
           </nav>
         </div>
-        <div className="mt-auto p-4">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                <Link
-                    href={settingsItem.href}
-                    className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    pathname.startsWith(settingsItem.href) && 'bg-muted text-primary'
-                    )}
-                >
-                    <settingsItem.icon className="h-4 w-4" />
-                    {settingsItem.label}
-                </Link>
-            </nav>
+
+        {/* Footer com Perfil */}
+        <div className="mt-auto border-t border-border/40 p-4 bg-muted/30">
+          <nav className="px-3 space-y-1">
+            <div className="pb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Conta
+              </p>
+            </div>
+            <Link
+              href={settingsItem.href}
+              data-active={pathname.startsWith(settingsItem.href)}
+              className={cn(
+                'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+                'border-l-3 border-l-transparent',
+                'hover:shadow-sm hover:bg-primary/10',
+                pathname.startsWith(settingsItem.href)
+                  ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
+                  : 'font-medium text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <settingsItem.icon 
+                className={cn(
+                  'h-5 w-5 transition-all',
+                  pathname.startsWith(settingsItem.href) ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                )} 
+              />
+              <span className="text-base">{settingsItem.label}</span>
+            </Link>
+          </nav>
         </div>
       </div>
     </div>

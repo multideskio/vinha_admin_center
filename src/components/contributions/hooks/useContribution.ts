@@ -113,7 +113,10 @@ export default function useContribution(options: UseContributionOptions = {}): U
     setPaymentState(prev => ({ ...prev, isProcessing: true, paymentDetails: null }))
     
     try {
-      const payload = { ...data }
+      const payload = { 
+        ...data,
+        amount: Number(data.amount) // Garante que amount é número
+      }
       const response = await fetch('/api/v1/transacoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,15 +143,25 @@ export default function useContribution(options: UseContributionOptions = {}): U
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      devLog('Payment creation failed:', errorMessage)
+      console.warn('Payment creation failed:', errorMessage) // warn em vez de error para não exibir overlay vermelho
+      
+      // Mensagem amigável para erros de método não habilitado
+      let userMessage = errorMessage
+      if (errorMessage.includes('not enabled') || errorMessage.includes('não está habilitado')) {
+        userMessage = `${errorMessage}\n\n💡 Tente usar outro método de pagamento (PIX ou Cartão).`
+      }
       
       toast({
         title: 'Erro no Pagamento',
-        description: errorMessage,
+        description: userMessage,
         variant: 'destructive',
       })
       
       onError?.(errorMessage)
+      
+      // Volta para o formulário em caso de erro
+      setCurrentStep(1)
+      setPaymentState(prev => ({ ...prev, showPaymentDetails: false }))
     } finally {
       setPaymentState(prev => ({ ...prev, isProcessing: false }))
     }
@@ -160,6 +173,7 @@ export default function useContribution(options: UseContributionOptions = {}): U
     
     const payload = {
       ...formData,
+      amount: Number(formData.amount), // Garante que amount é número
       card: cardData,
       installments: installments || 1,
     }
@@ -199,7 +213,7 @@ export default function useContribution(options: UseContributionOptions = {}): U
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      devLog('Card payment failed:', errorMessage)
+      console.warn('Card payment failed:', errorMessage) // warn em vez de error
       
       toast({
         title: 'Erro no Pagamento',

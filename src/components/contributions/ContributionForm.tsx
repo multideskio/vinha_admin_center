@@ -34,6 +34,27 @@ export default function ContributionForm({
   onError,
   className
 }: ContributionFormProps) {
+  const [availablePaymentMethods, setAvailablePaymentMethods] = React.useState<string[]>([])
+  const [isLoadingMethods, setIsLoadingMethods] = React.useState(true)
+
+  // Busca métodos disponíveis no mount
+  React.useEffect(() => {
+    const fetchMethods = async () => {
+      try {
+        const response = await fetch('/api/v1/payment-methods')
+        if (response.ok) {
+          const data = await response.json()
+          setAvailablePaymentMethods(data.methods || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch payment methods:', error)
+      } finally {
+        setIsLoadingMethods(false)
+      }
+    }
+    fetchMethods()
+  }, [])
+
   // Hook principal de contribuição
   const {
     formData,
@@ -70,6 +91,12 @@ export default function ContributionForm({
 
   // Handlers
   const handleDataFormSubmit = (data: ContributionData) => {
+    // Valida se o método de pagamento está disponível
+    if (!availablePaymentMethods.includes(data.paymentMethod)) {
+      onError?.(`Método de pagamento "${data.paymentMethod}" não está disponível. Configure em Admin > Gateways.`)
+      return
+    }
+    
     updateFormData(data)
     handleFormSubmit(data)
   }
@@ -111,25 +138,32 @@ export default function ContributionForm({
         if (paymentState.pixStatus === 'expired') {
           return (
             <div className="text-center space-y-4">
-              <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border border-red-200 dark:border-red-800 rounded-lg p-6">
-                <div className="bg-red-100 dark:bg-red-900 p-3 rounded-full w-fit mx-auto mb-4">
-                  <svg className="h-8 w-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+              <div className="relative overflow-hidden rounded-2xl border-2 border-red-200 dark:border-red-800 shadow-xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950 dark:to-orange-950" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-red-400/20 rounded-full blur-3xl" />
+                <div className="relative z-10 p-8">
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-red-500/30 rounded-full blur-2xl animate-pulse" />
+                    <div className="relative bg-gradient-to-br from-red-500 to-red-600 p-4 rounded-full w-fit mx-auto shadow-2xl">
+                      <svg className="h-12 w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-black text-red-800 dark:text-red-200 mb-3">
+                    ⏰ Tempo Esgotado
+                  </h3>
+                  <p className="text-base text-red-700 dark:text-red-300 mb-6 font-medium">
+                    O tempo para pagamento via PIX expirou.<br />
+                    Gere um novo código para continuar sua contribuição.
+                  </p>
+                  <Button
+                    onClick={handleBackToForm}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold shadow-lg h-12 px-6"
+                  >
+                    🔄 Gerar Novo PIX
+                  </Button>
                 </div>
-                <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
-                  Tempo Esgotado
-                </h3>
-                <p className="text-sm text-red-700 dark:text-red-300 mb-4">
-                  O tempo para pagamento via PIX expirou. Gere um novo código para continuar.
-                </p>
-                <Button
-                  onClick={handleBackToForm}
-                  variant="outline"
-                  className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-950"
-                >
-                  Gerar Novo PIX
-                </Button>
               </div>
             </div>
           )
@@ -197,105 +231,162 @@ export default function ContributionForm({
 
         <Separator />
 
-        {/* Resumo e Botão */}
+        {/* Resumo Premium e Botão */}
         {formData.amount > 0 && (
-          <div className="bg-muted/30 rounded-lg p-4">
-            <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
-              <div className="text-center sm:text-left">
-                <p className="text-xs text-muted-foreground">Valor da contribuição:</p>
-                <p className="text-xl font-bold text-foreground">R$ {Number(formData.amount).toFixed(2)}</p>
-                {formData.contributionType && (
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {formData.contributionType}
+          <div className="relative overflow-hidden rounded-2xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10" />
+            <div className="relative p-6 backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                <div className="text-center sm:text-left space-y-1">
+                  <p className="text-sm text-muted-foreground font-medium">Total da Contribuição</p>
+                  <p className="text-4xl font-bold bg-gradient-to-r from-videira-cyan to-videira-blue bg-clip-text text-transparent">
+                    R$ {Number(formData.amount).toFixed(2)}
                   </p>
-                )}
+                  {formData.contributionType && (
+                    <div className="inline-flex items-center gap-2 bg-white/50 dark:bg-black/20 px-3 py-1 rounded-full">
+                      <div className="w-2 h-2 rounded-full bg-videira-cyan animate-pulse" />
+                      <p className="text-xs font-semibold capitalize">
+                        {formData.contributionType}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={() => handleDataFormSubmit(formData)}
+                  size="lg"
+                  disabled={
+                    isLoadingMethods || 
+                    paymentState.isProcessing || 
+                    !formData.amount || 
+                    formData.amount <= 0 || 
+                    availablePaymentMethods.length === 0 ||
+                    !availablePaymentMethods.includes(formData.paymentMethod)
+                  }
+                  className="min-w-[220px] h-12 font-bold text-base bg-gradient-to-r from-videira-cyan to-videira-blue hover:from-videira-cyan/90 hover:to-videira-blue/90 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                >
+                  {isLoadingMethods ? (
+                    <>
+                      <div className="mr-2 h-5 w-5 animate-spin rounded-full border-3 border-white border-t-transparent" />
+                      Verificando métodos...
+                    </>
+                  ) : paymentState.isProcessing ? (
+                    <>
+                      <div className="mr-2 h-5 w-5 animate-spin rounded-full border-3 border-white border-t-transparent" />
+                      Processando...
+                    </>
+                  ) : availablePaymentMethods.length === 0 ? (
+                    <>
+                      <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Métodos Indisponíveis
+                    </>
+                  ) : (
+                    <>
+                      <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
+                      </svg>
+                      Prosseguir com Segurança
+                    </>
+                  )}
+                </Button>
               </div>
-              <Button
-                onClick={() => handleDataFormSubmit(formData)}
-                size="lg"
-                disabled={paymentState.isProcessing || !formData.amount || formData.amount <= 0}
-                className="min-w-[180px] h-10 font-semibold"
-              >
-                {paymentState.isProcessing ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
-                    </svg>
-                    Prosseguir com Segurança
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         )}
 
-        {/* Badges de Segurança */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
-          <div className="flex items-center justify-center gap-6 text-xs">
-            <div className="flex items-center gap-1 text-green-700 dark:text-green-300">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
-              </svg>
-              <span className="font-medium">SSL 256-bit</span>
+        {/* Badges de Segurança Premium */}
+        <div className="relative overflow-hidden rounded-2xl border-2 border-green-200 dark:border-green-800">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-50 via-blue-50 to-purple-50 dark:from-green-950 dark:via-blue-950 dark:to-purple-950" />
+          <div className="relative p-4">
+            <div className="grid grid-cols-3 gap-4 mb-3">
+              <div className="flex flex-col items-center gap-2 p-3 bg-white/50 dark:bg-black/20 rounded-xl backdrop-blur-sm">
+                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                  <svg className="h-5 w-5 text-green-700 dark:text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-xs font-bold text-green-700 dark:text-green-300">SSL 256-bit</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 p-3 bg-white/50 dark:bg-black/20 rounded-xl backdrop-blur-sm">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                  <svg className="h-5 w-5 text-blue-700 dark:text-blue-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-xs font-bold text-blue-700 dark:text-blue-300">PCI-DSS</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 p-3 bg-white/50 dark:bg-black/20 rounded-xl backdrop-blur-sm">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                  <div className="h-5 w-5 bg-gradient-to-br from-purple-600 to-purple-700 rounded text-white text-sm flex items-center justify-center font-black">
+                    C
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-purple-700 dark:text-purple-300">Cielo</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-blue-700 dark:text-blue-300">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812z" clipRule="evenodd" />
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
               </svg>
-              <span className="font-medium">PCI Compliant</span>
-            </div>
-            <div className="flex items-center gap-1 text-purple-700 dark:text-purple-300">
-              <div className="h-4 w-4 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">C</div>
-              <span className="font-medium">Gateway Cielo</span>
+              <span className="font-medium">Dados criptografados ponta a ponta • Não armazenamos informações de cartão</span>
             </div>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-2">
-            🔒 Dados protegidos por criptografia • Não armazenamos informações de cartão
-          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className={cn("flex flex-col gap-4 max-w-6xl mx-auto", className)}>
-      {/* Indicador de Progresso */}
-      <ProgressIndicator currentStep={paymentState.currentStep} />
+    <div className={cn("flex flex-col gap-6 max-w-6xl mx-auto pb-8", className)}>
+      {/* Indicador de Progresso com Videira */}
+      <div className="relative overflow-hidden rounded-2xl p-1">
+        <div className="absolute inset-0 videira-gradient opacity-20" />
+        <div className="relative bg-background rounded-xl p-4">
+          <ProgressIndicator currentStep={paymentState.currentStep} />
+        </div>
+      </div>
 
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <div className="flex items-center justify-center gap-2">
-          <div className="bg-primary/10 p-2 rounded-full">
-            <DollarSign className="h-6 w-6 text-primary" />
+      {/* Header Premium */}
+      <div className="text-center space-y-3">
+        <div className="flex items-center justify-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 videira-gradient opacity-20 blur-xl rounded-full" />
+            <div className="relative bg-gradient-to-br from-videira-cyan to-videira-blue p-3 rounded-2xl shadow-lg">
+              <DollarSign className="h-7 w-7 text-white" />
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <div className="text-left">
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-videira-cyan via-videira-blue to-videira-purple bg-clip-text text-transparent">
               Contribuição Segura
             </h1>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <svg className="h-3 w-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
-              </svg>
-              <span>Ambiente 100% seguro</span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">SSL 256-bit</span>
+              </div>
+              <span>•</span>
+              <span className="font-medium">Cielo Gateway</span>
             </div>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-          Realize sua contribuição de forma segura através de nosso sistema protegido.
+        <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+          Sistema de pagamento certificado PCI-DSS com criptografia de ponta a ponta.
+          Seus dados estão 100% protegidos.
         </p>
       </div>
 
-      {/* Card Principal */}
-      <Card>
-        <CardHeader className="pb-4">
+      {/* Card Principal com Videira */}
+      <Card className="shadow-2xl border-t-4 border-t-videira-cyan relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-videira-cyan/5 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-videira-purple/5 to-transparent rounded-full blur-3xl" />
+        
+        <CardHeader className="pb-4 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-xl font-bold">
                 {paymentState.currentStep === 1 && (
                   <>
                     <DollarSign className="h-4 w-4" />

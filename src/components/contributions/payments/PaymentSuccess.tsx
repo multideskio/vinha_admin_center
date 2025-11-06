@@ -16,66 +16,95 @@ export default function PaymentSuccess({
   onNewContribution
 }: PaymentSuccessProps) {
   return (
-    <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:from-green-950 dark:to-green-900 dark:border-green-800">
-      <CardContent className="flex flex-col items-center justify-center p-10 text-center">
-        {/* Ícone de Sucesso */}
-        <div className="bg-green-100 dark:bg-green-900 p-4 rounded-full mb-6">
-          <CheckCircle className="h-16 w-16 text-green-600 dark:text-green-400" />
+    <Card className="relative overflow-hidden shadow-2xl border-t-4 border-t-green-500">
+      <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-cyan-50 dark:from-green-950 dark:via-emerald-950 dark:to-cyan-950" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-green-400/20 to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-cyan-400/20 to-transparent rounded-full blur-3xl" />
+      
+      <CardContent className="relative z-10 flex flex-col items-center justify-center p-10 text-center">
+        {/* Ícone de Sucesso Animado */}
+        <div className="relative mb-6">
+          <div className="absolute inset-0 bg-green-500/30 rounded-full blur-2xl animate-pulse" />
+          <div className="relative bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-full shadow-2xl">
+            <CheckCircle className="h-20 w-20 text-white" strokeWidth={3} />
+          </div>
         </div>
 
-        {/* Título */}
-        <h2 className="text-2xl font-bold mb-2 text-green-800 dark:text-green-200">
+        {/* Título Premium */}
+        <h2 className="text-4xl font-black mb-3 bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
           Pagamento Confirmado!
         </h2>
 
         {/* Detalhes da Contribuição */}
-        <div className="mb-6 space-y-2">
-          <p className="text-green-700 dark:text-green-300">
+        <div className="mb-8 space-y-3">
+          <p className="text-lg text-green-700 dark:text-green-300 font-medium">
             Sua contribuição de{' '}
-            <span className="font-semibold">{formatCurrency(amount)}</span>{' '}
-            foi recebida com sucesso.
+            <span className="font-black text-2xl bg-gradient-to-r from-videira-cyan to-videira-blue bg-clip-text text-transparent">
+              {formatCurrency(amount)}
+            </span>{' '}
+            foi recebida!
           </p>
           
-          <p className="text-sm text-green-600 dark:text-green-400">
-            Tipo: {getContributionTypeLabel(contributionType)}
-          </p>
+          <div className="inline-flex items-center gap-2 bg-white/70 dark:bg-black/30 px-4 py-2 rounded-full border-2 border-green-200 dark:border-green-800">
+            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-sm font-bold text-green-700 dark:text-green-300 capitalize">
+              {getContributionTypeLabel(contributionType)}
+            </span>
+          </div>
           
-          <p className="text-sm text-green-600 dark:text-green-400">
-            Obrigado por contribuir com o ministério!
+          <p className="text-base text-green-600 dark:text-green-400 font-semibold mt-4">
+            🙏 Obrigado por contribuir com o ministério!
           </p>
         </div>
 
-        {/* Informações Adicionais */}
-        <div className="bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6 max-w-md">
-          <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">
-            O que acontece agora?
-          </h3>
-          <ul className="text-sm text-green-700 dark:text-green-300 space-y-1 text-left">
-            <li>• Sua contribuição foi registrada no sistema</li>
-            <li>• Um recibo será enviado por email (se disponível)</li>
-            <li>• O valor será direcionado para o ministério</li>
-            <li>• Você pode fazer uma nova contribuição a qualquer momento</li>
-          </ul>
+        {/* Informações Adicionais Premium */}
+        <div className="relative overflow-hidden rounded-2xl border-2 border-green-200 dark:border-green-800 mb-8 max-w-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-white to-green-50 dark:from-black dark:to-green-950" />
+          <div className="relative p-6">
+            <h3 className="font-bold text-lg text-green-800 dark:text-green-200 mb-4 flex items-center justify-center gap-2">
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Próximos Passos
+            </h3>
+            <ul className="text-sm text-green-700 dark:text-green-300 space-y-3 text-left font-medium">
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">✓</div>
+                <span>Contribuição registrada no sistema</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">✓</div>
+                <span>Recibo enviado por email (se configurado)</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">✓</div>
+                <span>Valor direcionado para o ministério</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* Botão Nova Contribuição */}
+        {/* Botão Nova Contribuição Premium */}
         <Button
           onClick={onNewContribution}
           size="lg"
-          className="min-w-[200px]"
+          className="min-w-[240px] h-12 font-bold bg-gradient-to-r from-videira-cyan to-videira-blue hover:from-videira-cyan/90 hover:to-videira-blue/90 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
         >
           Fazer Nova Contribuição
         </Button>
 
-        {/* Mensagem de Gratidão */}
-        <div className="mt-6 p-4 bg-white/50 dark:bg-black/20 rounded-lg border border-green-200 dark:border-green-800">
-          <p className="text-sm text-green-700 dark:text-green-300 italic">
-            "Cada um dê conforme determinou em seu coração, não com pesar ou por obrigação, 
-            pois Deus ama quem dá com alegria."
-          </p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-            2 Coríntios 9:7
-          </p>
+        {/* Mensagem de Gratidão Premium */}
+        <div className="relative overflow-hidden rounded-2xl border-2 border-videira-purple/30 mt-8 max-w-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-videira-purple/5 to-videira-blue/5" />
+          <div className="relative p-6">
+            <p className="text-base text-foreground italic font-medium leading-relaxed">
+              "Cada um dê conforme determinou em seu coração, não com pesar ou por obrigação, 
+              pois Deus ama quem dá com alegria."
+            </p>
+            <p className="text-sm text-videira-purple font-bold mt-3">
+              — 2 Coríntios 9:7
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

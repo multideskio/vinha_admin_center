@@ -8,8 +8,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  ArrowRightLeft,
 } from 'lucide-react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -118,22 +120,38 @@ export default function TransacoesPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Transações</h1>
-          <p className="text-sm text-muted-foreground">
-            Visualize todas as transações financeiras da sua rede (somente leitura).
-          </p>
+      <div className="flex flex-col gap-6">
+        {/* Header com gradiente Videira */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg">
+          <div className="absolute inset-0 videira-gradient opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+          
+          <div className="relative z-10 p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                  <ArrowRightLeft className="h-8 w-8" />
+                  Transações
+                </h1>
+                <p className="text-base text-white/90 mt-2 font-medium">
+                  Visualize todas as transações financeiras da sua rede
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        <Card>
+
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row items-center gap-2 pb-4">
               <div className="relative flex-1 w-full sm:w-auto">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Buscar por contribuinte..."
-                  className="pl-8 w-full"
+                  className="pl-9 w-full border-2 focus:border-videira-cyan"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -141,7 +159,7 @@ export default function TransacoesPage() {
               <div className="flex gap-2 w-full sm:w-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1 flex-1">
+                    <Button variant="outline" size="sm" className="gap-1 flex-1 border-2 hover:border-videira-cyan">
                       <ListFilter className="h-3.5 w-3.5" />
                       <span className="sr-only sm:not-sr-only">Filtro</span>
                     </Button>
@@ -160,27 +178,28 @@ export default function TransacoesPage() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="sm" variant="outline" className="gap-1 flex-1">
+                <Button size="sm" variant="outline" className="gap-1 flex-1 border-2 hover:border-videira-cyan">
                   <Download className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only">Exportar</span>
                 </Button>
               </div>
               <DateRangePicker />
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Contribuinte</TableHead>
-                  <TableHead className="hidden lg:table-cell">Igreja</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Data</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="rounded-md border-2">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                    <TableHead className="font-semibold">Contribuinte</TableHead>
+                    <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
+                    <TableHead className="hidden md:table-cell text-right font-semibold">Valor</TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                    <TableHead className="hidden md:table-cell font-semibold">Data</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Ações</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
@@ -247,29 +266,34 @@ export default function TransacoesPage() {
                   </TableRow>
                 )}
               </TableBody>
-            </Table>
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1 || isLoading}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Anterior
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Página {currentPage} de {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages || isLoading}
-              >
-                Próximo
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              </Table>
+            </div>
+            <div className="flex items-center justify-between px-2 py-4">
+              <p className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages || 1}
+              </p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1 || isLoading}
+                  className="border-2"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages || isLoading}
+                  className="border-2"
+                >
+                  Próximo
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

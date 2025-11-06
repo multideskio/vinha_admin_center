@@ -167,7 +167,9 @@ export async function GET(): Promise<NextResponse> {
         ? await db
             .select({
               id: transactions.id,
-              name: users.email,
+              contributorId: transactions.contributorId,
+              contributorRole: users.role,
+              email: users.email,
               amount: transactions.amount,
               date: transactions.createdAt,
               status: transactions.status,
@@ -250,10 +252,35 @@ export async function GET(): Promise<NextResponse> {
       totalSupervisors: { value: `${totalSupervisors}`, change: '' },
     }
 
+    // Buscar nomes dos contribuintes
+    const contributorIds = recentTransactionsData.map(t => t.contributorId)
+    const contributorPastorNames = contributorIds.length > 0 ? await db
+      .select({ userId: pastorProfiles.userId, firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+      .from(pastorProfiles)
+      .where(inArray(pastorProfiles.userId, contributorIds))
+    : []
+    const contributorChurchNames = contributorIds.length > 0 ? await db
+      .select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
+      .from(churchProfiles)
+      .where(inArray(churchProfiles.userId, contributorIds))
+    : []
+    const contributorSupervisorNames = contributorIds.length > 0 ? await db
+      .select({ userId: supervisorProfiles.userId, firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+      .from(supervisorProfiles)
+      .where(inArray(supervisorProfiles.userId, contributorIds))
+    : []
+
+    const contributorNameMap = new Map<string, string>()
+    contributorPastorNames.forEach(p => contributorNameMap.set(p.userId, `${p.firstName} ${p.lastName}`))
+    contributorChurchNames.forEach(c => contributorNameMap.set(c.userId, c.nomeFantasia || ''))
+    contributorSupervisorNames.forEach(s => contributorNameMap.set(s.userId, `${s.firstName} ${s.lastName}`))
+
     const recentTransactions = recentTransactionsData.map((t) => ({
-      ...t,
+      id: t.id,
+      name: contributorNameMap.get(t.contributorId) || t.email,
       amount: Number(t.amount),
       date: format(new Date(t.date), 'dd/MM/yyyy'),
+      status: t.status,
     }))
     const recentRegistrations = recentRegistrationsData.map((u) => ({
       ...u,

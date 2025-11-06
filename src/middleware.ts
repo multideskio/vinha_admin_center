@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Enforce HTTPS in production
-  if (process.env.NODE_ENV === 'production') {
+  // HTTPS enforcement DISABLED for development
+  // Uncomment only when deploying to production with proper SSL certificate
+  /*
+  if (process.env.NODE_ENV === 'production' && !request.nextUrl.hostname.includes('localhost')) {
     const proto = request.headers.get('x-forwarded-proto')
     if (proto && proto !== 'https') {
       const url = new URL(request.url)
@@ -11,6 +13,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url, 301)
     }
   }
+  */
 
   // Skip maintenance check for admin, manager, pastor, supervisor routes, API, and static files
   if (

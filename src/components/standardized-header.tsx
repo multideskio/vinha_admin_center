@@ -407,14 +407,18 @@ export function StandardizedHeader({
           <DropdownMenuSeparator />
           
           {/* Logout */}
-          <form action={() => logoutUser()}>
-            <button type="submit" className="w-full text-left">
-              <DropdownMenuItem className="cursor-pointer">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sair</span>
-              </DropdownMenuItem>
-            </button>
-          </form>
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={async () => {
+              const result = await logoutUser()
+              if (result.success) {
+                window.location.href = '/auth/login'
+              }
+            }}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Sair</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

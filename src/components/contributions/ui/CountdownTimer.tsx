@@ -23,19 +23,28 @@ export default function CountdownTimer({
   }, [seconds, onExpired])
 
   return (
-    <div className={cn("space-y-2", className)}>
-      {/* Timer Display */}
-      <div className="flex items-center justify-between">
+    <div className={cn("space-y-3", className)}>
+      {/* Timer Display Premium */}
+      <div className="flex items-center justify-between p-3 bg-white/50 dark:bg-black/20 rounded-xl backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-            Aguardando pagamento
+          <div className={cn(
+            "w-3 h-3 rounded-full animate-pulse",
+            isAlertTime ? "bg-red-500" : "bg-videira-cyan"
+          )} />
+          <span className={cn(
+            "text-sm font-bold",
+            isAlertTime ? "text-red-700 dark:text-red-300" : "text-videira-cyan"
+          )}>
+            {isAlertTime ? "⚠️ Tempo quase acabando!" : "⏱️ Aguardando pagamento"}
           </span>
         </div>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <svg 
-            className="h-4 w-4 text-blue-600 dark:text-blue-400" 
+            className={cn(
+              "h-5 w-5",
+              isAlertTime ? "text-red-600 dark:text-red-400" : "text-videira-cyan"
+            )}
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -48,34 +57,49 @@ export default function CountdownTimer({
             />
           </svg>
           <span className={cn(
-            "text-sm font-mono font-bold",
+            "text-lg font-mono font-black",
             isAlertTime 
               ? "text-red-600 dark:text-red-400" 
-              : "text-blue-700 dark:text-blue-300"
+              : "text-videira-cyan"
           )}>
             {formatTime(seconds)}
           </span>
         </div>
       </div>
       
-      {/* Progress Bar */}
-      <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5">
+      {/* Progress Bar Premium */}
+      <div className="relative w-full bg-muted rounded-full h-2 overflow-hidden">
         <div 
           className={cn(
-            "h-1.5 rounded-full transition-all duration-1000 ease-linear",
-            isAlertTime ? "bg-red-500" : "bg-blue-500"
+            "h-2 rounded-full transition-all duration-1000 ease-linear",
+            isAlertTime 
+              ? "bg-gradient-to-r from-red-500 to-orange-500" 
+              : "bg-gradient-to-r from-videira-cyan to-videira-blue"
           )}
           style={{ width: `${Math.max(0, progressPercentage)}%` }}
         />
+        {!isAlertTime && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+        )}
       </div>
 
-      {/* Status Message */}
-      <p className="text-xs text-blue-600 dark:text-blue-400">
-        {isAlertTime 
-          ? "⚠️ Tempo quase esgotado! Complete o pagamento rapidamente."
-          : "Verificando automaticamente na Cielo a cada poucos segundos..."
-        }
-      </p>
+      {/* Status Message Premium */}
+      <div className={cn(
+        "text-center p-2 rounded-lg",
+        isAlertTime ? "bg-red-50 dark:bg-red-950" : "bg-videira-cyan/5"
+      )}>
+        <p className={cn(
+          "text-xs font-medium",
+          isAlertTime 
+            ? "text-red-700 dark:text-red-300" 
+            : "text-muted-foreground"
+        )}>
+          {isAlertTime 
+            ? "⚠️ Complete o pagamento rapidamente!"
+            : "🔄 Verificando automaticamente na Cielo..."
+          }
+        </p>
+      </div>
     </div>
   )
 }

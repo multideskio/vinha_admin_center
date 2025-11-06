@@ -57,9 +57,10 @@ export default function ContributionDataForm({
     })
 
     const handleSubmit = (data: ContributionFormData) => {
-        // Sanitiza a descrição antes de enviar
+        // Sanitiza a descrição e garante que amount é número
         const sanitizedData: ContributionData = {
             ...data,
+            amount: Number(data.amount), // Garante conversão para número
             paymentMethod: defaultValues?.paymentMethod || 'pix', // Adiciona o método de pagamento
             description: data.description ? sanitizeInput(data.description) : undefined
         }
@@ -86,8 +87,8 @@ export default function ContributionDataForm({
     return (
         <div className="space-y-4">
             <div>
-                <h3 className="font-semibold mb-1">Dados da Contribuição</h3>
-                <p className="text-xs text-muted-foreground">Preencha as informações</p>
+                <h3 className="font-bold text-lg mb-1">Dados da Contribuição</h3>
+                <p className="text-sm text-muted-foreground">Preencha as informações abaixo</p>
             </div>
 
             <Form {...form}>
@@ -102,30 +103,28 @@ export default function ContributionDataForm({
                                     Valor da Contribuição *
                                 </FormLabel>
                                 <FormControl>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+                                    <div className="relative group">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg">
                                             R$
                                         </span>
                                         <Input
                                             type="number"
                                             placeholder="0,00"
-                                            className="pl-10 text-lg font-medium"
+                                            className="pl-12 text-2xl font-bold h-14 border-2 focus:border-videira-cyan focus:ring-2 focus:ring-videira-cyan/20 transition-all"
                                             min="1"
                                             step="0.01"
                                             {...field}
                                         />
+                                        {watchedAmount > 0 && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-videira-cyan font-bold bg-videira-cyan/10 px-2 py-1 rounded">
+                                                {formatCurrency(watchedAmount)}
+                                            </div>
+                                        )}
                                     </div>
                                 </FormControl>
-                                <div className="flex justify-between items-center">
-                                    <p className="text-xs text-muted-foreground">
-                                        Valor mínimo: R$ 1,00
-                                    </p>
-                                    {watchedAmount > 0 && (
-                                        <p className="text-xs text-primary font-medium">
-                                            {formatCurrency(watchedAmount)}
-                                        </p>
-                                    )}
-                                </div>
+                                <p className="text-xs text-muted-foreground font-medium">
+                                    💡 Valor mínimo: R$ 1,00
+                                </p>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -142,7 +141,7 @@ export default function ContributionDataForm({
                                 </FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger className="h-11">
+                                        <SelectTrigger className="h-12 border-2 focus:border-videira-cyan font-semibold">
                                             <SelectValue placeholder="Selecione o tipo de contribuição" />
                                         </SelectTrigger>
                                     </FormControl>
@@ -176,7 +175,7 @@ export default function ContributionDataForm({
                                 <FormControl>
                                     <Textarea
                                         placeholder="Ex: Dízimo do mês de outubro, Oferta para missões, etc..."
-                                        className="min-h-[80px] resize-none"
+                                        className="min-h-[80px] resize-none border-2 focus:border-videira-cyan"
                                         maxLength={500}
                                         {...field}
                                     />

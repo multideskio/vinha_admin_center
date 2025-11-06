@@ -75,6 +75,109 @@
 
 ## 🚀 **Próximas Versões**
 
+### **v0.2.1 - UX/UI Enterprise Ready** (Dezembro 2025)
+
+#### 🎯 **MUST HAVE - Produtividade Essencial**
+- [ ] **Command Palette (⌘K)** - Busca global + ações rápidas
+  - Buscar por supervisor, pastor, igreja, transação
+  - Atalhos: Nova igreja, nova transação, ver perfil
+  - Navegação instantânea entre páginas
+  - Histórico de ações recentes
+
+- [ ] **Empty States com Onboarding**
+  - Ilustrações SVG customizadas
+  - CTAs destacados ("Cadastre sua primeira igreja")
+  - Guidance contextual para novos usuários
+  - Sugestões de próximos passos
+
+- [ ] **Export/Relatórios Avançados**
+  - Excel/CSV com filtros aplicados
+  - PDF com logo e formatação
+  - Agendamento de relatórios
+  - Histórico de exports
+
+- [ ] **Filtros Avançados Salvos**
+  - Multi-select (status, cidade, data)
+  - Save filters como "favoritos"
+  - Quick filters (Este mês, Ativos, Inativos)
+  - Reset filters inteligente
+
+#### ⚡ **SHOULD HAVE - Eficiência Avançada**
+- [ ] **Bulk Actions (Ações em Massa)**
+  - Checkbox selection nas tabelas
+  - Exportar selecionados
+  - Mudar status em lote
+  - Enviar notificação para múltiplos
+
+- [ ] **Notificações In-App**
+  - Bell icon no header com badge
+  - "Nova igreja cadastrada", "Pagamento aprovado"
+  - Mark as read/unread
+  - Filtro por tipo de notificação
+
+- [ ] **Quick Stats em Detalhes**
+  - Mini-KPIs no topo de páginas [id]
+  - Total arrecadado, Nº igrejas, Última transação
+  - Sparklines para tendências
+  - Comparativo mês anterior
+
+- [ ] **Breadcrumbs Contextuais**
+  - Manager > Supervisores > João Silva
+  - Navegação hierárquica clara
+  - Dropdowns em cada nível
+  - Mobile: Collapsed breadcrumbs
+
+#### 🎨 **NICE TO HAVE - Diferencial Premium**
+- [ ] **Atalhos de Teclado**
+  - N → Novo registro
+  - / → Focus search
+  - Esc → Limpar/Fechar
+  - ← → → Paginação
+  - Cheatsheet (?) modal
+
+- [ ] **Drag & Drop Upload**
+  - Drop zone visual para avatares
+  - Preview instantâneo
+  - Crop/resize inline
+  - Progress bar animada
+
+- [ ] **Recent Actions Timeline**
+  - Dashboard: Últimas 10 ações
+  - "João cadastrou Igreja X"
+  - "Maria fez pagamento R$ 500"
+  - Filtro por tipo/usuário
+
+- [ ] **Offline Mode Indicator**
+  - Banner quando perde conexão
+  - Retry automático
+  - Queue de ações pendentes
+  - Sync status visual
+
+#### 🔄 **Melhorias Incrementais**
+- [ ] **Skeleton Screens Content-Aware**
+  - Formato exato do conteúdo final
+  - Animação mais suave
+  - Transição natural
+
+- [ ] **Dark Mode Otimizado**
+  - Revisar contraste em todos os gradientes
+  - Ajustar opacidades
+  - Testes de acessibilidade
+
+- [ ] **Toasts Enriquecidos**
+  - Undo actions
+  - Progress bar para ações longas
+  - Rich content (avatares, ícones)
+  - Position customizável
+
+- [ ] **Tabelas Melhoradas**
+  - Column resizing
+  - Column reordering
+  - Pin columns
+  - Densidade visual (compact/normal/comfortable)
+
+---
+
 ### **v0.3.0 - Testes e Monitoramento** (Q1 2026)
 
 #### 🔄 **Dependências Complexas**
@@ -233,44 +336,57 @@
 
 ## 🎯 **Prioridades por Categoria**
 
-### 🔥 **Alta Prioridade**
-1. **Testes Automatizados** - Garantir qualidade
-2. **Monitoramento** - Visibilidade de produção
-3. **Performance** - Otimização e cache
-4. **Segurança 2FA** - Proteção adicional
+### 🔥 **Alta Prioridade (Q4 2025 - Q1 2026)**
+1. **UX/UI Enterprise** (v0.2.1) - Command Palette, Exports, Empty States
+2. **Testes Automatizados** (v0.3.0) - Garantir qualidade
+3. **Monitoramento** (v0.3.0) - Visibilidade de produção
+4. **Performance** (v0.3.0) - Otimização e cache
+5. **Segurança 2FA** (v0.3.0) - Proteção adicional
 
-### ⚡ **Média Prioridade**
-5. **Relatórios Avançados** - Mais insights
-6. **Sistema de Eventos** - Funcionalidade solicitada
-7. **Gestão de Membros** - Expansão natural
-8. **PWA Mobile** - Acessibilidade
+### ⚡ **Média Prioridade (Q2-Q3 2026)**
+6. **Relatórios Avançados** (v0.3.0) - Mais insights
+7. **Sistema de Eventos** (v0.4.0) - Funcionalidade solicitada
+8. **Gestão de Membros** (v0.4.0) - Expansão natural
+9. **PWA Mobile** (v0.5.0) - Acessibilidade
 
-### 💡 **Baixa Prioridade**
-9. **Múltiplos Gateways** - Diversificação
-10. **BI e Analytics** - Inteligência de dados
-11. **Machine Learning** - Automação avançada
+### 💡 **Baixa Prioridade (Q4 2026+)**
+10. **Múltiplos Gateways** (v0.4.0) - Diversificação
+11. **BI e Analytics** (v0.6.0) - Inteligência de dados
+12. **Machine Learning** (v0.6.0) - Automação avançada
 
 ---
 
 ## 📊 **Métricas de Sucesso**
 
-### **v0.2.0 Targets**
-- ✅ **95%+ uptime** em produção
-- ✅ **<2s tempo de resposta** médio
-- ✅ **80%+ coverage** de testes
-- ✅ **Zero vulnerabilidades** críticas
+### **v0.2.0 Targets** ✅
+- ✅ **100% Design System** aplicado
+- ✅ **97% Code quality** (35/36 arquivos)
+- ✅ **0 bugs críticos** pendentes
+- ✅ **Checkout nível profissional** implementado
+
+### **v0.2.1 Targets**
+- [ ] **Command Palette** funcional em todas as páginas
+- [ ] **80%+ usuários** usam atalhos de teclado
+- [ ] **50%+ exports** realizados por semana
+- [ ] **100% páginas** com empty states premium
 
 ### **v0.3.0 Targets**
-- ✅ **1000+ eventos** cadastrados
-- ✅ **5000+ membros** gerenciados
-- ✅ **10+ gateways** de pagamento
-- ✅ **99%+ satisfação** do usuário
+- [ ] **80%+ test coverage**
+- [ ] **<1s tempo de resposta** médio
+- [ ] **99.9% uptime** em produção
+- [ ] **Zero vulnerabilidades** críticas/altas
 
 ### **v0.4.0 Targets**
-- ✅ **50%+ usuários mobile** ativos
-- ✅ **Offline-first** funcional
-- ✅ **Push notifications** implementadas
-- ✅ **App stores** publicado
+- [ ] **1000+ eventos** cadastrados
+- [ ] **5000+ membros** gerenciados
+- [ ] **3+ gateways** de pagamento ativos
+- [ ] **95%+ satisfação** do usuário
+
+### **v0.5.0 Targets**
+- [ ] **50%+ usuários mobile** ativos
+- [ ] **Offline-first** funcional
+- [ ] **Push notifications** implementadas
+- [ ] **App instalado** em dispositivos
 
 ---
 
@@ -305,4 +421,15 @@
 
 **Vinha Admin Center** - Evoluindo continuamente para atender melhor às necessidades das igrejas! 🚀
 
-*Última atualização: Janeiro 2025*
+---
+
+## 📌 **Status de Desenvolvimento**
+
+| Versão | Status | Progresso | Data |
+|--------|--------|-----------|------|
+| v0.2.0 | ✅ Lançada | 100% | Nov 2025 |
+| v0.2.1 | 📋 Planejada | 0% | Dez 2025 |
+| v0.3.0 | 📋 Planejada | 0% | Q1 2026 |
+| v0.4.0 | 📋 Planejada | 0% | Q2 2026 |
+
+*Última atualização: Novembro 2025*

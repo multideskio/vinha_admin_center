@@ -639,21 +639,22 @@ export default function IgrejasPage() {
   }
 
   const TableView = () => (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-cyan">
       <CardContent className="pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome Fantasia</TableHead>
-              <TableHead className="hidden md:table-cell">CNPJ</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <div className="rounded-md border-2">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                <TableHead className="font-semibold">Nome Fantasia</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">CNPJ</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Email</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                <TableHead>
+                  <span className="sr-only">Ações</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
@@ -676,7 +677,7 @@ export default function IgrejasPage() {
               ))
             ) : paginatedChurches.length > 0 ? (
               paginatedChurches.map((church) => (
-                <TableRow key={church.id}>
+                <TableRow key={church.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Image
@@ -684,10 +685,10 @@ export default function IgrejasPage() {
                         alt={church.nomeFantasia || 'Igreja'}
                         width={40}
                         height={40}
-                        className="rounded-full object-cover"
+                        className="rounded-full object-cover ring-2 ring-videira-cyan/30"
                         unoptimized
                       />
-                      <span>{sanitizeText(church.nomeFantasia)}</span>
+                      <span className="font-semibold">{sanitizeText(church.nomeFantasia)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
@@ -727,7 +728,8 @@ export default function IgrejasPage() {
               </TableRow>
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
         <PaginationControls />
       </CardContent>
     </Card>
@@ -738,7 +740,7 @@ export default function IgrejasPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="shadow-lg">
               <CardContent className="pt-6">
                 <Skeleton className="h-48 w-full" />
               </CardContent>
@@ -747,58 +749,66 @@ export default function IgrejasPage() {
         ) : paginatedChurches.length > 0 ? (
           paginatedChurches.map((church, index) => {
             return (
-              <Card key={church.id}>
+              <Card key={church.id} className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
                 <CardContent className="pt-6">
-                  <div className="flex flex-col sm:flex-row flex-wrap gap-4">
-                    <Image
-                      src={church.avatarUrl || 'https://placehold.co/96x96.png'}
-                      alt={`Foto da ${church.nomeFantasia}`}
-                      width={96}
-                      height={96}
-                      className="rounded-lg object-cover w-24 h-24"
-                      unoptimized
-                    />
-                    <div className="flex-1 space-y-2 min-w-[200px]">
-                      <h3 className="text-lg font-bold">
-                        #{(currentPage - 1) * itemsPerPage + index + 1} - {sanitizeText(church.nomeFantasia)}
-                      </h3>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        <p className="flex items-center gap-2">
-                          <User size={14} />{' '}
-                          <span>Supervisor: {sanitizeText(church.supervisorName) || 'N/A'}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <FileText size={14} /> <span>{sanitizeText(church.cnpj)}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Phone size={14} /> <span>{sanitizeText(church.phone)}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Mail size={14} /> <span>{sanitizeText(church.email)}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <MapPin size={14} />{' '}
-                          <span>
-                            {sanitizeText(church.city)} - {sanitizeText(church.state)}
-                          </span>
-                        </p>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start gap-4">
+                      <Image
+                        src={church.avatarUrl || 'https://placehold.co/96x96.png'}
+                        alt={`Foto da ${church.nomeFantasia}`}
+                        width={80}
+                        height={80}
+                        className="rounded-xl object-cover w-20 h-20 ring-2 ring-videira-cyan/30"
+                        unoptimized
+                      />
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <h3 className="text-lg font-bold leading-tight">
+                            {sanitizeText(church.nomeFantasia)}
+                          </h3>
+                          <Badge variant={church.status === 'active' ? 'success' : 'destructive'} className="text-xs">
+                            {church.status === 'active' ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+                        <Badge variant="outline" className="font-medium">
+                          <User className="h-3 w-3 mr-1" />
+                          {sanitizeText(church.supervisorName) || 'N/A'}
+                        </Badge>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex justify-end mt-4">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/manager/igrejas/${church.id}`}>
+                    <div className="space-y-2 text-sm">
+                      <p className="flex items-center gap-2 text-muted-foreground">
+                        <FileText size={14} className="text-videira-cyan" />
+                        <span>{sanitizeText(church.cnpj)}</span>
+                      </p>
+                      <p className="flex items-center gap-2 text-muted-foreground">
+                        <Mail size={14} className="text-videira-cyan" /> 
+                        <span>{sanitizeText(church.email)}</span>
+                      </p>
+                      <p className="flex items-center gap-2 text-muted-foreground">
+                        <Phone size={14} className="text-videira-cyan" /> 
+                        <span>{sanitizeText(church.phone)}</span>
+                      </p>
+                      <p className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin size={14} className="text-videira-cyan" />
+                        <span>{sanitizeText(church.city)} - {sanitizeText(church.state)}</span>
+                      </p>
+                    </div>
+                    <Link href={`/manager/igrejas/${church.id}`} className="w-full">
+                      <Button variant="outline" size="sm" className="w-full border-2 hover:bg-videira-cyan/10 hover:border-videira-cyan hover:text-videira-cyan transition-all">
                         <Pencil className="mr-2 h-4 w-4" />
-                        Editar
-                      </Link>
-                    </Button>
+                        Editar Perfil
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
             )
           })
         ) : (
-          <div className="col-span-full text-center">Nenhuma igreja encontrada.</div>
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            Nenhuma igreja encontrada.
+          </div>
         )}
       </div>
       <PaginationControls />
@@ -806,85 +816,103 @@ export default function IgrejasPage() {
   )
 
   const PaginationControls = () => (
-    <div className="flex items-center justify-end space-x-2 py-4">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handlePreviousPage}
-        disabled={currentPage === 1 || isLoading}
-      >
-        <ChevronLeft className="h-4 w-4" /> Anterior
-      </Button>
-      <span className="text-sm text-muted-foreground">
-        Página {currentPage} de {totalPages}
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleNextPage}
-        disabled={currentPage === totalPages || isLoading}
-      >
-        Próximo <ChevronRight className="h-4 w-4" />
-      </Button>
+    <div className="flex items-center justify-between px-2 py-4">
+      <p className="text-sm text-muted-foreground">
+        Página {currentPage} de {totalPages || 1}
+      </p>
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePreviousPage}
+          disabled={currentPage === 1 || isLoading}
+          className="border-2"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages || isLoading}
+          className="border-2"
+        >
+          Próximo <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
     </div>
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Igrejas da Rede</h1>
-          <p className="text-sm text-muted-foreground">
-            Exibindo {filteredChurches.length} de {churches.length} resultados
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome fantasia..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+                Igrejas da Rede
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                {filteredChurches.length} de {churches.length} igrejas
+              </p>
             </div>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 w-8"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em tabela</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('card')}
-                  className="h-8 w-8"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em cards</TooltipContent>
-            </Tooltip>
             <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
-              <Button size="sm" className="gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />{' '}
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Igreja</span>
+              <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+                <PlusCircle className="h-5 w-5 mr-2" />
+                Nova Igreja
               </Button>
             </ChurchFormModal>
-          </TooltipProvider>
+          </div>
         </div>
       </div>
+
+      {/* Barra de busca e filtros */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome fantasia..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 border-2 focus:border-videira-cyan"
+          />
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('table')}
+                className={cn(viewMode === 'table' && 'bg-videira-cyan text-white')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Visualizar em tabela</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('card')}
+                className={cn(viewMode === 'card' && 'bg-videira-cyan text-white')}
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Visualizar em cards</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
       {viewMode === 'table' ? <TableView /> : <CardView />}
     </div>
   )

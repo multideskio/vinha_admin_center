@@ -79,8 +79,13 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
     e.preventDefault();
     try {
       console.log('User logout initiated:', userEmail);
-      await handleLogout();
-      console.log('User logout successful');
+      const result = await handleLogout();
+      if (result.success) {
+        console.log('User logout successful');
+        window.location.href = '/auth/login';
+      } else {
+        throw new Error('Falha ao fazer logout');
+      }
     } catch (error) {
       console.error('Logout error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout';
@@ -94,55 +99,72 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
   };
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
+    <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+          <Button variant="outline" size="icon" className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10">
             <PanelLeft className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="flex flex-col">
-          <nav className="grid gap-2 text-lg font-medium">
-            <Link
-              href="/manager/dashboard"
-              className="flex items-center gap-2 text-lg font-semibold"
-            >
-              {companyLogo ? (
-                <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
-              ) : (
-                <Logo className="h-6 w-6 text-primary" />
-              )}
-              <span className="sr-only">{companyName || 'Vinha Ministérios'}</span>
-            </Link>
+        <SheetContent side="left" className="flex flex-col p-0">
+          {/* Header Mobile com gradiente */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 videira-gradient opacity-90" />
+            <div className="relative z-10 flex h-16 items-center px-6">
+              <Link href="/manager/dashboard" className="flex items-center gap-3 group">
+                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-lg">
+                  {companyLogo ? (
+                    <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
+                  ) : (
+                    <Logo className="h-6 w-6 text-white" />
+                  )}
+                </div>
+                <div>
+                  <span className="text-base font-bold text-white drop-shadow-lg">
+                    {companyName || 'Vinha Ministérios'}
+                  </span>
+                  <p className="text-xs text-white/80 font-medium">Painel Gerente</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Menu Mobile */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-videira-blue/10 transition-all font-medium"
               >
                 <item.icon className="h-5 w-5" />
                 {item.label}
               </Link>
             ))}
-            <Link
-              href={settingsItem.href}
-              className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-            >
-              <settingsItem.icon className="h-5 w-5" />
-              {settingsItem.label}
-            </Link>
+            <div className="pt-4 mt-4 border-t">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 pb-2">
+                Conta
+              </p>
+              <Link
+                href={settingsItem.href}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all font-medium"
+              >
+                <settingsItem.icon className="h-5 w-5" />
+                {settingsItem.label}
+              </Link>
+            </div>
           </nav>
         </SheetContent>
       </Sheet>
       <div className="flex-1">
         <form>
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Procurar..."
-              className="w-full appearance-none bg-background pl-8 shadow-none md:w-auto"
+              className="w-full appearance-none bg-background pl-9 border-2 focus:border-videira-blue shadow-none md:w-2/3 lg:w-1/3"
             />
           </div>
         </form>
@@ -150,33 +172,35 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
       <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full">
-            <Avatar className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-videira-blue/10">
+            <Avatar className="h-9 w-9 ring-2 ring-videira-blue/30 hover:ring-videira-blue/50 transition-all">
               <AvatarImage
-                src={avatarUrl || 'https://placehold.co/32x32.png'}
+                src={avatarUrl || 'https://placehold.co/36x36.png'}
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />
-              <AvatarFallback>{userFallback}</AvatarFallback>
+              <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-semibold">
+                {userFallback}
+              </AvatarFallback>
             </Avatar>
             <span className="sr-only">Toggle user menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">Bem vindo {sanitizeText(userName)}!</p>
+              <p className="text-sm font-semibold leading-none">Bem-vindo, {sanitizeText(userName)}!</p>
               <p className="text-xs leading-none text-muted-foreground">{sanitizeText(userEmail)}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="cursor-pointer">
             <Link href="/manager/perfil">
               <User className="mr-2 h-4 w-4" />
-              <span>Perfil</span>
+              <span>Meu Perfil</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="cursor-pointer">
             <Link href="/ajuda">
               <LifeBuoy className="mr-2 h-4 w-4" />
               <span>Ajuda</span>
@@ -185,7 +209,7 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
           <DropdownMenuSeparator />
           <form onSubmit={handleLogoutSubmit}>
             <button type="submit" className="w-full">
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sair</span>
               </DropdownMenuItem>

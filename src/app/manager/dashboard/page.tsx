@@ -187,24 +187,44 @@ export default function GerenteDashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Dashboard do Gerente
-        </h1>
-        <DateRangePicker />
+    <div className="flex flex-col gap-6">
+      {/* Header Moderno com Gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
+                Dashboard do Gerente
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Visão geral da sua rede de supervisores e igrejas
+              </p>
+            </div>
+            <DateRangePicker />
+          </div>
+        </div>
       </div>
 
       {profileIncomplete && (
-        <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950">
+        <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-500/10 to-transparent shadow-lg">
           <CardHeader>
-            <CardTitle className="text-amber-900 dark:text-amber-100">Perfil Incompleto</CardTitle>
+            <CardTitle className="text-amber-900 dark:text-amber-100 flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-amber-500/20 ring-2 ring-amber-500/30">
+                <UserCog className="h-5 w-5 text-amber-600" />
+              </div>
+              Perfil Incompleto
+            </CardTitle>
             <CardDescription className="text-amber-800 dark:text-amber-200">
               Complete seu perfil para habilitar todas as funcionalidades, incluindo pagamentos via boleto.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild>
+            <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg">
               <a href="/manager/perfil">Completar Perfil</a>
             </Button>
           </CardContent>
@@ -212,84 +232,116 @@ export default function GerenteDashboardPage() {
       )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {kpiDisplayData.map((kpi) => (
-          <Card key={kpi.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-              <kpi.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
-              <p className="text-xs text-muted-foreground">{kpi.change}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {kpiDisplayData.map((kpi, index) => {
+          const colorClasses = [
+            { card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30', iconColor: 'h-4 w-4 text-videira-cyan' },
+            { card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30', iconColor: 'h-4 w-4 text-videira-blue' },
+            { card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30', iconColor: 'h-4 w-4 text-videira-purple' },
+            { card: 'shadow-lg border-l-4 border-l-green-500 hover:shadow-xl transition-all bg-gradient-to-br from-green-500/5 to-transparent', icon: 'p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30', iconColor: 'h-4 w-4 text-green-500' },
+            { card: 'shadow-lg border-l-4 border-l-blue-500 hover:shadow-xl transition-all bg-gradient-to-br from-blue-500/5 to-transparent', icon: 'p-2 rounded-lg bg-blue-500/15 ring-2 ring-blue-500/30', iconColor: 'h-4 w-4 text-blue-500' },
+            { card: 'shadow-lg border-l-4 border-l-purple-500 hover:shadow-xl transition-all bg-gradient-to-br from-purple-500/5 to-transparent', icon: 'p-2 rounded-lg bg-purple-500/15 ring-2 ring-purple-500/30', iconColor: 'h-4 w-4 text-purple-500' },
+          ] as const
+          const classes = colorClasses[index % colorClasses.length]!
+          return (
+            <Card key={kpi.title} className={classes.card}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-semibold">{kpi.title}</CardTitle>
+                <div className={classes.icon}>
+                  <kpi.icon className={classes.iconColor} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{kpi.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Últimas Transações na Rede</CardTitle>
-              <CardDescription>As transações mais recentes da sua rede.</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+                  <ArrowRightLeft className="h-5 w-5 text-videira-cyan" />
+                </div>
+                Últimas Transações na Rede
+              </CardTitle>
+              <CardDescription>As transações mais recentes da sua rede</CardDescription>
             </div>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={fetchData}>
-              <RefreshCw className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8 border-2 border-videira-cyan/30 hover:bg-videira-cyan/10" 
+              onClick={fetchData}
+            >
+              <RefreshCw className="h-4 w-4 text-videira-cyan" />
               <span className="sr-only">Atualizar</span>
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Contribuinte</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.recentTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.name}</TableCell>
-                    <TableCell className="text-right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(transaction.amount)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                        {statusMap[transaction.status]?.text || transaction.status}
-                      </Badge>
-                    </TableCell>
+            <div className="rounded-md border-2">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                    <TableHead className="font-semibold">Contribuinte</TableHead>
+                    <TableHead className="text-right font-semibold">Valor</TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.recentTransactions.map((transaction) => (
+                    <TableRow key={transaction.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">{transaction.name}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(transaction.amount)}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                          {statusMap[transaction.status]?.text || transaction.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-videira-blue">
           <CardHeader>
-            <CardTitle>Cadastros Recentes na Rede</CardTitle>
-            <CardDescription>Os últimos usuários cadastrados na sua rede.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                <Users className="h-5 w-5 text-videira-blue" />
+              </div>
+              Cadastros Recentes na Rede
+            </CardTitle>
+            <CardDescription>Os últimos usuários cadastrados na sua rede</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
+            <div className="space-y-4">
               {data.recentRegistrations.map((user) => (
-                <div key={user.id} className="flex items-center">
-                  <Avatar className="h-9 w-9">
+                <div key={user.id} className="flex items-center p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <Avatar className="h-10 w-10 ring-2 ring-videira-blue/30">
                     <AvatarImage
-                      src={`https://placehold.co/36x36.png`}
+                      src={`https://placehold.co/40x40.png`}
                       alt="Avatar"
                       data-ai-hint="person symbol"
                     />
-                    <AvatarFallback>{user.avatar}</AvatarFallback>
+                    <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-semibold">
+                      {user.avatar}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.type}</p>
+                    <p className="text-sm font-semibold leading-none">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.type}</p>
                   </div>
-                  <div className="ml-auto font-medium text-muted-foreground text-sm">
+                  <div className="ml-auto text-xs text-muted-foreground">
                     {user.date}
                   </div>
                 </div>
@@ -299,10 +351,16 @@ export default function GerenteDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="shadow-lg border-t-4 border-t-green-500">
           <CardHeader>
-            <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30">
+                <DollarSign className="h-5 w-5 text-green-600" />
+              </div>
+              Arrecadação por Método de Pagamento
+            </CardTitle>
+            <CardDescription>Distribuição das formas de pagamento na rede</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
@@ -326,11 +384,16 @@ export default function GerenteDashboardPage() {
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-videira-purple">
           <CardHeader>
-            <CardTitle>Arrecadação por Igreja</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+                <Church className="h-5 w-5 text-videira-purple" />
+              </div>
+              Arrecadação por Igreja
+            </CardTitle>
             <CardDescription>
-              Distribuição da arrecadação mensal entre as igrejas da sua rede.
+              Distribuição da arrecadação mensal entre as igrejas da sua rede
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -347,10 +410,15 @@ export default function GerenteDashboardPage() {
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-videira-blue">
           <CardHeader>
-            <CardTitle>Contribuições por Igreja</CardTitle>
-            <CardDescription>Número de contribuições de cada igreja da sua rede.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                <Users className="h-5 w-5 text-videira-blue" />
+              </div>
+              Contribuições por Igreja
+            </CardTitle>
+            <CardDescription>Número de contribuições de cada igreja da sua rede</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={{}} className="h-[300px] w-full">
@@ -366,18 +434,24 @@ export default function GerenteDashboardPage() {
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardHeader>
-            <CardTitle>Novos Membros por Mês (Rede)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+                <Users className="h-5 w-5 text-videira-cyan" />
+              </div>
+              Novos Membros por Mês (Rede)
+            </CardTitle>
+            <CardDescription>Crescimento mensal da sua rede nos últimos meses</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={{}} className="h-[300px] w-full">
               <BarChart data={data.newMembers} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
                 <Tooltip content={<ChartTooltipContent indicator="dot" />} />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="hsl(187 100% 43%)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ChartContainer>
           </CardContent>
