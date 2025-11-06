@@ -8,6 +8,14 @@ import { logCieloWebhook } from '@/lib/cielo-logger'
 
 const COMPANY_ID = process.env.COMPANY_INIT || ''
 
+// ✅ CORRIGIDO: Classe para erros de validação (que devem retornar 200)
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -22,10 +30,10 @@ export async function POST(request: NextRequest) {
 
     const { PaymentId, ChangeType } = body
 
-    // Validação da Cielo - retorna 200 mesmo sem PaymentId
+    // ✅ CORRIGIDO: Validação da Cielo - throw ValidationError para retornar 200
     if (!PaymentId) {
       console.log('[CIELO_WEBHOOK] Validation request - no PaymentId')
-      return NextResponse.json({ success: true, message: 'Webhook validated' }, { status: 200 })
+      throw new ValidationError('Validation request - no PaymentId')
     }
 
     // Buscar transação por gatewayTransactionId
@@ -45,10 +53,10 @@ export async function POST(request: NextRequest) {
         .limit(1)
     }
 
-    // Retorna 200 mesmo se transação não existir (validação da Cielo)
+    // ✅ CORRIGIDO: Throw ValidationError se transação não existir (validação da Cielo)
     if (!transaction) {
       console.log('[CIELO_WEBHOOK] Transaction not found:', PaymentId)
-      return NextResponse.json({ success: true, message: 'Transaction not found but webhook accepted' }, { status: 200 })
+      throw new ValidationError(`Transaction not found: ${PaymentId}`)
     }
 
     console.log('[CIELO_WEBHOOK] Transaction found:', {
@@ -172,10 +180,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, status: newStatus }, { status: 200 })
   } catch (error) {
     console.error('[CIELO_WEBHOOK] Error:', error)
-    // Retorna 200 mesmo com erro para não desativar webhook
+    
+    // ✅ CORRIGIDO: Diferenciar erros de validação (200) de erros de processamento (500)
+    if (error instanceof ValidationError) {
+      // Erros de validação: webhook válido mas sem dados para processar
+      return NextResponse.json(
+        { success: true, message: 'Webhook validated but skipped', reason: error.message },
+        { status: 200 }
+      )
+    }
+    
+    // ✅ CORRIGIDO: Erros reais de processamento devem retornar 500 para Cielo retentar
+    // Isso permite que a Cielo saiba que houve um problema e retente o webhook
     return NextResponse.json(
-      { success: true, message: 'Webhook received but error processing' },
-      { status: 200 }
+      { success: false, error: 'Processing error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
     )
   }
 }

@@ -8,6 +8,7 @@ import { db } from '@/db/drizzle'
 import { otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { validateRequest } from '@/lib/jwt'
 
 const sendNotificationSchema = z.object({
   type: z.enum(['welcome', 'payment_reminder']),
@@ -27,6 +28,12 @@ const sendNotificationSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ CORRIGIDO: Validar autenticação
+    const { user } = await validateRequest()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { type, companyId, recipient, data } = sendNotificationSchema.parse(body)
 
@@ -60,7 +67,7 @@ export async function POST(request: NextRequest) {
     switch (type) {
       case 'welcome':
         result = await notificationService.sendWelcome(
-          'temp-user-id', // TODO: Get actual user ID
+          user.id, // ✅ CORRIGIDO: Usar ID real do usuário autenticado
           recipient.name,
           data?.churchName || 'Nossa Igreja',
           recipient.phone,
@@ -77,7 +84,7 @@ export async function POST(request: NextRequest) {
         }
         
         result = await notificationService.sendPaymentReminder(
-          'temp-user-id', // TODO: Get actual user ID
+          user.id, // ✅ CORRIGIDO: Usar ID real do usuário autenticado
           recipient.name,
           data.amount,
           data.dueDate,

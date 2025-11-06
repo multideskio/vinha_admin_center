@@ -13,7 +13,12 @@ import {
   Lock,
   Mail,
   Smartphone,
+  User,
+  Info,
+  ArrowRightLeft,
+  Building2,
 } from 'lucide-react'
+import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -51,12 +56,14 @@ const churchProfileSchema = z.object({
   city: z.string().min(1, { message: 'A cidade é obrigatória.' }),
   neighborhood: z.string().min(1, { message: 'O bairro é obrigatório.' }),
   address: z.string().min(1, { message: 'O endereço é obrigatório.' }),
+  number: z.string().optional(),
+  complement: z.string().optional(),
+  phone: z.string().min(14, { message: 'O telefone deve ter ao menos 10 dígitos.' }),
   foundationDate: z.string().optional(),
   titheDay: z.coerce.number().min(1).max(31),
-  phone: z.string().min(1, { message: 'O celular é obrigatório.' }),
-  treasurerFirstName: z.string().min(1, 'O nome do tesoureiro é obrigatório.'),
-  treasurerLastName: z.string().min(1, 'O sobrenome do tesoureiro é obrigatório.'),
-  treasurerCpf: z.string().min(14, 'O CPF do tesoureiro deve ter 11 dígitos.'),
+  treasurerFirstName: z.string().min(1, { message: 'O nome do tesoureiro é obrigatório.' }),
+  treasurerLastName: z.string().min(1, { message: 'O sobrenome do tesoureiro é obrigatório.' }),
+  treasurerCpf: z.string().min(1, { message: 'O CPF do tesoureiro é obrigatório.' }),
   newPassword: z.string().optional().or(z.literal('')),
   facebook: z.string().url().optional().or(z.literal('')),
   instagram: z.string().url().optional().or(z.literal('')),
@@ -88,9 +95,12 @@ const SettingsTab = ({ userId }: { userId: string }) => {
       if (!response.ok) throw new Error('Falha ao carregar configurações.')
       const data = await response.json()
       setSettings(data)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -100,116 +110,127 @@ const SettingsTab = ({ userId }: { userId: string }) => {
     fetchSettings()
   }, [fetchSettings])
 
-  const handleSwitchChange = (
-    type: NotificationType,
-    channel: 'email' | 'whatsapp',
-    value: boolean,
-  ) => {
+  const toggleSetting = async (type: NotificationType, channel: 'email' | 'whatsapp') => {
+    const newValue = !settings[type]?.[channel]
     setSettings((prev) => ({
       ...prev,
-      [type]: {
-        ...prev[type],
-        [channel]: value,
-      },
+      [type]: { ...prev[type], [channel]: newValue },
     }))
-  }
 
-  const handleSaveSettings = async () => {
     try {
       const response = await fetch(`/api/v1/users/${userId}/notification-settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({ type, channel, enabled: newValue }),
       })
-      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+      if (!response.ok) throw new Error('Falha ao atualizar configuração.')
+      toast({ title: 'Sucesso', description: 'Configuração atualizada com sucesso.' })
+    } catch (error: unknown) {
+      setSettings((prev) => ({
+        ...prev,
+        [type]: { ...prev[type], [channel]: !newValue },
+      }))
       toast({
-        title: 'Sucesso',
-        description: 'Configurações de notificação salvas.',
-        variant: 'success',
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
     }
   }
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-4 w-72" />
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
     )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Configurações de Notificação</CardTitle>
-        <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {NOTIFICATION_TYPES.map((type) => (
-          <div key={type} className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-medium">
-                {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
-              </p>
+    <div className="space-y-4">
+      {NOTIFICATION_TYPES.filter((t) => t in notificationSettingsConfig).map((type) => (
+        <Card key={type} className="shadow-sm border-l-4 border-l-muted">
+          <CardHeader>
+            <CardTitle className="text-base">
+              {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
+            </CardTitle>
+            <CardDescription className="text-sm">Configure como deseja receber notificações.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`${type}-email`} className="text-sm font-medium">
+                <Mail className="inline h-4 w-4 mr-2" />
+                E-mail
+              </Label>
+              <Switch
+                id={`${type}-email`}
+                checked={settings[type]?.email || false}
+                onCheckedChange={() => toggleSetting(type, 'email')}
+              />
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2" title="Notificar por Email">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <Switch
-                  checked={settings[type]?.email ?? false}
-                  onCheckedChange={(value) => handleSwitchChange(type, 'email', value)}
-                />
-              </div>
-              <div className="flex items-center gap-2" title="Notificar por WhatsApp">
-                <Smartphone className="h-4 w-4 text-muted-foreground" />
-                <Switch
-                  checked={settings[type]?.whatsapp ?? false}
-                  onCheckedChange={(value) => handleSwitchChange(type, 'whatsapp', value)}
-                />
-              </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`${type}-whatsapp`} className="text-sm font-medium">
+                <Smartphone className="inline h-4 w-4 mr-2" />
+                WhatsApp
+              </Label>
+              <Switch
+                id={`${type}-whatsapp`}
+                checked={settings[type]?.whatsapp || false}
+                onCheckedChange={() => toggleSetting(type, 'whatsapp')}
+              />
             </div>
-          </div>
-        ))}
-        <div className="flex justify-end">
-          <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   )
 }
 
-export default function IgrejaProfilePage() {
-  const [church, setChurch] = React.useState<ChurchProfile | null>(null)
+export default function ChurchProfilePage() {
+  const [data, setData] = React.useState<ChurchProfile | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
-  const [isUploadingPhoto, setIsUploadingPhoto] = React.useState(false)
-  const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const [isUploading, setIsUploading] = React.useState(false)
   const { toast } = useToast()
 
   const form = useForm<ChurchProfile>({
     resolver: zodResolver(churchProfileSchema),
-    defaultValues: {},
+    defaultValues: {
+      cnpj: '',
+      razaoSocial: '',
+      nomeFantasia: '',
+      email: '',
+      cep: '',
+      state: '',
+      city: '',
+      neighborhood: '',
+      address: '',
+      number: '',
+      complement: '',
+      phone: '',
+      foundationDate: '',
+      titheDay: 10,
+      treasurerFirstName: '',
+      treasurerLastName: '',
+      treasurerCpf: '',
+      newPassword: '',
+      facebook: '',
+      instagram: '',
+      website: '',
+    },
   })
 
-  const fetchProfile = React.useCallback(async () => {
+  const fetchData = React.useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/v1/igreja/perfil')
       if (!response.ok) throw new Error('Falha ao carregar perfil.')
-      const data = await response.json()
-      setChurch(data)
-      form.reset(data)
-    } catch (error) {
+      const profileData = await response.json()
+      setData(profileData)
+      form.reset(profileData)
+    } catch (error: unknown) {
       toast({
         title: 'Erro',
         description: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -221,20 +242,81 @@ export default function IgrejaProfilePage() {
   }, [form, toast])
 
   React.useEffect(() => {
-    fetchProfile()
-  }, [fetchProfile])
+    fetchData()
+  }, [fetchData])
 
-  const onSubmit = async (data: ChurchProfile) => {
+  const handleAvatarChange = async (file: File) => {
+    if (!data) return
+    setIsUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error('Falha ao fazer upload da imagem.')
+      const { url } = await response.json()
+
+      const updateResponse = await fetch('/api/v1/igreja/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: url }),
+      })
+
+      if (!updateResponse.ok) throw new Error('Falha ao atualizar avatar.')
+
+      setData((prev) => (prev ? { ...prev, avatarUrl: url } : null))
+      toast({ title: 'Sucesso', description: 'Avatar atualizado com sucesso.' })
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleSocialLinkBlur = async (field: 'facebook' | 'instagram' | 'website', value: string) => {
     try {
       const response = await fetch('/api/v1/igreja/perfil', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ [field]: value }),
       })
+
+      if (!response.ok) throw new Error('Falha ao atualizar rede social.')
+
+      setData((prev) => (prev ? { ...prev, [field]: value } : null))
+      toast({ title: 'Sucesso', description: 'Rede social atualizada.' })
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const onSubmit = async (formData: ChurchProfile) => {
+    try {
+      const response = await fetch('/api/v1/igreja/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
       if (!response.ok) throw new Error('Falha ao atualizar perfil.')
-      toast({ title: 'Sucesso', description: 'Perfil atualizado.', variant: 'success' })
-      fetchProfile()
-    } catch (error) {
+      const updatedData = await response.json()
+      setData(updatedData)
+      form.reset(updatedData)
+      toast({ title: 'Sucesso', description: 'Perfil atualizado com sucesso.' })
+    } catch (error: unknown) {
       toast({
         title: 'Erro',
         description: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -243,515 +325,490 @@ export default function IgrejaProfilePage() {
     }
   }
 
-  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setIsUploadingPhoto(true)
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('folder', 'avatars')
-        formData.append('filename', `igreja-${church?.id}-${file.name}`)
-
-        const response = await fetch('/api/v1/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) throw new Error('Falha no upload da imagem')
-
-        const result = await response.json()
-        
-        const updateResponse = await fetch('/api/v1/igreja/perfil', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatarUrl: result.url }),
-        })
-
-        if (!updateResponse.ok) throw new Error('Falha ao atualizar avatar')
-
-        setPreviewImage(result.url)
-        setChurch(prev => prev ? { ...prev, avatarUrl: result.url } : null)
-        
-        toast({
-          title: 'Sucesso',
-          description: 'Avatar atualizado com sucesso!',
-          variant: 'success',
-        })
-      } catch (error) {
-        toast({
-          title: 'Erro',
-          description: 'Falha ao fazer upload da imagem.',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsUploadingPhoto(false)
-      }
-    }
-  }
-
-  const handleSocialLinkBlur = async (
-    fieldName: 'facebook' | 'instagram' | 'website',
-    value: string,
-  ) => {
-    if (!value || value === church?.[fieldName]) return
-
-    try {
-      const response = await fetch('/api/v1/igreja/perfil', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [fieldName]: value || null }),
-      })
-
-      if (!response.ok) throw new Error(`Falha ao atualizar ${fieldName}.`)
-
-      toast({
-        title: 'Sucesso!',
-        description: `Link do ${fieldName} atualizado.`,
-        variant: 'success',
-      })
-      
-      setChurch((prev) => (prev ? { ...prev, [fieldName]: value } : null))
-    } catch (error) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  if (isLoading || !church) {
+  if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-        <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-96 w-full" />
-            </CardContent>
-          </Card>
-        </div>
+      <div className="flex flex-col gap-8">
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     )
   }
 
+  if (!data) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Erro ao carregar dados da igreja. Por favor, tente novamente.
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Left Column: Profile Card */}
-      <div className="lg:col-span-1">
-        <Card>
-          <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
-              <ClickableAvatar
-                src={previewImage || church.avatarUrl || "https://placehold.co/96x96.png"}
-                alt={church.nomeFantasia}
-                fallback="IDM"
-                className={cn("h-24 w-24", isUploadingPhoto && "opacity-50")}
-              />
-              {isUploadingPhoto && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                </div>
-              )}
-              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                  <Camera className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <span className="sr-only">Trocar foto</span>
-              </Label>
-              <Input
-                id="photo-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                disabled={isUploadingPhoto}
-              />
-            </div>
-            <h2 className="mt-4 text-xl font-semibold">{church.nomeFantasia}</h2>
-            <p className="text-muted-foreground">Igreja</p>
-          </CardContent>
-          <Separator />
-          <CardContent className="pt-6">
-            <h3 className="mb-4 font-semibold">Redes sociais</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Facebook className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={church.facebook ?? ''}
-                  placeholder="https://facebook.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={church.instagram ?? ''}
-                  placeholder="https://instagram.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={church.website ?? ''}
-                  placeholder="https://website.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+            Meu Perfil
+          </h1>
+          <p className="text-base text-white/90 mt-2 font-medium">
+            Gerencie as informações da sua igreja
+          </p>
+        </div>
       </div>
 
-      {/* Right Column: Tabs and Form */}
-      <div className="lg:col-span-2">
-        <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Dados da Igreja</TabsTrigger>
-            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
-            <Card>
-              <CardContent className="pt-6">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="cnpj"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CNPJ</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={(e) => {
-                                  let value = e.target.value.replace(/\D/g, '')
-                                  if (value.length <= 14) {
-                                    value = value.replace(/(\d{2})(\d)/, '$1.$2')
-                                    value = value.replace(/(\d{3})(\d)/, '$1.$2')
-                                    value = value.replace(/(\d{3})(\d)/, '$1/$2')
-                                    value = value.replace(/(\d{4})(\d)/, '$1-$2')
-                                  }
-                                  field.onChange(value)
-                                }}
-                                maxLength={18}
-                                disabled
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Left Column: Profile Card */}
+        <div className="lg:col-span-1">
+          <Card className="shadow-lg border-t-4 border-t-videira-cyan">
+            <CardContent className="flex flex-col items-center pt-6 text-center">
+              <div className="relative">
+                <ClickableAvatar
+                  src={data.avatarUrl}
+                  alt={data.nomeFantasia}
+                  fallback={data.nomeFantasia.substring(0, 2).toUpperCase()}
+                  className={cn("h-24 w-24 ring-4 ring-videira-cyan/30", isUploading && "opacity-50")}
+                  enableModal={!!data.avatarUrl}
+                />
+                {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  </div>
+                )}
+                <Label htmlFor="avatar-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-videira-cyan border-2 border-white hover:bg-videira-cyan/90 shadow-lg">
+                    <Camera className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="sr-only">Trocar foto</span>
+                </Label>
+                <Input
+                  id="avatar-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleAvatarChange(file)
+                  }}
+                  disabled={isUploading}
+                />
+              </div>
+              <h2 className="mt-4 text-xl font-semibold">
+                {data.nomeFantasia}
+              </h2>
+              <p className="text-muted-foreground">{data.razaoSocial}</p>
+            </CardContent>
+            <Separator />
+            <CardContent className="pt-6">
+              <h3 className="mb-4 font-semibold flex items-center gap-2">
+                <Globe className="h-5 w-5 text-videira-cyan" />
+                Redes sociais
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Facebook className="h-5 w-5 text-blue-600" />
+                  <Input
+                    defaultValue={data.facebook ?? ''}
+                    placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                    className="border-2 focus:border-videira-cyan"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Instagram className="h-5 w-5 text-pink-600" />
+                  <Input
+                    defaultValue={data.instagram ?? ''}
+                    placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                    className="border-2 focus:border-videira-cyan"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-videira-cyan" />
+                  <Input 
+                    defaultValue={data.website ?? ''} 
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                    className="border-2 focus:border-videira-cyan"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="razaoSocial"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Razão Social</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="nomeFantasia"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome Fantasia</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+        {/* Right Column: Tabs and Form */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 p-1 bg-gradient-to-r from-videira-cyan/10 to-videira-blue/10">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-videira-cyan data-[state=active]:text-white">
+            <User className="h-4 w-4 mr-2" />
+            Perfil
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="data-[state=active]:bg-videira-blue data-[state=active]:text-white">
+            <Mail className="h-4 w-4 mr-2" />
+            Configurações
+          </TabsTrigger>
+        </TabsList>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="cep"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CEP</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={(e) => {
-                                  let value = e.target.value.replace(/\D/g, '')
-                                  if (value.length >= 5) {
-                                    value = value.slice(0, 5) + '-' + value.slice(5, 8)
-                                  }
-                                  field.onChange(value)
-                                }}
-                                maxLength={9}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Estado/UF</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cidade</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="neighborhood"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Bairro</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Endereço</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="foundationDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Data de Fundação</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="dd/mm/aaaa"
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={(e) => {
-                                  let value = e.target.value.replace(/\D/g, '')
-                                  if (value.length >= 2) value = value.slice(0, 2) + '/' + value.slice(2)
-                                  if (value.length >= 5) value = value.slice(0, 5) + '/' + value.slice(5, 9)
-                                  field.onChange(value)
-                                }}
-                                maxLength={10}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="titheDay"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Dia do dízimo</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Celular</FormLabel>
-                            <FormControl>
-                              <PhoneInput
-                                country={'br'}
-                                value={field.value ?? ''}
-                                onChange={field.onChange}
-                                inputClass="!w-full"
-                                containerClass="phone-input-wrapper"
-                                inputStyle={{
-                                  width: '100%',
-                                  height: '40px',
-                                  fontSize: '14px',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  color: 'hsl(var(--foreground))',
-                                }}
-                                buttonStyle={{
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRight: 'none',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                                }}
-                                dropdownStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  color: 'hsl(var(--foreground))',
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <Separator />
-                    <h3 className="text-lg font-medium">Dados do Tesoureiro</h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="treasurerFirstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="treasurerLastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sobrenome</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="treasurerCpf"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CPF</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={(e) => {
-                                  let value = e.target.value.replace(/\D/g, '')
-                                  if (value.length <= 11) {
-                                    value = value.replace(/(\d{3})(\d)/, '$1.$2')
-                                    value = value.replace(/(\d{3})(\d)/, '$1.$2')
-                                    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-                                  }
-                                  field.onChange(value)
-                                }}
-                                maxLength={14}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <Alert
-                      variant="destructive"
-                      className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
-                    >
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                      <AlertDescription>
-                        <strong>Importante</strong> - É necessário ter um usuário para a igreja
-                        poder acessar o sistema.
-                      </AlertDescription>
-                    </Alert>
-
+        <TabsContent value="profile" className="space-y-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="shadow-lg border-l-4 border-l-videira-blue">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5 text-videira-blue" />
+                    Dados da Igreja
+                  </CardTitle>
+                  <CardDescription>Informações cadastrais da igreja</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="newPassword"
+                      name="nomeFantasia"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Crie ou atualize a senha da igreja</FormLabel>
+                          <FormLabel>Nome Fantasia *</FormLabel>
                           <FormControl>
-                            <div className="relative mt-1">
-                              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                type="password"
-                                placeholder="Nova senha"
-                                className="pl-9"
-                                {...field}
-                                value={field.value ?? ''}
-                              />
-                            </div>
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="razaoSocial"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Razão Social *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="cnpj"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CNPJ *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>E-mail *</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone *</FormLabel>
+                          <FormControl>
+                            <PhoneInput
+                              {...field}
+                              country="br"
+                              preferredCountries={['br']}
+                              inputClass={cn(
+                                'w-full px-3 py-2 rounded-md border border-input bg-background',
+                                'focus:outline-none focus:ring-2 focus:ring-ring',
+                              )}
+                              containerClass="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="foundationDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Fundação</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                    <div className="flex justify-end">
-                      <Button type="submit">Alterar cadastro</Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="configuracoes">
-            {church.userId && <SettingsTab userId={church.userId} />}
-          </TabsContent>
-        </Tabs>
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="cep"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CEP *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado *</FormLabel>
+                          <FormControl>
+                            <Input maxLength={2} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cidade *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="neighborhood"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bairro *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Logradouro *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="complement"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Complemento</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="treasurerFirstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do Tesoureiro *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="treasurerLastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sobrenome do Tesoureiro *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="treasurerCpf"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CPF do Tesoureiro *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="facebook"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Facebook</FormLabel>
+                          <FormControl>
+                            <Input type="url" placeholder="https://facebook.com/..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="instagram"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Instagram</FormLabel>
+                          <FormControl>
+                            <Input type="url" placeholder="https://instagram.com/..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website</FormLabel>
+                          <FormControl>
+                            <Input type="url" placeholder="https://..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="titheDay"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dia do Dízimo (1-31)</FormLabel>
+                        <FormControl>
+                          <Input type="number" min={1} max={31} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          <Lock className="inline h-4 w-4 mr-2" />
+                          Nova Senha (deixe em branco para não alterar)
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full bg-gradient-to-r from-videira-cyan to-videira-blue hover:from-videira-cyan/90 hover:to-videira-blue/90 text-white font-semibold shadow-lg"
+              >
+                Salvar Alterações
+              </Button>
+            </form>
+          </Form>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <Card className="shadow-lg border-l-4 border-l-green-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-green-500" />
+                Notificações
+              </CardTitle>
+              <CardDescription>Gerencie como deseja receber notificações</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.userId && <SettingsTab userId={data.userId} />}
+            </CardContent>
+          </Card>
+        </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   )

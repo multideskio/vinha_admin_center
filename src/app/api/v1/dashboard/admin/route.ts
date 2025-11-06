@@ -297,98 +297,72 @@ export async function GET(request: Request): Promise<NextResponse> {
       .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
       .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
 
+    // ✅ CORRIGIDO: Buscar todos os últimos pagamentos de uma vez (otimização N+1)
+    const allContributorIds = [
+      ...pastorsWithTitheDay.map(p => p.id),
+      ...churchesWithTitheDay.map(c => c.id)
+    ]
+
+    const lastPaymentsData = await db
+      .select({
+        contributorId: transactions.contributorId,
+        lastPayment: sql<Date>`MAX(${transactions.createdAt})`.mapWith((val) => new Date(val)),
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.status, 'approved'),
+          sql`${transactions.contributorId} IN ${allContributorIds}`
+        )
+      )
+      .groupBy(transactions.contributorId)
+
+    // Criar Map para acesso O(1)
+    const lastPaymentMap = new Map(
+      lastPaymentsData.map(p => [p.contributorId, p.lastPayment])
+    )
+
     const defaulters = []
 
-    // Verificar pastores
+    // ✅ CORRIGIDO: Verificar pastores sem queries adicionais
     for (const pastor of pastorsWithTitheDay) {
-      // Buscar última transação aprovada nos últimos 3 meses
-      const lastPayment = await db
-        .select({ createdAt: transactions.createdAt })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.contributorId, pastor.id),
-            eq(transactions.status, 'approved'),
-            gte(transactions.createdAt, threeMonthsAgo)
-          )
-        )
-        .orderBy(desc(transactions.createdAt))
-        .limit(1)
+      const lastPaymentDate = lastPaymentMap.get(pastor.id)
 
-      // Se não pagou nos últimos 3 meses, é inadimplente
-      if (lastPayment.length === 0) {
-        // Calcular dias desde o início dos 3 meses
-        const daysSinceThreeMonths = Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
+      // Se não tem pagamento OU o último foi antes de 3 meses atrás
+      if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
+        const daysSince = lastPaymentDate 
+          ? Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
+          : Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
         
         defaulters.push({
           id: pastor.id,
           name: `${pastor.firstName} ${pastor.lastName}`,
           type: 'pastor' as const,
           titheDay: pastor.titheDay,
-          lastPayment: null,
-          daysLate: daysSinceThreeMonths,
+          lastPayment: lastPaymentDate ? format(lastPaymentDate, 'dd/MM/yyyy') : null,
+          daysLate: daysSince,
         })
-      } else {
-        // Verificar se o último pagamento foi há mais de 3 meses
-        const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
-        if (lastPaymentDate < threeMonthsAgo) {
-          const daysSinceLastPayment = Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
-          
-          defaulters.push({
-            id: pastor.id,
-            name: `${pastor.firstName} ${pastor.lastName}`,
-            type: 'pastor' as const,
-            titheDay: pastor.titheDay,
-            lastPayment: format(lastPaymentDate, 'dd/MM/yyyy'),
-            daysLate: daysSinceLastPayment,
-          })
-        }
       }
     }
 
-    // Verificar igrejas
+    // ✅ CORRIGIDO: Verificar igrejas sem queries adicionais
     for (const church of churchesWithTitheDay) {
-      // Buscar última transação aprovada nos últimos 3 meses
-      const lastPayment = await db
-        .select({ createdAt: transactions.createdAt })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.contributorId, church.id),
-            eq(transactions.status, 'approved'),
-            gte(transactions.createdAt, threeMonthsAgo)
-          )
-        )
-        .orderBy(desc(transactions.createdAt))
-        .limit(1)
+      const lastPaymentDate = lastPaymentMap.get(church.id)
 
-      // Se não pagou nos últimos 3 meses, é inadimplente
-      if (lastPayment.length === 0) {
-        const daysSinceThreeMonths = Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
+      // Se não tem pagamento OU o último foi antes de 3 meses atrás
+      if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
+        const daysSince = lastPaymentDate 
+          ? Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
+          : Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
         
         defaulters.push({
           id: church.id,
           name: church.nomeFantasia,
           type: 'church' as const,
           titheDay: church.titheDay,
-          lastPayment: null,
-          daysLate: daysSinceThreeMonths,
+          lastPayment: lastPaymentDate ? format(lastPaymentDate, 'dd/MM/yyyy') : null,
+          daysLate: daysSince,
         })
-      } else {
-        // Verificar se o último pagamento foi há mais de 3 meses
-        const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
-        if (lastPaymentDate < threeMonthsAgo) {
-          const daysSinceLastPayment = Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
-          
-          defaulters.push({
-            id: church.id,
-            name: church.nomeFantasia,
-            type: 'church' as const,
-            titheDay: church.titheDay,
-            lastPayment: format(lastPaymentDate, 'dd/MM/yyyy'),
-            daysLate: daysSinceLastPayment,
-          })
-        }
       }
     }
 

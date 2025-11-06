@@ -19,22 +19,15 @@ export default function ContribuirPage() {
   }
 
   const handleError = (error: string) => {
-    console.error('Igreja contribution error:', error)
+    console.warn('Igreja contribution error:', error)
     // Lógica específica de erro para igreja
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Nova Contribuição</h1>
-        <p className="text-sm text-muted-foreground">Realize uma nova contribuição.</p>
-      </div>
-      
-      <ContributionForm
-        userRole="igreja"
-        onSuccess={handleSuccess}
-        onError={handleError}
-      />
-    </div>
+    <ContributionForm
+      userRole="igreja"
+      onSuccess={handleSuccess}
+      onError={handleError}
+    />
   )
 }

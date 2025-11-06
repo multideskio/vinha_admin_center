@@ -32,55 +32,52 @@ export default async function PastorLayout({
 }: {
   children: React.ReactNode
 }): Promise<JSX.Element> {
-  try {
-    const { user } = await validateRequest()
-    
-    if (!user || user.role !== 'pastor') {
-      redirect('/auth/login')
-    }
-
-    const [userData, company] = await Promise.all([
-      db
-        .select({
-          avatarUrl: users.avatarUrl,
-          firstName: pastorProfiles.firstName,
-          lastName: pastorProfiles.lastName,
-        })
-        .from(users)
-        .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-        .where(eq(users.id, user.id))
-        .limit(1)
-        .then((res) => res[0]),
-      getCompanySettings(),
-    ])
-
-    const userName = userData?.firstName
-      ? `${userData.firstName} ${userData.lastName}`
-      : user.email?.split('@')[0] || 'User'
-    const userFallback = userData?.firstName
-      ? `${userData.firstName[0]}${userData.lastName?.[0] || ''}`
-      : userName.substring(0, 2).toUpperCase()
-
-    return (
-      <ErrorBoundary>
-        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-          <PastorSidebar />
-          <div className="flex flex-col">
-            <PastorHeader
-              userName={userName}
-              userEmail={user.email}
-              userFallback={userFallback}
-              avatarUrl={userData?.avatarUrl || undefined}
-            />
-            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-              {children}
-            </main>
-          </div>
-        </div>
-      </ErrorBoundary>
-    )
-  } catch (error) {
-    console.error('Pastor layout error:', error)
+  // ✅ CORRIGIDO BUG #8: Removido try-catch desnecessário
+  // redirect() lança NEXT_REDIRECT como comportamento normal, não deve ser capturado
+  const { user } = await validateRequest()
+  
+  if (!user || user.role !== 'pastor') {
     redirect('/auth/login')
   }
+
+  const [userData, company] = await Promise.all([
+    db
+      .select({
+        avatarUrl: users.avatarUrl,
+        firstName: pastorProfiles.firstName,
+        lastName: pastorProfiles.lastName,
+      })
+      .from(users)
+      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .where(eq(users.id, user.id))
+      .limit(1)
+      .then((res) => res[0]),
+    getCompanySettings(),
+  ])
+
+  const userName = userData?.firstName
+    ? `${userData.firstName} ${userData.lastName}`
+    : user.email?.split('@')[0] || 'User'
+  const userFallback = userData?.firstName
+    ? `${userData.firstName[0]}${userData.lastName?.[0] || ''}`
+    : userName.substring(0, 2).toUpperCase()
+
+  return (
+    <ErrorBoundary>
+      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <PastorSidebar />
+        <div className="flex flex-col">
+          <PastorHeader
+            userName={userName}
+            userEmail={user.email}
+            userFallback={userFallback}
+            avatarUrl={userData?.avatarUrl || undefined}
+          />
+          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+            {children}
+          </main>
+        </div>
+      </div>
+    </ErrorBoundary>
+  )
 }

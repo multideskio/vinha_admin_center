@@ -4,12 +4,31 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { runNotificationScheduler } from '@/lib/notification-scheduler'
+import { timingSafeEqual } from 'crypto'
+
+// ✅ CORRIGIDO: Validar CRON_SECRET no início
+const CRON_SECRET = process.env.CRON_SECRET
+if (!CRON_SECRET) {
+  throw new Error('CRON_SECRET environment variable is required')
+}
 
 export async function GET(request: NextRequest) {
   try {
-    // Verificar se é uma requisição autorizada (pode implementar auth aqui)
+    // ✅ CORRIGIDO: Verificar autenticação com timing-safe comparison
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    
+    // ✅ CORRIGIDO: Usar timingSafeEqual para prevenir timing attacks
+    const expectedToken = Buffer.from(CRON_SECRET)
+    const receivedToken = Buffer.from(token)
+
+    if (expectedToken.length !== receivedToken.length || 
+        !timingSafeEqual(expectedToken, receivedToken)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

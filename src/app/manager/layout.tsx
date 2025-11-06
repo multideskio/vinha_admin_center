@@ -32,27 +32,28 @@ export default async function ManagerLayout({
 }: {
   children: React.ReactNode
 }): Promise<JSX.Element> {
-  try {
-    const { user } = await validateRequest()
+  // ✅ CORRIGIDO BUG #8: Removido try-catch desnecessário
+  // redirect() lança NEXT_REDIRECT como comportamento normal, não deve ser capturado
+  const { user } = await validateRequest()
 
-    if (!user || user.role !== 'manager') {
-      redirect('/auth/login')
-    }
+  if (!user || user.role !== 'manager') {
+    redirect('/auth/login')
+  }
 
-    const [userData, company] = await Promise.all([
-      db
-        .select({
-          avatarUrl: users.avatarUrl,
-          firstName: managerProfiles.firstName,
-          lastName: managerProfiles.lastName,
-        })
-        .from(users)
-        .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-        .where(eq(users.id, user.id))
-        .limit(1)
-        .then((res) => res[0]),
-      getCompanySettings(),
-    ])
+  const [userData, company] = await Promise.all([
+    db
+      .select({
+        avatarUrl: users.avatarUrl,
+        firstName: managerProfiles.firstName,
+        lastName: managerProfiles.lastName,
+      })
+      .from(users)
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+      .where(eq(users.id, user.id))
+      .limit(1)
+      .then((res) => res[0]),
+    getCompanySettings(),
+  ])
 
   const userName = userData?.firstName
     ? `${userData.firstName} ${userData.lastName}`
@@ -61,28 +62,24 @@ export default async function ManagerLayout({
     ? `${userData.firstName[0]}${userData.lastName?.[0] || ''}`
     : userName.substring(0, 2).toUpperCase()
 
-    return (
-      <ErrorBoundary>
-        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-          <ManagerSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
-          <div className="flex flex-col">
-            <ManagerHeader
-              userName={userName}
-              userEmail={user.email}
-              userFallback={userFallback}
-              avatarUrl={userData?.avatarUrl || undefined}
-              companyLogo={company?.logoUrl || undefined}
-              companyName={company?.name || undefined}
-            />
-            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-              {children}
-            </main>
-          </div>
+  return (
+    <ErrorBoundary>
+      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <ManagerSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
+        <div className="flex flex-col">
+          <ManagerHeader
+            userName={userName}
+            userEmail={user.email}
+            userFallback={userFallback}
+            avatarUrl={userData?.avatarUrl || undefined}
+            companyLogo={company?.logoUrl || undefined}
+            companyName={company?.name || undefined}
+          />
+          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+            {children}
+          </main>
         </div>
-      </ErrorBoundary>
-    )
-  } catch (error) {
-    console.error('Manager layout error:', error)
-    redirect('/auth/login')
-  }
+      </div>
+    </ErrorBoundary>
+  )
 }

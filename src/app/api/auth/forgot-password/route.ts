@@ -9,6 +9,16 @@ import { EmailService } from '@/lib/notifications'
 import { otherSettings } from '@/db/schema'
 import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
 
+// ✅ CORRIGIDO: Lista de hosts permitidos para prevenir host header injection
+const ALLOWED_HOSTS = [
+  'vinha.com',
+  'app.vinha.com',
+  'www.vinha.com',
+  'localhost:3000',
+  'localhost:9002',
+  '127.0.0.1:3000',
+]
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
@@ -51,8 +61,22 @@ export async function POST(request: NextRequest) {
     const [settings] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, user.companyId)).limit(1)
     if (!settings) return NextResponse.json({ error: 'Configuração não encontrada' }, { status: 500 })
 
-    // Prepara link e envia email
-    const host = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || request.headers.get('host') || 'localhost:3000'
+    // ✅ CORRIGIDO: Preparar link com validação de host seguro
+    let host = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+    
+    if (!host) {
+      const requestHost = request.headers.get('host')
+      
+      // Validar se o host está na lista de permitidos
+      if (requestHost && ALLOWED_HOSTS.includes(requestHost)) {
+        host = requestHost
+      } else {
+        // Fallback seguro para domínio padrão
+        host = 'app.vinha.com'
+        console.warn(`[FORGOT_PASSWORD] Host não permitido: ${requestHost}. Usando fallback: ${host}`)
+      }
+    }
+
     const resetLink = `https://${host}/auth/redefinir-senha/${token}`
     const html = createPasswordResetEmail({
       companyName: settings.smtpFrom || 'Equipe Vinha',

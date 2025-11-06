@@ -121,14 +121,23 @@ export default function TransacoesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Transações da Igreja</h1>
-        <p className="text-sm text-muted-foreground">
-          Visualize o histórico de contribuições recebidas.
-        </p>
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+            Transações da Igreja
+          </h1>
+          <p className="text-base text-white/90 mt-2 font-medium">
+            Visualize o histórico de contribuições recebidas
+          </p>
+        </div>
       </div>
-      <Card>
+      <Card className="shadow-lg border-t-4 border-t-videira-blue">
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
             <DropdownMenu>
@@ -174,7 +183,7 @@ export default function TransacoesPage() {
             </Button>
           </div>
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
               <TableRow>
                 <TableHead>Contribuinte</TableHead>
                 <TableHead className="hidden md:table-cell">Descrição</TableHead>

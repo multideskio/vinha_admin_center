@@ -10,10 +10,26 @@ import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
+// ✅ CORRIGIDO: Schema com validação de pasta permitida
 const uploadSchema = z.object({
-  folder: z.string().min(1).default('uploads'),
-  filename: z.string().min(1),
+  folder: z.enum(['uploads', 'avatars', 'documents', 'receipts']).default('uploads'),
+  filename: z.string().min(1).max(255),
 })
+
+// ✅ CORRIGIDO: Constantes de segurança
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+]
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,8 +47,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Validar dados
-    const validatedData = uploadSchema.parse({ folder, filename })
+    // ✅ CORRIGIDO: Validar tamanho do arquivo
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
+        { status: 413 }
+      )
+    }
+
+    // ✅ CORRIGIDO: Validar tipo de arquivo
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid file type',
+          allowedTypes: ALLOWED_FILE_TYPES,
+          receivedType: file.type,
+        },
+        { status: 400 }
+      )
+    }
+
+    // ✅ CORRIGIDO: Sanitizar filename (remover caracteres perigosos)
+    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
+
+    // ✅ CORRIGIDO: Validar dados com schema seguro
+    const validatedData = uploadSchema.parse({ 
+      folder, 
+      filename: sanitizedFilename 
+    })
 
     // Converter arquivo para buffer
     const bytes = await file.arrayBuffer()

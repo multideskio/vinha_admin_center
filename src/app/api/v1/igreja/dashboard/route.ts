@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, churchProfiles } from '@/db/schema'
+import { transactions, churchProfiles, users } from '@/db/schema'
 import { count, sum, eq, and, gte, lt, sql } from 'drizzle-orm'
 import { subMonths, startOfMonth } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
@@ -48,8 +48,25 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
 
     const [profileData] = await db
-      .select()
+      .select({
+        nomeFantasia: churchProfiles.nomeFantasia,
+        razaoSocial: churchProfiles.razaoSocial,
+        cnpj: churchProfiles.cnpj,
+        email: users.email,
+        phone: users.phone,
+        address: churchProfiles.address,
+        neighborhood: churchProfiles.neighborhood,
+        city: churchProfiles.city,
+        state: churchProfiles.state,
+        foundationDate: churchProfiles.foundationDate,
+        titheDay: users.titheDay,
+        treasurerFirstName: churchProfiles.treasurerFirstName,
+        treasurerLastName: churchProfiles.treasurerLastName,
+        treasurerCpf: churchProfiles.treasurerCpf,
+        avatarUrl: users.avatarUrl,
+      })
       .from(churchProfiles)
+      .leftJoin(users, eq(users.id, churchProfiles.userId))
       .where(eq(churchProfiles.userId, churchId))
 
     const totalContributedResult = await db
@@ -163,7 +180,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }))
 
     return NextResponse.json({
-      profile: { ...sessionUser, ...profileData },
+      profile: profileData,
       kpis,
       monthlyContributions: formattedMonthlyContributions,
       paymentMethods: formattedPaymentMethods,
