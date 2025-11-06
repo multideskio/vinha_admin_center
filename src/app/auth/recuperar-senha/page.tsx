@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { Grape } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,26 +30,6 @@ const recoverySchema = z.object({
 });
 
 type RecoveryFormValues = z.infer<typeof recoverySchema>;
-
-const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-      <path d="M12 2v2" />
-      <path d="M12 18v-8" />
-      <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-      <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    </svg>
-  );
 
 export default function RecuperarSenhaPage() {
   const form = useForm<RecoveryFormValues>({
@@ -98,7 +79,7 @@ export default function RecuperarSenhaPage() {
         <CardHeader className="text-center space-y-4 pb-6">
             <div className="flex justify-center items-center">
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-videira-purple/20 to-videira-blue/20 ring-4 ring-videira-purple/30 shadow-lg">
-                    <Logo className="h-10 w-10 text-videira-purple" />
+                    <Grape className="h-10 w-10 text-videira-purple fill-videira-purple/20" />
                 </div>
             </div>
             <div>

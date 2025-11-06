@@ -1,5 +1,4 @@
-import Image from 'next/image';
-import { Grape, Users, TrendingUp, Heart, Shield, Sparkles } from 'lucide-react';
+import { Grape, Sparkles } from 'lucide-react';
 
 export default function AuthLayout({
   children,
@@ -45,60 +44,17 @@ export default function AuthLayout({
               </div>
             </div>
 
-            {/* Descrição */}
-            <p className="text-xl text-white/95 mb-12 leading-relaxed drop-shadow">
-              Gerencie sua comunidade com facilidade e eficiência. 
-              Nossa plataforma oferece as ferramentas certas para você se conectar e crescer.
-            </p>
-
-            {/* Features */}
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 group">
-                <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white text-lg">Gestão de Membros</h3>
-                  <p className="text-white/80 text-sm">
-                    Organize pastores, supervisores e igrejas em uma plataforma integrada
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 group">
-                <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                  <TrendingUp className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white text-lg">Relatórios Inteligentes</h3>
-                  <p className="text-white/80 text-sm">
-                    Análises e insights em tempo real sobre contribuições e crescimento
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 group">
-                <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                  <Heart className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white text-lg">Conexão Ministerial</h3>
-                  <p className="text-white/80 text-sm">
-                    Notificações automáticas via e-mail e WhatsApp para toda comunidade
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 group">
-                <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white text-lg">Seguro & Confiável</h3>
-                  <p className="text-white/80 text-sm">
-                    Seus dados protegidos com criptografia de ponta a ponta
-                  </p>
-                </div>
+            {/* Versículo Bíblico */}
+            <div className="mt-8 p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <div className="space-y-3">
+                <p className="text-lg text-white/95 leading-relaxed italic">
+                  &ldquo;Trazei todos os dízimos à casa do tesouro, para que haja mantimento na minha casa, 
+                  e depois fazei prova de mim, diz o Senhor dos Exércitos, se eu não vos abrir as janelas 
+                  do céu e não derramar sobre vós uma bênção tal, que dela vos advenha a maior abastança.&rdquo;
+                </p>
+                <p className="text-white/70 text-sm font-medium text-right">
+                  Malaquias 3:10
+                </p>
               </div>
             </div>
 

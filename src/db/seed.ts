@@ -8,13 +8,7 @@ import * as schema from './schema'
 import {
   users,
   adminProfiles,
-  managerProfiles,
-  supervisorProfiles,
-  pastorProfiles,
-  churchProfiles,
-  regions,
   companies,
-  apiKeys,
 } from './schema'
 
 if (!process.env.DATABASE_URL) {
@@ -29,16 +23,11 @@ if (!process.env.COMPANY_INIT) {
   throw new Error('COMPANY_INIT is not set in the environment variables')
 }
 
-// IDs de teste do ambiente
-const ADMIN_INIT = process.env.ADMIN_INIT
-const GERENTE_INIT = process.env.GERENTE_INIT
-const SUPERVISOR_INIT = process.env.SUPERVISOR_INIT
-const PASTOR_INIT = process.env.PASTOR_INIT
-const IGREJA_INIT = process.env.IGREJA_INIT
-
-if (!ADMIN_INIT || !GERENTE_INIT || !SUPERVISOR_INIT || !PASTOR_INIT || !IGREJA_INIT) {
-  throw new Error('Uma ou mais variáveis de ID de usuário inicial não estão definidas no ambiente.')
+if (!process.env.ADMIN_INIT) {
+  throw new Error('ADMIN_INIT is not set in the environment variables')
 }
+
+const ADMIN_INIT = process.env.ADMIN_INIT
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -66,15 +55,15 @@ async function main(): Promise<void> {
   await db.delete(schema.passwordResetTokens)
   
   // Depois deletar perfis
-  await db.delete(adminProfiles)
-  await db.delete(pastorProfiles)
-  await db.delete(churchProfiles)
-  await db.delete(supervisorProfiles)
-  await db.delete(managerProfiles)
+  await db.delete(schema.adminProfiles)
+  await db.delete(schema.pastorProfiles)
+  await db.delete(schema.churchProfiles)
+  await db.delete(schema.supervisorProfiles)
+  await db.delete(schema.managerProfiles)
   
   // Por último, usuários, regiões e empresas
   await db.delete(users)
-  await db.delete(regions)
+  await db.delete(schema.regions)
   await db.delete(companies)
 
   // Criar Empresa
@@ -96,29 +85,12 @@ async function main(): Promise<void> {
     throw new Error('Failed to create company')
   }
 
-  // Criar Regiões
-  console.log('Seeding regions...')
-  const seededRegions = await db
-    .insert(regions)
-    .values([
-      { name: 'Sul', color: '#3b82f6', companyId: company.id },
-      { name: 'Sudeste', color: '#16a34a', companyId: company.id },
-      { name: 'Centro-Oeste', color: '#f97316', companyId: company.id },
-      { name: 'Norte', color: '#ef4444', companyId: company.id },
-      { name: 'Nordeste', color: '#8b5cf6', companyId: company.id },
-    ])
-    .returning()
-  const centroOeste = seededRegions.find((r) => r.name === 'Centro-Oeste')
-  if (!centroOeste) {
-    throw new Error('Centro-Oeste region not found')
-  }
-
   const password = process.env.DEFAULT_PASSWORD
   if (!password) {
     throw new Error('DEFAULT_PASSWORD environment variable is required')
   }
 
-  // 1. Admin
+  // Criar Admin
   console.log('Seeding admin...')
   const [adminUser] = await db
     .insert(users)
@@ -142,123 +114,9 @@ async function main(): Promise<void> {
     permission: 'superadmin',
   })
 
-  // 2. Gerente
-  console.log('Seeding manager...')
-  const [managerUser] = await db
-    .insert(users)
-    .values({
-      id: GERENTE_INIT,
-      companyId: company.id,
-      email: 'gerente@vinha.com',
-      password: await bcrypt.hash(password, 10),
-      role: 'manager',
-      status: 'active',
-      titheDay: 10,
-    })
-    .returning()
-  if (!managerUser) {
-    throw new Error('Failed to create manager user')
-  }
-  await db.insert(managerProfiles).values({
-    userId: managerUser.id,
-    firstName: 'Paulo',
-    lastName: 'Ferreira',
-    cpf: '222.222.222-22',
-    address: 'Av. Exemplo, 123',
-    neighborhood: 'Centro',
-    city: 'São Paulo',
-    state: 'SP',
-    cep: '01000-000',
-  })
-
-  // 3. Supervisor
-  console.log('Seeding supervisor...')
-  const [supervisorUser] = await db
-    .insert(users)
-    .values({
-      id: SUPERVISOR_INIT,
-      companyId: company.id,
-      email: 'supervisor@vinha.com',
-      password: await bcrypt.hash(password, 10),
-      role: 'supervisor',
-      status: 'active',
-      titheDay: 8,
-    })
-    .returning()
-  if (!supervisorUser) {
-    throw new Error('Failed to create supervisor user')
-  }
-  await db.insert(supervisorProfiles).values({
-    userId: supervisorUser.id,
-    managerId: managerUser.id,
-    regionId: centroOeste.id,
-    firstName: 'Jabez',
-    lastName: 'Henrique',
-    cpf: '333.333.333-33',
-  })
-
-  // 4. Pastor
-  console.log('Seeding pastor...')
-  const [pastorUser] = await db
-    .insert(users)
-    .values({
-      id: PASTOR_INIT,
-      companyId: company.id,
-      email: 'pastor@vinha.com',
-      password: await bcrypt.hash(password, 10),
-      role: 'pastor',
-      status: 'active',
-      titheDay: 15,
-    })
-    .returning()
-  if (!pastorUser) {
-    throw new Error('Failed to create pastor user')
-  }
-  await db.insert(pastorProfiles).values({
-    userId: pastorUser.id,
-    supervisorId: supervisorUser.id,
-    firstName: 'João',
-    lastName: 'Silva',
-    cpf: '444.444.444-44',
-  })
-
-  // 5. Igreja
-  console.log('Seeding church...')
-  const [churchUser] = await db
-    .insert(users)
-    .values({
-      id: IGREJA_INIT,
-      companyId: company.id,
-      email: 'igreja@vinha.com',
-      password: await bcrypt.hash(password, 10),
-      role: 'church_account',
-      status: 'active',
-      titheDay: 5,
-    })
-    .returning()
-  if (!churchUser) {
-    throw new Error('Failed to create church user')
-  }
-  await db.insert(churchProfiles).values({
-    userId: churchUser.id,
-    supervisorId: supervisorUser.id,
-    cnpj: '12.345.678/0001-99',
-    razaoSocial: 'Igreja Exemplo da Vinha',
-    nomeFantasia: 'Vinha Exemplo',
-    treasurerFirstName: 'Maria',
-    treasurerLastName: 'Finanças',
-  })
-
-  // Criar chave de API padrão
-  console.log('Seeding API key...')
-  await db.insert(apiKeys).values({
-    companyId: company.id,
-    name: 'Default API Key',
-    key: 'vinha_sk_default123456789abcdef',
-    status: 'active',
-  })
-
   console.log('Database seeding complete.')
+  console.log('✅ Company created')
+  console.log('✅ Admin user created (admin@vinha.com)')
   await pool.end()
 }
 
