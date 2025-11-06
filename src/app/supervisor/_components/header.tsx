@@ -57,9 +57,10 @@ type HeaderProps = {
   userName: string
   userEmail: string
   userFallback: string
+  avatarUrl?: string
 }
 
-export function SupervisorHeader({ userName, userEmail, userFallback }: HeaderProps): JSX.Element {
+export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl }: HeaderProps): JSX.Element {
   const pathname = usePathname()
 
   return (
@@ -140,7 +141,7 @@ export function SupervisorHeader({ userName, userEmail, userFallback }: HeaderPr
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-videira-blue/10">
             <Avatar className="h-9 w-9 ring-2 ring-videira-blue/30 hover:ring-videira-blue/50 transition-all">
               <AvatarImage
-                src="https://placehold.co/36x36.png"
+                src={avatarUrl || 'https://placehold.co/36x36.png'}
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />

@@ -70,6 +70,7 @@ export default async function SupervisorLayout({
               userName={userName}
               userEmail={user.email}
               userFallback={userFallback}
+              avatarUrl={userData?.avatarUrl || undefined}
             />
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
               {children}
