@@ -17,6 +17,8 @@ import {
   MoreHorizontal,
   RefreshCw,
   Loader2,
+  ArrowRightLeft,
+  User,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -165,20 +167,24 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-purple">
       <CardHeader>
-        <CardTitle>Minhas Transações</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <ArrowRightLeft className="h-5 w-5 text-videira-purple" />
+          Minhas Transações
+        </CardTitle>
         <CardDescription>Histórico das suas transações financeiras.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="rounded-md border-2">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>ID da Transação</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right min-w-[140px]">Ações</TableHead>
+            <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+              <TableHead className="font-semibold">ID da Transação</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Data</TableHead>
+              <TableHead className="text-right font-semibold">Valor</TableHead>
+              <TableHead className="text-right min-w-[140px] font-semibold">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -263,6 +269,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
             )}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -367,10 +374,13 @@ const SettingsTab = ({ userId }: { userId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-green-500">
       <CardHeader>
-        <CardTitle>Configurações de Notificação</CardTitle>
-        <CardDescription>Gerencie quais notificações este usuário receberá.</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="h-5 w-5 text-green-500" />
+          Configurações de Notificação
+        </CardTitle>
+        <CardDescription>Gerencie quais notificações você receberá.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {NOTIFICATION_TYPES.map((type) => (
@@ -633,10 +643,28 @@ export default function SupervisorProfilePage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Left Column: Profile Card */}
-      <div className="lg:col-span-1">
-        <Card>
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+            Meu Perfil
+          </h1>
+          <p className="text-base text-white/90 mt-2 font-medium">
+            Gerencie suas informações pessoais e preferências
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Left Column: Profile Card */}
+        <div className="lg:col-span-1">
+          <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <ClickableAvatar
@@ -707,16 +735,25 @@ export default function SupervisorProfilePage() {
         </Card>
       </div>
 
-      {/* Right Column: Tabs and Form */}
-      <div className="lg:col-span-2">
-        <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Dados do perfil</TabsTrigger>
-            <TabsTrigger value="transacoes">Transações</TabsTrigger>
-            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
+        {/* Right Column: Tabs and Form */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="profile">
+            <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-videira-cyan/10 to-videira-blue/10">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Dados do perfil
+            </TabsTrigger>
+            <TabsTrigger value="transacoes" className="flex items-center gap-2">
+              <ArrowRightLeft className="h-4 w-4" />
+              Transações
+            </TabsTrigger>
+            <TabsTrigger value="configuracoes" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Configurações
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
-            <Card>
+            <Card className="shadow-lg border-t-4 border-t-videira-blue">
               <CardContent className="pt-6">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -1028,6 +1065,7 @@ export default function SupervisorProfilePage() {
             {supervisor.id && <SettingsTab userId={supervisor.id} />}
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   )

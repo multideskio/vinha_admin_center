@@ -64,20 +64,32 @@ export default function RecuperarSenhaPage() {
   const onSubmit = async (data: RecoveryFormValues) => {
     setFormError(null)
     setSuccess(false)
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+    
     try {
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        signal: controller.signal
       })
+      clearTimeout(timeoutId)
+      
       if (res.ok) {
         setSuccess(true)
       } else {
         const json = await res.json()
         setFormError(json.error || 'Erro ao enviar e-mail.')
       }
-    } catch {
-      setFormError('Erro de conexão.');
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if ((error as Error).name === 'AbortError') {
+        setFormError('Tempo esgotado. Por favor, tente novamente.')
+      } else {
+        setFormError('Erro de conexão.')
+      }
     }
   };
 
@@ -136,9 +148,12 @@ export default function RecuperarSenhaPage() {
             </form>
         </Form>
         {success ? (
-          <div className="mt-4 p-3 rounded-lg bg-green-500/10 border-2 border-green-500/30 text-center">
-            <p className="text-sm font-medium text-green-600">
-              ✓ Se o e-mail estiver cadastrado, enviaremos um link de recuperação.
+          <div className="mt-4 p-3 rounded-lg bg-green-500/10 border-2 border-green-500/30 space-y-2">
+            <p className="text-sm font-medium text-green-600 text-center">
+              ✓ Link de recuperação enviado! Verifique sua caixa de entrada e spam.
+            </p>
+            <p className="text-xs text-muted-foreground text-center">
+              Não recebeu? Aguarde alguns minutos ou tente novamente.
             </p>
           </div>
         ) : null}

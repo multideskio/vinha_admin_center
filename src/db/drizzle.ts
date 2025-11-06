@@ -11,9 +11,9 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000,
+  max: 20, // Aumentado de 10 para 20 para suportar mais requisições simultâneas
+  idleTimeoutMillis: 30000, // Reduzido de 60s para 30s - libera conexões idle mais rápido
+  connectionTimeoutMillis: 15000, // Aumentado de 10s para 15s - mais tempo para aguardar conexão disponível
   allowExitOnIdle: false,
 });
 

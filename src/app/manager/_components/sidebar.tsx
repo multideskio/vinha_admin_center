@@ -17,12 +17,12 @@ import { cn } from '@/lib/utils';
 import packageJson from '../../../../package.json';
 
 const menuItems = [
-    { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/manager/supervisores', label: 'Supervisores', icon: UserCog },
-    { href: '/manager/pastores', label: 'Pastores', icon: User },
-    { href: '/manager/igrejas', label: 'Igrejas', icon: Church },
-    { href: '/manager/transacoes', label: 'Transações', icon: ArrowRightLeft },
-    { href: '/manager/contribuicoes', label: 'Contribuições', icon: Handshake },
+  { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'cyan' },
+  { href: '/manager/supervisores', label: 'Supervisores', icon: UserCog, gradient: 'blue' },
+  { href: '/manager/pastores', label: 'Pastores', icon: User, gradient: 'purple' },
+  { href: '/manager/igrejas', label: 'Igrejas', icon: Church, gradient: 'cyan' },
+  { href: '/manager/transacoes', label: 'Transações', icon: ArrowRightLeft, gradient: 'blue' },
+  { href: '/manager/contribuicoes', label: 'Contribuições', icon: Handshake, gradient: 'purple' },
 ];
 
 const settingsItem = {
@@ -43,6 +43,34 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
     console.error('Failed to load company logo:', companyLogo);
     e.currentTarget.style.display = 'none';
   };
+
+  const getGradientClass = (gradient: string) => {
+    switch (gradient) {
+      case 'cyan':
+        return 'hover:bg-videira-cyan/10 data-[active=true]:bg-videira-cyan/15 data-[active=true]:border-l-videira-cyan'
+      case 'blue':
+        return 'hover:bg-videira-blue/10 data-[active=true]:bg-videira-blue/15 data-[active=true]:border-l-videira-blue'
+      case 'purple':
+        return 'hover:bg-videira-purple/10 data-[active=true]:bg-videira-purple/15 data-[active=true]:border-l-videira-purple'
+      default:
+        return 'hover:bg-primary/10 data-[active=true]:bg-primary/15'
+    }
+  }
+
+  const getIconColor = (gradient: string, isActive: boolean) => {
+    if (!isActive) return 'text-muted-foreground group-hover:text-foreground'
+    
+    switch (gradient) {
+      case 'cyan':
+        return 'text-videira-cyan'
+      case 'blue':
+        return 'text-videira-blue'
+      case 'purple':
+        return 'text-videira-purple'
+      default:
+        return 'text-primary'
+    }
+  }
 
   return (
     <div className="hidden border-r bg-gradient-to-b from-background via-muted/20 to-background md:block sticky top-0 h-screen shadow-xl">
@@ -72,31 +100,42 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
         {/* Menu principal */}
         <div className="flex-1 overflow-y-auto py-6">
           <nav className="px-3 space-y-1">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                data-active={pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))}
-                className={cn(
-                  'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
-                  'border-l-3 border-l-transparent',
-                  'hover:shadow-sm',
-                  (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href)))
-                    ? 'bg-videira-blue/15 border-l-4 border-l-videira-blue font-semibold text-videira-blue hover:bg-videira-blue/20'
-                    : 'font-medium text-muted-foreground hover:text-foreground hover:bg-videira-blue/10'
-                )}
-              >
-                <item.icon 
+            {menuItems.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  data-active={isActive}
                   className={cn(
-                    'h-5 w-5 transition-all',
-                    (pathname === item.href || (item.href !== '/manager/dashboard' && pathname.startsWith(item.href)))
-                      ? 'text-videira-blue'
-                      : 'text-muted-foreground group-hover:text-foreground'
-                  )} 
-                />
-                <span className="text-base">{item.label}</span>
-              </Link>
-            ))}
+                    'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+                    'border-l-3 border-l-transparent',
+                    'hover:shadow-sm hover:scale-[1.02]',
+                    getGradientClass(item.gradient),
+                    isActive ? 'font-semibold border-l-4' : 'font-medium'
+                  )}
+                >
+                  <item.icon 
+                    className={cn(
+                      'h-5 w-5 transition-all duration-200',
+                      getIconColor(item.gradient, isActive)
+                    )} 
+                  />
+                  <span className={cn(
+                    'text-base transition-colors',
+                    isActive ? getIconColor(item.gradient, true) : 'text-muted-foreground group-hover:text-foreground'
+                  )}>
+                    {item.label}
+                  </span>
+                  {isActive && (
+                    <div className="ml-auto h-2 w-2 rounded-full bg-current animate-pulse" />
+                  )}
+                </Link>
+              )
+            })}
           </nav>
         </div>
 

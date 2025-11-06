@@ -36,7 +36,7 @@ export default async function ManagerLayout({
     const { user } = await validateRequest()
 
     if (!user || user.role !== 'manager') {
-      return redirect('/auth/login')
+      redirect('/auth/login')
     }
 
     const [userData, company] = await Promise.all([
@@ -83,6 +83,6 @@ export default async function ManagerLayout({
     )
   } catch (error) {
     console.error('Manager layout error:', error)
-    return redirect('/auth/login')
+    redirect('/auth/login')
   }
 }

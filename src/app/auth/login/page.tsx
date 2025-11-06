@@ -66,7 +66,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [logs, setLogs] = React.useState<LogEntry[]>([]);
-  const [isLogging, setIsLogging] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -77,7 +76,6 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLogging(true);
     setLogs([{ message: 'Enviando credenciais...', status: 'pending' }]);
 
     const result = await loginUser(data);
@@ -102,7 +100,6 @@ export default function LoginPage() {
         const path = roleToPathMap[result.role] || '/';
         router.push(path);
     }
-    setIsLogging(false);
   };
 
   return (
@@ -173,9 +170,9 @@ export default function LoginPage() {
                 type="submit" 
                 className="w-full bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all" 
                 size="lg"
-                disabled={form.formState.isSubmitting || isLogging}
+                disabled={form.formState.isSubmitting}
             >
-                {isLogging ? (
+                {form.formState.isSubmitting ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Verificando...

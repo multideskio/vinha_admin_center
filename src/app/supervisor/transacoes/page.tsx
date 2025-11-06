@@ -135,83 +135,107 @@ export default function TransacoesPage() {
     refunded: { text: 'Reembolsada', variant: 'outline' },
   }
 
-  return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Transações da Supervisão
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Gerencie as transações financeiras da sua supervisão.
-          {dateRange?.from && dateRange?.to && (
-            <span className="ml-2 font-medium">
-              Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
-            </span>
-          )}
-        </p>
-      </div>
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="relative flex-1 sm:flex-initial">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Buscar..."
-                      className="pl-8 w-full sm:w-[250px]"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Buscar por nome do contribuinte</p>
-                  <p className="text-xs text-muted-foreground">Mínimo 4 caracteres</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <ListFilter className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only">Filtro</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {Object.entries(statusMap).map(([key, { text }]) => (
-                  <DropdownMenuCheckboxItem
-                    key={key}
-                    checked={statusFilter.includes(key)}
-                    onCheckedChange={() => handleStatusFilterChange(key)}
-                  >
-                    {text}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DateRangePicker
-              value={dateRange}
-              onChange={setDateRange}
-            />
+  const statusOptions = [
+    { value: 'approved', label: 'Aprovada' },
+    { value: 'pending', label: 'Pendente' },
+    { value: 'refused', label: 'Recusada' },
+    { value: 'refunded', label: 'Reembolsada' },
+  ]
 
-            <Button size="sm" variant="outline" className="gap-1">
-              <Download className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only">Exportar</span>
-            </Button>
+  const handleExport = () => {
+    toast({
+      title: 'Exportação',
+      description: 'Funcionalidade em desenvolvimento.',
+      variant: 'default',
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+                Transações da Supervisão
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Gerencie as transações financeiras da sua supervisão
+                {dateRange?.from && dateRange?.to && (
+                  <span className="ml-2">
+                    • Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/60" />
+                      <Input
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8 bg-white/20 border-white/30 text-white placeholder:text-white/60 backdrop-blur-sm"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Buscar por contribuinte ou igreja</p>
+                    <p className="text-xs text-muted-foreground">Mínimo 4 caracteres</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <DateRangePicker value={dateRange} onChange={setDateRange} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-10 bg-white/20 hover:bg-white/30 text-white border-white/30">
+                    <ListFilter className="h-4 w-4 mr-2" />
+                    Status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Filtrar por status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {statusOptions.map((option) => (
+                    <DropdownMenuCheckboxItem
+                      key={option.value}
+                      checked={statusFilter.includes(option.value)}
+                      onCheckedChange={() => handleStatusFilterChange(option.value)}
+                    >
+                      {option.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="outline" size="sm" onClick={handleExport} className="h-10 bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <Card className="shadow-lg border-t-4 border-t-videira-cyan">
+        <CardContent className="pt-6">
+          <div className="rounded-md border-2">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Contribuinte</TableHead>
-                <TableHead className="hidden lg:table-cell">Igreja</TableHead>
-                <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="hidden md:table-cell">Motivo Solicitação</TableHead>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                <TableHead className="font-semibold">Contribuinte</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
+                <TableHead className="hidden md:table-cell text-right font-semibold">Valor</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Motivo Solicitação</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -365,6 +389,7 @@ export default function TransacoesPage() {
               )}
             </TableBody>
           </Table>
+          </div>
           <div className="flex items-center justify-end space-x-2 py-4">
             <Button
               variant="outline"

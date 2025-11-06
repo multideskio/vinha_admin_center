@@ -21,11 +21,13 @@ const resetSchema = z.object({
 
 type ResetFormValues = z.infer<typeof resetSchema>;
 
+type TokenStatus = 'loading' | 'valid' | 'expired' | 'invalid'
+
 export default function RedefinirSenhaPage() {
   const router = useRouter();
   const params = useParams();
   const token = params.token as string;
-  const [valid, setValid] = useState<null | boolean>(null);
+  const [tokenStatus, setTokenStatus] = useState<TokenStatus>('loading');
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -35,29 +37,66 @@ export default function RedefinirSenhaPage() {
   });
 
   useEffect(() => {
-    fetch(`/api/auth/verify-token?token=${token}`)
-      .then((res) => res.json())
-      .then((data) => setValid(!!data.valid))
-      .catch(() => setValid(false));
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+    
+    fetch(`/api/auth/verify-token?token=${token}`, { signal: controller.signal })
+      .then((res) => {
+        clearTimeout(timeoutId)
+        return res.json()
+      })
+      .then((data) => {
+        if (data.valid) {
+          setTokenStatus('valid')
+        } else if (data.expired) {
+          setTokenStatus('expired')
+        } else {
+          setTokenStatus('invalid')
+        }
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId)
+        if (error.name === 'AbortError') {
+          setTokenStatus('invalid')
+        } else {
+          setTokenStatus('invalid')
+        }
+      });
   }, [token]);
 
   const onSubmit = async (values: ResetFormValues) => {
     setFormError(null);
-    const res = await fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password: values.password }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      setSuccess(true);
-      setTimeout(() => router.push("/auth/login"), 2500);
-    } else {
-      setFormError(data.error || "Erro ao redefinir senha");
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+    
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password: values.password }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId)
+      
+      const data = await res.json();
+      if (data.success) {
+        setSuccess(true);
+        setTimeout(() => router.push("/auth/login"), 2500);
+      } else {
+        setFormError(data.error || "Erro ao redefinir senha");
+      }
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if ((error as Error).name === 'AbortError') {
+        setFormError("Tempo esgotado. Por favor, tente novamente.")
+      } else {
+        setFormError("Erro de conexão.")
+      }
     }
   };
 
-  if (valid === null) return (
+  if (tokenStatus === 'loading') return (
     <Card className="w-full max-w-sm mx-auto border-t-4 border-t-videira-blue shadow-xl">
       <CardContent className="pt-12 pb-12 text-center space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-videira-blue mx-auto" />
@@ -66,7 +105,34 @@ export default function RedefinirSenhaPage() {
     </Card>
   );
   
-  if (!valid)
+  if (tokenStatus === 'expired')
+    return (
+      <Card className="w-full max-w-sm mx-auto border-t-4 border-t-orange-500 shadow-xl">
+        <CardHeader className="text-center space-y-4 pb-6">
+          <div className="flex justify-center items-center">
+            <div className="p-4 rounded-2xl bg-orange-500/10 ring-4 ring-orange-500/30 shadow-lg">
+              <XCircle className="h-10 w-10 text-orange-500" />
+            </div>
+          </div>
+          <div>
+            <CardTitle className="text-2xl font-bold text-orange-600">Link Expirado</CardTitle>
+            <CardDescription className="text-base mt-2">
+              Este link de recuperação expirou. Por favor, solicite um novo link de recuperação de senha.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="text-center">
+          <a 
+            href="/auth/recuperar-senha" 
+            className="text-videira-blue hover:text-videira-cyan font-semibold transition-colors"
+          >
+            Solicitar novo link →
+          </a>
+        </CardContent>
+      </Card>
+    );
+
+  if (tokenStatus === 'invalid')
     return (
       <Card className="w-full max-w-sm mx-auto border-t-4 border-t-destructive shadow-xl">
         <CardHeader className="text-center space-y-4 pb-6">
@@ -78,10 +144,18 @@ export default function RedefinirSenhaPage() {
           <div>
             <CardTitle className="text-2xl font-bold text-destructive">Token Inválido</CardTitle>
             <CardDescription className="text-base mt-2">
-              Este link expirou ou é inválido. Solicite uma nova recuperação de senha.
+              Este link é inválido. Verifique se copiou o link corretamente ou solicite uma nova recuperação.
             </CardDescription>
           </div>
         </CardHeader>
+        <CardContent className="text-center">
+          <a 
+            href="/auth/recuperar-senha" 
+            className="text-videira-blue hover:text-videira-cyan font-semibold transition-colors"
+          >
+            Solicitar novo link →
+          </a>
+        </CardContent>
       </Card>
     );
 

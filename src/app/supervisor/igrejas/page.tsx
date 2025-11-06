@@ -678,15 +678,16 @@ export default function IgrejasPage() {
   }
 
   const TableView = () => (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-purple">
       <CardContent className="pt-6">
+        <div className="rounded-md border-2">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Nome Fantasia</TableHead>
-              <TableHead className="hidden md:table-cell">CNPJ</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
+            <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+              <TableHead className="font-semibold">Nome Fantasia</TableHead>
+              <TableHead className="hidden md:table-cell font-semibold">CNPJ</TableHead>
+              <TableHead className="hidden md:table-cell font-semibold">Email</TableHead>
+              <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
               </TableHead>
@@ -777,6 +778,7 @@ export default function IgrejasPage() {
             )}
           </TableBody>
         </Table>
+        </div>
         <PaginationControls />
       </CardContent>
     </Card>
@@ -796,7 +798,7 @@ export default function IgrejasPage() {
         ) : paginatedChurches.length > 0 ? (
           paginatedChurches.map((church, index) => {
             return (
-              <Card key={church.id}>
+              <Card key={church.id} className="shadow-lg hover:shadow-xl transition-all border-l-4 border-l-videira-purple">
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                     <ClickableAvatar
@@ -830,7 +832,7 @@ export default function IgrejasPage() {
                     </div>
                   </div>
                   <div className="flex justify-end mt-4">
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" className="hover:bg-videira-purple hover:text-white transition-colors" asChild>
                       <Link href={`/supervisor/igrejas/${church.id}`}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Editar
@@ -874,79 +876,89 @@ export default function IgrejasPage() {
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Igrejas da Supervisão
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Exibindo {filteredChurches.length} de {churches.length} resultados
-            {dateRange?.from && dateRange?.to && (
-              <span className="ml-2 font-medium">
-                • Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Buscar por nome fantasia, razão social ou email</p>
-                <p className="text-xs text-muted-foreground">Mínimo 4 caracteres</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <DateRangePicker 
-            value={dateRange}
-            onChange={setDateRange}
-          />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 w-8"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em tabela</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={viewMode === 'card' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => setViewMode('card')}
-                  className="h-8 w-8"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Visualizar em cards</TooltipContent>
-            </Tooltip>
-            <ChurchFormModal onSave={fetchData}>
-              <Button size="sm" className="gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />{' '}
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Igreja</span>
-              </Button>
-            </ChurchFormModal>
-          </TooltipProvider>
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+                Igrejas da Supervisão
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                Exibindo {filteredChurches.length} de {churches.length} resultados
+                {dateRange?.from && dateRange?.to && (
+                  <span className="ml-2">
+                    • Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-white/60" />
+                      <Input
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8 bg-white/20 border-white/30 text-white placeholder:text-white/60 backdrop-blur-sm"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Buscar por nome fantasia, razão social ou email</p>
+                    <p className="text-xs text-muted-foreground">Mínimo 4 caracteres</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <DateRangePicker 
+                value={dateRange}
+                onChange={setDateRange}
+              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      onClick={() => setViewMode('table')}
+                      className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Visualizar em tabela</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'card' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      onClick={() => setViewMode('card')}
+                      className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    >
+                      <Grid3x3 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Visualizar em cards</TooltipContent>
+                </Tooltip>
+                <ChurchFormModal onSave={fetchData}>
+                  <Button size="sm" className="gap-1 bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Nova Igreja</span>
+                  </Button>
+                </ChurchFormModal>
+              </TooltipProvider>
+            </div>
+          </div>
         </div>
       </div>
       {viewMode === 'table' ? <TableView /> : <CardView />}

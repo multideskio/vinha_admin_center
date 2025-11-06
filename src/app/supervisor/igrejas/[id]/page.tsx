@@ -26,6 +26,7 @@ import {
   User,
   Bell,
   CreditCard,
+  ChevronLeft,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -149,19 +150,23 @@ const TransactionsTab = ({ churchId }: { churchId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-videira-blue">
       <CardHeader>
-        <CardTitle>Transações da Igreja</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5 text-videira-blue" />
+          Transações da Igreja
+        </CardTitle>
         <CardDescription>Histórico de transações financeiras da igreja.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="rounded-md border-2">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>ID da Transação</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+            <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+              <TableHead className="font-semibold">ID da Transação</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Data</TableHead>
+              <TableHead className="text-right font-semibold">Valor</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
               </TableHead>
@@ -229,6 +234,7 @@ const TransactionsTab = ({ churchId }: { churchId: string }) => {
             )}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -318,9 +324,12 @@ const SettingsTab = ({ churchId }: { churchId: string }) => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-green-500">
       <CardHeader>
-        <CardTitle>Configurações de Notificação</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5 text-green-500" />
+          Configurações de Notificação
+        </CardTitle>
         <CardDescription>Gerencie quais notificações esta igreja receberá.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -545,10 +554,31 @@ export default function IgrejaProfilePage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      {/* Left Column: Profile Card */}
-      <div className="lg:col-span-1">
-        <Card>
+    <div className="flex flex-col gap-6">
+      {/* Header com link de volta */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        
+        <div className="relative z-10 p-6 flex items-center gap-4">
+          <Link href="/supervisor/igrejas">
+            <Button variant="ghost" size="icon" className="bg-white/20 hover:bg-white/30 text-white">
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-lg">
+              {church.nomeFantasia}
+            </h1>
+            <p className="text-white/90 text-sm mt-1">Editar dados da igreja</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Left Column: Profile Card */}
+        <div className="lg:col-span-1">
+          <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardContent className="flex flex-col items-center pt-6 text-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
@@ -609,10 +639,10 @@ export default function IgrejaProfilePage() {
         </Card>
       </div>
 
-      {/* Right Column: Tabs and Form */}
-      <div className="lg:col-span-2">
-        <Tabs defaultValue="profile">
-          <TabsList className="grid w-full grid-cols-4">
+        {/* Right Column: Tabs and Form */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="profile">
+            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-videira-cyan/10 to-videira-purple/10">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Dados da Igreja
@@ -631,7 +661,7 @@ export default function IgrejaProfilePage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="profile">
-            <Card>
+            <Card className="shadow-lg border-t-4 border-t-videira-purple">
               <CardContent className="pt-6">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -955,7 +985,7 @@ export default function IgrejaProfilePage() {
           </TabsContent>
           
           <TabsContent value="delete">
-            <Card className="border-destructive">
+            <Card className="border-destructive shadow-lg">
               <CardHeader>
                 <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
                 <CardDescription>
@@ -971,6 +1001,7 @@ export default function IgrejaProfilePage() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   )

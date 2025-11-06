@@ -8,6 +8,8 @@ import * as bcrypt from 'bcrypt'
 import { createJWT, setJWTCookie, clearJWTCookie, validateRequest } from '@/lib/jwt'
 import { redirect } from 'next/navigation'
 import { getErrorMessage } from '@/lib/error-types'
+import { rateLimit, rateLimitPresets } from '@/lib/rate-limiter'
+import { headers } from 'next/headers'
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'E-mail inválido.' }),
@@ -18,6 +20,22 @@ export async function loginUser(
   values: z.infer<typeof loginSchema>,
 ): Promise<{ success: boolean; error?: string; role?: string }> {
   try {
+    // Rate limiting (usar email como identificador + IP se disponível)
+    const headersList = await headers()
+    const forwarded = headersList.get('x-forwarded-for')
+    const realIP = headersList.get('x-real-ip')
+    const clientIP = forwarded?.split(',')[0]?.trim() || realIP || 'unknown'
+    
+    const rateLimitResult = rateLimit(
+      `login:${values.email}:${clientIP}`,
+      rateLimitPresets.login
+    )
+    
+    if (!rateLimitResult.allowed) {
+      const resetInMinutes = Math.ceil((rateLimitResult.resetAt - Date.now()) / 60000)
+      throw new Error(`Muitas tentativas de login. Tente novamente em ${resetInMinutes} minutos.`)
+    }
+
     const validatedFields = loginSchema.safeParse(values)
 
     if (!validatedFields.success) {

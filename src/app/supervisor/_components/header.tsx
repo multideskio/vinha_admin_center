@@ -34,6 +34,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { logoutUser } from '@/actions/auth'
+import { cn } from '@/lib/utils'
+import { Grape } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import packageJson from '../../../../package.json'
 
 const menuItems = [
   { href: '/supervisor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -49,26 +53,6 @@ const settingsItem = {
   icon: Settings,
 }
 
-const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-    <path d="M12 2v2" />
-    <path d="M12 18v-8" />
-    <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-  </svg>
-)
-
 type HeaderProps = {
   userName: string
   userEmail: string
@@ -76,29 +60,44 @@ type HeaderProps = {
 }
 
 export function SupervisorHeader({ userName, userEmail, userFallback }: HeaderProps): JSX.Element {
+  const pathname = usePathname()
+
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
+    <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
+      {/* Mobile Menu */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+          <Button variant="outline" size="icon" className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10">
             <PanelLeft className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="flex flex-col">
-          <nav className="grid gap-2 text-lg font-medium">
-            <Link
-              href="/supervisor/dashboard"
-              className="flex items-center gap-2 text-lg font-semibold"
-            >
-              <Logo className="h-6 w-6 text-primary" />
-              <span className="sr-only">Vinha Ministérios</span>
-            </Link>
+          {/* Mobile Header com Gradiente */}
+          <div className="relative overflow-hidden rounded-xl mb-4 -mx-6 -mt-6 p-4">
+            <div className="absolute inset-0 videira-gradient opacity-90" />
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-lg">
+                <Grape className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <span className="text-base font-bold text-white drop-shadow-lg">Vinha Ministérios</span>
+                <p className="text-xs text-white/80 font-medium">Painel Supervisor - v{packageJson.version}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Menu Items */}
+          <nav className="grid gap-2 text-base font-medium">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:bg-videira-blue/10 hover:text-videira-blue transition-all",
+                  (pathname === item.href || (item.href !== '/supervisor/dashboard' && pathname.startsWith(item.href))) &&
+                    'bg-videira-blue/15 text-videira-blue font-semibold'
+                )}
               >
                 <item.icon className="h-5 w-5" />
                 {item.label}
@@ -106,7 +105,10 @@ export function SupervisorHeader({ userName, userEmail, userFallback }: HeaderPr
             ))}
             <Link
               href={settingsItem.href}
-              className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:bg-videira-cyan/10 hover:text-videira-cyan transition-all",
+                pathname.startsWith(settingsItem.href) && 'bg-videira-cyan/15 text-videira-cyan font-semibold'
+              )}
             >
               <settingsItem.icon className="h-5 w-5" />
               {settingsItem.label}
@@ -114,44 +116,52 @@ export function SupervisorHeader({ userName, userEmail, userFallback }: HeaderPr
           </nav>
         </SheetContent>
       </Sheet>
+
+      {/* Search */}
       <div className="flex-1">
         <form>
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Procurar..."
-              className="w-full appearance-none bg-background pl-8 shadow-none md:w-auto"
+              className="w-full appearance-none bg-background pl-9 border-2 focus:border-videira-blue shadow-none md:w-2/3 lg:w-1/3"
             />
           </div>
         </form>
       </div>
+
+      {/* Theme Toggle */}
       <ThemeToggle />
+
+      {/* User Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full">
-            <Avatar className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-videira-blue/10">
+            <Avatar className="h-9 w-9 ring-2 ring-videira-blue/30 hover:ring-videira-blue/50 transition-all">
               <AvatarImage
-                src="https://placehold.co/32x32.png"
+                src="https://placehold.co/36x36.png"
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />
-              <AvatarFallback>{userFallback}</AvatarFallback>
+              <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">{userFallback}</AvatarFallback>
             </Avatar>
             <span className="sr-only">Toggle user menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">Bem vindo {userName}!</p>
+              <p className="text-sm font-semibold leading-none">Bem vindo, {userName}!</p>
               <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
+          <DropdownMenuItem asChild>
+            <Link href="/supervisor/perfil" className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <LifeBuoy className="mr-2 h-4 w-4" />
@@ -159,7 +169,7 @@ export function SupervisorHeader({ userName, userEmail, userFallback }: HeaderPr
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
-            className="cursor-pointer"
+            className="cursor-pointer text-destructive focus:text-destructive"
             onClick={async () => {
               const result = await logoutUser()
               if (result.success) {

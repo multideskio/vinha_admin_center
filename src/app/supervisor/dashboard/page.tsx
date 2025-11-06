@@ -192,68 +192,94 @@ export default function SupervisorDashboardPage(): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Dashboard do Supervisor
-          </h1>
-          {dateRange?.from && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Período: {dateRange.from.toLocaleDateString('pt-BR')} 
-              {dateRange.to && ` - ${dateRange.to.toLocaleDateString('pt-BR')}`}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <DateRangePicker 
-            value={dateRange}
-            onChange={setDateRange}
-          />
-          <Button onClick={handleSearch} variant="default" className="flex items-center gap-2">
-            <Search className="h-4 w-4" />
-            Buscar
-          </Button>
+    <div className="flex flex-col gap-6">
+      {/* Header com gradiente Videira */}
+      <div className="relative overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 videira-gradient opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative z-10 p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+                Dashboard do Supervisor
+              </h1>
+              <p className="text-base text-white/90 mt-2 font-medium">
+                {dateRange?.from 
+                  ? `${dateRange.from.toLocaleDateString('pt-BR')} ${dateRange.to ? `- ${dateRange.to.toLocaleDateString('pt-BR')}` : ''}`
+                  : 'Visão geral da sua supervisão'
+                }
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <DateRangePicker 
+                value={dateRange}
+                onChange={setDateRange}
+              />
+              <Button onClick={handleSearch} className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+                <Search className="h-4 w-4 mr-2" />
+                Buscar
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {kpiDisplayData.map((kpi) => (
-          <Card key={kpi.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-              <kpi.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
-              <p className="text-xs text-muted-foreground">{kpi.change}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {kpiDisplayData.map((kpi, index) => {
+          const colorClasses = [
+            { card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30', iconColor: 'h-4 w-4 text-videira-cyan' },
+            { card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30', iconColor: 'h-4 w-4 text-videira-blue' },
+            { card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30', iconColor: 'h-4 w-4 text-videira-purple' },
+            { card: 'shadow-lg border-l-4 border-l-green-500 hover:shadow-xl transition-all bg-gradient-to-br from-green-500/5 to-transparent', icon: 'p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30', iconColor: 'h-4 w-4 text-green-500' },
+            { card: 'shadow-lg border-l-4 border-l-blue-500 hover:shadow-xl transition-all bg-gradient-to-br from-blue-500/5 to-transparent', icon: 'p-2 rounded-lg bg-blue-500/15 ring-2 ring-blue-500/30', iconColor: 'h-4 w-4 text-blue-500' },
+          ] as const
+          const classes = colorClasses[index % colorClasses.length]!
+          return (
+            <Card key={kpi.title} className={classes.card}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-semibold">{kpi.title}</CardTitle>
+                <div className={classes.icon}>
+                  <kpi.icon className={classes.iconColor} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{kpi.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Últimas Transações</CardTitle>
-              <CardDescription>As transações mais recentes da sua supervisão.</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <ArrowRightLeft className="h-5 w-5 text-videira-cyan" />
+                Últimas Transações
+              </CardTitle>
+              <CardDescription>As transações mais recentes da sua supervisão</CardDescription>
             </div>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => fetchData(dateRange?.from, dateRange?.to)}>
+            <Button variant="outline" size="icon" className="h-8 w-8 border-2 hover:border-videira-cyan" onClick={() => fetchData(dateRange?.from, dateRange?.to)}>
               <RefreshCw className="h-4 w-4" />
               <span className="sr-only">Atualizar</span>
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Contribuinte</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="rounded-md border-2">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                    <TableHead className="font-semibold">Contribuinte</TableHead>
+                    <TableHead className="text-right font-semibold">Valor</TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                 {data.recentTransactions.length > 0 ? (
                   data.recentTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
@@ -279,32 +305,36 @@ export default function SupervisorDashboardPage(): JSX.Element {
                   </TableRow>
                 )}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-videira-blue">
           <CardHeader>
-            <CardTitle>Cadastros Recentes</CardTitle>
-            <CardDescription>Os últimos usuários cadastrados na sua supervisão.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-videira-blue" />
+              Cadastros Recentes
+            </CardTitle>
+            <CardDescription>Os últimos usuários cadastrados na sua supervisão</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               {data.recentRegistrations.length > 0 ? (
                 data.recentRegistrations.map((user) => (
                   <div key={user.id} className="flex items-center">
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-10 w-10 ring-2 ring-videira-blue/30">
                       <AvatarImage
-                        src={`https://placehold.co/36x36.png`}
+                        src={`https://placehold.co/40x40.png`}
                         alt="Avatar"
                         data-ai-hint="person symbol"
                       />
-                      <AvatarFallback>{user.avatar}</AvatarFallback>
+                      <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">{user.avatar}</AvatarFallback>
                     </Avatar>
                     <div className="ml-4 space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.type}</p>
+                      <p className="text-sm font-semibold leading-none">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.type}</p>
                     </div>
-                    <div className="ml-auto font-medium text-muted-foreground text-sm">
+                    <div className="ml-auto font-medium text-muted-foreground text-xs">
                       {user.date}
                     </div>
                   </div>
@@ -319,10 +349,13 @@ export default function SupervisorDashboardPage(): JSX.Element {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="shadow-lg border-t-4 border-t-videira-purple">
           <CardHeader>
-            <CardTitle>Arrecadação por Método de Pagamento</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-videira-purple" />
+              Arrecadação por Método de Pagamento
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {data.revenueByMethod.length > 0 ? (
@@ -352,11 +385,14 @@ export default function SupervisorDashboardPage(): JSX.Element {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-green-500">
           <CardHeader>
-            <CardTitle>Arrecadação por Igreja</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Church className="h-5 w-5 text-green-500" />
+              Arrecadação por Igreja
+            </CardTitle>
             <CardDescription>
-              Distribuição da arrecadação mensal entre as igrejas da sua supervisão.
+              Distribuição da arrecadação mensal entre as igrejas da sua supervisão
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -379,11 +415,14 @@ export default function SupervisorDashboardPage(): JSX.Element {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-blue-500">
           <CardHeader>
-            <CardTitle>Membros por Igreja</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-500" />
+              Membros por Igreja
+            </CardTitle>
             <CardDescription>
-              Distribuição de membros entre as igrejas da sua supervisão.
+              Distribuição de membros entre as igrejas da sua supervisão
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -406,9 +445,12 @@ export default function SupervisorDashboardPage(): JSX.Element {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardHeader>
-            <CardTitle>Novos Membros por Mês (Supervisão)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-videira-cyan" />
+              Novos Membros por Mês (Supervisão)
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {data.newMembers.length > 0 ? (
