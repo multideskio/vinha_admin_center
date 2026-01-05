@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, CreditCard, Plus } from 'lucide-react'
+import { MoreHorizontal, CreditCard, Plus, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 import { Badge } from '@/components/ui/badge'
@@ -37,7 +37,41 @@ type Gateway = {
 export default function GatewaysPage() {
   const [gateways, setGateways] = React.useState<Gateway[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isToggling, setIsToggling] = React.useState<string | null>(null)
   const { toast } = useToast()
+
+  const toggleGatewayStatus = async (gatewayId: string, currentStatus: boolean) => {
+    setIsToggling(gatewayId)
+    try {
+      const gateway = gateways.find((g) => g.id === gatewayId)
+      if (!gateway) throw new Error('Gateway não encontrado.')
+
+      const gatewayName = gateway.name.toLowerCase()
+      const response = await fetch(`/api/v1/gateways/${gatewayName}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      })
+
+      if (!response.ok) throw new Error('Falha ao alterar status do gateway.')
+
+      // Atualizar estado local
+      setGateways((prev) =>
+        prev.map((g) => (g.id === gatewayId ? { ...g, isActive: !currentStatus } : g)),
+      )
+
+      toast({
+        title: 'Sucesso!',
+        description: `Gateway ${!currentStatus ? 'ativado' : 'desativado'} com sucesso.`,
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsToggling(null)
+    }
+  }
 
   const fetchGateways = React.useCallback(async () => {
     setIsLoading(true)
@@ -232,13 +266,24 @@ export default function GatewaysPage() {
                           </Link>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost">
-                                <MoreHorizontal className="h-4 w-4" />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                disabled={isToggling === gateway.id}
+                              >
+                                {isToggling === gateway.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoreHorizontal className="h-4 w-4" />
+                                )}
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => toggleGatewayStatus(gateway.id, gateway.isActive)}
+                                disabled={isToggling === gateway.id}
+                              >
                                 {gateway.isActive ? 'Desativar' : 'Ativar'}
                               </DropdownMenuItem>
                             </DropdownMenuContent>

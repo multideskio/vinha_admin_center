@@ -112,6 +112,33 @@ export default function CieloGatewayPage() {
   const onSubmit = async (data: CieloGatewayValues) => {
     setIsSaving(true)
     try {
+      // Validação adicional para ambiente de produção
+      if (data.environment === 'production' && data.isActive) {
+        if (!data.prodClientId || !data.prodClientSecret) {
+          toast({
+            title: 'Erro',
+            description: 'Credenciais de produção são obrigatórias para ativar em produção.',
+            variant: 'destructive',
+          })
+          setIsSaving(false)
+          return
+        }
+      }
+
+      // Validação adicional para ambiente de desenvolvimento
+      if (data.environment === 'development' && data.isActive) {
+        if (!data.devClientId || !data.devClientSecret) {
+          toast({
+            title: 'Erro',
+            description:
+              'Credenciais de desenvolvimento são obrigatórias para ativar em desenvolvimento.',
+            variant: 'destructive',
+          })
+          setIsSaving(false)
+          return
+        }
+      }
+
       const payload = {
         ...data,
         acceptedPaymentMethods: data.acceptedPaymentMethods.join(','),
@@ -121,12 +148,20 @@ export default function CieloGatewayPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao salvar configurações.')
+      }
+
       toast({
         title: 'Sucesso!',
         description: 'Configurações da Cielo salvas com sucesso.',
         variant: 'success',
       })
+
+      // Recarregar configurações para sincronizar
+      await fetchConfig()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })

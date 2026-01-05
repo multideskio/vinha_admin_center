@@ -48,6 +48,8 @@ export default function BradescoGatewayPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
+  const [isUploading, setIsUploading] = React.useState(false)
+  const [certificateFile, setCertificateFile] = React.useState<string | null>(null)
 
   const form = useForm<BradescoGatewayValues>({
     resolver: zodResolver(bradescoGatewaySchema),
@@ -61,6 +63,63 @@ export default function BradescoGatewayPage() {
       certificatePassword: '',
     },
   })
+
+  const handleCertificateUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validação de tipo
+    const allowedTypes = ['application/x-pkcs12', 'application/x-pem-file', '.pfx', '.pem']
+    const fileExtension = file.name.toLowerCase().split('.').pop()
+    if (!allowedTypes.includes(file.type) && !['pfx', 'pem'].includes(fileExtension || '')) {
+      toast({
+        title: 'Erro',
+        description: 'Apenas arquivos .pfx ou .pem são permitidos.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Validação de tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Erro',
+        description: 'O certificado deve ter no máximo 5MB.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'certificates')
+
+      const response = await fetch('/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao fazer upload do certificado.')
+      }
+
+      await response.json()
+      setCertificateFile(file.name)
+      toast({
+        title: 'Sucesso!',
+        description: 'Certificado enviado com sucesso.',
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   const fetchConfig = React.useCallback(async () => {
     setIsLoading(true)
@@ -91,17 +150,52 @@ export default function BradescoGatewayPage() {
   const onSubmit = async (data: BradescoGatewayValues) => {
     setIsSaving(true)
     try {
+      // Validação adicional para ambiente de produção
+      if (data.environment === 'production' && data.isActive) {
+        if (!data.prodClientId || !data.prodClientSecret) {
+          toast({
+            title: 'Erro',
+            description: 'Credenciais de produção são obrigatórias para ativar em produção.',
+            variant: 'destructive',
+          })
+          setIsSaving(false)
+          return
+        }
+      }
+
+      // Validação adicional para ambiente de desenvolvimento
+      if (data.environment === 'development' && data.isActive) {
+        if (!data.devClientId || !data.devClientSecret) {
+          toast({
+            title: 'Erro',
+            description:
+              'Credenciais de desenvolvimento são obrigatórias para ativar em desenvolvimento.',
+            variant: 'destructive',
+          })
+          setIsSaving(false)
+          return
+        }
+      }
+
       const response = await fetch('/api/v1/gateways/bradesco', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao salvar configurações.')
+      }
+
       toast({
         title: 'Sucesso!',
         description: 'Configurações do Bradesco salvas com sucesso.',
         variant: 'success',
       })
+
+      // Recarregar configurações para sincronizar
+      await fetchConfig()
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -318,16 +412,35 @@ export default function BradescoGatewayPage() {
                         className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/50"
                       >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                          {isUploading ? (
+                            <Loader2 className="w-8 h-8 mb-4 text-muted-foreground animate-spin" />
+                          ) : (
+                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                          )}
                           <p className="mb-2 text-sm text-muted-foreground">
-                            <span className="font-semibold">Clique para enviar</span> ou arraste e
-                            solte
+                            {certificateFile ? (
+                              <span className="font-semibold text-green-600">
+                                {certificateFile}
+                              </span>
+                            ) : (
+                              <>
+                                <span className="font-semibold">Clique para enviar</span> ou arraste
+                                e solte
+                              </>
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Certificado (.pfx ou .pem)
+                            Certificado (.pfx ou .pem, max. 5MB)
                           </p>
                         </div>
-                        <Input id="certificate-upload" type="file" className="hidden" />
+                        <Input
+                          id="certificate-upload"
+                          type="file"
+                          accept=".pfx,.pem,application/x-pkcs12,application/x-pem-file"
+                          className="hidden"
+                          onChange={handleCertificateUpload}
+                          disabled={isUploading}
+                        />
                       </Label>
                     </div>
                   </FormControl>

@@ -22,13 +22,13 @@ const VALIDATED_COMPANY_ID = COMPANY_ID as string
 const companyUpdateSchema = z.object({
   name: z.string().min(1, 'O nome da aplicação é obrigatório.').optional(),
   supportEmail: z.string().email('E-mail de suporte inválido.').optional(),
-  logoUrl: z.string().url().optional().nullable(),
+  logoUrl: z.string().url('URL da logo inválida.').optional().nullable(),
   maintenanceMode: z.boolean().optional(),
 })
 
 export async function GET(): Promise<NextResponse> {
   const { user } = await validateRequest()
-  if (!user) {
+  if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
@@ -55,7 +55,7 @@ export async function GET(): Promise<NextResponse> {
 
 export async function PUT(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
-  if (!user) {
+  if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 

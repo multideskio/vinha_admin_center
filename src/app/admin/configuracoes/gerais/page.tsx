@@ -26,7 +26,7 @@ import Image from 'next/image'
 const generalSettingsSchema = z.object({
   name: z.string().min(1, 'O nome da aplicação é obrigatório.'),
   supportEmail: z.string().email('E-mail de suporte inválido.'),
-  logoUrl: z.string().optional().nullable(),
+  logoUrl: z.string().url('URL da logo inválida.').optional().nullable().or(z.literal('')),
   maintenanceMode: z.boolean().default(false),
 })
 
@@ -77,17 +77,42 @@ export default function GeneralSettingsPage() {
     const file = event.target.files?.[0]
     if (!file) return
 
+    // Validação de tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Erro',
+        description: 'A logo deve ter no máximo 5MB.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Validação de tipo
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml']
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Erro',
+        description: 'Apenas arquivos PNG, JPG ou SVG são permitidos.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setIsUploading(true)
     try {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('folder', 'uploads')
 
       const response = await fetch('/api/v1/upload', {
         method: 'POST',
         body: formData,
       })
 
-      if (!response.ok) throw new Error('Falha ao fazer upload da logo.')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao fazer upload da logo.')
+      }
 
       const { url } = await response.json()
       form.setValue('logoUrl', url)
@@ -104,17 +129,36 @@ export default function GeneralSettingsPage() {
   const onSubmit = async (data: GeneralSettingsValues) => {
     setIsSaving(true)
     try {
+      // Validação adicional para modo manutenção
+      if (data.maintenanceMode) {
+        const confirmMaintenance = window.confirm(
+          'Atenção: Ativar o modo de manutenção impedirá que usuários acessem o sistema. Deseja continuar?',
+        )
+        if (!confirmMaintenance) {
+          setIsSaving(false)
+          return
+        }
+      }
+
       const response = await fetch('/api/v1/company', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-      if (!response.ok) throw new Error('Falha ao salvar configurações.')
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao salvar configurações.')
+      }
+
       toast({
         title: 'Sucesso!',
         description: 'Configurações gerais salvas com sucesso.',
         variant: 'success',
       })
+
+      // Recarregar dados para sincronizar
+      await fetchSettings()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -238,7 +282,7 @@ export default function GeneralSettingsPage() {
                         <span className="font-semibold">Clique para enviar</span> ou arraste e solte
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        PNG, JPG ou SVG (max. 800x400px)
+                        PNG, JPG ou SVG (max. 5MB, recomendado: 200x80px)
                       </p>
                     </div>
                     <Input
@@ -256,11 +300,16 @@ export default function GeneralSettingsPage() {
                 control={form.control}
                 name="maintenanceMode"
                 render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2 pt-4">
+                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base font-medium">Modo de Manutenção</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Quando ativado, apenas administradores podem acessar o sistema
+                      </div>
+                    </div>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
-                    <FormLabel>Ativar modo de manutenção</FormLabel>
                   </FormItem>
                 )}
               />
