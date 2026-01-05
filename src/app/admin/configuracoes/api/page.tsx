@@ -264,7 +264,7 @@ export default function ApiKeysPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [])
 
   React.useEffect(() => {
     fetchKeys()

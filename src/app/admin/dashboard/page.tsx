@@ -289,9 +289,14 @@ export default function DashboardPage() {
       return data.newMembers.map((m) => ({ month: m.month, current: m.count }))
     }
     const out: Array<{ month: string; prev: number; current: number }> = []
-    const nm = data!.newMembers
+    const nm = data?.newMembers
+    if (!nm) return out
     for (let i = 1; i < nm.length; i++) {
-      out.push({ month: nm[i]!.month, prev: nm[i - 1]!.count, current: nm[i]!.count })
+      const current = nm[i]
+      const prev = nm[i - 1]
+      if (current && prev) {
+        out.push({ month: current.month, prev: prev.count, current: current.count })
+      }
     }
     return out
   }, [data])

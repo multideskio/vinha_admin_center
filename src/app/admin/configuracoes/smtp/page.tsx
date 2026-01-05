@@ -117,8 +117,8 @@ export default function SmtpSettingsPage() {
       }
     }
     fetchConfig()
-    fetchBlacklist(blacklistPage)
-    fetchEmailLogs(logsPage)
+    // fetchBlacklist e fetchEmailLogs são chamados em useEffects separados abaixo
+    // para evitar dependências desnecessárias e loops infinitos
   }, [form, toast])
 
   React.useEffect(() => {

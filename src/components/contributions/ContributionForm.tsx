@@ -182,10 +182,15 @@ export default function ContributionForm({
           )
         }
 
+        if (!paymentState.transactionId) {
+          onError?.('Transaction ID não encontrado')
+          return null
+        }
+
         return (
           <PixPayment
             amount={formData.amount}
-            transactionId={paymentState.transactionId!}
+            transactionId={paymentState.transactionId}
             paymentDetails={paymentState.paymentDetails}
             countdown={pixCountdown}
             onSuccess={() => {
