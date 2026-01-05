@@ -58,6 +58,19 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
+const SUGGESTED_COLORS = [
+  { name: 'Azul Oceano', color: '#0077BE' },
+  { name: 'Verde Floresta', color: '#228B22' },
+  { name: 'Roxo Real', color: '#6A0DAD' },
+  { name: 'Laranja Vibrante', color: '#FF8C00' },
+  { name: 'Vermelho Cardeal', color: '#C41E3A' },
+  { name: 'Amarelo Dourado', color: '#FFD700' },
+  { name: 'Rosa Coral', color: '#FF7F7F' },
+  { name: 'Turquesa', color: '#40E0D0' },
+  { name: 'Índigo', color: '#4B0082' },
+  { name: 'Verde Esmeralda', color: '#50C878' },
+]
+
 const regionSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, 'O nome da região é obrigatório.'),
@@ -81,12 +94,15 @@ const RegionFormModal = ({
   region,
   onSave,
   children,
+  existingRegions = [],
 }: {
   region?: Region
   onSave: () => void
   children: React.ReactNode
+  existingRegions?: Region[]
 }) => {
   const [isOpen, setIsOpen] = React.useState(false)
+  const [nameError, setNameError] = React.useState<string>('')
   const { toast } = useToast()
   const form = useForm<z.infer<typeof regionSchema>>({
     resolver: zodResolver(regionSchema),
@@ -104,10 +120,38 @@ const RegionFormModal = ({
           color: '#3F51B5',
         },
       )
+      setNameError('')
     }
   }, [isOpen, region, form])
 
+  // Validação em tempo real do nome
+  const validateName = React.useCallback((name: string) => {
+    if (!name.trim()) {
+      setNameError('')
+      return
+    }
+    
+    const isDuplicate = existingRegions.some(
+      r => r.name.toLowerCase() === name.toLowerCase() && r.id !== region?.id
+    )
+    
+    if (isDuplicate) {
+      setNameError('Já existe uma região com este nome.')
+    } else {
+      setNameError('')
+    }
+  }, [existingRegions, region?.id])
+
   const handleSave = async (data: z.infer<typeof regionSchema>) => {
+    if (nameError) {
+      toast({
+        title: 'Erro de validação',
+        description: nameError,
+        variant: 'destructive',
+      })
+      return
+    }
+
     const method = data.id ? 'PUT' : 'POST'
     const url = data.id ? `/api/v1/regioes/${data.id}` : '/api/v1/regioes'
 
@@ -120,8 +164,10 @@ const RegionFormModal = ({
         body: JSON.stringify(data),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        throw new Error('Falha ao salvar a região.')
+        throw new Error(result.error || 'Falha ao salvar a região.')
       }
 
       toast({
@@ -141,10 +187,14 @@ const RegionFormModal = ({
     }
   }
 
+  const usedColors = existingRegions
+    .filter(r => r.id !== region?.id)
+    .map(r => r.color.toLowerCase())
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <Palette className="h-5 w-5 text-videira-blue" />
@@ -155,7 +205,7 @@ const RegionFormModal = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
             <FormField
               control={form.control}
               name="name"
@@ -163,28 +213,96 @@ const RegionFormModal = ({
                 <FormItem>
                   <FormLabel>Nome da Região</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: Nordeste, Sul, Centro-Oeste" />
+                    <Input 
+                      {...field} 
+                      placeholder="Ex: Nordeste, Sul, Centro-Oeste"
+                      onChange={(e) => {
+                        field.onChange(e)
+                        validateName(e.target.value)
+                      }}
+                      className={nameError ? 'border-destructive' : ''}
+                    />
                   </FormControl>
+                  {nameError && (
+                    <p className="text-sm text-destructive">{nameError}</p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="color"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cor da Região</FormLabel>
-                  <div className="flex gap-3">
-                    <FormControl>
-                      <Input type="color" {...field} className="h-12 w-20 cursor-pointer" />
-                    </FormControl>
-                    <Input 
-                      value={field.value} 
-                      onChange={field.onChange}
-                      placeholder="#RRGGBB"
-                      className="flex-1 font-mono"
-                    />
+                  <div className="space-y-4">
+                    {/* Cores Sugeridas */}
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">Cores sugeridas:</p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {SUGGESTED_COLORS.map((suggestedColor) => {
+                          const isUsed = usedColors.includes(suggestedColor.color.toLowerCase())
+                          const isSelected = field.value.toLowerCase() === suggestedColor.color.toLowerCase()
+                          
+                          return (
+                            <button
+                              key={suggestedColor.color}
+                              type="button"
+                              onClick={() => !isUsed && field.onChange(suggestedColor.color)}
+                              disabled={isUsed}
+                              className={cn(
+                                "relative h-12 w-12 rounded-lg border-2 transition-all",
+                                isSelected && "ring-2 ring-videira-blue ring-offset-2",
+                                isUsed && "opacity-50 cursor-not-allowed",
+                                !isUsed && "hover:scale-110 cursor-pointer"
+                              )}
+                              style={{ backgroundColor: suggestedColor.color }}
+                              title={`${suggestedColor.name} ${isUsed ? '(Em uso)' : ''}`}
+                            >
+                              {isUsed && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="h-6 w-6 rounded-full bg-black/50 flex items-center justify-center">
+                                    <span className="text-white text-xs">✕</span>
+                                  </div>
+                                </div>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Seletor de Cor Personalizada */}
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Ou escolha uma cor personalizada:</p>
+                      <div className="flex gap-3">
+                        <FormControl>
+                          <Input type="color" {...field} className="h-12 w-20 cursor-pointer" />
+                        </FormControl>
+                        <Input 
+                          value={field.value} 
+                          onChange={field.onChange}
+                          placeholder="#RRGGBB"
+                          className="flex-1 font-mono"
+                        />
+                        <div
+                          className="h-12 w-12 rounded-lg border-2 border-muted shadow-sm"
+                          style={{ backgroundColor: field.value }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Aviso de Cor Duplicada */}
+                    {usedColors.includes(field.value.toLowerCase()) && (
+                      <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="h-2 w-2 rounded-full bg-amber-500" />
+                        <p className="text-sm text-amber-700">
+                          Esta cor já está sendo usada por outra região
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Escolha uma cor que identifique esta região nos gráficos e relatórios
@@ -193,6 +311,7 @@ const RegionFormModal = ({
                 </FormItem>
               )}
             />
+            
             <DialogFooter className="gap-2">
               <DialogClose asChild>
                 <Button variant="outline" type="button">
@@ -201,7 +320,7 @@ const RegionFormModal = ({
               </DialogClose>
               <Button 
                 type="submit" 
-                disabled={form.formState.isSubmitting}
+                disabled={form.formState.isSubmitting || !!nameError}
                 className="bg-videira-blue hover:bg-videira-blue/90 text-white"
               >
                 {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Região'}
@@ -244,14 +363,18 @@ export default function RegioesPage() {
     fetchRegions()
   }, [fetchRegions])
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, regionName: string) => {
     try {
       const response = await fetch(`/api/v1/regioes/${id}`, {
         method: 'DELETE',
       })
+      
+      const result = await response.json()
+      
       if (!response.ok) {
-        throw new Error('Falha ao excluir a região')
+        throw new Error(result.error || 'Falha ao excluir a região')
       }
+      
       toast({
         title: 'Sucesso!',
         description: 'Região excluída com sucesso.',
@@ -299,7 +422,7 @@ export default function RegioesPage() {
               >
                 <RefreshCw className="h-5 w-5" />
               </Button>
-              <RegionFormModal onSave={fetchRegions}>
+              <RegionFormModal existingRegions={regions} onSave={fetchRegions}>
                 <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
                   <PlusCircle className="h-5 w-5" />
                   <span>Nova Região</span>
@@ -426,7 +549,7 @@ export default function RegioesPage() {
                           <TableCell className="font-semibold text-lg">{region.name}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <RegionFormModal region={region} onSave={fetchRegions}>
+                              <RegionFormModal region={region} existingRegions={regions} onSave={fetchRegions}>
                                 <Button 
                                   size="sm"
                                   className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
@@ -451,12 +574,13 @@ export default function RegioesPage() {
                                     <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                     <AlertDialogDescription>
                                       Essa ação não pode ser desfeita. Isso excluirá permanentemente a região <strong>{region.name}</strong>.
+                                      {/* Verificar se há supervisores vinculados será feito pela API */}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => region.id && handleDelete(region.id)}
+                                      onClick={() => region.id && handleDelete(region.id, region.name)}
                                       className="bg-destructive hover:bg-destructive/90"
                                     >
                                       Sim, excluir
