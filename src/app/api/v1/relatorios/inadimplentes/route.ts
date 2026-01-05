@@ -2,6 +2,7 @@
  * @fileoverview API para listar inadimplentes com paginação, filtros e busca
  * @version 1.0
  * @date 2025-11-05
+ * @lastReview 2026-01-05 14:30 - Segurança e funcionalidades verificadas
  */
 
 import { NextRequest, NextResponse } from 'next/server'
