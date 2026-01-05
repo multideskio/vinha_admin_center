@@ -19,11 +19,11 @@ export function DynamicSEO({
 }: DynamicSEOProps) {
   const { settings, refetch } = useCompanySettings()
 
-  // Função para atualizar SEO
+  // Função para atualizar SEO de forma mais segura
   const updateSEO = useCallback(
     (companyName?: string | null, logoUrl?: string | null) => {
       // Verificar se estamos no browser
-      if (typeof document === 'undefined') return
+      if (typeof document === 'undefined' || typeof window === 'undefined') return
 
       try {
         // Atualizar title dinamicamente
@@ -33,33 +33,29 @@ export function DynamicSEO({
           document.title = fallbackTitle
         }
 
-        // Atualizar meta description
-        let metaDescription = document.querySelector('meta[name="description"]') as HTMLMetaElement
-        if (!metaDescription) {
-          metaDescription = document.createElement('meta')
-          metaDescription.name = 'description'
-          document.head.appendChild(metaDescription)
-        }
-
-        const description = companyName
-          ? `Sistema de administração para ${companyName}`
-          : fallbackDescription
-        metaDescription.content = description
+        // Atualizar meta description de forma segura
+        updateMetaTagSafe('name', 'description', companyName 
+          ? `Sistema de administração para ${companyName}` 
+          : fallbackDescription)
 
         // Atualizar Open Graph tags
-        updateMetaTag('property', 'og:title', companyName || fallbackTitle)
-        updateMetaTag('property', 'og:description', description)
-        updateMetaTag('property', 'og:site_name', companyName || fallbackTitle)
+        updateMetaTagSafe('property', 'og:title', companyName || fallbackTitle)
+        updateMetaTagSafe('property', 'og:description', companyName 
+          ? `Sistema de administração para ${companyName}` 
+          : fallbackDescription)
+        updateMetaTagSafe('property', 'og:site_name', companyName || fallbackTitle)
 
         // Atualizar Twitter Card tags
-        updateMetaTag('name', 'twitter:title', companyName || fallbackTitle)
-        updateMetaTag('name', 'twitter:description', description)
+        updateMetaTagSafe('name', 'twitter:title', companyName || fallbackTitle)
+        updateMetaTagSafe('name', 'twitter:description', companyName 
+          ? `Sistema de administração para ${companyName}` 
+          : fallbackDescription)
 
-        // Atualizar favicon e ícones
+        // Atualizar favicon de forma mais segura
         if (logoUrl) {
-          updateFavicon(logoUrl)
-          updateMetaTag('property', 'og:image', logoUrl)
-          updateMetaTag('name', 'twitter:image', logoUrl)
+          updateFaviconSafe(logoUrl)
+          updateMetaTagSafe('property', 'og:image', logoUrl)
+          updateMetaTagSafe('name', 'twitter:image', logoUrl)
         }
       } catch (error) {
         console.warn('Erro ao atualizar SEO:', error)
@@ -69,109 +65,132 @@ export function DynamicSEO({
   )
 
   useEffect(() => {
-    updateSEO(settings?.name, settings?.logoUrl)
+    // Aguardar o componente estar montado
+    const timer = setTimeout(() => {
+      updateSEO(settings?.name, settings?.logoUrl)
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [settings?.name, settings?.logoUrl, updateSEO])
 
   useEffect(() => {
     // Escutar evento personalizado de atualização das configurações
     const handleSettingsUpdate = async (event: Event) => {
-      const customEvent = event as CustomEvent<{ name: string; logoUrl: string }>
-      const { name, logoUrl } = customEvent.detail
-      updateSEO(name, logoUrl)
-      // Também recarregar as configurações do hook
-      await refetch()
+      try {
+        const customEvent = event as CustomEvent<{ name: string; logoUrl: string }>
+        const { name, logoUrl } = customEvent.detail
+        
+        // Aguardar um pouco antes de atualizar
+        setTimeout(() => {
+          updateSEO(name, logoUrl)
+        }, 200)
+        
+        // Também recarregar as configurações do hook
+        await refetch()
+      } catch (error) {
+        console.warn('Erro ao processar atualização de configurações:', error)
+      }
     }
 
-    window.addEventListener('company-settings-updated', handleSettingsUpdate)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('company-settings-updated', handleSettingsUpdate)
 
-    return () => {
-      window.removeEventListener('company-settings-updated', handleSettingsUpdate)
+      return () => {
+        window.removeEventListener('company-settings-updated', handleSettingsUpdate)
+      }
     }
+
+    // Retorno vazio para satisfazer TypeScript quando window não está disponível
+    return () => {}
   }, [refetch, updateSEO])
 
   return null // Este componente não renderiza nada visualmente
 }
 
 /**
- * Atualiza ou cria uma meta tag
+ * Atualiza ou cria uma meta tag de forma mais segura
  */
-function updateMetaTag(attribute: 'name' | 'property', value: string, content: string) {
+function updateMetaTagSafe(attribute: 'name' | 'property', value: string, content: string) {
   // Verificar se estamos no browser
-  if (typeof document === 'undefined') return
+  if (typeof document === 'undefined' || typeof window === 'undefined') return
 
   try {
+    // Aguardar o DOM estar pronto
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => updateMetaTagSafe(attribute, value, content))
+      return
+    }
+
     let metaTag = document.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement
     if (!metaTag) {
       metaTag = document.createElement('meta')
       metaTag.setAttribute(attribute, value)
-      document.head.appendChild(metaTag)
+      if (document.head) {
+        document.head.appendChild(metaTag)
+      }
     }
-    metaTag.content = content
+    if (metaTag) {
+      metaTag.content = content
+    }
   } catch (error) {
-    console.warn(`Erro ao atualizar meta tag ${attribute}="${value}":`, error)
+    console.debug(`Aviso: não foi possível atualizar meta tag ${attribute}="${value}"`)
   }
 }
 
 /**
- * Atualiza o favicon e ícones relacionados
+ * Atualiza o favicon de forma mais segura, sem removeChild
  */
-function updateFavicon(logoUrl: string) {
+function updateFaviconSafe(logoUrl: string) {
   // Verificar se estamos no browser
-  if (typeof document === 'undefined') return
+  if (typeof document === 'undefined' || typeof window === 'undefined') return
 
-  // Remover favicons existentes com verificação de segurança
-  const existingIcons = document.querySelectorAll('link[rel*="icon"]')
-  existingIcons.forEach((icon) => {
-    try {
-      if (icon.parentNode) {
-        icon.parentNode.removeChild(icon)
-      }
-    } catch (error) {
-      // Fallback para browsers que suportam remove()
-      try {
-        icon.remove()
-      } catch (removeError) {
-        console.warn('Erro ao remover ícone existente:', removeError)
+  try {
+    // Aguardar o DOM estar pronto
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => updateFaviconSafe(logoUrl))
+      return
+    }
+
+    // Em vez de remover, apenas atualizar os existentes ou criar novos
+    let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement
+    if (!favicon) {
+      favicon = document.createElement('link')
+      favicon.rel = 'icon'
+      favicon.type = 'image/x-icon'
+      if (document.head) {
+        document.head.appendChild(favicon)
       }
     }
-  })
+    if (favicon) {
+      favicon.href = logoUrl
+    }
 
-  // Adicionar novo favicon
-  const favicon = document.createElement('link')
-  favicon.rel = 'icon'
-  favicon.type = 'image/x-icon'
-  favicon.href = logoUrl
-  document.head.appendChild(favicon)
+    // Atualizar shortcut icon
+    let shortcutIcon = document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement
+    if (!shortcutIcon) {
+      shortcutIcon = document.createElement('link')
+      shortcutIcon.rel = 'shortcut icon'
+      if (document.head) {
+        document.head.appendChild(shortcutIcon)
+      }
+    }
+    if (shortcutIcon) {
+      shortcutIcon.href = logoUrl
+    }
 
-  // Adicionar shortcut icon
-  const shortcutIcon = document.createElement('link')
-  shortcutIcon.rel = 'shortcut icon'
-  shortcutIcon.href = logoUrl
-  document.head.appendChild(shortcutIcon)
-
-  // Adicionar apple-touch-icon para dispositivos móveis
-  const appleIcon = document.createElement('link')
-  appleIcon.rel = 'apple-touch-icon'
-  appleIcon.href = logoUrl
-  document.head.appendChild(appleIcon)
-
-  // Adicionar ícones para diferentes tamanhos
-  const sizes = [
-    '57x57',
-    '60x60',
-    '72x72',
-    '76x76',
-    '114x114',
-    '120x120',
-    '144x144',
-    '152x152',
-    '180x180',
-  ]
-  sizes.forEach((size) => {
-    const sizedIcon = document.createElement('link')
-    sizedIcon.rel = 'apple-touch-icon'
-    sizedIcon.sizes = size
-    sizedIcon.href = logoUrl
-    document.head.appendChild(sizedIcon)
-  })
+    // Atualizar apple-touch-icon
+    let appleIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement
+    if (!appleIcon) {
+      appleIcon = document.createElement('link')
+      appleIcon.rel = 'apple-touch-icon'
+      if (document.head) {
+        document.head.appendChild(appleIcon)
+      }
+    }
+    if (appleIcon) {
+      appleIcon.href = logoUrl
+    }
+  } catch (error) {
+    console.debug('Aviso: não foi possível atualizar favicon')
+  }
 }
