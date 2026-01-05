@@ -42,7 +42,10 @@ export async function GET(request: NextRequest) {
               eq(messageTemplates.templateType, templateType),
             ),
           )
-      : await db.select().from(messageTemplates).where(eq(messageTemplates.companyId, user.companyId))
+      : await db
+          .select()
+          .from(messageTemplates)
+          .where(eq(messageTemplates.companyId, user.companyId))
 
     return NextResponse.json({ templates })
   } catch (error) {
@@ -144,7 +147,9 @@ export async function PUT(request: NextRequest) {
     const [template] = await db
       .update(messageTemplates)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(messageTemplates.id, templateId), eq(messageTemplates.companyId, user.companyId)))
+      .where(
+        and(eq(messageTemplates.id, templateId), eq(messageTemplates.companyId, user.companyId)),
+      )
       .returning()
 
     if (!template) {

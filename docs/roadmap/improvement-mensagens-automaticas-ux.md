@@ -19,9 +19,11 @@ Aprimorar a experiência do usuário (UX) no sistema de mensagens automáticas (
 ### 1. Preview de Mensagens em Tempo Real
 
 **Arquivos a modificar:**
+
 - `src/app/admin/configuracoes/mensagens/page.tsx`
 
 **Funcionalidade:**
+
 ```typescript
 // Componente de preview que mostra a mensagem renderizada
 const MessagePreview = ({ template, eventType }: { template: string; eventType: string }) => {
@@ -32,9 +34,9 @@ const MessagePreview = ({ template, eventType }: { template: string; eventType: 
     nome_igreja: 'Igreja Exemplo',
     valor_transacao: 'R$ 150,00'
   }
-  
+
   const renderedMessage = TemplateEngine.processTemplate(template, sampleData)
-  
+
   return (
     <div className="bg-muted p-4 rounded-lg border-l-4 border-l-videira-blue">
       <h4 className="font-semibold mb-2">Preview da Mensagem:</h4>
@@ -47,6 +49,7 @@ const MessagePreview = ({ template, eventType }: { template: string; eventType: 
 ### 2. Validação Inteligente de Variáveis
 
 **Funcionalidade:**
+
 - Detectar variáveis não suportadas para cada tipo de evento
 - Sugerir variáveis corretas automaticamente
 - Highlight de variáveis válidas/inválidas no editor
@@ -54,12 +57,17 @@ const MessagePreview = ({ template, eventType }: { template: string; eventType: 
 ```typescript
 const validateVariables = (template: string, eventType: string) => {
   const allowedVariables = {
-    'payment_due_reminder': ['{nome_usuario}', '{data_vencimento}', '{link_pagamento}', '{nome_igreja}'],
-    'payment_received': ['{nome_usuario}', '{valor_transacao}', '{data_pagamento}', '{nome_igreja}'],
-    'payment_overdue': ['{nome_usuario}', '{data_vencimento}', '{nome_igreja}'],
-    'user_registered': ['{nome_usuario}', '{nome_igreja}']
+    payment_due_reminder: [
+      '{nome_usuario}',
+      '{data_vencimento}',
+      '{link_pagamento}',
+      '{nome_igreja}',
+    ],
+    payment_received: ['{nome_usuario}', '{valor_transacao}', '{data_pagamento}', '{nome_igreja}'],
+    payment_overdue: ['{nome_usuario}', '{data_vencimento}', '{nome_igreja}'],
+    user_registered: ['{nome_usuario}', '{nome_igreja}'],
   }
-  
+
   // Lógica de validação e sugestões
 }
 ```
@@ -67,10 +75,12 @@ const validateVariables = (template: string, eventType: string) => {
 ### 3. Histórico de Execuções
 
 **Arquivos a criar:**
+
 - `src/app/api/v1/notification-rules/[id]/stats/route.ts`
 - Componente `RuleStatsModal`
 
 **Funcionalidade:**
+
 ```typescript
 interface RuleStats {
   totalExecutions: number
@@ -89,6 +99,7 @@ interface RuleStats {
 ### 4. Sistema de Duplicação de Regras
 
 **Funcionalidade:**
+
 - Botão "Duplicar" na tabela de regras
 - Modal de confirmação com possibilidade de editar nome
 - Cópia completa da regra com novo ID
@@ -99,9 +110,9 @@ const duplicateRule = async (originalRule: NotificationRule) => {
     ...originalRule,
     id: undefined, // Novo ID será gerado
     name: `${originalRule.name} (Cópia)`,
-    isActive: false // Inicia desativada por segurança
+    isActive: false, // Inicia desativada por segurança
   }
-  
+
   // Lógica de duplicação
 }
 ```
@@ -109,6 +120,7 @@ const duplicateRule = async (originalRule: NotificationRule) => {
 ### 5. Filtros e Ordenação na Tabela
 
 **Funcionalidades:**
+
 - Filtro por tipo de evento
 - Filtro por status (ativa/inativa)
 - Filtro por canal (email/whatsapp)
@@ -123,13 +135,13 @@ const TableFilters = () => (
       <SelectItem value="payment_due_reminder">Lembrete de Vencimento</SelectItem>
       {/* ... outros filtros */}
     </Select>
-    
+
     <Select placeholder="Status">
       <SelectItem value="all">Todos</SelectItem>
       <SelectItem value="active">Ativas</SelectItem>
       <SelectItem value="inactive">Inativas</SelectItem>
     </Select>
-    
+
     <Input placeholder="Buscar por nome..." />
   </div>
 )
@@ -138,6 +150,7 @@ const TableFilters = () => (
 ### 6. Templates Pré-definidos por Categoria
 
 **Funcionalidade:**
+
 - Biblioteca de templates prontos por categoria
 - Templates para diferentes tons (formal, casual, urgente)
 - Templates específicos por tipo de igreja/organização
@@ -145,10 +158,12 @@ const TableFilters = () => (
 ```typescript
 const predefinedTemplates = {
   payment_due_reminder: {
-    formal: "Prezado(a) {nome_usuario}, informamos que sua contribuição de {valor_transacao} vence em {data_vencimento}.",
-    casual: "Oi {nome_usuario}! Só lembrando que sua contribuição vence em {data_vencimento} 😊",
-    urgent: "⚠️ {nome_usuario}, sua contribuição vence HOJE ({data_vencimento}). Não perca o prazo!"
-  }
+    formal:
+      'Prezado(a) {nome_usuario}, informamos que sua contribuição de {valor_transacao} vence em {data_vencimento}.',
+    casual: 'Oi {nome_usuario}! Só lembrando que sua contribuição vence em {data_vencimento} 😊',
+    urgent:
+      '⚠️ {nome_usuario}, sua contribuição vence HOJE ({data_vencimento}). Não perca o prazo!',
+  },
   // ... outros tipos
 }
 ```
@@ -156,6 +171,7 @@ const predefinedTemplates = {
 ### 7. Melhorias de Micro-interações
 
 **Funcionalidades:**
+
 - Animações suaves para modais e transições
 - Loading states mais elaborados
 - Confirmações visuais para ações
@@ -165,12 +181,14 @@ const predefinedTemplates = {
 ## 📊 Métricas de Sucesso
 
 ### Quantitativas
+
 - **Tempo de criação de regra**: Reduzir de 3min para 1min
 - **Taxa de erro na criação**: Reduzir de 15% para 5%
 - **Uso do preview**: 80% dos usuários utilizem o preview
 - **Duplicação de regras**: 60% das novas regras sejam duplicadas
 
 ### Qualitativas
+
 - **Satisfação do usuário**: Score NPS > 8
 - **Facilidade de uso**: Redução de tickets de suporte
 - **Adoção de funcionalidades**: 70% usem filtros e histórico
@@ -178,16 +196,19 @@ const predefinedTemplates = {
 ## 🗓️ Cronograma
 
 ### Fase 1 - Funcionalidades Core (Semana 1-2)
+
 - [ ] Preview de mensagens em tempo real
 - [ ] Validação inteligente de variáveis
 - [ ] Sistema de duplicação de regras
 
 ### Fase 2 - Produtividade (Semana 3)
+
 - [ ] Filtros e ordenação na tabela
 - [ ] Histórico de execuções
 - [ ] Templates pré-definidos
 
 ### Fase 3 - Polimento UX (Semana 4)
+
 - [ ] Micro-interações e animações
 - [ ] Tooltips e ajudas contextuais
 - [ ] Testes de usabilidade e ajustes
@@ -195,6 +216,7 @@ const predefinedTemplates = {
 ## 🎨 Design System
 
 Manter consistência com o **Design System Videira**:
+
 - Cores: videira-blue, videira-cyan, videira-purple
 - Componentes: shadcn/ui + customizações Videira
 - Tipografia: Inter com pesos adequados
@@ -204,17 +226,20 @@ Manter consistência com o **Design System Videira**:
 ## 🔍 Considerações Técnicas
 
 ### Performance
+
 - Lazy loading para histórico de execuções
 - Debounce para preview em tempo real (300ms)
 - Virtualização para listas grandes de regras
 
 ### Acessibilidade
+
 - ARIA labels para todos os controles
 - Navegação por teclado completa
 - Contraste adequado (WCAG 2.1 AA)
 - Screen reader friendly
 
 ### Compatibilidade
+
 - Responsivo para mobile/tablet
 - Suporte a navegadores modernos
 - Fallbacks para funcionalidades avançadas
@@ -225,7 +250,7 @@ Manter consistência com o **Design System Videira**:
 2. **Prioridade Média**: Filtros e duplicação (melhoria de workflow)
 3. **Prioridade Baixa**: Micro-interações (polimento visual)
 
-4. **Dependências**: 
+4. **Dependências**:
    - Sistema de logs já implementado
    - APIs de notification-rules funcionais
    - TemplateEngine para processamento
