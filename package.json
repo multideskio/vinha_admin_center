@@ -20,6 +20,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "db:drop": "drizzle-kit drop",
+    "db:reset": "tsx scripts/reset-database.ts",
     "notifications:test": "tsx -e \"import { testNotifications } from './src/lib/notification-hooks'; testNotifications(process.argv[2])\"",
     "sns:test": "tsx scripts/test-sns-monitoring.ts",
     "quality:check": "node scripts/quality-check.js",
