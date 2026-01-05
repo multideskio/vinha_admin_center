@@ -1,3 +1,6 @@
+/**
+ * @lastReview 2026-01-05 14:30 - Sistema de transações admin revisado
+ */
 'use client'
 
 import * as React from 'react'

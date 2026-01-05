@@ -1,3 +1,6 @@
+/**
+ * @lastReview 2026-01-05 14:30 - Página de detalhes de transação revisada
+ */
 'use client'
 
 import * as React from 'react'
