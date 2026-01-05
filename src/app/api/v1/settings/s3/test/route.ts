@@ -1,12 +1,13 @@
 /**
  * @fileoverview Rota da API para testar conexão com S3.
- * @version 1.0
+ * @version 1.1
  * @date 2024-08-08
  * @author PH
  */
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3'
+import { validateRequest } from '@/lib/jwt'
 
 const s3SettingsSchema = z.object({
   endpoint: z.string().min(1, 'Endpoint é obrigatório.'),
@@ -18,6 +19,12 @@ const s3SettingsSchema = z.object({
 })
 
 export async function POST(request: Request): Promise<NextResponse> {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const validatedData = s3SettingsSchema.parse(body)
