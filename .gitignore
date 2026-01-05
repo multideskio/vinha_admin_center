@@ -49,3 +49,4 @@ firestore-debug.log
 fix-*.sql
 
 .kiro/
+!.kiro/specs/

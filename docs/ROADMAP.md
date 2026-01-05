@@ -41,6 +41,7 @@
 ### ✅ **Estabilidade Total - Correção de Bugs Críticos**
 - [x] **7 bugs corrigidos** (2 críticos, 3 médios, 2 baixos)
 - [x] **4 vulnerabilidades de segurança** eliminadas
+- [x] **Correção crítica de segurança** - APIs de gerentes protegidas (Janeiro 2026)
 - [x] **Performance otimizada** - Dashboard 98% mais rápido
 - [x] **Logs limpos** - Sem erros falsos de NEXT_REDIRECT
 - [x] **Webhook Cielo** confiável com retry automático
@@ -69,6 +70,15 @@
 - [x] **UX melhorada** - Avisos visuais para cores duplicadas
 - [x] **Tratamento de erros** - Mensagens específicas da API (409, 404)
 - [x] **Interface moderna** - Grid de cores sugeridas com indicadores de uso
+
+### ✅ **Correção Crítica de Segurança - APIs de Gerentes** (Janeiro 2026)
+- [x] **Vulnerabilidade crítica eliminada** - APIs `/api/v1/manager/gerentes/*` estavam públicas
+- [x] **Autenticação obrigatória** - GET requer login para listar gerentes
+- [x] **Controle de acesso** - POST/PUT/DELETE apenas para admins
+- [x] **Auto-gestão preservada** - Gerentes podem alterar seus próprios dados via `/api/v1/manager/perfil`
+- [x] **Redirecionamento inteligente** - APIs antigas redirecionam para endpoints corretos
+- [x] **Princípio de menor privilégio** - Cada role tem acesso mínimo necessário
+- [x] **Separação de responsabilidades** - APIs `/manager/` para auto-gestão, `/admin/` para administração
 
 ### ✅ **Documentação Completa**
 - [x] **API_BUGS_FIXES_2025-11-06.md** criado

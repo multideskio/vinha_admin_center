@@ -58,12 +58,26 @@ export async function GET(_: Request, props: { params: Promise<{ id: string }> }
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const params = await props.params;
   const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem alterar gerentes.' }, { status: 403 })
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  // Esta funcionalidade foi movida para /api/v1/admin/gerentes/[id]
-  // Mantendo apenas para compatibilidade, mas bloqueando acesso
+  const { id } = params
+
+  // Apenas admin pode alterar qualquer gerente OU gerente pode alterar seus próprios dados
+  if (user.role !== 'admin' && user.id !== id) {
+    return NextResponse.json({ error: 'Acesso negado. Você só pode alterar seus próprios dados.' }, { status: 403 })
+  }
+
+  // Se não é admin, redireciona para API de perfil próprio
+  if (user.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Use /api/v1/manager/perfil para alterar seu próprio perfil.' },
+      { status: 410 }
+    )
+  }
+
+  // Admin deve usar a API correta
   return NextResponse.json(
     { error: 'Use /api/v1/admin/gerentes/[id] para alterar gerentes.' },
     { status: 410 }
