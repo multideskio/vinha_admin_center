@@ -13,50 +13,53 @@ interface DynamicSEOProps {
   fallbackDescription?: string
 }
 
-export function DynamicSEO({ 
+export function DynamicSEO({
   fallbackTitle = 'Vinha Admin Center',
-  fallbackDescription = 'Sistema de Administração para Gestão de Igrejas'
+  fallbackDescription = 'Sistema de Administração para Gestão de Igrejas',
 }: DynamicSEOProps) {
   const { settings, refetch } = useCompanySettings()
 
   // Função para atualizar SEO
-  const updateSEO = useCallback((companyName?: string | null, logoUrl?: string | null) => {
-    // Atualizar title dinamicamente
-    if (companyName) {
-      document.title = companyName
-    } else {
-      document.title = fallbackTitle
-    }
+  const updateSEO = useCallback(
+    (companyName?: string | null, logoUrl?: string | null) => {
+      // Atualizar title dinamicamente
+      if (companyName) {
+        document.title = companyName
+      } else {
+        document.title = fallbackTitle
+      }
 
-    // Atualizar meta description
-    let metaDescription = document.querySelector('meta[name="description"]') as HTMLMetaElement
-    if (!metaDescription) {
-      metaDescription = document.createElement('meta')
-      metaDescription.name = 'description'
-      document.head.appendChild(metaDescription)
-    }
-    
-    const description = companyName 
-      ? `Sistema de administração para ${companyName}` 
-      : fallbackDescription
-    metaDescription.content = description
+      // Atualizar meta description
+      let metaDescription = document.querySelector('meta[name="description"]') as HTMLMetaElement
+      if (!metaDescription) {
+        metaDescription = document.createElement('meta')
+        metaDescription.name = 'description'
+        document.head.appendChild(metaDescription)
+      }
 
-    // Atualizar Open Graph tags
-    updateMetaTag('property', 'og:title', companyName || fallbackTitle)
-    updateMetaTag('property', 'og:description', description)
-    updateMetaTag('property', 'og:site_name', companyName || fallbackTitle)
+      const description = companyName
+        ? `Sistema de administração para ${companyName}`
+        : fallbackDescription
+      metaDescription.content = description
 
-    // Atualizar Twitter Card tags
-    updateMetaTag('name', 'twitter:title', companyName || fallbackTitle)
-    updateMetaTag('name', 'twitter:description', description)
+      // Atualizar Open Graph tags
+      updateMetaTag('property', 'og:title', companyName || fallbackTitle)
+      updateMetaTag('property', 'og:description', description)
+      updateMetaTag('property', 'og:site_name', companyName || fallbackTitle)
 
-    // Atualizar favicon e ícones
-    if (logoUrl) {
-      updateFavicon(logoUrl)
-      updateMetaTag('property', 'og:image', logoUrl)
-      updateMetaTag('name', 'twitter:image', logoUrl)
-    }
-  }, [fallbackTitle, fallbackDescription])
+      // Atualizar Twitter Card tags
+      updateMetaTag('name', 'twitter:title', companyName || fallbackTitle)
+      updateMetaTag('name', 'twitter:description', description)
+
+      // Atualizar favicon e ícones
+      if (logoUrl) {
+        updateFavicon(logoUrl)
+        updateMetaTag('property', 'og:image', logoUrl)
+        updateMetaTag('name', 'twitter:image', logoUrl)
+      }
+    },
+    [fallbackTitle, fallbackDescription],
+  )
 
   useEffect(() => {
     updateSEO(settings?.name, settings?.logoUrl)
@@ -101,7 +104,7 @@ function updateMetaTag(attribute: 'name' | 'property', value: string, content: s
 function updateFavicon(logoUrl: string) {
   // Remover favicons existentes
   const existingIcons = document.querySelectorAll('link[rel*="icon"]')
-  existingIcons.forEach(icon => icon.remove())
+  existingIcons.forEach((icon) => icon.remove())
 
   // Adicionar novo favicon
   const favicon = document.createElement('link')
@@ -123,8 +126,18 @@ function updateFavicon(logoUrl: string) {
   document.head.appendChild(appleIcon)
 
   // Adicionar ícones para diferentes tamanhos
-  const sizes = ['57x57', '60x60', '72x72', '76x76', '114x114', '120x120', '144x144', '152x152', '180x180']
-  sizes.forEach(size => {
+  const sizes = [
+    '57x57',
+    '60x60',
+    '72x72',
+    '76x76',
+    '114x114',
+    '120x120',
+    '144x144',
+    '152x152',
+    '180x180',
+  ]
+  sizes.forEach((size) => {
     const sizedIcon = document.createElement('link')
     sizedIcon.rel = 'apple-touch-icon'
     sizedIcon.sizes = size

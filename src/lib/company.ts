@@ -24,12 +24,8 @@ export interface CompanySettings {
 export async function getCompanySettings(): Promise<CompanySettings | null> {
   try {
     const companyId = getCompanyId()
-    
-    const [company] = await db
-      .select()
-      .from(companies)
-      .where(eq(companies.id, companyId))
-      .limit(1)
+
+    const [company] = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1)
 
     if (!company) {
       return null
@@ -56,18 +52,10 @@ export async function getCompanySettings(): Promise<CompanySettings | null> {
 export async function getFullCompanySettings(companyId?: string) {
   try {
     const targetCompanyId = companyId || getCompanyId()
-    
+
     const [company, settings] = await Promise.all([
-      db
-        .select()
-        .from(companies)
-        .where(eq(companies.id, targetCompanyId))
-        .limit(1),
-      db
-        .select()
-        .from(otherSettings)
-        .where(eq(otherSettings.companyId, targetCompanyId))
-        .limit(1)
+      db.select().from(companies).where(eq(companies.id, targetCompanyId)).limit(1),
+      db.select().from(otherSettings).where(eq(otherSettings.companyId, targetCompanyId)).limit(1),
     ])
 
     return {
