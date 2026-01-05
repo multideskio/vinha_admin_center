@@ -1,3 +1,9 @@
+/**
+ * @lastReview 2026-01-05 15:00 - Página de relatório de membresia revisada
+ * ❌ PROBLEMA CRÍTICO: API /api/v1/relatorios/membresia NÃO EXISTE
+ * Frontend: ✅ Interface completa, filtros, gráfico de crescimento, export CSV, Design System Videira
+ * Backend: ❌ API não implementada - página não funcional
+ */
 'use client'
 
 import * as React from 'react'

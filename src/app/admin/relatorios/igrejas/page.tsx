@@ -1,3 +1,9 @@
+/**
+ * @lastReview 2026-01-05 15:00 - Página de relatório de igrejas revisada
+ * ❌ PROBLEMA CRÍTICO: API /api/v1/relatorios/igrejas NÃO EXISTE
+ * Frontend: ✅ Interface completa, filtros por região, paginação, export CSV, Design System Videira
+ * Backend: ❌ API não implementada - página não funcional
+ */
 'use client'
 
 import * as React from 'react'

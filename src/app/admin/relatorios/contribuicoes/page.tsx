@@ -1,3 +1,9 @@
+/**
+ * @lastReview 2026-01-05 15:00 - Página de relatório de contribuições revisada
+ * ❌ PROBLEMA CRÍTICO: API /api/v1/relatorios/contribuicoes NÃO EXISTE
+ * Frontend: ✅ Interface completa, filtros, export CSV, Design System Videira
+ * Backend: ❌ API não implementada - página não funcional
+ */
 'use client'
 
 import * as React from 'react'
