@@ -1,6 +1,6 @@
 /**
  * @fileoverview Rota da API para gerenciar gerentes (visão do gerente).
- * @version 1.2
+ * @version 1.3
  * @date 2024-08-07
  * @author PH
  */
@@ -9,9 +9,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, managerProfiles } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
-import { z } from 'zod'
-import * as bcrypt from 'bcrypt'
-import { managerProfileSchema } from '@/lib/types'
+import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
 const COMPANY_ID = process.env.COMPANY_INIT
@@ -20,10 +18,30 @@ if (!COMPANY_ID) {
 }
 const VALIDATED_COMPANY_ID = COMPANY_ID as string
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
+export async function GET(request: Request): Promise<NextResponse> {
+  const { user } = await validateRequest()
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
 
-export async function GET(): Promise<NextResponse> {
   try {
+    const url = new URL(request.url)
+    const minimal = url.searchParams.get('minimal') === 'true'
+
+    if (minimal) {
+      const result = await db
+        .select({
+          id: users.id,
+          firstName: managerProfiles.firstName,
+          lastName: managerProfiles.lastName,
+        })
+        .from(managerProfiles)
+        .innerJoin(users, eq(users.id, managerProfiles.userId))
+        .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
+        .orderBy(desc(users.createdAt))
+      return NextResponse.json({ managers: result })
+    }
+
     const result = await db
       .select({
         user: users,
@@ -52,67 +70,15 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  try {
-    const body = await request.json()
-    const validatedData = managerProfileSchema.omit({ id: true, userId: true }).parse(body)
-
-    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10)
-
-    const newManager = await db.transaction(async (tx) => {
-      const userInsertData = {
-        companyId: VALIDATED_COMPANY_ID,
-        email: validatedData.email,
-        password: hashedPassword,
-        role: 'manager' as const,
-        status: 'active' as const,
-        phone: validatedData.phone,
-        titheDay: validatedData.titheDay,
-      }
-      const [newUser] = await tx.insert(users).values([userInsertData]).returning()
-
-      if (!newUser) {
-        tx.rollback()
-        throw new Error('Falha ao criar usuário para gerente.')
-      }
-
-      const [newProfile] = await tx
-        .insert(managerProfiles)
-        .values({
-          userId: newUser.id,
-          firstName: validatedData.firstName,
-          lastName: validatedData.lastName,
-          cpf: validatedData.cpf,
-          cep: validatedData.cep,
-          state: validatedData.state,
-          city: validatedData.city,
-          neighborhood: validatedData.neighborhood,
-          address: validatedData.address,
-        })
-        .returning()
-
-      return { ...newUser, ...newProfile }
-    })
-
-    return NextResponse.json({ success: true, manager: newManager }, { status: 201 })
-  } catch (error: unknown) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Dados inválidos.', details: error.errors },
-        { status: 400 },
-      )
-    }
-    console.error('Erro ao criar gerente:', error)
-    if (
-      error instanceof Error &&
-      'constraint' in error &&
-      (error as Error & { constraint: string }).constraint === 'users_email_unique'
-    ) {
-      return NextResponse.json({ error: 'Este e-mail já está em uso.' }, { status: 409 })
-    }
-
-    return NextResponse.json(
-      { error: 'Erro ao criar gerente', details: getErrorMessage(error) },
-      { status: 500 },
-    )
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem criar gerentes.' }, { status: 403 })
   }
+
+  // Esta funcionalidade foi movida para /api/v1/admin/gerentes
+  // Mantendo apenas para compatibilidade, mas bloqueando acesso
+  return NextResponse.json(
+    { error: 'Use /api/v1/admin/gerentes para criar gerentes.' },
+    { status: 410 }
+  )
 }
