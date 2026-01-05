@@ -1,0 +1,97 @@
+{
+  "regioes": [
+    {
+      "id": "8",
+      "nome": "CENTRO OESTE"
+    },
+    {
+      "id": "9",
+      "nome": "NORTE"
+    },
+    {
+      "id": "10",
+      "nome": "CENTRO SUL"
+    }
+  ],
+  "gerentes": [
+    {
+      "id": "10",
+      "nome": "Naor Pedroza",
+      "sobrenome": "Mendonça",
+      "cpf": "1",
+      "email": "naorpedroza@gmail.com"
+    },
+    {
+      "id": "11",
+      "nome": "Mauro Estival",
+      "sobrenome": "Estival",
+      "cpf": "1",
+      "email": "mauroestival@gmail.com"
+    },
+    {
+      "id": "12",
+      "nome": "Almir Dias",
+      "sobrenome": "Dias",
+      "cpf": "1",
+      "email": "pralmirdias@gmail.com"
+    },
+    {
+      "id": "13",
+      "nome": "Carlos Eduardo Garcez",
+      "sobrenome": "Garcez",
+      "cpf": "1",
+      "email": "pastorcarlos@vinhasc.com.br"
+    },
+    {
+      "id": "14",
+      "nome": "Gilberto Camilo",
+      "sobrenome": "Junior",
+      "cpf": "1",
+      "email": "gilberto.camilo@gmail.com"
+    },
+    {
+      "id": "15",
+      "nome": "Ricardo Guimarães",
+      "sobrenome": "Guimarães",
+      "cpf": "1",
+      "email": "pr.ricardo@videirario.com.br"
+    },
+    {
+      "id": "16",
+      "nome": "Alex Martins",
+      "sobrenome": "Silva",
+      "cpf": "1",
+      "email": "pr.alex@hotmail.com"
+    },
+    {
+      "id": "17",
+      "nome": "Francisco Vasco",
+      "sobrenome": "Junior",
+      "cpf": "1",
+      "email": "prfranciscovasco@gmail.com"
+    },
+    {
+      "id": "18",
+      "nome": "Cristian Gimenez",
+      "sobrenome": "Gimenez",
+      "cpf": "1",
+      "email": "prcristiangimenez@gmail.com"
+    },
+    {
+      "id": "19",
+      "nome": "Hermes Pereira",
+      "sobrenome": "Junior",
+      "cpf": "1",
+      "email": "hermes@videiradf.com.br"
+    }
+  ],
+  "supervisores": [],
+  "usuarios": [],
+  "extractedAt": "2026-01-05T05:34:07.695Z",
+  "totalRecords": {
+    "regioes": 3,
+    "gerentes": 10,
+    "supervisores": 0,
+    "usuarios": 0
+  }
+}

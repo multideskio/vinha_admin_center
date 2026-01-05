@@ -492,6 +492,15 @@ export default function GerenteProfilePage() {
     }
   }, [id, form, toast])
 
+  const formatCPF = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+      .slice(0, 14)
+  }
+
   React.useEffect(() => {
     fetchManager()
   }, [fetchManager])
@@ -915,7 +924,12 @@ export default function GerenteProfilePage() {
                             <FormItem>
                               <FormLabel>CPF</FormLabel>
                               <FormControl>
-                                <Input {...field} disabled value={field.value ?? ''} />
+                                <Input 
+                                  {...field} 
+                                  value={field.value ?? ''} 
+                                  placeholder="000.000.000-00"
+                                  onChange={(e) => field.onChange(formatCPF(e.target.value))}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

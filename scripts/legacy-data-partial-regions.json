@@ -1,0 +1,26 @@
+{
+  "regioes": [
+    {
+      "id": "8",
+      "nome": "CENTRO OESTE"
+    },
+    {
+      "id": "9",
+      "nome": "NORTE"
+    },
+    {
+      "id": "10",
+      "nome": "CENTRO SUL"
+    }
+  ],
+  "gerentes": [],
+  "supervisores": [],
+  "usuarios": [],
+  "extractedAt": "2026-01-05T05:34:07.695Z",
+  "totalRecords": {
+    "regioes": 3,
+    "gerentes": 0,
+    "supervisores": 0,
+    "usuarios": 0
+  }
+}
