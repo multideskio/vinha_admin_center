@@ -8,7 +8,7 @@ import { validateRequest } from '@/lib/jwt'
 import { db } from '@/db/drizzle'
 import { otherSettings, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
+import { sendEmail as sendEmailWithLog } from '@/lib/email'
 import { WhatsAppService } from '@/lib/notifications'
 
 const sendMessageSchema = z.object({
@@ -39,7 +39,13 @@ export async function POST(request: NextRequest) {
     const { type, to, subject, message } = sendMessageSchema.parse(body)
 
     if (type === 'email') {
-      await sendEmail(to, subject || 'Mensagem', message, userData.companyId)
+      await sendEmailWithLog({
+        to,
+        subject: subject || 'Mensagem',
+        html: message.replace(/\n/g, '<br>'),
+        userId: user.id,
+        notificationType: 'manual_message',
+      })
     } else {
       await sendWhatsApp(to, message, userData.companyId)
     }
@@ -62,45 +68,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function sendEmail(to: string, subject: string, message: string, companyId: string) {
-  const [settings] = await db
-    .select()
-    .from(otherSettings)
-    .where(eq(otherSettings.companyId, companyId))
 
-  if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPass) {
-    throw new Error('Configurações SMTP não encontradas')
-  }
-
-  const sesClient = new SESClient({
-    region: 'us-east-1',
-    credentials: {
-      accessKeyId: settings.smtpUser,
-      secretAccessKey: settings.smtpPass,
-    },
-  })
-
-  const command = new SendEmailCommand({
-    Source: settings.smtpFrom || 'contato@multidesk.io',
-    Destination: {
-      ToAddresses: [to],
-    },
-    Message: {
-      Subject: {
-        Data: subject,
-        Charset: 'UTF-8',
-      },
-      Body: {
-        Html: {
-          Data: message.replace(/\n/g, '<br>'),
-          Charset: 'UTF-8',
-        },
-      },
-    },
-  })
-
-  await sesClient.send(command)
-}
 
 async function sendWhatsApp(to: string, message: string, companyId: string) {
   const [settings] = await db

@@ -78,7 +78,6 @@ const eventTriggerOptions = {
 
 const availableTags = [
   '{nome_usuario}',
-  '{valor_transacao}',
   '{data_vencimento}',
   '{link_pagamento}',
   '{nome_igreja}',
@@ -167,7 +166,7 @@ const NotificationFormModal = ({
       const payload = {
         eventTrigger: form.getValues('eventTrigger'),
         daysOffset: Number(form.getValues('daysOffset') || 0),
-        variables: ['{nome_usuario}', '{valor_transacao}', '{data_vencimento}', '{link_pagamento}'],
+        variables: ['{nome_usuario}', '{data_vencimento}', '{link_pagamento}', '{nome_igreja}'],
         tone: 'respeitoso e objetivo',
       }
       const res = await fetch('/api/v1/templates/ai-suggest', {
@@ -276,7 +275,7 @@ const NotificationFormModal = ({
                   </div>
                   <FormControl>
                     <Textarea
-                      placeholder="Olá {nome_usuario}, sua fatura de R${valor_transacao} vence em {data_vencimento}."
+                      placeholder="Olá {nome_usuario}, sua contribuição vence em {data_vencimento}. Acesse: {link_pagamento}"
                       rows={5}
                       {...field}
                     />
@@ -501,8 +500,8 @@ export default function MessagesSettingsPage() {
         <AlertDescription className="text-foreground">
           <strong>Dica:</strong> Configure regras para cada evento. Use variáveis como{' '}
           <code className="bg-muted px-1 rounded">{'{nome_usuario}'}</code>,{' '}
-          <code className="bg-muted px-1 rounded">{'{valor_transacao}'}</code> e{' '}
-          <code className="bg-muted px-1 rounded">{'{data_vencimento}'}</code> nos templates.
+          <code className="bg-muted px-1 rounded">{'{data_vencimento}'}</code> e{' '}
+          <code className="bg-muted px-1 rounded">{'{link_pagamento}'}</code> nos templates.
         </AlertDescription>
       </Alert>
 

@@ -41,11 +41,22 @@ export async function GET(request: NextRequest) {
     }
 
     const system = 'Você é um analista financeiro e operacional, escreve em PT-BR, claro e conciso.'
-    const userPrompt = `Com base no JSON abaixo do dashboard, produza um resumo curto (3-5 linhas) e 3 recomendações acionáveis.
-- Destaque variações mês a mês.
-- Aponte riscos (inadimplência) e oportunidades (regiões/métodos).
-- Seja direto e use bullet points nas recomendações.
-JSON:
+    const userPrompt = `Analise o JSON do dashboard e retorne APENAS um JSON válido (sem markdown) com esta estrutura:
+{
+  "summary": "Resumo geral em 2-3 linhas",
+  "cards": [
+    {"type": "success|warning|danger|info", "title": "Título", "description": "Descrição curta", "metric": "Métrica opcional", "text": "Texto detalhado opcional"},
+    ...
+  ]
+}
+
+Crie 3-4 cards:
+- 1 card com resumo geral (type: info)
+- 1-2 cards com oportunidades/destaques positivos (type: success)
+- 1-2 cards com alertas/riscos (type: warning ou danger se crítico)
+- Adicione "text" com detalhes quando relevante
+
+Dados:
 ${JSON.stringify(dashboard)}`
 
     const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -58,7 +69,7 @@ ${JSON.stringify(dashboard)}`
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.5,
-        max_tokens: 400,
+        max_tokens: 600,
       }),
     })
     if (!aiRes.ok) {
@@ -66,9 +77,28 @@ ${JSON.stringify(dashboard)}`
       return NextResponse.json({ error: 'Falha na OpenAI', details: errText }, { status: 500 })
     }
     const aiJson = await aiRes.json()
-    const insight = aiJson.choices?.[0]?.message?.content?.trim() || ''
+    const content = aiJson.choices?.[0]?.message?.content?.trim() || ''
+    
+    // Parse JSON response
+    let summary = ''
+    let cards
+    try {
+      const parsed = JSON.parse(content)
+      summary = parsed.summary || ''
+      cards = parsed.cards || []
+    } catch {
+      // Fallback se OpenAI retornar texto ao invés de JSON
+      summary = content.substring(0, 300)
+      cards = [{
+        type: 'info',
+        title: 'Análise Gerada',
+        description: content.substring(0, 200),
+        metric: null,
+        text: content
+      }]
+    }
 
-    return NextResponse.json({ insight })
+    return NextResponse.json({ summary, cards })
   } catch (e) {
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }

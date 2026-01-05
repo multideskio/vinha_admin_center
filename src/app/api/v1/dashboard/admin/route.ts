@@ -303,7 +303,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       ...churchesWithTitheDay.map(c => c.id)
     ]
 
-    const lastPaymentsData = await db
+    // ✅ CORRIGIDO: Evitar SQL error quando não há contributors (empty IN clause)
+    const lastPaymentsData = allContributorIds.length > 0 ? await db
       .select({
         contributorId: transactions.contributorId,
         lastPayment: sql<Date>`MAX(${transactions.createdAt})`.mapWith((val) => new Date(val)),
@@ -315,7 +316,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           sql`${transactions.contributorId} IN ${allContributorIds}`
         )
       )
-      .groupBy(transactions.contributorId)
+      .groupBy(transactions.contributorId) : []
 
     // Criar Map para acesso O(1)
     const lastPaymentMap = new Map(

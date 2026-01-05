@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Chave da OpenAI não configurada.' }, { status: 400 })
     }
 
-    const vars = variables && variables.length ? variables.join(', ') : '{nome_usuario}, {valor_transacao}, {data_vencimento}, {link_pagamento}'
+    const vars = variables && variables.length ? variables.join(', ') : '{nome_usuario}, {data_vencimento}, {link_pagamento}'
     const ptTone = tone || 'respeitoso, claro e objetivo'
 
     const system = `Você é um assistente que escreve mensagens curtas e eficazes em PT-BR para um sistema de gestão de igrejas. As mensagens devem aceitar variáveis delimitadas por chaves, que serão substituídas pelo sistema (ex.: {nome_usuario}). Evite links se não fornecidos nas variáveis.`

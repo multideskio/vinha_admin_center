@@ -98,7 +98,8 @@ export default function DashboardPage() {
   const [sending, setSending] = React.useState(false)
   const [lastUpdatedAt, setLastUpdatedAt] = React.useState<string | null>(null)
   const [insightLoading, setInsightLoading] = React.useState(false)
-  const [insightText, setInsightText] = React.useState('')
+  const [insightSummary, setInsightSummary] = React.useState('')
+  const [insightCards, setInsightCards] = React.useState<Array<{type: string; title: string; description: string; metric?: string | null; text?: string}>>([])
   const [userName, setUserName] = React.useState<string>('')
 
   const fetchData = React.useCallback(async () => {
@@ -174,9 +175,11 @@ export default function DashboardPage() {
       const res = await fetch(`/api/v1/dashboard/insights?${params.toString()}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Falha ao gerar insights')
-      setInsightText(data.insight || '')
+      setInsightSummary(data.summary || '')
+      setInsightCards(data.cards || [])
     } catch (e: unknown) {
-      setInsightText('')
+      setInsightSummary('')
+      setInsightCards([])
       toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
     } finally {
       setInsightLoading(false)
@@ -476,9 +479,41 @@ export default function DashboardPage() {
           </Button>
         </CardHeader>
         <CardContent className="relative z-10">
-          {insightText ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{insightText}</ReactMarkdown>
+          {insightSummary || insightCards.length > 0 ? (
+            <div className="space-y-4">
+              {insightSummary && (
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <p className="text-sm leading-relaxed">{insightSummary}</p>
+                </div>
+              )}
+              {insightCards.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {insightCards.map((card, idx) => {
+                    const typeColors = {
+                      success: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-700 dark:text-green-400', icon: 'bg-green-500/20' },
+                      warning: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-700 dark:text-yellow-400', icon: 'bg-yellow-500/20' },
+                      danger: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-700 dark:text-red-400', icon: 'bg-red-500/20' },
+                      info: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-700 dark:text-blue-400', icon: 'bg-blue-500/20' },
+                    }
+                    const colors = typeColors[card.type as keyof typeof typeColors] || typeColors.info
+                    return (
+                      <div key={idx} className={cn('p-4 rounded-lg border-2 transition-all hover:shadow-lg', colors.bg, colors.border)}>
+                        <div className="flex items-start gap-3">
+                          <div className={cn('p-2 rounded-lg', colors.icon)}>
+                            <Sparkles className={cn('h-4 w-4', colors.text)} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={cn('font-semibold text-sm mb-1', colors.text)}>{card.title}</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{card.description}</p>
+                            {card.metric && <p className={cn('text-lg font-bold mt-2', colors.text)}>{card.metric}</p>}
+                            {card.text && <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">{card.text}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Clique em "Gerar insights" para ver o resumo da IA.</p>

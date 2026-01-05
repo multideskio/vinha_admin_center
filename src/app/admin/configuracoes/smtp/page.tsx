@@ -20,8 +20,12 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Loader2, Mail, ChevronLeft, Save, Send, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Loader2, Mail, ChevronLeft, Save, Send, CheckCircle, AlertTriangle, Ban, History, Trash2, Settings, ChevronRight, Eye } from 'lucide-react'
 import Link from 'next/link'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const smtpSettingsSchema = z.object({
   host: z.string().min(1, 'Servidor SMTP é obrigatório.'),
@@ -39,6 +43,18 @@ export default function SmtpSettingsPage() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [isTesting, setIsTesting] = React.useState(false)
   const [testEmail, setTestEmail] = React.useState('')
+  const [blacklist, setBlacklist] = React.useState<any[]>([])
+  const [emailLogs, setEmailLogs] = React.useState<any[]>([])
+  const [loadingBlacklist, setLoadingBlacklist] = React.useState(false)
+  const [loadingLogs, setLoadingLogs] = React.useState(false)
+  const [logsPage, setLogsPage] = React.useState(1)
+  const [blacklistPage, setBlacklistPage] = React.useState(1)
+  const [totalLogs, setTotalLogs] = React.useState(0)
+  const [totalBlacklist, setTotalBlacklist] = React.useState(0)
+  const logsPerPage = 20
+  const blacklistPerPage = 20
+  const [selectedEmail, setSelectedEmail] = React.useState<any>(null)
+  const [showEmailDialog, setShowEmailDialog] = React.useState(false)
 
   const form = useForm<SmtpSettingsValues>({
     resolver: zodResolver(smtpSettingsSchema),
@@ -75,7 +91,60 @@ export default function SmtpSettingsPage() {
       }
     }
     fetchConfig()
+    fetchBlacklist(blacklistPage)
+    fetchEmailLogs(logsPage)
   }, [form, toast])
+
+  React.useEffect(() => {
+    fetchEmailLogs(logsPage)
+  }, [logsPage])
+
+  React.useEffect(() => {
+    fetchBlacklist(blacklistPage)
+  }, [blacklistPage])
+
+  const fetchBlacklist = async (page = 1) => {
+    setLoadingBlacklist(true)
+    try {
+      const response = await fetch(`/api/v1/email-blacklist?active=true&page=${page}&limit=${blacklistPerPage}`)
+      if (response.ok) {
+        const data = await response.json()
+        setBlacklist(data.blacklist || [])
+        setTotalBlacklist(data.total || 0)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar blacklist:', error)
+    } finally {
+      setLoadingBlacklist(false)
+    }
+  }
+
+  const fetchEmailLogs = async (page = 1) => {
+    setLoadingLogs(true)
+    try {
+      const response = await fetch(`/api/v1/notification-logs?channel=email&page=${page}&limit=${logsPerPage}`)
+      if (response.ok) {
+        const data = await response.json()
+        setEmailLogs(data.logs || [])
+        setTotalLogs(data.total || 0)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar logs:', error)
+    } finally {
+      setLoadingLogs(false)
+    }
+  }
+
+  const handleRemoveFromBlacklist = async (email: string) => {
+    try {
+      const response = await fetch(`/api/v1/email-blacklist?email=${email}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Falha ao remover da blacklist')
+      toast({ title: 'Sucesso', description: 'Email removido da blacklist', variant: 'success' })
+      fetchBlacklist(blacklistPage)
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Falha ao remover email', variant: 'destructive' })
+    }
+  }
 
   const onSubmit = async (data: SmtpSettingsValues) => {
     setIsSaving(true)
@@ -192,219 +261,441 @@ export default function SmtpSettingsPage() {
         </div>
       </div>
 
-      {/* Card Informativo sobre SES */}
-      <Card className="shadow-lg border-l-4 border-l-videira-purple bg-gradient-to-br from-videira-purple/5 to-transparent">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-videira-purple">
-            <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
-              <CheckCircle className="h-5 w-5 text-videira-purple" />
-            </div>
-            Sistema de E-mail Configurado
-          </CardTitle>
-          <CardDescription>Usando Amazon SES para envios transacionais</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Notificações de boas-vindas</span> - Enviadas automaticamente para novos usuários
-            </p>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="h-2 w-2 rounded-full bg-videira-blue mt-2 ring-2 ring-videira-blue/30" />
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Confirmações de pagamento</span> - Recibos enviados após aprovação
-            </p>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="h-2 w-2 rounded-full bg-videira-purple mt-2 ring-2 ring-videira-purple/30" />
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Mensagens do sistema</span> - Via componente SendMessageDialog
-            </p>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Recuperação de senha</span> - Links de reset enviados por email
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs de Monitoramento e Configuração */}
+      <Tabs defaultValue="logs" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="logs" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Histórico
+          </TabsTrigger>
+          <TabsTrigger value="config" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Configuração
+          </TabsTrigger>
+          <TabsTrigger value="blacklist" className="flex items-center gap-2">
+            <Ban className="h-4 w-4" />
+            Bloqueados ({blacklist.length})
+          </TabsTrigger>
+        </TabsList>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Card de Configuração */}
-          <Card className="shadow-lg border-t-4 border-t-videira-blue">
+        {/* Logs */}
+        <TabsContent value="logs">
+          <Card className="shadow-lg border-t-4 border-t-videira-purple">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
-                  <Mail className="h-5 w-5 text-videira-blue" />
+                <div className="p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30">
+                  <History className="h-5 w-5 text-videira-purple" />
                 </div>
-                Credenciais SMTP / Amazon SES
+                Histórico de Disparos
               </CardTitle>
               <CardDescription>
-                Configure Amazon SES, SendGrid ou outro provedor SMTP
+                Últimos 50 emails enviados pelo sistema
               </CardDescription>
             </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="host"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Servidor SMTP</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="email-smtp.us-east-1.amazonaws.com"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="port"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Porta</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="587" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="user"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Usuário SMTP</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Seu usuário SMTP" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha SMTP</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Sua senha SMTP"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="from"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>E-mail de Envio (From)</FormLabel>
-                  <FormControl>
+            <CardContent>
+              {loadingLogs ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : emailLogs.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Nenhum email enviado ainda</p>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Destinatário</TableHead>
+                        <TableHead>Assunto</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {emailLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="font-mono text-sm">{log.recipient}</TableCell>
+                          <TableCell className="max-w-xs truncate">{log.subject}</TableCell>
+                          <TableCell>
+                            <Badge variant={log.status === 'sent' ? 'default' : 'destructive'}>
+                              {log.status === 'sent' ? 'Enviado' : 'Falhou'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(log.sentAt).toLocaleString('pt-BR')}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedEmail(log)
+                                setShowEmailDialog(true)
+                              }}
+                              className="text-videira-blue hover:text-videira-blue/80"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Mostrando {(logsPage - 1) * logsPerPage + 1} a {Math.min(logsPage * logsPerPage, totalLogs)} de {totalLogs}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLogsPage(p => Math.max(1, p - 1))}
+                        disabled={logsPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLogsPage(p => p + 1)}
+                        disabled={logsPage * logsPerPage >= totalLogs}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Configuração */}
+        <TabsContent value="config">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="shadow-lg border-t-4 border-t-videira-blue">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                      <Mail className="h-5 w-5 text-videira-blue" />
+                    </div>
+                    Credenciais SMTP / Amazon SES
+                  </CardTitle>
+                  <CardDescription>
+                    Configure Amazon SES, SendGrid ou outro provedor SMTP
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="host"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Servidor SMTP</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="email-smtp.us-east-1.amazonaws.com"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="port"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Porta</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="587" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="user"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Usuário SMTP</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Seu usuário SMTP" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Senha SMTP</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Sua senha SMTP"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="from"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>E-mail de Envio (From)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="remetente@autorizado.com"
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex justify-end pt-4">
+                    <Button 
+                      type="submit" 
+                      disabled={isSaving}
+                      className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Salvar Configurações
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg border-t-4 border-t-videira-cyan">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
+                      <Send className="h-5 w-5 text-videira-cyan" />
+                    </div>
+                    Testar Configuração
+                  </CardTitle>
+                  <CardDescription>
+                    Envie um e-mail de teste para validar as configurações
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Alert className="bg-videira-blue/10 border-videira-blue/30">
+                    <AlertTriangle className="h-4 w-4 text-videira-blue" />
+                    <AlertDescription className="text-videira-blue">
+                      <strong>Amazon SES:</strong> Certifique-se de que o e-mail de destino está verificado no SES se estiver em modo Sandbox.
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="space-y-2">
+                    <Label className="font-semibold">E-mail de Destino</Label>
                     <Input
                       type="email"
-                      placeholder="remetente@autorizado.com"
-                      {...field}
-                      value={field.value ?? ''}
+                      placeholder="Ex: teste@vinha.com"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      className="border-2"
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end pt-4">
-              <Button 
-                type="submit" 
-                disabled={isSaving}
-                className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Salvar Configurações
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={handleSendTestEmail}
+                      disabled={isTesting}
+                      className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                    >
+                      {isTesting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Enviar E-mail de Teste
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
+          </Form>
+        </TabsContent>
 
-        {/* Card de Teste */}
-        <Card className="shadow-lg border-t-4 border-t-videira-cyan">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30">
-                <Send className="h-5 w-5 text-videira-cyan" />
-              </div>
-              Testar Configuração
-            </CardTitle>
-            <CardDescription>
-              Envie um e-mail de teste para validar as configurações
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert className="bg-videira-blue/10 border-videira-blue/30">
-              <AlertTriangle className="h-4 w-4 text-videira-blue" />
-              <AlertDescription className="text-videira-blue">
-                <strong>Amazon SES:</strong> Certifique-se de que o e-mail de destino está verificado no SES se estiver em modo Sandbox.
-              </AlertDescription>
-            </Alert>
-            
-            <div className="space-y-2">
-              <Label className="font-semibold">E-mail de Destino</Label>
-              <Input
-                type="email"
-                placeholder="Ex: teste@vinha.com"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                className="border-2"
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={handleSendTestEmail}
-                disabled={isTesting}
-                className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-              >
-                {isTesting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Enviar E-mail de Teste
-                  </>
+        {/* Blacklist */}
+        <TabsContent value="blacklist">
+          <Card className="shadow-lg border-t-4 border-t-red-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-red-500/15 ring-2 ring-red-500/30">
+                  <Ban className="h-5 w-5 text-red-500" />
+                </div>
+                Emails Bloqueados (Blacklist)
+              </CardTitle>
+              <CardDescription>
+                Emails que falharam permanentemente ou foram marcados como spam
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingBlacklist ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : blacklist.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Ban className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Nenhum email bloqueado</p>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Motivo</TableHead>
+                        <TableHead>Tentativas</TableHead>
+                        <TableHead>Última Tentativa</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {blacklist.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-mono text-sm">{item.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={item.reason === 'bounce' ? 'destructive' : 'secondary'}>
+                              {item.reason === 'bounce' ? 'Bounce' : item.reason === 'complaint' ? 'Spam' : item.reason}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{item.attemptCount}x</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(item.lastAttemptAt).toLocaleString('pt-BR')}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveFromBlacklist(item.email)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Mostrando {(blacklistPage - 1) * blacklistPerPage + 1} a {Math.min(blacklistPage * blacklistPerPage, totalBlacklist)} de {totalBlacklist}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setBlacklistPage(p => Math.max(1, p - 1))}
+                        disabled={blacklistPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setBlacklistPage(p => p + 1)}
+                        disabled={blacklistPage * blacklistPerPage >= totalBlacklist}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialog de Visualização de Email */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-videira-blue" />
+              Visualizar Email
+            </DialogTitle>
+            <DialogDescription>
+              Cópia do email enviado para {selectedEmail?.recipient}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEmail && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Destinatário</p>
+                  <p className="font-mono text-sm">{selectedEmail.recipient}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Status</p>
+                  <Badge variant={selectedEmail.status === 'sent' ? 'default' : 'destructive'}>
+                    {selectedEmail.status === 'sent' ? 'Enviado' : 'Falhou'}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Assunto</p>
+                  <p className="text-sm">{selectedEmail.subject}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Data</p>
+                  <p className="text-sm">{new Date(selectedEmail.sentAt).toLocaleString('pt-BR')}</p>
+                </div>
+                {selectedEmail.errorMessage && (
+                  <div className="col-span-2">
+                    <p className="text-sm font-semibold text-muted-foreground">Erro</p>
+                    <p className="text-sm text-red-500">{selectedEmail.errorMessage}</p>
+                  </div>
                 )}
-              </Button>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground mb-2">Conteúdo do Email</p>
+                <div 
+                  className="border rounded-lg p-4 bg-white dark:bg-gray-950 overflow-auto"
+                  dangerouslySetInnerHTML={{ __html: selectedEmail.messageContent || '<p>Sem conteúdo</p>' }}
+                />
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </form>
-    </Form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
