@@ -8,6 +8,7 @@ import { messageTemplates } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { TemplateEngine } from '@/lib/template-engine'
+import { validateRequest } from '@/lib/jwt'
 
 const templateSchema = z.object({
   companyId: z.string().uuid(),
@@ -21,14 +22,15 @@ const templateSchema = z.object({
 
 // GET - Listar templates
 export async function GET(request: NextRequest) {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
-    const companyId = searchParams.get('companyId')
     const templateType = searchParams.get('type')
-
-    if (!companyId) {
-      return NextResponse.json({ error: 'companyId is required' }, { status: 400 })
-    }
 
     const templates = templateType
       ? await db
@@ -36,11 +38,11 @@ export async function GET(request: NextRequest) {
           .from(messageTemplates)
           .where(
             and(
-              eq(messageTemplates.companyId, companyId),
+              eq(messageTemplates.companyId, user.companyId),
               eq(messageTemplates.templateType, templateType),
             ),
           )
-      : await db.select().from(messageTemplates).where(eq(messageTemplates.companyId, companyId))
+      : await db.select().from(messageTemplates).where(eq(messageTemplates.companyId, user.companyId))
 
     return NextResponse.json({ templates })
   } catch (error) {
@@ -51,9 +53,15 @@ export async function GET(request: NextRequest) {
 
 // POST - Criar template
 export async function POST(request: NextRequest) {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
-    const data = templateSchema.parse(body)
+    const data = { ...templateSchema.parse(body), companyId: user.companyId }
 
     // Validar templates
     if (data.whatsappTemplate) {
@@ -95,6 +103,12 @@ export async function POST(request: NextRequest) {
 
 // PUT - Atualizar template
 export async function PUT(request: NextRequest) {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const templateId = searchParams.get('id')
@@ -130,7 +144,7 @@ export async function PUT(request: NextRequest) {
     const [template] = await db
       .update(messageTemplates)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(messageTemplates.id, templateId))
+      .where(and(eq(messageTemplates.id, templateId), eq(messageTemplates.companyId, user.companyId)))
       .returning()
 
     if (!template) {
