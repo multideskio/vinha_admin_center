@@ -1,12 +1,13 @@
 /**
  * @fileoverview Rota da API para testar envio de e-mail SMTP.
- * @version 1.0
+ * @version 1.1
  * @date 2024-08-08
  * @author PH
  */
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
+import { validateRequest } from '@/lib/jwt'
 
 const testEmailSchema = z.object({
   email: z.string().email(),
@@ -20,6 +21,12 @@ const testEmailSchema = z.object({
 })
 
 export async function POST(request: Request): Promise<NextResponse> {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const validatedData = testEmailSchema.parse(body)

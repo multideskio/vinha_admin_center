@@ -208,7 +208,12 @@ export default function SmtpSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-      if (!response.ok) throw new Error('Falha ao salvar configurações SMTP.')
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao salvar configurações SMTP.')
+      }
+      
       toast({
         title: 'Sucesso!',
         description: 'Configurações de SMTP salvas com sucesso.',
@@ -231,16 +236,31 @@ export default function SmtpSettingsPage() {
       })
       return
     }
+
+    // Validar se as configurações estão preenchidas
+    const currentConfig = form.getValues()
+    if (!currentConfig.host || !currentConfig.user || !currentConfig.password) {
+      toast({
+        title: 'Configurações Incompletas',
+        description: 'Por favor, preencha todas as configurações SMTP antes de testar.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setIsTesting(true)
     try {
-      const currentConfig = form.getValues()
       const response = await fetch('/api/v1/settings/smtp/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: testEmail, config: currentConfig }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'Falha ao enviar e-mail de teste.')
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Falha ao enviar e-mail de teste.')
+      }
+      
       toast({
         title: 'Sucesso!',
         description: 'E-mail de teste enviado com sucesso!',
