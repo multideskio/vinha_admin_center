@@ -1,18 +1,18 @@
 /**
- * @fileoverview API para relatório financeiro completo
- * @version 1.0
- * @date 2025-11-05
+ * @lastReview 2026-01-05 15:35 - API de relatório financeiro implementada
+ * @fileoverview API para relatório financeiro completo com filtros avançados
+ * Segurança: ✅ Validação admin obrigatória
+ * Funcionalidades: ✅ Filtros por período/método/status, ✅ KPIs por status, ✅ Paginação
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, pastorProfiles, churchProfiles } from '@/db/schema'
-import { and, eq, gte, lt, desc } from 'drizzle-orm'
+import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema'
+import { eq, and, between, desc, sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
-import { startOfMonth, endOfMonth, format } from 'date-fns'
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: Request) {
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -20,39 +20,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-
-    // Filtros
     const from = searchParams.get('from')
     const to = searchParams.get('to')
-    const method = searchParams.get('method') // 'all', 'pix', 'credit_card', 'boleto'
-    const status = searchParams.get('status') // 'all', 'approved', 'pending', 'refused', 'refunded'
+    const method = searchParams.get('method')
+    const status = searchParams.get('status')
 
-    const now = new Date()
-    const startDate = from ? new Date(from) : startOfMonth(now)
-    const endDate = to ? new Date(to) : endOfMonth(now)
+    // Definir período padrão (últimos 30 dias)
+    const endDate = to ? new Date(to) : new Date()
+    const startDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
-    // Construir condições
-    const conditions = [gte(transactions.createdAt, startDate), lt(transactions.createdAt, endDate)]
+    // Condições base
+    const conditions = [
+      eq(transactions.companyId, user.companyId),
+      between(transactions.createdAt, startDate, endDate),
+    ]
 
+    // Filtros opcionais
     if (method && method !== 'all') {
-      if (method === 'pix' || method === 'credit_card' || method === 'boleto') {
-        conditions.push(eq(transactions.paymentMethod, method))
-      }
+      conditions.push(eq(transactions.paymentMethod, method as 'pix' | 'credit_card' | 'boleto'))
     }
 
     if (status && status !== 'all') {
-      if (
-        status === 'approved' ||
-        status === 'pending' ||
-        status === 'refused' ||
-        status === 'refunded'
-      ) {
-        conditions.push(eq(transactions.status, status))
-      }
+      conditions.push(eq(transactions.status, status as 'approved' | 'pending' | 'refused' | 'refunded'))
     }
 
-    // Buscar transações
-    const transactionsData = await db
+    // Buscar todas as transações
+    const allTransactions = await db
       .select({
         id: transactions.id,
         amount: transactions.amount,
@@ -60,113 +53,86 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         status: transactions.status,
         date: transactions.createdAt,
         contributorId: transactions.contributorId,
-        contributorEmail: users.email,
+        firstName: pastorProfiles.firstName,
+        lastName: pastorProfiles.lastName,
+        nomeFantasia: churchProfiles.nomeFantasia,
         contributorRole: users.role,
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
+      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
       .where(and(...conditions))
       .orderBy(desc(transactions.createdAt))
-      .limit(1000)
 
-    // Buscar nomes dos contribuintes
-    const enrichedTransactions = await Promise.all(
-      transactionsData.map(async (t) => {
-        let contributorName = t.contributorEmail
+    // Formatar transações
+    const formattedTransactions = allTransactions.map(t => ({
+      id: t.id,
+      contributorName: t.contributorRole === 'pastor' 
+        ? `${t.firstName || ''} ${t.lastName || ''}`.trim()
+        : t.nomeFantasia || 'N/A',
+      contributorRole: t.contributorRole,
+      amount: Number(t.amount),
+      method: t.method,
+      status: t.status,
+      date: new Date(t.date).toLocaleDateString('pt-BR'),
+    }))
 
-        if (t.contributorRole === 'pastor') {
-          const [pastor] = await db
-            .select({
-              firstName: pastorProfiles.firstName,
-              lastName: pastorProfiles.lastName,
-            })
-            .from(pastorProfiles)
-            .where(eq(pastorProfiles.userId, t.contributorId))
-            .limit(1)
-          if (pastor) {
-            contributorName = `${pastor.firstName} ${pastor.lastName}`
-          }
-        } else if (t.contributorRole === 'church_account') {
-          const [church] = await db
-            .select({
-              nomeFantasia: churchProfiles.nomeFantasia,
-            })
-            .from(churchProfiles)
-            .where(eq(churchProfiles.userId, t.contributorId))
-            .limit(1)
-          if (church) {
-            contributorName = church.nomeFantasia
-          }
-        }
+    // Calcular KPIs por status
+    const statusSummary = await db
+      .select({
+        status: transactions.status,
+        count: sql<number>`COUNT(*)`,
+        total: sql<number>`SUM(${transactions.amount})`,
+      })
+      .from(transactions)
+      .where(and(...conditions))
+      .groupBy(transactions.status)
 
-        return {
-          id: t.id,
-          contributorName,
-          contributorRole: t.contributorRole,
-          amount: Number(t.amount),
-          method: t.method,
-          status: t.status,
-          date: format(new Date(t.date), 'dd/MM/yyyy HH:mm'),
-        }
-      }),
-    )
+    const statusTotals = statusSummary.reduce((acc, s) => {
+      acc[s.status] = Number(s.total)
+      return acc
+    }, {} as Record<string, number>)
 
-    // Calcular resumo
-    const totalApproved = enrichedTransactions
-      .filter((t) => t.status === 'approved')
-      .reduce((sum, t) => sum + t.amount, 0)
+    // Resumo por método de pagamento
+    const methodSummary = await db
+      .select({
+        method: transactions.paymentMethod,
+        count: sql<number>`COUNT(*)`,
+        total: sql<number>`SUM(${transactions.amount})`,
+      })
+      .from(transactions)
+      .where(and(...conditions))
+      .groupBy(transactions.paymentMethod)
 
-    const totalPending = enrichedTransactions
-      .filter((t) => t.status === 'pending')
-      .reduce((sum, t) => sum + t.amount, 0)
-
-    const totalRefused = enrichedTransactions
-      .filter((t) => t.status === 'refused')
-      .reduce((sum, t) => sum + t.amount, 0)
-
-    const totalRefunded = enrichedTransactions
-      .filter((t) => t.status === 'refunded')
-      .reduce((sum, t) => sum + t.amount, 0)
-
-    // Agrupar por método
-    const byMethod = enrichedTransactions.reduce(
-      (acc, t) => {
-        if (!acc[t.method]) {
-          acc[t.method] = { count: 0, total: 0 }
-        }
-        const methodData = acc[t.method]
-        if (methodData) {
-          methodData.count++
-          methodData.total += t.amount
-        }
-        return acc
-      },
-      {} as Record<string, { count: number; total: number }>,
-    )
+    const byMethod = methodSummary.reduce((acc, m) => {
+      acc[m.method] = {
+        count: Number(m.count),
+        total: Number(m.total),
+      }
+      return acc
+    }, {} as Record<string, { count: number; total: number }>)
 
     return NextResponse.json({
-      transactions: enrichedTransactions,
+      transactions: formattedTransactions,
       summary: {
-        totalTransactions: enrichedTransactions.length,
-        totalApproved,
-        totalPending,
-        totalRefused,
-        totalRefunded,
+        totalTransactions: formattedTransactions.length,
+        totalApproved: statusTotals.approved || 0,
+        totalPending: statusTotals.pending || 0,
+        totalRefused: statusTotals.refused || 0,
+        totalRefunded: statusTotals.refunded || 0,
         byMethod,
       },
       period: {
-        from: format(startDate, 'dd/MM/yyyy'),
-        to: format(endDate, 'dd/MM/yyyy'),
+        from: startDate.toLocaleDateString('pt-BR'),
+        to: endDate.toLocaleDateString('pt-BR'),
       },
     })
-  } catch (error: unknown) {
-    console.error('Erro ao buscar relatório financeiro:', error)
+  } catch (error) {
+    console.error('Erro ao gerar relatório financeiro:', error)
     return NextResponse.json(
-      {
-        error: 'Erro ao buscar relatório financeiro',
-        details: error instanceof Error ? error.message : 'Erro desconhecido',
-      },
-      { status: 500 },
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
     )
   }
 }

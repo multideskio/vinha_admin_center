@@ -47,7 +47,7 @@ type ChurchData = {
   cnpj: string
   cidade: string
   estado: string
-  regionName: string
+  supervisorName: string
   totalRevenue: number
   transactionCount: number
   lastTransaction: { date: string; amount: number } | null
@@ -101,7 +101,7 @@ export default function RelatorioIgrejasPage() {
       const params = new URLSearchParams()
       if (dateRange.from) params.append('from', dateRange.from.toISOString())
       if (dateRange.to) params.append('to', dateRange.to.toISOString())
-      if (regionFilter !== 'all') params.append('regionId', regionFilter)
+      if (regionFilter !== 'all') params.append('supervisorId', regionFilter)
 
       const response = await fetch(`/api/v1/relatorios/igrejas?${params.toString()}`)
       if (!response.ok) {
@@ -109,8 +109,8 @@ export default function RelatorioIgrejasPage() {
       }
       const result = await response.json()
       setAllChurches(result.churches)
-      setByRegion(result.byRegion)
-      setRegions(result.regions)
+      setByRegion(result.bySupervisor)
+      setRegions(result.supervisors)
       setSummary(result.summary)
       setPeriod(result.period)
     } catch (error: unknown) {
@@ -162,7 +162,7 @@ export default function RelatorioIgrejasPage() {
         c.cnpj,
         c.cidade,
         c.estado,
-        c.regionName,
+        c.supervisorName,
         `R$ ${c.totalRevenue.toFixed(2)}`,
         c.transactionCount,
         c.lastTransaction ? c.lastTransaction.date : 'Nunca',
@@ -272,16 +272,16 @@ export default function RelatorioIgrejasPage() {
               <DateRangePicker onDateRangeChange={handleDateRangeChange} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Região</label>
+              <label className="text-sm font-medium">Supervisor</label>
               <Select value={regionFilter} onValueChange={setRegionFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as Regiões</SelectItem>
-                  {regions.map((region) => (
-                    <SelectItem key={region.id} value={region.id}>
-                      {region.name}
+                  <SelectItem value="all">Todos os Supervisores</SelectItem>
+                  {regions.map((supervisor) => (
+                    <SelectItem key={supervisor.id} value={supervisor.id}>
+                      {supervisor.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -307,7 +307,7 @@ export default function RelatorioIgrejasPage() {
           <CardContent>
             <div className="text-2xl font-bold">{summary.totalChurches}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {Object.keys(byRegion).length} regiões
+              {Object.keys(byRegion).length} supervisores
             </p>
           </CardContent>
         </Card>
@@ -343,15 +343,15 @@ export default function RelatorioIgrejasPage() {
       {byRegion && Object.keys(byRegion).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Resumo por Região</CardTitle>
-            <CardDescription>Igrejas e arrecadação agrupadas por região</CardDescription>
+            <CardTitle>Resumo por Supervisor</CardTitle>
+            <CardDescription>Igrejas e arrecadação agrupadas por supervisor</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(byRegion).map(([regionName, data]) => (
-                <div key={regionName} className="p-4 border rounded-lg">
+              {Object.entries(byRegion).map(([supervisorName, data]) => (
+                <div key={supervisorName} className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="font-semibold">{regionName}</p>
+                    <p className="font-semibold">{supervisorName}</p>
                     <Badge>{data.count} igrejas</Badge>
                   </div>
                   <p className="text-2xl font-bold text-primary">
@@ -386,7 +386,7 @@ export default function RelatorioIgrejasPage() {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Cidade/UF</TableHead>
-                      <TableHead>Região</TableHead>
+                      <TableHead>Supervisor</TableHead>
                       <TableHead className="text-right">Arrecadação</TableHead>
                       <TableHead className="text-center">Transações</TableHead>
                       <TableHead>Última Contrib.</TableHead>
@@ -407,7 +407,7 @@ export default function RelatorioIgrejasPage() {
                           {church.cidade}/{church.estado}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{church.regionName}</Badge>
+                          <Badge variant="outline">{church.supervisorName}</Badge>
                         </TableCell>
                         <TableCell className="text-right font-semibold">
                           {new Intl.NumberFormat('pt-BR', {

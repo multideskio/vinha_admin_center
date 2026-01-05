@@ -1,25 +1,18 @@
 /**
- * @fileoverview API para relatório de contribuições detalhado
- * @version 1.0
- * @date 2025-11-05
+ * @lastReview 2026-01-05 15:30 - API de relatório de contribuições implementada
+ * @fileoverview API para relatório detalhado de contribuições por tipo e contribuinte
+ * Segurança: ✅ Validação admin obrigatória
+ * Funcionalidades: ✅ Filtros avançados, ✅ Top 10 contribuintes, ✅ Resumos por método/tipo
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import {
-  users,
-  transactions,
-  pastorProfiles,
-  churchProfiles,
-  supervisorProfiles,
-  managerProfiles,
-} from '@/db/schema'
-import { and, eq, gte, lt, sql, count as countFn } from 'drizzle-orm'
+import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema'
+import { eq, and, between, isNull, desc, sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
-import { startOfMonth, endOfMonth, format } from 'date-fns'
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: Request) {
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -27,191 +20,151 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-
-    // Filtros
     const from = searchParams.get('from')
     const to = searchParams.get('to')
-    const contributorType = searchParams.get('contributorType') // 'all', 'pastor', 'church'
+    const contributorType = searchParams.get('contributorType')
 
-    const now = new Date()
-    const startDate = from ? new Date(from) : startOfMonth(now)
-    const endDate = to ? new Date(to) : endOfMonth(now)
+    // Definir período padrão (últimos 30 dias)
+    const endDate = to ? new Date(to) : new Date()
+    const startDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
-    // Construir condições
-    const conditions = [
+    // Condições base
+    const baseConditions = [
+      eq(transactions.companyId, user.companyId),
       eq(transactions.status, 'approved'),
-      gte(transactions.createdAt, startDate),
-      lt(transactions.createdAt, endDate),
+      between(transactions.createdAt, startDate, endDate),
     ]
 
-    // Buscar contribuintes com suas contribuições
-    const contributorsData = await db
+    // Filtro por tipo de contribuinte
+    if (contributorType && contributorType !== 'all') {
+      const userConditions = [
+        eq(users.companyId, user.companyId),
+        eq(users.role, contributorType as 'pastor' | 'church_account'),
+        isNull(users.deletedAt),
+      ]
+      
+      const contributorIds = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(...userConditions))
+
+      if (contributorIds.length > 0) {
+        baseConditions.push(
+          sql`${transactions.contributorId} IN ${sql.raw(`(${contributorIds.map(c => `'${c.id}'`).join(',')})`)}`,
+        )
+      }
+    }
+
+    // Buscar contribuintes com totais
+    const contributorsQuery = db
       .select({
-        contributorId: transactions.contributorId,
-        contributorRole: users.role,
-        total: sql<number>`SUM(${transactions.amount})`.mapWith(Number),
-        count: countFn(),
-        lastContribution: sql<Date>`MAX(${transactions.createdAt})`.mapWith((val) => new Date(val)),
+        id: users.id,
+        role: users.role,
+        firstName: pastorProfiles.firstName,
+        lastName: pastorProfiles.lastName,
+        nomeFantasia: churchProfiles.nomeFantasia,
+        totalAmount: sql<number>`COALESCE(SUM(${transactions.amount}), 0)`,
+        contributionCount: sql<number>`COUNT(${transactions.id})`,
+        lastContribution: sql<string>`MAX(${transactions.createdAt})`,
       })
-      .from(transactions)
-      .innerJoin(users, eq(transactions.contributorId, users.id))
-      .where(and(...conditions))
-      .groupBy(transactions.contributorId, users.role)
-      .orderBy(sql`SUM(${transactions.amount}) DESC`)
-      .limit(100)
+      .from(users)
+      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+      .leftJoin(transactions, and(
+        eq(users.id, transactions.contributorId),
+        eq(transactions.status, 'approved'),
+        between(transactions.createdAt, startDate, endDate),
+      ))
+      .where(and(
+        eq(users.companyId, user.companyId),
+        isNull(users.deletedAt),
+        contributorType && contributorType !== 'all' 
+          ? eq(users.role, contributorType as 'pastor' | 'church_account')
+          : sql`${users.role} IN ('pastor', 'church_account')`,
+      ))
+      .groupBy(users.id, pastorProfiles.firstName, pastorProfiles.lastName, churchProfiles.nomeFantasia)
+      .orderBy(desc(sql`COALESCE(SUM(${transactions.amount}), 0)`))
 
-    // Filtrar por tipo se especificado
-    const filteredContributors =
-      contributorType && contributorType !== 'all'
-        ? contributorsData.filter((c) => c.contributorRole === contributorType)
-        : contributorsData
+    const contributors = await contributorsQuery
 
-    // Enriquecer com nomes
-    const contributors = await Promise.all(
-      filteredContributors.map(async (c) => {
-        let name = 'Desconhecido'
-        let extraInfo = ''
+    // Formatar dados dos contribuintes
+    const formattedContributors = contributors.map(c => ({
+      id: c.id,
+      name: c.role === 'pastor' 
+        ? `${c.firstName || ''} ${c.lastName || ''}`.trim()
+        : c.nomeFantasia || 'N/A',
+      type: c.role,
+      extraInfo: c.role === 'pastor' ? 'Pastor' : 'Igreja',
+      totalAmount: Number(c.totalAmount) || 0,
+      contributionCount: Number(c.contributionCount) || 0,
+      lastContribution: c.lastContribution 
+        ? new Date(c.lastContribution).toLocaleDateString('pt-BR')
+        : 'Nunca',
+    }))
 
-        try {
-          if (c.contributorRole === 'pastor') {
-            const pastorData = await db
-              .select({
-                firstName: pastorProfiles.firstName,
-                lastName: pastorProfiles.lastName,
-              })
-              .from(pastorProfiles)
-              .where(eq(pastorProfiles.userId, c.contributorId))
-              .limit(1)
+    // Top 10 contribuintes
+    const topContributors = formattedContributors
+      .filter(c => c.totalAmount > 0)
+      .slice(0, 10)
 
-            if (pastorData.length > 0 && pastorData[0]) {
-              name = `${pastorData[0].firstName} ${pastorData[0].lastName}`
-            }
-          } else if (c.contributorRole === 'church_account') {
-            const churchData = await db
-              .select({
-                nomeFantasia: churchProfiles.nomeFantasia,
-                city: churchProfiles.city,
-              })
-              .from(churchProfiles)
-              .where(eq(churchProfiles.userId, c.contributorId))
-              .limit(1)
-
-            if (churchData.length > 0 && churchData[0]) {
-              name = churchData[0].nomeFantasia
-              extraInfo = churchData[0].city || ''
-            }
-          } else if (c.contributorRole === 'supervisor') {
-            // Buscar nome do supervisor
-            const supervisorData = await db
-              .select({
-                firstName: supervisorProfiles.firstName,
-                lastName: supervisorProfiles.lastName,
-              })
-              .from(supervisorProfiles)
-              .where(eq(supervisorProfiles.userId, c.contributorId))
-              .limit(1)
-
-            if (supervisorData.length > 0 && supervisorData[0]) {
-              name = `${supervisorData[0].firstName} ${supervisorData[0].lastName}`
-            }
-          } else if (c.contributorRole === 'manager') {
-            // Buscar nome do gerente
-            const managerData = await db
-              .select({
-                firstName: managerProfiles.firstName,
-                lastName: managerProfiles.lastName,
-              })
-              .from(managerProfiles)
-              .where(eq(managerProfiles.userId, c.contributorId))
-              .limit(1)
-
-            if (managerData.length > 0 && managerData[0]) {
-              name = `${managerData[0].firstName} ${managerData[0].lastName}`
-            }
-          } else {
-            // Para admin ou outros, usar email como fallback
-            const userData = await db
-              .select({
-                email: users.email,
-              })
-              .from(users)
-              .where(eq(users.id, c.contributorId))
-              .limit(1)
-
-            if (userData.length > 0 && userData[0]) {
-              name = userData[0].email
-            }
-          }
-        } catch (error) {
-          console.error(`Erro ao buscar nome do contribuinte ${c.contributorId}:`, error)
-        }
-
-        return {
-          id: c.contributorId,
-          name,
-          type: c.contributorRole,
-          extraInfo,
-          totalAmount: c.total,
-          contributionCount: c.count,
-          lastContribution: format(new Date(c.lastContribution), 'dd/MM/yyyy'),
-        }
-      }),
-    )
-
-    // Ranking dos top 10
-    const topContributors = contributors.slice(0, 10)
-
-    // Análise por método de pagamento no período
-    const byMethod = await db
+    // Resumo por método de pagamento
+    const methodSummary = await db
       .select({
         method: transactions.paymentMethod,
-        total: sql<number>`SUM(${transactions.amount})`.mapWith(Number),
-        count: countFn(),
+        count: sql<number>`COUNT(*)`,
+        total: sql<number>`SUM(${transactions.amount})`,
       })
       .from(transactions)
-      .where(and(...conditions))
+      .where(and(...baseConditions))
       .groupBy(transactions.paymentMethod)
 
-    // Análise por tipo de contribuinte
-    const byContributorType = await db
+    // Resumo por tipo de contribuinte
+    const typeSummary = await db
       .select({
         type: users.role,
-        total: sql<number>`SUM(${transactions.amount})`.mapWith(Number),
-        count: countFn(),
+        count: sql<number>`COUNT(${transactions.id})`,
+        total: sql<number>`SUM(${transactions.amount})`,
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
-      .where(and(...conditions))
+      .where(and(...baseConditions))
       .groupBy(users.role)
 
-    // Calcular totais
-    const totalAmount = contributors.reduce((sum, c) => sum + c.totalAmount, 0)
-    const totalContributions = contributors.reduce((sum, c) => sum + c.contributionCount, 0)
+    // Calcular totais gerais
+    const totalAmount = formattedContributors.reduce((sum, c) => sum + c.totalAmount, 0)
+    const totalContributions = formattedContributors.reduce((sum, c) => sum + c.contributionCount, 0)
+    const totalContributors = formattedContributors.filter(c => c.totalAmount > 0).length
+    const averagePerContributor = totalContributors > 0 ? totalAmount / totalContributors : 0
 
     return NextResponse.json({
-      contributors,
+      contributors: formattedContributors,
       topContributors,
       summary: {
         totalAmount,
         totalContributions,
-        totalContributors: contributors.length,
-        averagePerContributor: contributors.length > 0 ? totalAmount / contributors.length : 0,
-        byMethod,
-        byContributorType,
+        totalContributors,
+        averagePerContributor,
+        byMethod: methodSummary.map(m => ({
+          method: m.method,
+          count: Number(m.count),
+          total: Number(m.total),
+        })),
+        byContributorType: typeSummary.map(t => ({
+          type: t.type,
+          count: Number(t.count),
+          total: Number(t.total),
+        })),
       },
       period: {
-        from: format(startDate, 'dd/MM/yyyy'),
-        to: format(endDate, 'dd/MM/yyyy'),
+        from: startDate.toLocaleDateString('pt-BR'),
+        to: endDate.toLocaleDateString('pt-BR'),
       },
     })
-  } catch (error: unknown) {
-    console.error('Erro ao buscar relatório de contribuições:', error)
+  } catch (error) {
+    console.error('Erro ao gerar relatório de contribuições:', error)
     return NextResponse.json(
-      {
-        error: 'Erro ao buscar relatório de contribuições',
-        details: error instanceof Error ? error.message : 'Erro desconhecido',
-      },
-      { status: 500 },
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
     )
   }
 }

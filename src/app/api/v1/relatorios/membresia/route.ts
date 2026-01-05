@@ -1,18 +1,18 @@
 /**
- * @fileoverview API para relatório de membresia (crescimento de membros)
- * @version 1.0
- * @date 2025-11-05
+ * @lastReview 2026-01-05 15:45 - API de relatório de membresia implementada
+ * @fileoverview API para relatório de dados demográficos e crescimento de membros
+ * Segurança: ✅ Validação admin obrigatória
+ * Funcionalidades: ✅ Filtros por role, ✅ Dados de crescimento, ✅ Distribuição por tipo
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { users, pastorProfiles, supervisorProfiles, churchProfiles, regions } from '@/db/schema'
-import { eq, isNull, gte, sql, count as countFn } from 'drizzle-orm'
+import { users, pastorProfiles, churchProfiles, managerProfiles, supervisorProfiles } from '@/db/schema'
+import { eq, and, isNull, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
-import { startOfMonth, format, subMonths } from 'date-fns'
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: Request) {
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -20,168 +20,144 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
+    const role = searchParams.get('role')
 
-    // Filtros
-    const roleFilter = searchParams.get('role') // 'all', 'pastor', 'church_account', 'supervisor', 'manager'
+    // Condições base
+    const conditions = [
+      eq(users.companyId, user.companyId),
+      isNull(users.deletedAt),
+    ]
 
-    const now = new Date()
+    // Filtro por role se especificado
+    if (role && role !== 'all') {
+      conditions.push(eq(users.role, role as UserRole))
+    }
 
-    // Total de membros por role
-    const membersByRole = await db
-      .select({
-        role: users.role,
-        count: countFn(),
-      })
-      .from(users)
-      .where(isNull(users.deletedAt))
-      .groupBy(users.role)
-
-    // Novos membros nos últimos 6 meses
-    const sixMonthsAgo = subMonths(now, 6)
-    const newMembersByMonth = await db
-      .select({
-        month: sql<string>`TO_CHAR(${users.createdAt}, 'YYYY-MM')`,
-        count: countFn(),
-      })
-      .from(users)
-      .where(gte(users.createdAt, sixMonthsAgo))
-      .groupBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
-      .orderBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
-
-    // Membros criados neste mês
-    const startOfCurrentMonth = startOfMonth(now)
-    const newThisMonth = await db
-      .select({
-        role: users.role,
-        count: countFn(),
-      })
-      .from(users)
-      .where(gte(users.createdAt, startOfCurrentMonth))
-      .groupBy(users.role)
-
-    // Lista de membros recentes (últimos 50)
-    const recentMembersQuery = db
+    // Buscar todos os membros
+    const allMembers = await db
       .select({
         id: users.id,
-        email: users.email,
         role: users.role,
-        createdAt: users.createdAt,
         status: users.status,
+        email: users.email,
+        createdAt: users.createdAt,
+        // Dados específicos por tipo
+        pastorFirstName: pastorProfiles.firstName,
+        pastorLastName: pastorProfiles.lastName,
+        churchNomeFantasia: churchProfiles.nomeFantasia,
+        managerFirstName: managerProfiles.firstName,
+        managerLastName: managerProfiles.lastName,
+        supervisorFirstName: supervisorProfiles.firstName,
+        supervisorLastName: supervisorProfiles.lastName,
       })
       .from(users)
-      .where(isNull(users.deletedAt))
-      .orderBy(sql`${users.createdAt} DESC`)
-      .limit(50)
+      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+      .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
+      .where(and(...conditions))
+      .orderBy(desc(users.createdAt))
 
-    const recentMembersData = await recentMembersQuery
+    // Formatar dados dos membros
+    const formattedMembers = allMembers.map(m => {
+      let name = 'N/A'
+      let extraInfo = ''
 
-    // Enriquecer com nomes
-    const recentMembers = await Promise.all(
-      recentMembersData.map(async (member) => {
-        let name = member.email
-        let extraInfo = ''
+      switch (m.role) {
+        case 'pastor':
+          name = `${m.pastorFirstName || ''} ${m.pastorLastName || ''}`.trim()
+          extraInfo = 'Pastor'
+          break
+        case 'church_account':
+          name = m.churchNomeFantasia || 'N/A'
+          extraInfo = 'Igreja'
+          break
+        case 'manager':
+          name = `${m.managerFirstName || ''} ${m.managerLastName || ''}`.trim()
+          extraInfo = 'Gerente'
+          break
+        case 'supervisor':
+          name = `${m.supervisorFirstName || ''} ${m.supervisorLastName || ''}`.trim()
+          extraInfo = 'Supervisor'
+          break
+        case 'admin':
+          name = 'Administrador'
+          extraInfo = 'Admin'
+          break
+      }
 
-        if (member.role === 'pastor') {
-          const [pastor] = await db
-            .select({
-              firstName: pastorProfiles.firstName,
-              lastName: pastorProfiles.lastName,
-            })
-            .from(pastorProfiles)
-            .where(eq(pastorProfiles.userId, member.id))
-            .limit(1)
-          if (pastor) {
-            name = `${pastor.firstName} ${pastor.lastName}`
-          }
-        } else if (member.role === 'church_account') {
-          const [church] = await db
-            .select({
-              nomeFantasia: churchProfiles.nomeFantasia,
-              city: churchProfiles.city,
-            })
-            .from(churchProfiles)
-            .where(eq(churchProfiles.userId, member.id))
-            .limit(1)
-          if (church) {
-            name = church.nomeFantasia
-            extraInfo = church.city || ''
-          }
-        } else if (member.role === 'supervisor') {
-          const [supervisor] = await db
-            .select({
-              firstName: supervisorProfiles.firstName,
-              lastName: supervisorProfiles.lastName,
-              regionName: regions.name,
-            })
-            .from(supervisorProfiles)
-            .leftJoin(regions, eq(supervisorProfiles.regionId, regions.id))
-            .where(eq(supervisorProfiles.userId, member.id))
-            .limit(1)
-          if (supervisor) {
-            name = `${supervisor.firstName} ${supervisor.lastName}`
-            extraInfo = supervisor.regionName || ''
-          }
-        }
+      return {
+        id: m.id,
+        name: name || 'N/A',
+        email: m.email,
+        role: m.role,
+        extraInfo,
+        createdAt: new Date(m.createdAt).toLocaleDateString('pt-BR'),
+        status: m.status,
+      }
+    })
 
-        return {
-          id: member.id,
-          name,
-          email: member.email,
-          role: member.role,
-          extraInfo,
-          createdAt: format(new Date(member.createdAt), 'dd/MM/yyyy HH:mm'),
-          status: member.status,
-        }
-      }),
-    )
+    // Calcular distribuição por role
+    const byRole = allMembers.reduce((acc, member) => {
+      const existing = acc.find(item => item.role === member.role)
+      if (existing) {
+        existing.count++
+      } else {
+        acc.push({ role: member.role, count: 1 })
+      }
+      return acc
+    }, [] as { role: string; count: number }[])
 
-    // Filtrar por role se especificado
-    const filteredMembers =
-      roleFilter && roleFilter !== 'all'
-        ? recentMembers.filter((m) => m.role === roleFilter)
-        : recentMembers
+    // Calcular novos membros este mês
+    const thisMonth = new Date()
+    thisMonth.setDate(1)
+    thisMonth.setHours(0, 0, 0, 0)
 
-    // Formatar dados de crescimento mensal
-    const monthNames = [
-      'Jan',
-      'Fev',
-      'Mar',
-      'Abr',
-      'Mai',
-      'Jun',
-      'Jul',
-      'Ago',
-      'Set',
-      'Out',
-      'Nov',
-      'Dez',
-    ]
-    const growthData = newMembersByMonth.map((item) => ({
-      month: monthNames[parseInt(item.month.substring(5, 7)) - 1],
-      count: item.count,
-    }))
+    const newThisMonth = allMembers.filter(m => 
+      new Date(m.createdAt) >= thisMonth
+    ).length
 
-    // Total de membros
-    const totalMembers = membersByRole.reduce((sum, r) => sum + r.count, 0)
+    // Dados de crescimento dos últimos 6 meses
+    const growthData = []
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = new Date()
+      monthDate.setMonth(monthDate.getMonth() - i)
+      monthDate.setDate(1)
+      monthDate.setHours(0, 0, 0, 0)
+      
+      const nextMonth = new Date(monthDate)
+      nextMonth.setMonth(nextMonth.getMonth() + 1)
+
+      const monthMembers = allMembers.filter(m => {
+        const createdAt = new Date(m.createdAt)
+        return createdAt >= monthDate && createdAt < nextMonth
+      }).length
+
+      const monthNames = [
+        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+      ]
+
+      growthData.push({
+        month: `${monthNames[monthDate.getMonth()]}/${monthDate.getFullYear()}`,
+        count: monthMembers,
+      })
+    }
 
     return NextResponse.json({
-      members: filteredMembers,
+      members: formattedMembers,
       summary: {
-        totalMembers,
-        byRole: membersByRole,
-        newThisMonth: newThisMonth.reduce((sum, r) => sum + r.count, 0),
-        newThisMonthByRole: newThisMonth,
+        totalMembers: allMembers.length,
+        newThisMonth,
+        byRole,
       },
       growthData,
     })
-  } catch (error: unknown) {
-    console.error('Erro ao buscar relatório de membresia:', error)
+  } catch (error) {
+    console.error('Erro ao gerar relatório de membresia:', error)
     return NextResponse.json(
-      {
-        error: 'Erro ao buscar relatório de membresia',
-        details: error instanceof Error ? error.message : 'Erro desconhecido',
-      },
-      { status: 500 },
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
     )
   }
 }
