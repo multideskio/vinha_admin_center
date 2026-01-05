@@ -208,12 +208,12 @@ export default function SmtpSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Falha ao salvar configurações SMTP.')
       }
-      
+
       toast({
         title: 'Sucesso!',
         description: 'Configurações de SMTP salvas com sucesso.',
@@ -256,11 +256,11 @@ export default function SmtpSettingsPage() {
         body: JSON.stringify({ email: testEmail, config: currentConfig }),
       })
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Falha ao enviar e-mail de teste.')
       }
-      
+
       toast({
         title: 'Sucesso!',
         description: 'E-mail de teste enviado com sucesso!',

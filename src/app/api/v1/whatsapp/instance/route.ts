@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { validateRequest } from '@/lib/jwt'
 
 const instanceSchema = z.object({
   instanceName: z.string().min(1),
@@ -13,6 +14,12 @@ const instanceSchema = z.object({
 
 // GET - Verificar se instância existe
 export async function GET(request: NextRequest) {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const instanceName = searchParams.get('instanceName')
@@ -74,6 +81,12 @@ export async function GET(request: NextRequest) {
 
 // POST - Criar instância se não existir
 export async function POST(request: NextRequest) {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { instanceName, serverUrl, apiKey } = instanceSchema.parse(body)

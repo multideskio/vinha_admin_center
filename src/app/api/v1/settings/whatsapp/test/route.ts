@@ -1,11 +1,12 @@
 /**
  * @fileoverview Rota da API para testar envio de mensagem via WhatsApp.
- * @version 1.0
+ * @version 1.1
  * @date 2024-08-08
  * @author PH
  */
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { validateRequest } from '@/lib/jwt'
 
 const testMessageSchema = z.object({
   phone: z.string().min(10),
@@ -18,6 +19,12 @@ const testMessageSchema = z.object({
 })
 
 export async function POST(request: Request): Promise<NextResponse> {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const validatedData = testMessageSchema.parse(body)

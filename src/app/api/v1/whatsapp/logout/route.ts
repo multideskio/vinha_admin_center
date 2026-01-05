@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { validateRequest } from '@/lib/jwt'
 
 const logoutRequestSchema = z.object({
   apiUrl: z.string().url(),
@@ -8,6 +9,12 @@ const logoutRequestSchema = z.object({
 })
 
 export async function DELETE(request: NextRequest) {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { apiUrl, apiKey, instanceName } = logoutRequestSchema.parse(body)

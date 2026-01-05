@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { validateRequest } from '@/lib/jwt'
 
 const infoRequestSchema = z.object({
   apiUrl: z.string().url(),
@@ -8,6 +9,12 @@ const infoRequestSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Validar autenticação e role admin
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { apiUrl, apiKey, instanceName } = infoRequestSchema.parse(body)
