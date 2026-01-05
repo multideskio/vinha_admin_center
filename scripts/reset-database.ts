@@ -22,7 +22,7 @@ async function resetDatabase() {
   try {
     // Dropar todas as tabelas em cascata
     console.log('📋 Listando tabelas existentes...')
-    
+
     const tablesResult = await pool.query(`
       SELECT tablename 
       FROM pg_tables 
@@ -34,8 +34,11 @@ async function resetDatabase() {
     const tables = tablesResult.rows
 
     if (tables.length > 0) {
-      console.log(`🔍 Encontradas ${tables.length} tabelas:`, tables.map(t => t.tablename).join(', '))
-      
+      console.log(
+        `🔍 Encontradas ${tables.length} tabelas:`,
+        tables.map((t) => t.tablename).join(', '),
+      )
+
       // Dropar todas as tabelas
       for (const table of tables) {
         console.log(`🗑️  Dropando tabela: ${table.tablename}`)
@@ -62,9 +65,8 @@ async function resetDatabase() {
       console.log('✅ Banco de dados resetado com sucesso!')
       console.log('📝 Agora execute: npm run db:push')
     } else {
-      console.log('⚠️  Ainda existem tabelas:', remainingTables.map(t => t.tablename).join(', '))
+      console.log('⚠️  Ainda existem tabelas:', remainingTables.map((t) => t.tablename).join(', '))
     }
-
   } catch (error) {
     console.error('❌ Erro ao resetar banco de dados:', error)
     throw error
