@@ -8,7 +8,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, churchProfiles, supervisorProfiles } from '@/db/schema'
-import { eq, and, isNull, desc, sql } from 'drizzle-orm'
+import { eq, and, isNull, desc, sql, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
@@ -51,6 +51,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const minimal = url.searchParams.get('minimal') === 'true'
 
     if (minimal) {
+      // ✅ Para busca minimal, qualquer usuário logado pode acessar
       const result = await db
         .select({
           id: churchProfiles.userId,
@@ -63,22 +64,90 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ churches: result })
     }
 
-    const result = await db
-      .select({
-        id: users.id,
-        nomeFantasia: churchProfiles.nomeFantasia,
-        email: users.email,
-        phone: users.phone,
-        status: users.status,
-        cnpj: churchProfiles.cnpj,
-        avatarUrl: users.avatarUrl,
-        supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
-      })
-      .from(users)
-      .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-      .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
-      .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
-      .orderBy(desc(users.createdAt))
+    // ✅ Para listagem completa, aplicar filtros por role
+    let result
+
+    if (user.role === 'admin') {
+      // Admin pode ver todas as igrejas
+      result = await db
+        .select({
+          id: users.id,
+          nomeFantasia: churchProfiles.nomeFantasia,
+          email: users.email,
+          phone: users.phone,
+          status: users.status,
+          cnpj: churchProfiles.cnpj,
+          avatarUrl: users.avatarUrl,
+          supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+        })
+        .from(users)
+        .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+        .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
+        .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
+        .orderBy(desc(users.createdAt))
+    } else if (user.role === 'manager') {
+      // Manager pode ver igrejas de seus supervisores
+      const supervisorIdsResult = await db
+        .select({ id: supervisorProfiles.userId })
+        .from(supervisorProfiles)
+        .where(eq(supervisorProfiles.managerId, user.id))
+
+      if (supervisorIdsResult.length === 0) {
+        return NextResponse.json({ churches: [] })
+      }
+
+      const supervisorIds = supervisorIdsResult.map((s) => s.id)
+
+      result = await db
+        .select({
+          id: users.id,
+          nomeFantasia: churchProfiles.nomeFantasia,
+          email: users.email,
+          phone: users.phone,
+          status: users.status,
+          cnpj: churchProfiles.cnpj,
+          avatarUrl: users.avatarUrl,
+          supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+        })
+        .from(users)
+        .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+        .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
+        .where(
+          and(
+            eq(users.role, 'church_account'),
+            isNull(users.deletedAt),
+            inArray(churchProfiles.supervisorId, supervisorIds),
+          ),
+        )
+        .orderBy(desc(users.createdAt))
+    } else if (user.role === 'supervisor') {
+      // Supervisor pode ver apenas suas igrejas
+      result = await db
+        .select({
+          id: users.id,
+          nomeFantasia: churchProfiles.nomeFantasia,
+          email: users.email,
+          phone: users.phone,
+          status: users.status,
+          cnpj: churchProfiles.cnpj,
+          avatarUrl: users.avatarUrl,
+          supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+        })
+        .from(users)
+        .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+        .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
+        .where(
+          and(
+            eq(users.role, 'church_account'),
+            eq(churchProfiles.supervisorId, user.id),
+            isNull(users.deletedAt),
+          ),
+        )
+        .orderBy(desc(users.createdAt))
+    } else {
+      // Outros roles não podem listar igrejas
+      return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
+    }
 
     return NextResponse.json({ churches: result })
   } catch (error) {
@@ -93,12 +162,47 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
+  // ✅ Admin, Manager e Supervisor podem criar igrejas
+  if (!['admin', 'manager', 'supervisor'].includes(user.role)) {
+    return NextResponse.json({ error: 'Acesso negado. Apenas administradores, gerentes e supervisores podem criar igrejas.' }, { status: 403 })
+  }
+
   try {
     const body = await request.json()
     const validatedData = churchSchema.parse({
       ...body,
       foundationDate: body.foundationDate ? new Date(body.foundationDate) : null,
     })
+
+    // ✅ Validar se o supervisor pertence à hierarquia do usuário
+    if (user.role === 'manager') {
+      // Manager deve verificar se o supervisor pertence a ele
+      const [supervisor] = await db
+        .select({ id: supervisorProfiles.userId })
+        .from(supervisorProfiles)
+        .where(
+          and(
+            eq(supervisorProfiles.userId, validatedData.supervisorId),
+            eq(supervisorProfiles.managerId, user.id),
+          ),
+        )
+
+      if (!supervisor) {
+        return NextResponse.json(
+          { error: 'Supervisor inválido ou não pertence a este gerente.' },
+          { status: 403 },
+        )
+      }
+    } else if (user.role === 'supervisor') {
+      // Supervisor só pode criar igrejas para si mesmo
+      if (validatedData.supervisorId !== user.id) {
+        return NextResponse.json(
+          { error: 'Supervisor pode criar igrejas apenas para si mesmo.' },
+          { status: 403 },
+        )
+      }
+    }
+    // Admin pode criar para qualquer supervisor (sem validação adicional)
 
     const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10)
 

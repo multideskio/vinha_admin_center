@@ -8,7 +8,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, pastorProfiles, supervisorProfiles } from '@/db/schema'
-import { eq, and, isNull, desc, sql } from 'drizzle-orm'
+import { eq, and, isNull, desc, sql, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
@@ -24,7 +24,7 @@ const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
+  if (!user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
@@ -33,35 +33,158 @@ export async function GET(request: Request): Promise<NextResponse> {
     const minimal = url.searchParams.get('minimal') === 'true'
 
     if (minimal) {
-      const result = await db
-        .select({
-          id: pastorProfiles.userId,
-          firstName: pastorProfiles.firstName,
-          lastName: pastorProfiles.lastName,
-        })
-        .from(pastorProfiles)
-        .leftJoin(users, eq(users.id, pastorProfiles.userId))
-        .where(isNull(users.deletedAt))
-        .orderBy(desc(users.createdAt))
+      // ✅ Para busca minimal, aplicar filtros por role
+      let result
+
+      if (user.role === 'admin') {
+        // Admin pode ver todos os pastores
+        result = await db
+          .select({
+            id: pastorProfiles.userId,
+            firstName: pastorProfiles.firstName,
+            lastName: pastorProfiles.lastName,
+          })
+          .from(pastorProfiles)
+          .leftJoin(users, eq(users.id, pastorProfiles.userId))
+          .where(isNull(users.deletedAt))
+          .orderBy(desc(users.createdAt))
+      } else if (user.role === 'manager') {
+        // Manager pode ver pastores de seus supervisores
+        const supervisorIdsResult = await db
+          .select({ id: supervisorProfiles.userId })
+          .from(supervisorProfiles)
+          .where(eq(supervisorProfiles.managerId, user.id))
+
+        if (supervisorIdsResult.length === 0) {
+          return NextResponse.json({ pastors: [] })
+        }
+
+        const supervisorIds = supervisorIdsResult.map((s) => s.id)
+
+        result = await db
+          .select({
+            id: pastorProfiles.userId,
+            firstName: pastorProfiles.firstName,
+            lastName: pastorProfiles.lastName,
+          })
+          .from(pastorProfiles)
+          .leftJoin(users, eq(users.id, pastorProfiles.userId))
+          .where(
+            and(
+              isNull(users.deletedAt),
+              inArray(pastorProfiles.supervisorId, supervisorIds),
+            ),
+          )
+          .orderBy(desc(users.createdAt))
+      } else if (user.role === 'supervisor') {
+        // Supervisor pode ver apenas seus pastores
+        result = await db
+          .select({
+            id: pastorProfiles.userId,
+            firstName: pastorProfiles.firstName,
+            lastName: pastorProfiles.lastName,
+          })
+          .from(pastorProfiles)
+          .leftJoin(users, eq(users.id, pastorProfiles.userId))
+          .where(
+            and(
+              eq(pastorProfiles.supervisorId, user.id),
+              isNull(users.deletedAt),
+            ),
+          )
+          .orderBy(desc(users.createdAt))
+      } else {
+        // Outros roles não podem listar pastores
+        return NextResponse.json({ pastors: [] })
+      }
+
       return NextResponse.json({ pastors: result })
     }
 
-    const result = await db
-      .select({
-        id: users.id,
-        firstName: pastorProfiles.firstName,
-        lastName: pastorProfiles.lastName,
-        email: users.email,
-        phone: users.phone,
-        status: users.status,
-        cpf: pastorProfiles.cpf,
-        supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
-      })
-      .from(users)
-      .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-      .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
-      .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
-      .orderBy(desc(users.createdAt))
+    // ✅ Para listagem completa, aplicar filtros por role
+    let result
+
+    if (user.role === 'admin') {
+      // Admin pode ver todos os pastores
+      result = await db
+        .select({
+          id: users.id,
+          firstName: pastorProfiles.firstName,
+          lastName: pastorProfiles.lastName,
+          email: users.email,
+          phone: users.phone,
+          status: users.status,
+          cpf: pastorProfiles.cpf,
+          supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+        })
+        .from(users)
+        .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+        .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+        .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
+        .orderBy(desc(users.createdAt))
+    } else if (user.role === 'manager') {
+      // Manager pode ver pastores de seus supervisores
+      const supervisorIdsResult = await db
+        .select({ id: supervisorProfiles.userId })
+        .from(supervisorProfiles)
+        .where(eq(supervisorProfiles.managerId, user.id))
+
+      if (supervisorIdsResult.length === 0) {
+        return NextResponse.json({ pastors: [] })
+      }
+
+      const supervisorIds = supervisorIdsResult.map((s) => s.id)
+
+      result = await db
+        .select({
+          id: users.id,
+          firstName: pastorProfiles.firstName,
+          lastName: pastorProfiles.lastName,
+          email: users.email,
+          phone: users.phone,
+          status: users.status,
+          cpf: pastorProfiles.cpf,
+          supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+        })
+        .from(users)
+        .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+        .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+        .where(
+          and(
+            eq(users.role, 'pastor'),
+            isNull(users.deletedAt),
+            inArray(pastorProfiles.supervisorId, supervisorIds),
+          ),
+        )
+        .orderBy(desc(users.createdAt))
+    } else if (user.role === 'supervisor') {
+      // Supervisor pode ver apenas seus pastores
+      result = await db
+        .select({
+          id: users.id,
+          firstName: pastorProfiles.firstName,
+          lastName: pastorProfiles.lastName,
+          email: users.email,
+          phone: users.phone,
+          status: users.status,
+          cpf: pastorProfiles.cpf,
+          supervisorName: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+        })
+        .from(users)
+        .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+        .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+        .where(
+          and(
+            eq(users.role, 'pastor'),
+            eq(pastorProfiles.supervisorId, user.id),
+            isNull(users.deletedAt),
+          ),
+        )
+        .orderBy(desc(users.createdAt))
+    } else {
+      // Outros roles não podem listar pastores
+      return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
+    }
 
     return NextResponse.json({ pastors: result })
   } catch (error) {
@@ -72,8 +195,13 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function POST(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
+  if (!user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  }
+
+  // ✅ Admin, Manager e Supervisor podem criar pastores
+  if (!['admin', 'manager', 'supervisor'].includes(user.role)) {
+    return NextResponse.json({ error: 'Acesso negado. Apenas administradores, gerentes e supervisores podem criar pastores.' }, { status: 403 })
   }
 
   try {
@@ -82,6 +210,43 @@ export async function POST(request: Request): Promise<NextResponse> {
       ...body,
       birthDate: body.birthDate ? new Date(body.birthDate) : null,
     })
+
+    // ✅ Validar se o supervisor pertence à hierarquia do usuário
+    if (user.role === 'manager') {
+      // Manager deve verificar se o supervisor pertence a ele
+      if (!validatedData.supervisorId) {
+        return NextResponse.json(
+          { error: 'Supervisor é obrigatório.' },
+          { status: 400 },
+        )
+      }
+
+      const [supervisor] = await db
+        .select({ id: supervisorProfiles.userId })
+        .from(supervisorProfiles)
+        .where(
+          and(
+            eq(supervisorProfiles.userId, validatedData.supervisorId),
+            eq(supervisorProfiles.managerId, user.id),
+          ),
+        )
+
+      if (!supervisor) {
+        return NextResponse.json(
+          { error: 'Supervisor inválido ou não pertence a este gerente.' },
+          { status: 403 },
+        )
+      }
+    } else if (user.role === 'supervisor') {
+      // Supervisor só pode criar pastores para si mesmo
+      if (!validatedData.supervisorId || validatedData.supervisorId !== user.id) {
+        return NextResponse.json(
+          { error: 'Supervisor pode criar pastores apenas para si mesmo.' },
+          { status: 403 },
+        )
+      }
+    }
+    // Admin pode criar para qualquer supervisor (sem validação adicional)
 
     const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10)
 

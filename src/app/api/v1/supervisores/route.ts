@@ -36,6 +36,11 @@ const supervisorSchema = z.object({
 })
 
 export async function GET(request: Request): Promise<NextResponse> {
+  const { user } = await validateRequest()
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   const url = new URL(request.url)
   const minimal = url.searchParams.get('minimal') === 'true'
 
@@ -85,11 +90,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ supervisors: result })
   }
 
-  const { user } = await validateRequest()
-  if (!user) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
-
   try {
     const result = await db
       .select({
@@ -121,6 +121,11 @@ export async function POST(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  // ✅ Apenas admin e manager podem criar supervisores
+  if (user.role !== 'admin' && user.role !== 'manager') {
+    return NextResponse.json({ error: 'Acesso negado. Apenas administradores e gerentes podem criar supervisores.' }, { status: 403 })
   }
 
   try {
