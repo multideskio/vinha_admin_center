@@ -9,6 +9,9 @@ if (!COMPANY_ID) {
   throw new Error('COMPANY_INIT é obrigatório')
 }
 
+// Type assertion para garantir que COMPANY_ID não é undefined após a validação
+const companyId: string = COMPANY_ID
+
 export async function GET(request: NextRequest) {
   try {
     // Validar autenticação
@@ -26,13 +29,13 @@ export async function GET(request: NextRequest) {
     let query = db
       .select()
       .from(notificationLogs)
-      .where(eq(notificationLogs.companyId, COMPANY_ID))
+      .where(eq(notificationLogs.companyId, companyId))
       .$dynamic()
 
     if (channel) {
       query = query.where(
         and(
-          eq(notificationLogs.companyId, COMPANY_ID),
+          eq(notificationLogs.companyId, companyId),
           eq(notificationLogs.channel, channel)
         )
       )
@@ -49,10 +52,10 @@ export async function GET(request: NextRequest) {
       .where(
         channel
           ? and(
-              eq(notificationLogs.companyId, COMPANY_ID),
+              eq(notificationLogs.companyId, companyId),
               eq(notificationLogs.channel, channel)
             )
-          : eq(notificationLogs.companyId, COMPANY_ID)
+          : eq(notificationLogs.companyId, companyId)
       )
 
     return NextResponse.json({ logs, total: countResult[0]?.count || 0 })

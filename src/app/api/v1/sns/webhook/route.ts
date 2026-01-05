@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { emailBlacklist, notificationLogs } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
-import { MessageValidator } from 'sns-validator'
+import MessageValidator from 'sns-validator'
 
 const COMPANY_ID = process.env.COMPANY_INIT
 if (!COMPANY_ID) {
   throw new Error('COMPANY_INIT é obrigatório')
 }
+
+// Type assertion para garantir que COMPANY_ID não é undefined após a validação
+const companyId: string = COMPANY_ID
 
 const validator = new MessageValidator()
 
@@ -60,21 +63,32 @@ interface SESMessage {
 
 export async function POST(request: NextRequest) {
   try {
-    const body: SNSMessage = await request.json()
+    const rawBody = await request.json() as Record<string, unknown>
 
     // CRÍTICO: Validar assinatura SNS
     try {
-      await validator.validate(body)
+      await new Promise((resolve, reject) => {
+        validator.validate(rawBody, (error: Error | null) => {
+          if (error) {
+            reject(error)
+          } else {
+            resolve(true)
+          }
+        })
+      })
     } catch (validationError) {
       console.error('SNS signature validation failed:', {
         error: validationError instanceof Error ? validationError.message : 'Unknown error',
-        messageId: body.MessageId,
+        messageId: rawBody.MessageId,
       })
       return NextResponse.json(
         { error: 'Assinatura SNS inválida' },
         { status: 403 }
       )
     }
+
+    // Após validação, podemos fazer cast seguro
+    const body = rawBody as unknown as SNSMessage
 
     // Confirmar subscrição SNS
     if (body.Type === 'SubscriptionConfirmation') {
@@ -129,7 +143,7 @@ async function handleBounce(bounce: SESBounce, messageId: string) {
         .from(emailBlacklist)
         .where(
           and(
-            eq(emailBlacklist.companyId, COMPANY_ID),
+            eq(emailBlacklist.companyId, companyId),
             eq(emailBlacklist.email, email)
           )
         )
@@ -147,7 +161,7 @@ async function handleBounce(bounce: SESBounce, messageId: string) {
           .where(eq(emailBlacklist.id, existing[0].id))
       } else {
         await db.insert(emailBlacklist).values({
-          companyId: COMPANY_ID,
+          companyId: companyId,
           email,
           reason: 'bounce',
           errorCode: bounce.bounceSubType,
@@ -162,8 +176,8 @@ async function handleBounce(bounce: SESBounce, messageId: string) {
 
     // Log da notificação
     await db.insert(notificationLogs).values({
-      companyId: COMPANY_ID,
-      userId: COMPANY_ID, // Sistema
+      companyId: companyId,
+      userId: companyId, // Sistema
       notificationType: 'sns_bounce',
       channel: 'email',
       status: 'failed',
@@ -194,7 +208,7 @@ async function handleComplaint(complaint: SESComplaint, messageId: string) {
       .from(emailBlacklist)
       .where(
         and(
-          eq(emailBlacklist.companyId, COMPANY_ID),
+          eq(emailBlacklist.companyId, companyId),
           eq(emailBlacklist.email, email)
         )
       )
@@ -213,7 +227,7 @@ async function handleComplaint(complaint: SESComplaint, messageId: string) {
         .where(eq(emailBlacklist.id, existing[0].id))
     } else {
       await db.insert(emailBlacklist).values({
-        companyId: COMPANY_ID,
+        companyId: companyId,
         email,
         reason: 'complaint',
         errorCode: complaint.complaintFeedbackType || 'abuse',
@@ -227,8 +241,8 @@ async function handleComplaint(complaint: SESComplaint, messageId: string) {
 
     // Log da notificação
     await db.insert(notificationLogs).values({
-      companyId: COMPANY_ID,
-      userId: COMPANY_ID, // Sistema
+      companyId: companyId,
+      userId: companyId, // Sistema
       notificationType: 'sns_complaint',
       channel: 'email',
       status: 'failed',

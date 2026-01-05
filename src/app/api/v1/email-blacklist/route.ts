@@ -10,6 +10,9 @@ if (!COMPANY_ID) {
   throw new Error('COMPANY_INIT é obrigatório')
 }
 
+// Type assertion para garantir que COMPANY_ID não é undefined após a validação
+const companyId: string = COMPANY_ID
+
 const blacklistAddSchema = z.object({
   email: z.string().email('Email inválido'),
   reason: z.enum(['bounce', 'complaint', 'manual']).optional(),
@@ -33,13 +36,13 @@ export async function GET(request: NextRequest) {
     let query = db
       .select()
       .from(emailBlacklist)
-      .where(eq(emailBlacklist.companyId, COMPANY_ID))
+      .where(eq(emailBlacklist.companyId, companyId))
       .$dynamic()
 
     if (isActive !== null) {
       query = query.where(
         and(
-          eq(emailBlacklist.companyId, COMPANY_ID),
+          eq(emailBlacklist.companyId, companyId),
           eq(emailBlacklist.isActive, isActive === 'true')
         )
       )
@@ -56,10 +59,10 @@ export async function GET(request: NextRequest) {
       .where(
         isActive !== null
           ? and(
-              eq(emailBlacklist.companyId, COMPANY_ID),
+              eq(emailBlacklist.companyId, companyId),
               eq(emailBlacklist.isActive, isActive === 'true')
             )
-          : eq(emailBlacklist.companyId, COMPANY_ID)
+          : eq(emailBlacklist.companyId, companyId)
       )
 
     return NextResponse.json({ blacklist, total: countResult[0]?.count || 0 })
@@ -102,7 +105,7 @@ export async function POST(request: NextRequest) {
       .from(emailBlacklist)
       .where(
         and(
-          eq(emailBlacklist.companyId, COMPANY_ID),
+          eq(emailBlacklist.companyId, companyId),
           eq(emailBlacklist.email, email.toLowerCase())
         )
       )
@@ -121,7 +124,7 @@ export async function POST(request: NextRequest) {
         .where(eq(emailBlacklist.id, existing[0].id))
     } else {
       await db.insert(emailBlacklist).values({
-        companyId: COMPANY_ID,
+        companyId: companyId,
         email: email.toLowerCase(),
         reason: reason || 'manual',
         errorMessage: errorMessage || 'Adicionado manualmente',
@@ -172,7 +175,7 @@ export async function DELETE(request: NextRequest) {
       .set({ isActive: false })
       .where(
         and(
-          eq(emailBlacklist.companyId, COMPANY_ID),
+          eq(emailBlacklist.companyId, companyId),
           eq(emailBlacklist.email, email)
         )
       )
