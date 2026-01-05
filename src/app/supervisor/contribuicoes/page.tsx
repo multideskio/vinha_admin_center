@@ -9,7 +9,7 @@ import React from 'react'
 import { ContributionForm } from '@/components/contributions'
 
 export default function ContribuicoesPage() {
-  const handleSuccess = (transaction: any) => {
+  const handleSuccess = (transaction: { id: string; amount: string; status: string }) => {
     console.log('Contribution successful:', transaction)
     // Aqui poderia adicionar lógica específica do supervisor
     // como atualizar dashboards, enviar notificações, etc.

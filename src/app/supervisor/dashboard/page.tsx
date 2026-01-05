@@ -258,7 +258,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
               iconColor: 'h-4 w-4 text-blue-500',
             },
           ] as const
-          const classes = colorClasses[index % colorClasses.length]!
+          const classes = colorClasses[index % colorClasses.length] ?? colorClasses[0]
           return (
             <Card key={kpi.title} className={classes.card}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

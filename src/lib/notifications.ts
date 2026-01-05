@@ -142,9 +142,10 @@ export class EmailService {
 
       await this.sesClient.send(command)
       return { success: true }
-    } catch (error: any) {
-      const errorCode = error.name || error.Code || 'UNKNOWN'
-      const errorMessage = error.message || String(error)
+    } catch (error: unknown) {
+      const errorObj = error as { name?: string; Code?: string; message?: string }
+      const errorCode = errorObj.name || errorObj.Code || 'UNKNOWN'
+      const errorMessage = errorObj.message || String(error)
 
       // Adicionar à blacklist se for erro permanente
       if (companyId && this.shouldBlacklist(errorCode)) {
@@ -310,9 +311,9 @@ export class NotificationService {
       name,
       churchName,
       // aliases PT-BR
-      nome_usuario: name as unknown as string,
-      nome_igreja: churchName as unknown as string,
-    } as any
+      nome_usuario: name,
+      nome_igreja: churchName,
+    }
 
     // Buscar templates personalizados
     const [template] = await db
@@ -382,11 +383,11 @@ export class NotificationService {
       dueDate,
       paymentLink,
       // aliases PT-BR
-      nome_usuario: name as unknown as string,
-      valor_transacao: amount as unknown as string,
-      data_vencimento: dueDate as unknown as string,
-      link_pagamento: (paymentLink || '') as unknown as string,
-    } as any
+      nome_usuario: name,
+      valor_transacao: amount,
+      data_vencimento: dueDate,
+      link_pagamento: paymentLink || '',
+    }
 
     // Buscar templates personalizados
     const [template] = await db
@@ -456,11 +457,11 @@ export class NotificationService {
       dueDate,
       paymentLink,
       // aliases PT-BR
-      nome_usuario: name as unknown as string,
-      valor_transacao: amount as unknown as string,
-      data_vencimento: dueDate as unknown as string,
-      link_pagamento: (paymentLink || '') as unknown as string,
-    } as any
+      nome_usuario: name,
+      valor_transacao: amount,
+      data_vencimento: dueDate,
+      link_pagamento: paymentLink || '',
+    }
 
     // Buscar templates personalizados
     const [template] = await db
@@ -518,10 +519,10 @@ export class NotificationService {
       amount,
       paidAt,
       // aliases PT-BR
-      nome_usuario: name as unknown as string,
-      valor_transacao: amount as unknown as string,
-      data_pagamento: paidAt as unknown as string,
-    } as any
+      nome_usuario: name,
+      valor_transacao: amount,
+      data_pagamento: paidAt,
+    }
 
     const [template] = await db
       .select()

@@ -8,6 +8,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import {
   Search,
   User,
@@ -320,9 +321,11 @@ export function StandardizedHeader({
             >
               {companyLogo ? (
                 <>
-                  <img
+                  <NextImage
                     src={companyLogo}
                     alt={`Logo ${companyName}`}
+                    width={24}
+                    height={24}
                     className="h-6 object-contain"
                     onError={handleLogoError}
                   />

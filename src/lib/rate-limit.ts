@@ -10,7 +10,7 @@ function createRedis(): IORedis | null {
       connectTimeout: 5000,
       retryStrategy: (times: number) => Math.min(5000, times * 200),
       tls: isTLS ? { rejectUnauthorized: false } : undefined,
-    } as any)
+    } as Record<string, unknown>)
     client.on('error', () => {})
     return client
   } catch {

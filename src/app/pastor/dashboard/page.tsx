@@ -244,7 +244,7 @@ export default function PastorDashboardPage() {
               iconColor: 'h-4 w-4 text-videira-purple',
             },
           ] as const
-          const classes = colorClasses[index % colorClasses.length]!
+          const classes = colorClasses[index % colorClasses.length] ?? colorClasses[0]
           return (
             <Card key={kpi.title} className={classes.card}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

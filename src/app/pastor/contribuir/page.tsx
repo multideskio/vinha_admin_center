@@ -9,7 +9,7 @@ import React from 'react'
 import { ContributionForm } from '@/components/contributions'
 
 export default function ContribuirPage() {
-  const handleSuccess = (transaction: any) => {
+  const handleSuccess = (transaction: { id: string; amount: string; status: string }) => {
     console.log('Pastor contribution successful:', transaction)
     // Lógica específica do pastor
     // Pode incluir atualizações no perfil, histórico, etc.

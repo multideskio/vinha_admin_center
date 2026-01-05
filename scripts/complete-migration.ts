@@ -258,7 +258,7 @@ class CompleteMigration {
             companyId: this.companyId,
             email: email,
             password: hashedPassword,
-            role: role as any,
+            role: role as 'admin' | 'manager' | 'supervisor' | 'pastor' | 'church_account',
             status: 'active',
             welcomeSent: true, // ✅ Evitar envio de email de boas-vindas
             createdAt: new Date(),

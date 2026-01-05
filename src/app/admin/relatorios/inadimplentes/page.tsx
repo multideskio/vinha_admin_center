@@ -251,7 +251,7 @@ export default function InadimplentesPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo</label>
-              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
+              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as 'all' | 'pastor' | 'church')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -264,7 +264,7 @@ export default function InadimplentesPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Ordenar por</label>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'daysLate' | 'name')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -276,7 +276,7 @@ export default function InadimplentesPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Ordem</label>
-              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as any)}>
+              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

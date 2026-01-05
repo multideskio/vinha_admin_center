@@ -157,10 +157,13 @@ export function FileUpload({
             >
               {isImage(file) ? (
                 <ImageModal src={URL.createObjectURL(file)} alt={file.name}>
-                  <Image className="h-8 w-8 text-blue-500 cursor-pointer hover:opacity-80" />
+                  <Image
+                    className="h-8 w-8 text-blue-500 cursor-pointer hover:opacity-80"
+                    aria-label={`Preview da imagem ${file.name}`}
+                  />
                 </ImageModal>
               ) : (
-                <File className="h-8 w-8 text-gray-500" />
+                <File className="h-8 w-8 text-gray-500" aria-label={`Arquivo ${file.name}`} />
               )}
 
               <div className="flex-1 min-w-0">

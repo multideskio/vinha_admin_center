@@ -51,10 +51,21 @@ type RoleCount = {
   count: number
 }
 
+type GrowthDataPoint = {
+  month: string
+  count: number
+}
+
+type MembresiaSummary = {
+  totalMembers: number
+  newThisMonth: number
+  byRole: RoleCount[]
+}
+
 export default function RelatorioMembresiaPage() {
   const [allMembers, setAllMembers] = React.useState<Member[]>([])
-  const [summary, setSummary] = React.useState<any>(null)
-  const [growthData, setGrowthData] = React.useState<any[]>([])
+  const [summary, setSummary] = React.useState<MembresiaSummary | null>(null)
+  const [growthData, setGrowthData] = React.useState<GrowthDataPoint[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [roleFilter, setRoleFilter] = React.useState('all')
   const [currentPage, setCurrentPage] = React.useState(1)

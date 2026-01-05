@@ -8,6 +8,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LucideIcon,
@@ -268,9 +269,11 @@ export function StandardizedSidebar({
           <Link href={`${basePath}/dashboard`} className="flex items-center gap-2 font-semibold">
             {companyLogo ? (
               <>
-                <img
+                <NextImage
                   src={companyLogo}
                   alt={`Logo ${companyName}`}
+                  width={24}
+                  height={24}
                   className="h-6 object-contain"
                   onError={handleLogoError}
                 />

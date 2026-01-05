@@ -92,7 +92,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             daysLate: daysSinceThreeMonths,
           })
         } else {
-          const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
+          const lastPaymentItem = lastPayment[0]
+          if (!lastPaymentItem) continue
+          const lastPaymentDate = new Date(lastPaymentItem.createdAt)
           if (lastPaymentDate < threeMonthsAgo) {
             const daysSinceLastPayment = Math.floor(
               (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24),
@@ -166,7 +168,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             daysLate: daysSinceThreeMonths,
           })
         } else {
-          const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
+          const lastPaymentItem = lastPayment[0]
+          if (!lastPaymentItem) continue
+          const lastPaymentDate = new Date(lastPaymentItem.createdAt)
           if (lastPaymentDate < threeMonthsAgo) {
             const daysSinceLastPayment = Math.floor(
               (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24),

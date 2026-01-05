@@ -92,9 +92,10 @@ export async function sendEmail({
     if (userId) {
       await logEmail(userId, to, subject, html, true, undefined, undefined, notificationType)
     }
-  } catch (error: any) {
-    const errorCode = error.name || error.Code || 'UNKNOWN'
-    const errorMessage = error.message || String(error)
+  } catch (error: unknown) {
+    const errorObj = error as { name?: string; Code?: string; message?: string }
+    const errorCode = errorObj.name || errorObj.Code || 'UNKNOWN'
+    const errorMessage = errorObj.message || String(error)
 
     // Adicionar à blacklist se for erro permanente
     if (shouldBlacklist(errorCode)) {

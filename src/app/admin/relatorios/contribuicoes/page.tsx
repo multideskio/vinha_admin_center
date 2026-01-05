@@ -43,10 +43,31 @@ type Contributor = {
   lastContribution: string
 }
 
+type SummaryByMethod = {
+  method: string
+  count: number
+  total: number
+}
+
+type SummaryByContributorType = {
+  type: string
+  count: number
+  total: number
+}
+
+type Summary = {
+  totalAmount: number
+  totalContributions: number
+  totalContributors: number
+  averagePerContributor: number
+  byMethod: SummaryByMethod[]
+  byContributorType: SummaryByContributorType[]
+}
+
 export default function RelatorioContribuicoesPage() {
   const [contributors, setContributors] = React.useState<Contributor[]>([])
   const [topContributors, setTopContributors] = React.useState<Contributor[]>([])
-  const [summary, setSummary] = React.useState<any>(null)
+  const [summary, setSummary] = React.useState<Summary | null>(null)
   const [period, setPeriod] = React.useState({ from: '', to: '' })
   const [isLoading, setIsLoading] = React.useState(true)
   const [dateRange, setDateRange] = React.useState<{
@@ -379,7 +400,7 @@ export default function RelatorioContribuicoesPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {summary.byMethod.map((item: any) => (
+                {summary.byMethod.map((item) => (
                   <div
                     key={item.method}
                     className="flex items-center justify-between p-3 border rounded-lg"
@@ -407,7 +428,7 @@ export default function RelatorioContribuicoesPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {summary.byContributorType.map((item: any) => (
+                {summary.byContributorType.map((item) => (
                   <div
                     key={item.type}
                     className="flex items-center justify-between p-3 border rounded-lg"

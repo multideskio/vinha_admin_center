@@ -60,10 +60,20 @@ export interface CardState {
   focus: 'number' | 'expiry' | 'cvc' | 'name' | ''
 }
 
+// Tipo para transação retornada
+export interface TransactionResult {
+  id: string
+  amount: string
+  status: string
+  paymentMethod: string
+  createdAt: string
+  [key: string]: unknown
+}
+
 // Props do componente principal
 export interface ContributionFormProps {
   userRole?: UserRole
-  onSuccess?: (transaction: any) => void
+  onSuccess?: (transaction: TransactionResult) => void
   onError?: (error: string) => void
   className?: string
 }
@@ -147,7 +157,7 @@ export interface PaymentStatusCardProps {
 
 // Hooks
 export interface UseContributionOptions {
-  onSuccess?: (transaction: any) => void
+  onSuccess?: (transaction: TransactionResult) => void
   onError?: (error: string) => void
 }
 
@@ -197,7 +207,7 @@ export interface UsePaymentTimerReturn {
 }
 
 // Utilitários
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string

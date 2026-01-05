@@ -66,7 +66,13 @@ export async function PUT(request: Request): Promise<NextResponse> {
     } = body
 
     // Atualizar tabela users
-    const userUpdate: any = {}
+    const userUpdate: {
+      email?: string
+      phone?: string
+      titheDay?: number
+      avatarUrl?: string
+      password?: string
+    } = {}
     if (email) userUpdate.email = email
     if (phone) userUpdate.phone = phone
     if (titheDay) userUpdate.titheDay = titheDay
@@ -80,7 +86,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
     }
 
     // Atualizar tabela church_profiles
-    const profileUpdate: any = {}
+    const profileUpdate: Record<string, unknown> = {}
 
     Object.keys(profileData).forEach((key) => {
       const value = profileData[key]

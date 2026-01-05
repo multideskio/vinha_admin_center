@@ -169,7 +169,7 @@ export const sanitizeInput = (input: string): string => {
 /**
  * Debounce para funções
  */
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number,
 ): ((...args: Parameters<T>) => void) => {
@@ -191,7 +191,7 @@ export const isDevelopment = (): boolean => {
 /**
  * Log condicional (apenas em desenvolvimento)
  */
-export const devLog = (message: string, ...args: any[]): void => {
+export const devLog = (message: string, ...args: unknown[]): void => {
   if (isDevelopment()) {
     console.log(`[CONTRIBUTIONS] ${message}`, ...args)
   }

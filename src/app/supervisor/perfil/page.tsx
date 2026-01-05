@@ -79,8 +79,21 @@ const notificationSettingsConfig = {
   network_reports: 'Relatórios da Rede',
 }
 
+type Transaction = {
+  id: string
+  amount: string | number
+  status: string
+  paymentMethod: string
+  createdAt: string
+  date?: string
+  Payment?: {
+    Status?: number
+  }
+  [key: string]: unknown
+}
+
 const TransactionsTab = ({ userId }: { userId: string }) => {
-  const [transactions, setTransactions] = React.useState<any[]>([])
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [syncingTransactions, setSyncingTransactions] = React.useState<Set<string>>(new Set())
   const { toast } = useToast()
@@ -228,7 +241,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
-                      }).format(transaction.amount)}
+                      }).format(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center gap-2 justify-end">

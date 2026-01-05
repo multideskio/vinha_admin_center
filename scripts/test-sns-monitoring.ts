@@ -21,8 +21,8 @@ async function testBounce() {
       notificationType: 'test_bounce',
     })
     console.log('✅ Email enviado (aguarde notificação SNS)')
-  } catch (error: any) {
-    console.log('❌ Erro esperado:', error.message)
+  } catch (error: unknown) {
+    console.log('❌ Erro esperado:', error instanceof Error ? error.message : String(error))
   }
 }
 
@@ -37,8 +37,8 @@ async function testComplaint() {
       notificationType: 'test_complaint',
     })
     console.log('✅ Email enviado (aguarde notificação SNS)')
-  } catch (error: any) {
-    console.log('❌ Erro esperado:', error.message)
+  } catch (error: unknown) {
+    console.log('❌ Erro esperado:', error instanceof Error ? error.message : String(error))
   }
 }
 
@@ -72,8 +72,8 @@ async function testBlacklist() {
       notificationType: 'test_blacklist',
     })
     console.log('❌ ERRO: Email foi enviado (não deveria)')
-  } catch (error: any) {
-    console.log('✅ Email bloqueado corretamente:', error.message)
+  } catch (error: unknown) {
+    console.log('✅ Email bloqueado corretamente:', error instanceof Error ? error.message : String(error))
   }
 
   // Limpar teste

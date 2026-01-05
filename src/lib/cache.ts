@@ -10,7 +10,7 @@ function createRedis(): IORedis | null {
       connectTimeout: 5000,
       retryStrategy: (times: number) => Math.min(5000, times * 200),
       tls: isTLS ? { rejectUnauthorized: false } : undefined,
-    } as any)
+    } as Record<string, unknown>)
     client.on('error', () => {})
     return client
   } catch {
@@ -20,7 +20,7 @@ function createRedis(): IORedis | null {
 
 const redis: IORedis | null = createRedis()
 
-export async function setCache(key: string, value: any, ttlSeconds = 60) {
+export async function setCache(key: string, value: unknown, ttlSeconds = 60) {
   if (!redis) return
   try {
     await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds)
@@ -29,7 +29,7 @@ export async function setCache(key: string, value: any, ttlSeconds = 60) {
   }
 }
 
-export async function getCache<T = any>(key: string): Promise<T | null> {
+export async function getCache<T = unknown>(key: string): Promise<T | null> {
   if (!redis) return null
   try {
     const data = await redis.get(key)

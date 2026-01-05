@@ -75,14 +75,20 @@ export async function GET(
     }
 
     // Converter configurações do banco para o formato esperado
+    type NotificationSettings = {
+      payment_notifications: { email: boolean; whatsapp: boolean }
+      due_date_reminders: { email: boolean; whatsapp: boolean }
+      network_reports: { email: boolean; whatsapp: boolean }
+    }
     const formattedSettings = settings.reduce((acc, setting) => {
-      if (!acc[setting.notificationType]) {
-        acc[setting.notificationType] = { email: false, whatsapp: false }
+      const type = setting.notificationType as keyof NotificationSettings
+      if (!acc[type]) {
+        acc[type] = { email: false, whatsapp: false }
       }
-      acc[setting.notificationType].email = setting.email
-      acc[setting.notificationType].whatsapp = setting.whatsapp
+      acc[type].email = setting.email
+      acc[type].whatsapp = setting.whatsapp
       return acc
-    }, {} as any)
+    }, {} as NotificationSettings)
 
     return NextResponse.json({ ...defaultSettings, ...formattedSettings })
   } catch (error) {
@@ -129,13 +135,21 @@ export async function PUT(
     await db.delete(userNotificationSettings).where(eq(userNotificationSettings.userId, id))
 
     // Inserir novas configurações
-    const settingsToInsert = []
+    type NotificationType = 'payment_notifications' | 'due_date_reminders' | 'network_reports'
+    type ChannelSettings = { email: boolean; whatsapp: boolean }
+    const settingsToInsert: Array<{
+      userId: string
+      notificationType: NotificationType
+      email: boolean
+      whatsapp: boolean
+    }> = []
     for (const [type, channels] of Object.entries(validatedSettings)) {
+      const typedChannels = channels as ChannelSettings
       settingsToInsert.push({
         userId: id,
-        notificationType: type as any,
-        email: (channels as any).email,
-        whatsapp: (channels as any).whatsapp,
+        notificationType: type as NotificationType,
+        email: typedChannels.email,
+        whatsapp: typedChannels.whatsapp,
       })
     }
 

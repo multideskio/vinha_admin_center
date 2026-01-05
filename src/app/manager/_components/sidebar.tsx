@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -81,9 +82,11 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
             <Link href="/manager/dashboard" className="flex items-center gap-3 group">
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 group-hover:ring-white/50 transition-all shadow-lg">
                 {companyLogo ? (
-                  <img
+                  <Image
                     src={companyLogo}
                     alt="Logo"
+                    width={24}
+                    height={24}
                     className="h-6 w-6 object-contain"
                     onError={handleLogoError}
                   />

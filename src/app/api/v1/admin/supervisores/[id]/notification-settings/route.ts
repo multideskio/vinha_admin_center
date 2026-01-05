@@ -55,15 +55,18 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
 
     await db.transaction(async (tx) => {
       await tx.delete(userNotificationSettings).where(eq(userNotificationSettings.userId, id))
-      const insertData = Object.entries(data).map(([type, settings]) => ({
-        userId: id,
-        notificationType: type as
-          | 'payment_notifications'
-          | 'due_date_reminders'
-          | 'network_reports',
-        email: (settings as any).email,
-        whatsapp: (settings as any).whatsapp,
-      }))
+      const insertData = Object.entries(data).map(([type, settings]) => {
+        const typedSettings = settings as { email: boolean; whatsapp: boolean }
+        return {
+          userId: id,
+          notificationType: type as
+            | 'payment_notifications'
+            | 'due_date_reminders'
+            | 'network_reports',
+          email: typedSettings.email,
+          whatsapp: typedSettings.whatsapp,
+        }
+      })
       if (insertData.length > 0) await tx.insert(userNotificationSettings).values(insertData)
     })
 

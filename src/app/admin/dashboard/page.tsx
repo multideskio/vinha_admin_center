@@ -217,10 +217,10 @@ export default function DashboardPage() {
     }
   }, [dateRange, toast])
 
-  const exportCsv = (rows: Array<Record<string, any>>, filename: string) => {
+  const exportCsv = (rows: Array<Record<string, unknown>>, filename: string) => {
     try {
       if (!rows || rows.length === 0) return
-      const headers = Object.keys(rows[0] as Record<string, any>)
+      const headers = Object.keys(rows[0] as Record<string, unknown>)
       const csv = [
         headers.join(','),
         ...rows.map((r) => headers.map((h) => JSON.stringify(r[h] ?? '')).join(',')),
@@ -714,7 +714,7 @@ export default function DashboardPage() {
                     dataKey="prev"
                     stroke="transparent"
                     dot={
-                      dumbbellData.some((d) => (d as any).prev !== undefined)
+                      dumbbellData.some((d) => 'prev' in d && d.prev !== undefined)
                         ? { r: 5, fill: '#94a3b8' }
                         : false
                     }

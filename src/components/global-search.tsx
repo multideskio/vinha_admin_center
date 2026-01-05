@@ -98,7 +98,10 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
       if (!acc[result.type]) {
         acc[result.type] = []
       }
-      acc[result.type]!.push(result)
+      const typeArray = acc[result.type]
+      if (typeArray) {
+        typeArray.push(result)
+      }
       return acc
     },
     {} as Record<string, SearchResult[]>,

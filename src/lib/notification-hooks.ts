@@ -201,13 +201,13 @@ export async function onUserDeleted(
 // Central Notification Event Processor
 export async function processNotificationEvent(
   eventType: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
 ): Promise<void> {
   // eventType: Ex: 'user_registered', 'payment_received', etc
   // data: userId, amount, transactionId, email, phone, etc
   try {
     const userId = data.userId
-    if (!userId) return
+    if (!userId || typeof userId !== 'string') return
     // Busca usuário e settings
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
     if (!user) return
@@ -224,7 +224,7 @@ export async function processNotificationEvent(
       .where(
         and(
           eq(notificationRules.isActive, true),
-          eq(notificationRules.eventTrigger, eventType as any),
+          eq(notificationRules.eventTrigger, eventType as 'user_registered' | 'payment_received' | 'payment_due_reminder' | 'payment_overdue'),
         ),
       )
     for (const rule of activeRules) {
@@ -263,7 +263,7 @@ export async function processNotificationEvent(
 }
 
 // Producer: Enfileira job de notificação
-export async function addNotificationJob(eventType: string, data: Record<string, any>) {
+export async function addNotificationJob(eventType: string, data: Record<string, unknown>) {
   await notificationQueue.add('send', { eventType, data })
 }
 

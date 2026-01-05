@@ -417,7 +417,7 @@ export default function PastorProfilePage() {
     fetchData()
   }, [fetchData])
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: PastorFormData) => {
     setIsSaving(true)
     try {
       const response = await fetch(`/api/v1/supervisor/pastores/${id}`, {

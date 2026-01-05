@@ -63,14 +63,38 @@ const smtpSettingsSchema = z.object({
 
 type SmtpSettingsValues = z.infer<typeof smtpSettingsSchema>
 
+interface EmailBlacklistItem {
+  id: string
+  email: string
+  reason?: string
+  createdAt: string
+  active: boolean
+  attemptCount?: number
+  lastAttemptAt?: string
+}
+
+interface EmailLogItem {
+  id: string
+  userId?: string
+  email?: string
+  recipient?: string
+  subject?: string
+  status: string
+  createdAt: string
+  sentAt?: string
+  error?: string
+  errorMessage?: string
+  messageContent?: string
+}
+
 export default function SmtpSettingsPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [isTesting, setIsTesting] = React.useState(false)
   const [testEmail, setTestEmail] = React.useState('')
-  const [blacklist, setBlacklist] = React.useState<any[]>([])
-  const [emailLogs, setEmailLogs] = React.useState<any[]>([])
+  const [blacklist, setBlacklist] = React.useState<EmailBlacklistItem[]>([])
+  const [emailLogs, setEmailLogs] = React.useState<EmailLogItem[]>([])
   const [loadingBlacklist, setLoadingBlacklist] = React.useState(false)
   const [loadingLogs, setLoadingLogs] = React.useState(false)
   const [logsPage, setLogsPage] = React.useState(1)
@@ -79,7 +103,7 @@ export default function SmtpSettingsPage() {
   const [totalBlacklist, setTotalBlacklist] = React.useState(0)
   const logsPerPage = 20
   const blacklistPerPage = 20
-  const [selectedEmail, setSelectedEmail] = React.useState<any>(null)
+  const [selectedEmail, setSelectedEmail] = React.useState<EmailLogItem | null>(null)
   const [showEmailDialog, setShowEmailDialog] = React.useState(false)
 
   const form = useForm<SmtpSettingsValues>({
@@ -354,7 +378,7 @@ export default function SmtpSettingsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(log.sentAt).toLocaleString('pt-BR')}
+                            {log.sentAt ? new Date(log.sentAt).toLocaleString('pt-BR') : 'N/A'}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button
@@ -639,9 +663,9 @@ export default function SmtpSettingsPage() {
                                   : item.reason}
                             </Badge>
                           </TableCell>
-                          <TableCell>{item.attemptCount}x</TableCell>
+                          <TableCell>{item.attemptCount ?? 0}x</TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(item.lastAttemptAt).toLocaleString('pt-BR')}
+                            {item.lastAttemptAt ? new Date(item.lastAttemptAt).toLocaleString('pt-BR') : 'N/A'}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button
@@ -721,7 +745,7 @@ export default function SmtpSettingsPage() {
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Data</p>
                   <p className="text-sm">
-                    {new Date(selectedEmail.sentAt).toLocaleString('pt-BR')}
+                    {selectedEmail.sentAt ? new Date(selectedEmail.sentAt).toLocaleString('pt-BR') : 'N/A'}
                   </p>
                 </div>
                 {selectedEmail.errorMessage && (

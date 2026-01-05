@@ -97,7 +97,7 @@ export async function POST() {
         await db.insert(notificationRules).values({
           companyId,
           name: rule.name,
-          eventTrigger: rule.eventTrigger as any,
+          eventTrigger: rule.eventTrigger as 'payment_due_reminder' | 'payment_overdue',
           daysOffset: rule.daysOffset,
           messageTemplate: '{nome_usuario}',
           sendViaEmail: rule.sendViaEmail,

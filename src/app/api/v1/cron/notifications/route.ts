@@ -13,7 +13,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const ip = (request.headers as any).get?.('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  const ip = forwardedFor?.split(',')[0]?.trim() || 'local'
   const rl = await rateLimit('api:cron:notifications', ip, 2, 60)
   if (!rl.allowed) {
     return NextResponse.json(

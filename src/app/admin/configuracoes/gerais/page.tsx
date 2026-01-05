@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import Image from 'next/image'
 
 const generalSettingsSchema = z.object({
   name: z.string().min(1, 'O nome da aplicação é obrigatório.'),
@@ -213,7 +214,7 @@ export default function GeneralSettingsPage() {
                 <Label>Logo da Aplicação</Label>
                 {logoPreview && (
                   <div className="mb-4">
-                    <img src={logoPreview} alt="Logo preview" className="h-20 object-contain" />
+                    <Image src={logoPreview} alt="Logo preview" width={80} height={80} className="h-20 object-contain" />
                   </div>
                 )}
                 <div className="flex items-center justify-center w-full">

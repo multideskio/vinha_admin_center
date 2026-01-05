@@ -8,6 +8,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Search,
   User,
@@ -109,7 +110,7 @@ export function AdminHeader({
           <nav className="grid gap-2 text-lg font-medium">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold">
               {companyLogo ? (
-                <img src={companyLogo} alt={companyName || 'Logo'} className="h-6 object-contain" />
+                <Image src={companyLogo} alt={companyName || 'Logo'} width={24} height={24} className="h-6 object-contain" />
               ) : (
                 <Logo className="h-6 w-6 text-primary" />
               )}

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import Image from 'next/image'
 import {
   Loader2,
   Smartphone,
@@ -889,9 +890,11 @@ export default function WhatsappSettingsPage() {
                         <div
                           className={`bg-white p-3 rounded-xl shadow-inner ${qrCodeExpired ? 'opacity-50' : ''}`}
                         >
-                          <img
+                          <Image
                             src={qrCode}
                             alt="QR Code WhatsApp"
+                            width={256}
+                            height={256}
                             className="w-40 h-40 mx-auto rounded-lg"
                           />
                           {qrCodeExpired && (
