@@ -47,10 +47,7 @@ export async function logCieloResponse(data: {
   }
 }
 
-export async function logCieloWebhook(data: {
-  paymentId?: string
-  requestBody: unknown
-}) {
+export async function logCieloWebhook(data: { paymentId?: string; requestBody: unknown }) {
   try {
     await db.insert(cieloLogs).values({
       operationType: 'webhook',

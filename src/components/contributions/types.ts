@@ -156,13 +156,13 @@ export interface UseContributionReturn {
   formData: ContributionFormData
   paymentState: PaymentState
   cardState: CardState
-  
+
   // Ações
   updateFormData: (data: Partial<ContributionFormData>) => void
   updateCardState: (state: Partial<CardState>) => void
   setCurrentStep: (step: PaymentStep) => void
   setPixStatus: (status: PixStatus) => void
-  
+
   // Handlers
   handleFormSubmit: (data: ContributionData) => Promise<void>
   handleCardPayment: (cardData: CardData) => Promise<void>
@@ -210,34 +210,38 @@ export interface ApiResponse<T = any> {
 }
 
 // Constantes
-export const PAYMENT_METHODS: Record<PaymentMethod, { label: string; icon: string; description: string }> = {
+export const PAYMENT_METHODS: Record<
+  PaymentMethod,
+  { label: string; icon: string; description: string }
+> = {
   pix: {
     label: 'PIX',
     icon: 'QrCode',
-    description: 'Instantâneo e gratuito'
+    description: 'Instantâneo e gratuito',
   },
   credit_card: {
     label: 'Cartão de Crédito',
-    icon: 'CreditCard', 
-    description: 'Parcelamento disponível'
+    icon: 'CreditCard',
+    description: 'Parcelamento disponível',
   },
   boleto: {
     label: 'Boleto Bancário',
     icon: 'Banknote',
-    description: 'Qualquer banco • 3 dias úteis'
-  }
+    description: 'Qualquer banco • 3 dias úteis',
+  },
 }
 
-export const CONTRIBUTION_TYPES: Record<ContributionType, { label: string; description: string }> = {
-  dizimo: {
-    label: 'Dízimo',
-    description: '10% da renda'
-  },
-  oferta: {
-    label: 'Oferta', 
-    description: 'Contribuição voluntária'
+export const CONTRIBUTION_TYPES: Record<ContributionType, { label: string; description: string }> =
+  {
+    dizimo: {
+      label: 'Dízimo',
+      description: '10% da renda',
+    },
+    oferta: {
+      label: 'Oferta',
+      description: 'Contribuição voluntária',
+    },
   }
-}
 
 export const PIX_COUNTDOWN_SECONDS = 180 // 3 minutos
 export const PIX_MAX_ATTEMPTS = 25

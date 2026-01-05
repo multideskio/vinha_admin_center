@@ -2,7 +2,17 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Users, ChevronLeft, Download, RefreshCw, TrendingUp, UserPlus, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import {
+  Users,
+  ChevronLeft,
+  Download,
+  RefreshCw,
+  TrendingUp,
+  UserPlus,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
+import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 
 type Member = {
@@ -100,13 +110,26 @@ export default function RelatorioMembresiaPage() {
 
     try {
       const headers = ['Nome', 'Email', 'Role', 'Info Adicional', 'Data Cadastro', 'Status']
-      const rows = allMembers.map((m) => [m.name, m.email, m.role, m.extraInfo, m.createdAt, m.status])
-      const csv = [headers.join(','), ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(','))].join('\n')
+      const rows = allMembers.map((m) => [
+        m.name,
+        m.email,
+        m.role,
+        m.extraInfo,
+        m.createdAt,
+        m.status,
+      ])
+      const csv = [
+        headers.join(','),
+        ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(',')),
+      ].join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `relatorio-membresia-${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute(
+        'download',
+        `relatorio-membresia-${new Date().toISOString().slice(0, 10)}.csv`,
+      )
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -117,7 +140,11 @@ export default function RelatorioMembresiaPage() {
         variant: 'success',
       })
     } catch (e) {
-      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o CSV.', variant: 'destructive' })
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível gerar o CSV.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -151,13 +178,13 @@ export default function RelatorioMembresiaPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/relatorios">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -175,7 +202,7 @@ export default function RelatorioMembresiaPage() {
                 Dados demográficos, engajamento e crescimento de membros
               </p>
             </div>
-            <Button 
+            <Button
               onClick={handleExportCSV}
               className="bg-white text-orange-600 hover:bg-white/90 shadow-lg font-semibold gap-2"
             >
@@ -237,7 +264,9 @@ export default function RelatorioMembresiaPage() {
               <UserPlus className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{summary.newThisMonth}</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {summary.newThisMonth}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Cadastros recentes</p>
             </CardContent>
           </Card>
@@ -268,7 +297,13 @@ export default function RelatorioMembresiaPage() {
             <ChartContainer config={{}} className="h-[300px] w-full">
               <LineChart data={growthData} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  className="text-xs"
+                />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Line
@@ -296,7 +331,9 @@ export default function RelatorioMembresiaPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {summary.byRole.map((item: RoleCount) => (
                 <div key={item.role} className="p-4 border rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-2">{roleMap[item.role] || item.role}</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {roleMap[item.role] || item.role}
+                  </p>
                   <p className="text-3xl font-bold">{item.count}</p>
                 </div>
               ))}
@@ -335,7 +372,9 @@ export default function RelatorioMembresiaPage() {
                     {members.map((member) => (
                       <TableRow key={member.id}>
                         <TableCell className="font-medium">{member.name}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{member.email}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {member.email}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{roleMap[member.role] || member.role}</Badge>
                         </TableCell>

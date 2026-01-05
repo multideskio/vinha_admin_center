@@ -31,8 +31,11 @@ async function verifySupervisor(supervisorId: string, managerId: string): Promis
   return true
 }
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -77,8 +80,11 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function PUT(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -126,7 +132,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         profileUpdateData.complement = validatedData.complement
       if (validatedData.regionId) profileUpdateData.regionId = validatedData.regionId
       if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
-      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.instagram !== undefined)
+        profileUpdateData.instagram = validatedData.instagram
       if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
@@ -153,8 +160,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

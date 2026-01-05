@@ -4,10 +4,7 @@ import { transactions, users, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
 import { eq } from 'drizzle-orm'
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const { user } = await validateRequest()
@@ -39,7 +36,7 @@ export async function GET(
         .from(supervisorProfiles)
         .where(eq(supervisorProfiles.managerId, user.id))
 
-      const supervisorUserIds = supervisors.map(s => s.userId)
+      const supervisorUserIds = supervisors.map((s) => s.userId)
       const isInNetwork = supervisorUserIds.includes(transaction.contributorId)
 
       if (!isInNetwork) {
@@ -77,9 +74,6 @@ export async function GET(
     return NextResponse.json({ transaction: formattedTransaction })
   } catch (error) {
     console.error('Error fetching manager transaction:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar transação' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao buscar transação' }, { status: 500 })
   }
 }

@@ -7,10 +7,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, pastorProfiles, supervisorProfiles, churchProfiles, regions } from '@/db/schema'
-import { and, eq, isNull, gte, lt, sql, count as countFn } from 'drizzle-orm'
+import { eq, isNull, gte, sql, count as countFn } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
-import { startOfMonth, endOfMonth, format, subMonths } from 'date-fns'
+import { startOfMonth, format, subMonths } from 'date-fns'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { user } = await validateRequest()
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-    
+
     // Filtros
     const roleFilter = searchParams.get('role') // 'all', 'pastor', 'church_account', 'supervisor', 'manager'
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .groupBy(users.role)
 
     // Lista de membros recentes (últimos 50)
-    let recentMembersQuery = db
+    const recentMembersQuery = db
       .select({
         id: users.id,
         email: users.email,
@@ -132,16 +132,30 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           createdAt: format(new Date(member.createdAt), 'dd/MM/yyyy HH:mm'),
           status: member.status,
         }
-      })
+      }),
     )
 
     // Filtrar por role se especificado
-    const filteredMembers = roleFilter && roleFilter !== 'all'
-      ? recentMembers.filter((m) => m.role === roleFilter)
-      : recentMembers
+    const filteredMembers =
+      roleFilter && roleFilter !== 'all'
+        ? recentMembers.filter((m) => m.role === roleFilter)
+        : recentMembers
 
     // Formatar dados de crescimento mensal
-    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    const monthNames = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ]
     const growthData = newMembersByMonth.map((item) => ({
       month: monthNames[parseInt(item.month.substring(5, 7)) - 1],
       count: item.count,
@@ -167,8 +181,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         error: 'Erro ao buscar relatório de membresia',
         details: error instanceof Error ? error.message : 'Erro desconhecido',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
-

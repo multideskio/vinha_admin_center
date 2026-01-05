@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles, managerProfiles, supervisorProfiles, pastorProfiles } from '@/db/schema'
+import {
+  transactions,
+  users,
+  churchProfiles,
+  managerProfiles,
+  supervisorProfiles,
+  pastorProfiles,
+} from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
@@ -13,13 +20,15 @@ const transactionSchema = z.object({
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto']),
   contributionType: z.enum(['dizimo', 'oferta']),
   description: z.string().optional(),
-  card: z.object({
-    number: z.string(),
-    holder: z.string(),
-    expirationDate: z.string(),
-    securityCode: z.string(),
-    brand: z.string(),
-  }).optional(),
+  card: z
+    .object({
+      number: z.string(),
+      holder: z.string(),
+      expirationDate: z.string(),
+      securityCode: z.string(),
+      brand: z.string(),
+    })
+    .optional(),
   installments: z.number().min(1).max(12).optional(),
 })
 
@@ -75,22 +84,37 @@ export async function GET(request: NextRequest) {
     const formattedTransactions = await Promise.all(
       userTransactions.map(async (t) => {
         let contributorName = t.contributorEmail
-        
+
         if (t.contributorRole === 'manager') {
-          const [profile] = await db.select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
-            .from(managerProfiles).where(eq(managerProfiles.userId, t.contributorId)).limit(1)
+          const [profile] = await db
+            .select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
+            .from(managerProfiles)
+            .where(eq(managerProfiles.userId, t.contributorId))
+            .limit(1)
           if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
         } else if (t.contributorRole === 'supervisor') {
-          const [profile] = await db.select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
-            .from(supervisorProfiles).where(eq(supervisorProfiles.userId, t.contributorId)).limit(1)
+          const [profile] = await db
+            .select({
+              firstName: supervisorProfiles.firstName,
+              lastName: supervisorProfiles.lastName,
+            })
+            .from(supervisorProfiles)
+            .where(eq(supervisorProfiles.userId, t.contributorId))
+            .limit(1)
           if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
         } else if (t.contributorRole === 'pastor') {
-          const [profile] = await db.select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
-            .from(pastorProfiles).where(eq(pastorProfiles.userId, t.contributorId)).limit(1)
+          const [profile] = await db
+            .select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+            .from(pastorProfiles)
+            .where(eq(pastorProfiles.userId, t.contributorId))
+            .limit(1)
           if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
         } else if (t.contributorRole === 'church_account') {
-          const [profile] = await db.select({ nomeFantasia: churchProfiles.nomeFantasia })
-            .from(churchProfiles).where(eq(churchProfiles.userId, t.contributorId)).limit(1)
+          const [profile] = await db
+            .select({ nomeFantasia: churchProfiles.nomeFantasia })
+            .from(churchProfiles)
+            .where(eq(churchProfiles.userId, t.contributorId))
+            .limit(1)
           if (profile) contributorName = profile.nomeFantasia
         }
 
@@ -106,10 +130,10 @@ export async function GET(request: NextRequest) {
           paidAt: new Date(t.createdAt).toISOString(),
           refundRequestReason: t.refundRequestReason,
         }
-      })
+      }),
     )
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       transactions: formattedTransactions,
       pagination: {
         page,
@@ -119,10 +143,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error fetching transactions:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -189,17 +210,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    const userName = profile?.firstName && profile?.lastName 
-      ? `${profile.firstName} ${profile.lastName}` 
-      : profile?.nomeFantasia || userData.email.split('@')[0]
+    const userName =
+      profile?.firstName && profile?.lastName
+        ? `${profile.firstName} ${profile.lastName}`
+        : profile?.nomeFantasia || userData.email.split('@')[0]
     const userCpf = profile?.cpf || profile?.treasurerCpf || ''
     const userAddress = profile?.address || ''
     const userCity = profile?.city || ''
     const userState = profile?.state || ''
     const userCep = profile?.cep || ''
     const userDistrict = profile?.neighborhood || ''
-
-
 
     let paymentResult: Record<string, unknown> | undefined
     let status: 'pending' | 'approved' | 'refused' = 'pending'
@@ -214,14 +234,19 @@ export async function POST(request: NextRequest) {
         String(userName),
         userData.email,
         data.card,
-        installments
+        installments,
       )
-      status = paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
+      status =
+        paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
     } else if (data.paymentMethod === 'boleto') {
       if (!userCpf || !userAddress || !userCity || !userState || !userCep || !userDistrict) {
-        return NextResponse.json({ 
-          error: 'Boleto requer perfil completo com CPF, endereço e bairro. Complete seu perfil em /manager/perfil' 
-        }, { status: 400 })
+        return NextResponse.json(
+          {
+            error:
+              'Boleto requer perfil completo com CPF, endereço e bairro. Complete seu perfil em /manager/perfil',
+          },
+          { status: 400 },
+        )
       }
       paymentResult = await createBoletoPayment(
         data.amount,
@@ -232,7 +257,7 @@ export async function POST(request: NextRequest) {
         String(userCity),
         String(userState),
         String(userCep),
-        String(userDistrict)
+        String(userDistrict),
       )
     }
 
@@ -257,11 +282,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento'
-    
+
     // Erros de validação/negócio (esperados) = warning
     // Erros de sistema (inesperados) = error
     if (
-      errorMessage.includes('not enabled') || 
+      errorMessage.includes('not enabled') ||
       errorMessage.includes('não está habilitado') ||
       errorMessage.includes('perfil completo') ||
       errorMessage.includes('Configure em')
@@ -270,7 +295,7 @@ export async function POST(request: NextRequest) {
     } else {
       console.error('System error creating transaction:', error)
     }
-    
+
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

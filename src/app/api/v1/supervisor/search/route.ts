@@ -7,32 +7,27 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import {
-  users,
-  pastorProfiles,
-  churchProfiles,
-  transactions,
-} from '@/db/schema'
+import { users, pastorProfiles, churchProfiles, transactions } from '@/db/schema'
 import { eq, and, isNull, ilike, or, inArray } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser || sessionUser.role !== 'supervisor') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('q')
-  
+
   if (!query || query.length < 3) {
     return NextResponse.json({ results: [] })
   }
 
   try {
     const searchTerm = `%${query}%`
-    
+
     // Buscar pastores
     const pastorsRaw = await db
       .select({
@@ -52,13 +47,13 @@ export async function GET(request: Request): Promise<NextResponse> {
             ilike(pastorProfiles.firstName, searchTerm),
             ilike(pastorProfiles.lastName, searchTerm),
             ilike(users.email, searchTerm),
-            ilike(pastorProfiles.cpf, searchTerm)
-          )
-        )
+            ilike(pastorProfiles.cpf, searchTerm),
+          ),
+        ),
       )
       .limit(5)
 
-    const pastors = pastorsRaw.map(p => ({
+    const pastors = pastorsRaw.map((p) => ({
       id: p.id,
       type: 'pastor' as const,
       title: p.firstName,
@@ -85,13 +80,13 @@ export async function GET(request: Request): Promise<NextResponse> {
           or(
             ilike(churchProfiles.nomeFantasia, searchTerm),
             ilike(churchProfiles.razaoSocial, searchTerm),
-            ilike(churchProfiles.cnpj, searchTerm)
-          )
-        )
+            ilike(churchProfiles.cnpj, searchTerm),
+          ),
+        ),
       )
       .limit(5)
 
-    const churches = churchesRaw.map(c => ({
+    const churches = churchesRaw.map((c) => ({
       id: c.id,
       type: 'igreja' as const,
       title: c.nomeFantasia,
@@ -113,29 +108,30 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const networkUserIds = [
       sessionUser.id,
-      ...pastorIds.map(p => p.id),
-      ...churchIds.map(c => c.id)
+      ...pastorIds.map((p) => p.id),
+      ...churchIds.map((c) => c.id),
     ]
 
-    const transactionResultsRaw = networkUserIds.length > 0 ? await db
-      .select({
-        id: transactions.id,
-        email: users.email,
-        amount: transactions.amount,
-      })
-      .from(transactions)
-      .leftJoin(users, eq(transactions.contributorId, users.id))
-      .where(
-        and(
-          inArray(transactions.contributorId, networkUserIds),
-          or(
-            ilike(users.email, searchTerm)
-          )
-        )
-      )
-      .limit(5) : []
+    const transactionResultsRaw =
+      networkUserIds.length > 0
+        ? await db
+            .select({
+              id: transactions.id,
+              email: users.email,
+              amount: transactions.amount,
+            })
+            .from(transactions)
+            .leftJoin(users, eq(transactions.contributorId, users.id))
+            .where(
+              and(
+                inArray(transactions.contributorId, networkUserIds),
+                or(ilike(users.email, searchTerm)),
+              ),
+            )
+            .limit(5)
+        : []
 
-    const transactionResults = transactionResultsRaw.map(t => ({
+    const transactionResults = transactionResultsRaw.map((t) => ({
       id: t.id,
       type: 'transacao' as const,
       title: t.id,
@@ -145,18 +141,18 @@ export async function GET(request: Request): Promise<NextResponse> {
     }))
 
     const results = [
-      ...pastors.map(p => ({
+      ...pastors.map((p) => ({
         ...p,
         title: `${p.title} ${p.subtitle}`,
         subtitle: p.description,
         description: 'Pastor',
       })),
-      ...churches.map(c => ({
+      ...churches.map((c) => ({
         ...c,
         subtitle: c.description,
         description: 'Igreja',
       })),
-      ...transactionResults.map(t => ({
+      ...transactionResults.map((t) => ({
         ...t,
         title: `#${t.title}`,
         subtitle: t.subtitle || 'Contribuinte',

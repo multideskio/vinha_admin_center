@@ -47,9 +47,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { type TransactionStatus } from '@/lib/types'
-import { cn } from '@/lib/utils';
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { cn } from '@/lib/utils'
 
 type KpiData = {
   title: string
@@ -84,13 +82,23 @@ type DashboardData = {
   }[]
   recentRegistrations: { id: string; name: string; type: string; date: string; avatar: string }[]
   newMembers: { month: string; count: number }[]
-  defaulters: { id: string; name: string; type: 'pastor' | 'church'; titheDay: number; lastPayment: string | null; daysLate: number }[]
+  defaulters: {
+    id: string
+    name: string
+    type: 'pastor' | 'church'
+    titheDay: number
+    lastPayment: string | null
+    daysLate: number
+  }[]
 }
 
 export default function DashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
-  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({
     from: undefined,
     to: undefined,
   })
@@ -99,7 +107,15 @@ export default function DashboardPage() {
   const [lastUpdatedAt, setLastUpdatedAt] = React.useState<string | null>(null)
   const [insightLoading, setInsightLoading] = React.useState(false)
   const [insightSummary, setInsightSummary] = React.useState('')
-  const [insightCards, setInsightCards] = React.useState<Array<{type: string; title: string; description: string; metric?: string | null; text?: string}>>([])
+  const [insightCards, setInsightCards] = React.useState<
+    Array<{
+      type: string
+      title: string
+      description: string
+      metric?: string | null
+      text?: string
+    }>
+  >([])
   const [userName, setUserName] = React.useState<string>('')
 
   const fetchData = React.useCallback(async () => {
@@ -108,7 +124,7 @@ export default function DashboardPage() {
       const params = new URLSearchParams()
       if (dateRange.from) params.append('from', dateRange.from.toISOString())
       if (dateRange.to) params.append('to', dateRange.to.toISOString())
-      
+
       const response = await fetch(`/api/v1/dashboard/admin?${params.toString()}`)
       if (!response.ok) {
         throw new Error('Falha ao carregar os dados do dashboard.')
@@ -130,7 +146,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     fetchData()
-    
+
     // Buscar dados do usuário
     fetch('/api/v1/me')
       .then((res) => res.json())
@@ -146,9 +162,12 @@ export default function DashboardPage() {
       })
   }, [fetchData])
 
-  const handleDateRangeChange = React.useCallback((range: { from: Date | undefined; to: Date | undefined }) => {
-    setDateRange(range)
-  }, [])
+  const handleDateRangeChange = React.useCallback(
+    (range: { from: Date | undefined; to: Date | undefined }) => {
+      setDateRange(range)
+    },
+    [],
+  )
 
   const handleSendReminders = React.useCallback(async () => {
     setSending(true)
@@ -158,9 +177,17 @@ export default function DashboardPage() {
       if (!response.ok) {
         throw new Error(data?.error || 'Falha ao enviar lembretes.')
       }
-      toast({ title: 'Lembretes enviados', description: `${data.sent} enviados, ${data.skipped} ignorados.`, variant: 'success' })
+      toast({
+        title: 'Lembretes enviados',
+        description: `${data.sent} enviados, ${data.skipped} ignorados.`,
+        variant: 'success',
+      })
     } catch (e: unknown) {
-      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
     } finally {
       setSending(false)
     }
@@ -180,7 +207,11 @@ export default function DashboardPage() {
     } catch (e: unknown) {
       setInsightSummary('')
       setInsightCards([])
-      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
     } finally {
       setInsightLoading(false)
     }
@@ -190,7 +221,10 @@ export default function DashboardPage() {
     try {
       if (!rows || rows.length === 0) return
       const headers = Object.keys(rows[0] as Record<string, any>)
-      const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n')
+      const csv = [
+        headers.join(','),
+        ...rows.map((r) => headers.map((h) => JSON.stringify(r[h] ?? '')).join(',')),
+      ].join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -201,13 +235,17 @@ export default function DashboardPage() {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
     } catch (e) {
-      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o CSV.', variant: 'destructive' })
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível gerar o CSV.',
+        variant: 'destructive',
+      })
     }
   }
 
   const handleExportDefaulters = () => {
     if (!data || !data.defaulters?.length) return
-    const rows = data.defaulters.map(d => ({
+    const rows = data.defaulters.map((d) => ({
       id: d.id,
       nome: d.name,
       tipo: d.type,
@@ -215,12 +253,12 @@ export default function DashboardPage() {
       dias_atraso: d.daysLate,
       ultimo_pagamento: d.lastPayment || '',
     }))
-    exportCsv(rows, `inadimplentes-${new Date().toISOString().slice(0,10)}.csv`)
+    exportCsv(rows, `inadimplentes-${new Date().toISOString().slice(0, 10)}.csv`)
   }
 
   const handleExportTransactions = () => {
     if (!data || !data.recentTransactions?.length) return
-    const rows = data.recentTransactions.map(t => ({
+    const rows = data.recentTransactions.map((t) => ({
       id: t.id,
       contribuinte: t.name,
       valor: t.amount,
@@ -228,7 +266,7 @@ export default function DashboardPage() {
       data: t.date,
       role: t.contributorRole,
     }))
-    exportCsv(rows, `transacoes-${new Date().toISOString().slice(0,10)}.csv`)
+    exportCsv(rows, `transacoes-${new Date().toISOString().slice(0, 10)}.csv`)
   }
 
   const kpiDisplayData = data
@@ -248,11 +286,11 @@ export default function DashboardPage() {
     if (!data?.newMembers) return [] as Array<{ month: string; prev?: number; current: number }>
     if (data.newMembers.length < 2) {
       // fallback: mostra apenas pontos do mês atual
-      return data.newMembers.map(m => ({ month: m.month, current: m.count }))
+      return data.newMembers.map((m) => ({ month: m.month, current: m.count }))
     }
     const out: Array<{ month: string; prev: number; current: number }> = []
     const nm = data!.newMembers
-    for (let i = 1; i < nm.length; i++) {
+    for (const i = 1; i < nm.length; i++) {
       out.push({ month: nm[i]!.month, prev: nm[i - 1]!.count, current: nm[i]!.count })
     }
     return out
@@ -280,7 +318,7 @@ export default function DashboardPage() {
           </div>
           <Skeleton className="h-10 w-64" />
         </div>
-        
+
         {/* KPIs principais */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -406,11 +444,11 @@ export default function DashboardPage() {
         {/* Fundo com gradiente */}
         <div className="absolute inset-0 videira-gradient opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        
+
         {/* Efeitos decorativos */}
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             {userName && (
@@ -426,24 +464,22 @@ export default function DashboardPage() {
               Visão geral do sistema e estatísticas em tempo real
             </p>
             {lastUpdatedAt && (
-              <p className="text-sm text-white/70 mt-1">
-                Atualizado em {lastUpdatedAt}
-              </p>
+              <p className="text-sm text-white/70 mt-1">Atualizado em {lastUpdatedAt}</p>
             )}
           </div>
           <div className="flex items-center gap-2">
             <DateRangePicker onDateRangeChange={handleDateRangeChange} />
-            <Button 
-              variant="secondary" 
-              size="icon" 
-              onClick={fetchData} 
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={fetchData}
               title="Atualizar"
               className="bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-lg"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
-            <Button 
-              onClick={handleSendReminders} 
+            <Button
+              onClick={handleSendReminders}
               disabled={sending}
               className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
             >
@@ -459,7 +495,7 @@ export default function DashboardPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-videira-purple/5 via-videira-blue/5 to-videira-cyan/5 pointer-events-none" />
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-videira-purple/10 blur-3xl pointer-events-none" />
         <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-videira-cyan/10 blur-3xl pointer-events-none" />
-        
+
         <CardHeader className="flex flex-row items-center justify-between relative z-10">
           <div>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -468,10 +504,12 @@ export default function DashboardPage() {
               </div>
               <span className="videira-gradient-text">Insights IA</span>
             </CardTitle>
-            <CardDescription className="mt-1">Resumo do momento atual e recomendações automáticas.</CardDescription>
+            <CardDescription className="mt-1">
+              Resumo do momento atual e recomendações automáticas.
+            </CardDescription>
           </div>
-          <Button 
-            onClick={handleGenerateInsights} 
+          <Button
+            onClick={handleGenerateInsights}
             disabled={insightLoading}
             className="videira-gradient hover:opacity-90 text-white shadow-lg"
           >
@@ -490,23 +528,63 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {insightCards.map((card, idx) => {
                     const typeColors = {
-                      success: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-700 dark:text-green-400', icon: 'bg-green-500/20' },
-                      warning: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-700 dark:text-yellow-400', icon: 'bg-yellow-500/20' },
-                      danger: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-700 dark:text-red-400', icon: 'bg-red-500/20' },
-                      info: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-700 dark:text-blue-400', icon: 'bg-blue-500/20' },
+                      success: {
+                        bg: 'bg-green-500/10',
+                        border: 'border-green-500/30',
+                        text: 'text-green-700 dark:text-green-400',
+                        icon: 'bg-green-500/20',
+                      },
+                      warning: {
+                        bg: 'bg-yellow-500/10',
+                        border: 'border-yellow-500/30',
+                        text: 'text-yellow-700 dark:text-yellow-400',
+                        icon: 'bg-yellow-500/20',
+                      },
+                      danger: {
+                        bg: 'bg-red-500/10',
+                        border: 'border-red-500/30',
+                        text: 'text-red-700 dark:text-red-400',
+                        icon: 'bg-red-500/20',
+                      },
+                      info: {
+                        bg: 'bg-blue-500/10',
+                        border: 'border-blue-500/30',
+                        text: 'text-blue-700 dark:text-blue-400',
+                        icon: 'bg-blue-500/20',
+                      },
                     }
-                    const colors = typeColors[card.type as keyof typeof typeColors] || typeColors.info
+                    const colors =
+                      typeColors[card.type as keyof typeof typeColors] || typeColors.info
                     return (
-                      <div key={idx} className={cn('p-4 rounded-lg border-2 transition-all hover:shadow-lg', colors.bg, colors.border)}>
+                      <div
+                        key={idx}
+                        className={cn(
+                          'p-4 rounded-lg border-2 transition-all hover:shadow-lg',
+                          colors.bg,
+                          colors.border,
+                        )}
+                      >
                         <div className="flex items-start gap-3">
                           <div className={cn('p-2 rounded-lg', colors.icon)}>
                             <Sparkles className={cn('h-4 w-4', colors.text)} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className={cn('font-semibold text-sm mb-1', colors.text)}>{card.title}</h4>
-                            <p className="text-xs text-muted-foreground leading-relaxed">{card.description}</p>
-                            {card.metric && <p className={cn('text-lg font-bold mt-2', colors.text)}>{card.metric}</p>}
-                            {card.text && <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">{card.text}</p>}
+                            <h4 className={cn('font-semibold text-sm mb-1', colors.text)}>
+                              {card.title}
+                            </h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {card.description}
+                            </p>
+                            {card.metric && (
+                              <p className={cn('text-lg font-bold mt-2', colors.text)}>
+                                {card.metric}
+                              </p>
+                            )}
+                            {card.text && (
+                              <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                                {card.text}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -516,7 +594,9 @@ export default function DashboardPage() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Clique em "Gerar insights" para ver o resumo da IA.</p>
+            <p className="text-sm text-muted-foreground">
+              Clique em &ldquo;Gerar insights&rdquo; para ver o resumo da IA.
+            </p>
           )}
         </CardContent>
       </Card>
@@ -527,48 +607,58 @@ export default function DashboardPage() {
         <div className="lg:col-span-12">
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
             {kpiDisplayData.slice(0, 4).map((kpi, index) => (
-              <Card 
-                key={kpi.title} 
+              <Card
+                key={kpi.title}
                 className={cn(
-                  "hover:shadow-2xl transition-all duration-300 h-full hover:scale-[1.05] relative overflow-hidden group",
-                  "border-t-4",
-                  index === 0 && "border-t-videira-cyan bg-gradient-to-br from-videira-cyan/5 via-background to-background",
-                  index === 1 && "border-t-videira-blue bg-gradient-to-br from-videira-blue/5 via-background to-background",
-                  index === 2 && "border-t-videira-purple bg-gradient-to-br from-videira-purple/5 via-background to-background",
-                  index === 3 && "border-t-orange-500 bg-gradient-to-br from-orange-500/5 via-background to-background"
+                  'hover:shadow-2xl transition-all duration-300 h-full hover:scale-[1.05] relative overflow-hidden group',
+                  'border-t-4',
+                  index === 0 &&
+                    'border-t-videira-cyan bg-gradient-to-br from-videira-cyan/5 via-background to-background',
+                  index === 1 &&
+                    'border-t-videira-blue bg-gradient-to-br from-videira-blue/5 via-background to-background',
+                  index === 2 &&
+                    'border-t-videira-purple bg-gradient-to-br from-videira-purple/5 via-background to-background',
+                  index === 3 &&
+                    'border-t-orange-500 bg-gradient-to-br from-orange-500/5 via-background to-background',
                 )}
               >
                 {/* Efeito de brilho no hover */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                
+
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                     {kpi.title}
                   </CardTitle>
-                  <div className={cn(
-                    "p-3 rounded-xl shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6",
-                    index === 0 && "bg-videira-cyan/15 ring-2 ring-videira-cyan/30",
-                    index === 1 && "bg-videira-blue/15 ring-2 ring-videira-blue/30",
-                    index === 2 && "bg-videira-purple/15 ring-2 ring-videira-purple/30",
-                    index === 3 && "bg-orange-500/15 ring-2 ring-orange-500/30"
-                  )}>
-                    <kpi.icon className={cn(
-                      "h-5 w-5",
-                      index === 0 && "text-videira-cyan",
-                      index === 1 && "text-videira-blue",
-                      index === 2 && "text-videira-purple",
-                      index === 3 && "text-orange-600 dark:text-orange-400"
-                    )} />
+                  <div
+                    className={cn(
+                      'p-3 rounded-xl shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6',
+                      index === 0 && 'bg-videira-cyan/15 ring-2 ring-videira-cyan/30',
+                      index === 1 && 'bg-videira-blue/15 ring-2 ring-videira-blue/30',
+                      index === 2 && 'bg-videira-purple/15 ring-2 ring-videira-purple/30',
+                      index === 3 && 'bg-orange-500/15 ring-2 ring-orange-500/30',
+                    )}
+                  >
+                    <kpi.icon
+                      className={cn(
+                        'h-5 w-5',
+                        index === 0 && 'text-videira-cyan',
+                        index === 1 && 'text-videira-blue',
+                        index === 2 && 'text-videira-purple',
+                        index === 3 && 'text-orange-600 dark:text-orange-400',
+                      )}
+                    />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={cn(
-                    "text-3xl font-bold mb-2 tracking-tight",
-                    index === 0 && "text-videira-cyan",
-                    index === 1 && "text-videira-blue",
-                    index === 2 && "text-videira-purple",
-                    index === 3 && "text-orange-600 dark:text-orange-400"
-                  )}>
+                  <div
+                    className={cn(
+                      'text-3xl font-bold mb-2 tracking-tight',
+                      index === 0 && 'text-videira-cyan',
+                      index === 1 && 'text-videira-blue',
+                      index === 2 && 'text-videira-purple',
+                      index === 3 && 'text-orange-600 dark:text-orange-400',
+                    )}
+                  >
                     {kpi.value}
                   </div>
                   <p className="text-sm text-muted-foreground font-medium">{kpi.change}</p>
@@ -588,27 +678,54 @@ export default function DashboardPage() {
                     <TrendingUp className="h-5 w-5 text-videira-blue" />
                     Progresso de Crescimento
                   </CardTitle>
-                  <CardDescription className="mt-1">Comparativo mês a mês (gráfico de pontos/halteres)</CardDescription>
+                  <CardDescription className="mt-1">
+                    Comparativo mês a mês (gráfico de pontos/halteres)
+                  </CardDescription>
                 </div>
                 <Badge className="bg-videira-blue text-white shadow-md">
-                  {(data?.newMembers?.reduce((sum, m) => sum + m.count, 0) ?? 0)} novos membros
+                  {data?.newMembers?.reduce((sum, m) => sum + m.count, 0) ?? 0} novos membros
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <ChartContainer config={{}} className="h-[320px] w-full">
-                <ComposedChart data={dumbbellData} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                <ComposedChart
+                  data={dumbbellData}
+                  margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    className="text-xs"
+                  />
                   <YAxis tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
                   <Tooltip content={<ChartTooltipContent />} />
                   {/* Fallback: quando só existe current */}
-                  <Line type="linear" dataKey="prev" stroke="transparent" dot={dumbbellData.some(d => (d as any).prev !== undefined) ? { r: 5, fill: '#94a3b8' } : false} />
-                  <Line type="linear" dataKey="current" stroke="transparent" dot={{ r: 5, fill: 'hsl(var(--primary))' }} />
+                  <Line
+                    type="linear"
+                    dataKey="prev"
+                    stroke="transparent"
+                    dot={
+                      dumbbellData.some((d) => (d as any).prev !== undefined)
+                        ? { r: 5, fill: '#94a3b8' }
+                        : false
+                    }
+                  />
+                  <Line
+                    type="linear"
+                    dataKey="current"
+                    stroke="transparent"
+                    dot={{ r: 5, fill: 'hsl(var(--primary))' }}
+                  />
                 </ComposedChart>
               </ChartContainer>
               {(!dumbbellData || dumbbellData.length === 0) && (
-                <p className="text-xs text-muted-foreground mt-2">Sem dados suficientes para exibir o gráfico.</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Sem dados suficientes para exibir o gráfico.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -623,32 +740,32 @@ export default function DashboardPage() {
                   <Sparkles className="h-5 w-5 text-videira-cyan" />
                   Ações Rápidas
                 </CardTitle>
-                <CardDescription className="mt-1">Operações administrativas frequentes</CardDescription>
+                <CardDescription className="mt-1">
+                  Operações administrativas frequentes
+                </CardDescription>
               </div>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
-                <Button 
-                  onClick={handleSendReminders} 
+                <Button
+                  onClick={handleSendReminders}
                   disabled={sending}
                   className="bg-videira-blue hover:bg-videira-blue/90 text-white shadow-md hover:shadow-lg transition-all font-semibold"
                 >
                   {sending ? 'Enviando...' : 'Enviar lembretes (e-mail)'}
                 </Button>
                 <Link href="/admin/configuracoes/mensagens">
-                  <Button 
-                    className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-                  >
+                  <Button className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold">
                     Configurar mensagens
                   </Button>
                 </Link>
-                <Button 
+                <Button
                   onClick={handleExportDefaulters}
                   className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
                   <Save className="h-4 w-4 mr-2" /> Exportar inadimplentes
                 </Button>
-                <Button 
+                <Button
                   onClick={handleExportTransactions}
                   className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
@@ -671,12 +788,14 @@ export default function DashboardPage() {
                     </div>
                     Inadimplentes (3 meses)
                   </CardTitle>
-                  <CardDescription className="mt-1">Pastores e igrejas que não contribuíram nos últimos 3 meses.</CardDescription>
+                  <CardDescription className="mt-1">
+                    Pastores e igrejas que não contribuíram nos últimos 3 meses.
+                  </CardDescription>
                 </div>
                 {data.defaulters.length > 6 && (
                   <Link href="/admin/relatorios/inadimplentes">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                     >
                       Ver todos ({data.defaulters.length})
@@ -688,24 +807,35 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {data.defaulters.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum inadimplente nos últimos 3 meses! 🎉</p>
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum inadimplente nos últimos 3 meses! 🎉
+                </p>
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {data.defaulters.slice(0, 6).map((defaulter) => {
                       const profilePath = defaulter.type === 'pastor' ? 'pastores' : 'igrejas'
                       return (
-                        <div key={defaulter.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div
+                          key={defaulter.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
                           <div className="flex-1">
-                            <Link href={`/admin/${profilePath}/${defaulter.id}`} className="text-sm font-medium hover:underline text-primary flex items-center gap-1">
+                            <Link
+                              href={`/admin/${profilePath}/${defaulter.id}`}
+                              className="text-sm font-medium hover:underline text-primary flex items-center gap-1"
+                            >
                               {defaulter.name}
                               <ExternalLink className="h-3 w-3" />
                             </Link>
                             <p className="text-xs text-muted-foreground">
-                              {defaulter.type === 'pastor' ? 'Pastor' : 'Igreja'} • Dia {defaulter.titheDay}
+                              {defaulter.type === 'pastor' ? 'Pastor' : 'Igreja'} • Dia{' '}
+                              {defaulter.titheDay}
                             </p>
                           </div>
-                          <Badge variant="destructive" className="ml-2">{defaulter.daysLate}d</Badge>
+                          <Badge variant="destructive" className="ml-2">
+                            {defaulter.daysLate}d
+                          </Badge>
                         </div>
                       )
                     })}
@@ -713,9 +843,7 @@ export default function DashboardPage() {
                   {data.defaulters.length > 6 && (
                     <div className="mt-4 pt-4 border-t">
                       <Link href="/admin/relatorios/inadimplentes">
-                        <Button 
-                          className="w-full bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-                        >
+                        <Button className="w-full bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold">
                           Ver lista completa ({data.defaulters.length} inadimplentes)
                           <ExternalLink className="h-4 w-4 ml-2" />
                         </Button>
@@ -739,16 +867,16 @@ export default function DashboardPage() {
                 <CardDescription className="mt-1">As 10 transações mais recentes.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Button 
-                  size="icon" 
-                  className="h-8 w-8 bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md" 
+                <Button
+                  size="icon"
+                  className="h-8 w-8 bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md"
                   onClick={fetchData}
                 >
                   <RefreshCw className="h-4 w-4" />
                   <span className="sr-only">Atualizar</span>
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={handleExportTransactions}
                   className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
@@ -779,7 +907,10 @@ export default function DashboardPage() {
                       <TableRow key={transaction.id}>
                         <TableCell className="font-medium">
                           {profilePath ? (
-                            <Link href={`/admin/${profilePath}/${transaction.contributorId}`} className="flex items-center gap-1 hover:underline text-primary">
+                            <Link
+                              href={`/admin/${profilePath}/${transaction.contributorId}`}
+                              className="flex items-center gap-1 hover:underline text-primary"
+                            >
                               {transaction.name}
                               <ExternalLink className="h-3 w-3" />
                             </Link>
@@ -788,14 +919,19 @@ export default function DashboardPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(transaction.amount)}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
                             {statusMap[transaction.status]?.text || transaction.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">{transaction.date}</TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {transaction.date}
+                        </TableCell>
                       </TableRow>
                     )
                   })}
@@ -816,7 +952,12 @@ export default function DashboardPage() {
                 <PieChart>
                   <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
                   <Legend content={<ChartLegendContent nameKey="method" />} />
-                  <Pie data={data.revenueByMethod} dataKey="value" nameKey="method" innerRadius={60}>
+                  <Pie
+                    data={data.revenueByMethod}
+                    dataKey="value"
+                    nameKey="method"
+                    innerRadius={60}
+                  >
                     {data.revenueByMethod.map((entry) => (
                       <Cell key={entry.method} fill={entry.fill} />
                     ))}
@@ -840,7 +981,12 @@ export default function DashboardPage() {
                     <PieChart>
                       <Tooltip content={<ChartTooltipContent hideLabel />} />
                       <Legend content={<ChartLegendContent nameKey="name" />} />
-                      <Pie data={data.revenueByRegion} dataKey="revenue" nameKey="name" innerRadius={50}>
+                      <Pie
+                        data={data.revenueByRegion}
+                        dataKey="revenue"
+                        nameKey="name"
+                        innerRadius={50}
+                      >
                         {data.revenueByRegion.map((entry, index) => (
                           <Cell key={`cell-revenue-${index}`} fill={entry.fill || '#8884d8'} />
                         ))}
@@ -858,16 +1004,24 @@ export default function DashboardPage() {
                     {(data.revenueByRegion || []).map((r) => (
                       <div key={r.name} className="flex items-center justify-between py-2">
                         <div className="flex items-center gap-2">
-                          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: r.fill || '#8884d8' }} />
+                          <span
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: r.fill || '#8884d8' }}
+                          />
                           <span className="text-sm">{r.name}</span>
                         </div>
                         <span className="text-sm text-muted-foreground">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.revenue || 0)}
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(r.revenue || 0)}
                         </span>
                       </div>
                     ))}
                     {(!data.revenueByRegion || data.revenueByRegion.length === 0) && (
-                      <div className="py-2 text-sm text-muted-foreground">Nenhuma região encontrada</div>
+                      <div className="py-2 text-sm text-muted-foreground">
+                        Nenhuma região encontrada
+                      </div>
                     )}
                   </div>
                 </div>

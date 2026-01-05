@@ -78,37 +78,40 @@ export default function SupervisorDashboardPage(): JSX.Element {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchData = React.useCallback(async (startDate?: Date, endDate?: Date) => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (startDate) params.append('startDate', startDate.toISOString())
-      if (endDate) params.append('endDate', endDate.toISOString())
-      
-      const url = `/api/v1/supervisor/dashboard${params.toString() ? `?${params.toString()}` : ''}`
-      const response = await fetch(url)
-      
-      if (response.status === 401) {
-        // Usuário não autenticado, redirecionar para login
-        window.location.href = '/auth/login'
-        return
+  const fetchData = React.useCallback(
+    async (startDate?: Date, endDate?: Date) => {
+      setIsLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (startDate) params.append('startDate', startDate.toISOString())
+        if (endDate) params.append('endDate', endDate.toISOString())
+
+        const url = `/api/v1/supervisor/dashboard${params.toString() ? `?${params.toString()}` : ''}`
+        const response = await fetch(url)
+
+        if (response.status === 401) {
+          // Usuário não autenticado, redirecionar para login
+          window.location.href = '/auth/login'
+          return
+        }
+        if (!response.ok) {
+          throw new Error('Falha ao carregar os dados do dashboard.')
+        }
+        const dashboardData: DashboardData = await response.json()
+        setData(dashboardData)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({
+          title: 'Erro',
+          description: message,
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
       }
-      if (!response.ok) {
-        throw new Error('Falha ao carregar os dados do dashboard.')
-      }
-      const dashboardData: DashboardData = await response.json()
-      setData(dashboardData)
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({
-        title: 'Erro',
-        description: message,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [toast])
+    },
+    [toast],
+  )
 
   const handleSearch = React.useCallback(() => {
     if (dateRange?.from && dateRange?.to) {
@@ -199,7 +202,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -207,18 +210,17 @@ export default function SupervisorDashboardPage(): JSX.Element {
                 Dashboard do Supervisor
               </h1>
               <p className="text-base text-white/90 mt-2 font-medium">
-                {dateRange?.from 
+                {dateRange?.from
                   ? `${dateRange.from.toLocaleDateString('pt-BR')} ${dateRange.to ? `- ${dateRange.to.toLocaleDateString('pt-BR')}` : ''}`
-                  : 'Visão geral da sua supervisão'
-                }
+                  : 'Visão geral da sua supervisão'}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <DateRangePicker 
-                value={dateRange}
-                onChange={setDateRange}
-              />
-              <Button onClick={handleSearch} className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+              <DateRangePicker value={dateRange} onChange={setDateRange} />
+              <Button
+                onClick={handleSearch}
+                className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
+              >
                 <Search className="h-4 w-4 mr-2" />
                 Buscar
               </Button>
@@ -230,11 +232,31 @@ export default function SupervisorDashboardPage(): JSX.Element {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {kpiDisplayData.map((kpi, index) => {
           const colorClasses = [
-            { card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30', iconColor: 'h-4 w-4 text-videira-cyan' },
-            { card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30', iconColor: 'h-4 w-4 text-videira-blue' },
-            { card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30', iconColor: 'h-4 w-4 text-videira-purple' },
-            { card: 'shadow-lg border-l-4 border-l-green-500 hover:shadow-xl transition-all bg-gradient-to-br from-green-500/5 to-transparent', icon: 'p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30', iconColor: 'h-4 w-4 text-green-500' },
-            { card: 'shadow-lg border-l-4 border-l-blue-500 hover:shadow-xl transition-all bg-gradient-to-br from-blue-500/5 to-transparent', icon: 'p-2 rounded-lg bg-blue-500/15 ring-2 ring-blue-500/30', iconColor: 'h-4 w-4 text-blue-500' },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30',
+              iconColor: 'h-4 w-4 text-videira-cyan',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30',
+              iconColor: 'h-4 w-4 text-videira-blue',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30',
+              iconColor: 'h-4 w-4 text-videira-purple',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-green-500 hover:shadow-xl transition-all bg-gradient-to-br from-green-500/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30',
+              iconColor: 'h-4 w-4 text-green-500',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-blue-500 hover:shadow-xl transition-all bg-gradient-to-br from-blue-500/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-blue-500/15 ring-2 ring-blue-500/30',
+              iconColor: 'h-4 w-4 text-blue-500',
+            },
           ] as const
           const classes = colorClasses[index % colorClasses.length]!
           return (
@@ -264,7 +286,12 @@ export default function SupervisorDashboardPage(): JSX.Element {
               </CardTitle>
               <CardDescription>As transações mais recentes da sua supervisão</CardDescription>
             </div>
-            <Button variant="outline" size="icon" className="h-8 w-8 border-2 hover:border-videira-cyan" onClick={() => fetchData(dateRange?.from, dateRange?.to)}>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-2 hover:border-videira-cyan"
+              onClick={() => fetchData(dateRange?.from, dateRange?.to)}
+            >
               <RefreshCw className="h-4 w-4" />
               <span className="sr-only">Atualizar</span>
             </Button>
@@ -280,31 +307,31 @@ export default function SupervisorDashboardPage(): JSX.Element {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                {data.recentTransactions.length > 0 ? (
-                  data.recentTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-medium">{transaction.name}</TableCell>
-                      <TableCell className="text-right">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(transaction.amount)}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                          {statusMap[transaction.status]?.text || transaction.status}
-                        </Badge>
+                  {data.recentTransactions.length > 0 ? (
+                    data.recentTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium">{transaction.name}</TableCell>
+                        <TableCell className="text-right">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(transaction.amount)}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                            {statusMap[transaction.status]?.text || transaction.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                        Nenhuma transação encontrada
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                      Nenhuma transação encontrada
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+                  )}
+                </TableBody>
               </Table>
             </div>
           </CardContent>
@@ -328,7 +355,9 @@ export default function SupervisorDashboardPage(): JSX.Element {
                         alt="Avatar"
                         data-ai-hint="person symbol"
                       />
-                      <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">{user.avatar}</AvatarFallback>
+                      <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">
+                        {user.avatar}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="ml-4 space-y-1">
                       <p className="text-sm font-semibold leading-none">{user.name}</p>
@@ -371,7 +400,12 @@ export default function SupervisorDashboardPage(): JSX.Element {
                 <PieChart>
                   <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
                   <Legend content={<ChartLegendContent nameKey="method" />} />
-                  <Pie data={data.revenueByMethod} dataKey="value" nameKey="method" innerRadius={60}>
+                  <Pie
+                    data={data.revenueByMethod}
+                    dataKey="value"
+                    nameKey="method"
+                    innerRadius={60}
+                  >
                     {data.revenueByMethod.map((entry) => (
                       <Cell key={entry.method} fill={entry.fill} />
                     ))}
@@ -401,7 +435,12 @@ export default function SupervisorDashboardPage(): JSX.Element {
                 <PieChart>
                   <Tooltip content={<ChartTooltipContent hideLabel />} />
                   <Legend content={<ChartLegendContent nameKey="name" />} />
-                  <Pie data={data.revenueByChurch} dataKey="revenue" nameKey="name" innerRadius={60}>
+                  <Pie
+                    data={data.revenueByChurch}
+                    dataKey="revenue"
+                    nameKey="name"
+                    innerRadius={60}
+                  >
                     {data.revenueByChurch.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
@@ -455,7 +494,10 @@ export default function SupervisorDashboardPage(): JSX.Element {
           <CardContent>
             {data.newMembers.length > 0 ? (
               <ChartContainer config={{}} className="h-[300px] w-full">
-                <BarChart data={data.newMembers} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                <BarChart
+                  data={data.newMembers}
+                  margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                   <YAxis tickLine={false} axisLine={false} tickMargin={8} />

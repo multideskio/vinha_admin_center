@@ -44,62 +44,73 @@ type Transaction = {
 export default function TransacoesPage() {
   const [transactions, setTransactions] = React.useState<Transaction[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
-  const [statusFilters, setStatusFilters] = React.useState<string[]>(['approved', 'pending', 'refused', 'refunded'])
+  const [statusFilters, setStatusFilters] = React.useState<string[]>([
+    'approved',
+    'pending',
+    'refused',
+    'refunded',
+  ])
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchTransactions = React.useCallback(async (search?: string, startDate?: string, endDate?: string) => {
-    setIsLoading(true)
-    
-    try {
-      const params = new URLSearchParams()
-      if (search) params.append('search', search)
-      if (startDate) params.append('startDate', startDate)
-      if (endDate) params.append('endDate', endDate)
-      
-      const response = await fetch(`/api/v1/igreja/transacoes?${params.toString()}`)
-      if (!response.ok) throw new Error('Falha ao carregar transações.')
-      const data = await response.json()
-      setTransactions(data.transactions)
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({ title: 'Erro', description: message, variant: 'destructive' })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [toast])
+  const fetchTransactions = React.useCallback(
+    async (search?: string, startDate?: string, endDate?: string) => {
+      setIsLoading(true)
+
+      try {
+        const params = new URLSearchParams()
+        if (search) params.append('search', search)
+        if (startDate) params.append('startDate', startDate)
+        if (endDate) params.append('endDate', endDate)
+
+        const response = await fetch(`/api/v1/igreja/transacoes?${params.toString()}`)
+        if (!response.ok) throw new Error('Falha ao carregar transações.')
+        const data = await response.json()
+        setTransactions(data.transactions)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({ title: 'Erro', description: message, variant: 'destructive' })
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [toast],
+  )
 
   React.useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
 
   const filteredTransactions = React.useMemo(() => {
-    return transactions.filter(t => statusFilters.includes(t.status))
+    return transactions.filter((t) => statusFilters.includes(t.status))
   }, [transactions, statusFilters])
 
   const toggleStatusFilter = (status: string) => {
-    setStatusFilters(prev => 
-      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    setStatusFilters((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status],
     )
   }
 
-  const handleDateRangeChange = React.useCallback((range: DateRange | undefined) => {
-    setDateRange(range)
-    const startDate = range?.from ? format(range.from, 'yyyy-MM-dd') : undefined
-    const endDate = range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
-    fetchTransactions(undefined, startDate, endDate)
-  }, [fetchTransactions])
+  const handleDateRangeChange = React.useCallback(
+    (range: DateRange | undefined) => {
+      setDateRange(range)
+      const startDate = range?.from ? format(range.from, 'yyyy-MM-dd') : undefined
+      const endDate = range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
+      fetchTransactions(undefined, startDate, endDate)
+    },
+    [fetchTransactions],
+  )
 
   const exportToCSV = () => {
     const headers = ['Contribuinte', 'Valor', 'Status', 'Data']
-    const rows = filteredTransactions.map(t => [
+    const rows = filteredTransactions.map((t) => [
       t.contributor,
       t.amount.toFixed(2),
       statusMap[t.status]?.text || t.status,
-      t.date
+      t.date,
     ])
-    
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
+
+    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -107,7 +118,7 @@ export default function TransacoesPage() {
     a.download = `transacoes-igreja-${format(new Date(), 'yyyy-MM-dd')}.csv`
     a.click()
     URL.revokeObjectURL(url)
-    
+
     toast({ title: 'Sucesso', description: 'Transações exportadas!', variant: 'success' })
   }
 
@@ -127,7 +138,7 @@ export default function TransacoesPage() {
         <div className="absolute inset-0 videira-gradient opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
             Transações da Igreja
@@ -150,25 +161,25 @@ export default function TransacoesPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem 
+                <DropdownMenuCheckboxItem
                   checked={statusFilters.includes('approved')}
                   onCheckedChange={() => toggleStatusFilter('approved')}
                 >
                   Aprovada
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
+                <DropdownMenuCheckboxItem
                   checked={statusFilters.includes('pending')}
                   onCheckedChange={() => toggleStatusFilter('pending')}
                 >
                   Pendente
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
+                <DropdownMenuCheckboxItem
                   checked={statusFilters.includes('refused')}
                   onCheckedChange={() => toggleStatusFilter('refused')}
                 >
                   Recusada
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
+                <DropdownMenuCheckboxItem
                   checked={statusFilters.includes('refunded')}
                   onCheckedChange={() => toggleStatusFilter('refunded')}
                 >

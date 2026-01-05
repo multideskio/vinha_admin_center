@@ -13,7 +13,7 @@ import {
   PaymentStep,
   PixStatus,
   UseContributionOptions,
-  UseContributionReturn
+  UseContributionReturn,
 } from '../types'
 import { devLog, generateTransactionId } from '../utils'
 
@@ -21,7 +21,7 @@ const initialFormData: ContributionFormData = {
   amount: 0,
   paymentMethod: 'pix',
   contributionType: 'dizimo',
-  description: ''
+  description: '',
 }
 
 const initialPaymentState: PaymentState = {
@@ -31,7 +31,7 @@ const initialPaymentState: PaymentState = {
   transactionId: null,
   pixStatus: 'idle',
   countdown: 180,
-  showPaymentDetails: false
+  showPaymentDetails: false,
 }
 
 const initialCardState: CardState = {
@@ -39,10 +39,12 @@ const initialCardState: CardState = {
   expiry: '',
   cvc: '',
   name: '',
-  focus: ''
+  focus: '',
 }
 
-export default function useContribution(options: UseContributionOptions = {}): UseContributionReturn {
+export default function useContribution(
+  options: UseContributionOptions = {},
+): UseContributionReturn {
   const { onSuccess, onError } = options
   const { toast } = useToast()
 
@@ -53,21 +55,21 @@ export default function useContribution(options: UseContributionOptions = {}): U
 
   // Ações de atualização de estado
   const updateFormData = useCallback((data: Partial<ContributionFormData>) => {
-    setFormData(prev => ({ ...prev, ...data }))
+    setFormData((prev) => ({ ...prev, ...data }))
     devLog('Form data updated:', data)
   }, [])
 
   const updateCardState = useCallback((state: Partial<CardState>) => {
-    setCardState(prev => ({ ...prev, ...state }))
+    setCardState((prev) => ({ ...prev, ...state }))
   }, [])
 
   const setCurrentStep = useCallback((step: PaymentStep) => {
-    setPaymentState(prev => ({ ...prev, currentStep: step }))
+    setPaymentState((prev) => ({ ...prev, currentStep: step }))
     devLog('Step changed to:', step)
   }, [])
 
   const setPixStatus = useCallback((status: PixStatus) => {
-    setPaymentState(prev => ({ ...prev, pixStatus: status }))
+    setPaymentState((prev) => ({ ...prev, pixStatus: status }))
     devLog('PIX status changed to:', status)
   }, [])
 
@@ -81,168 +83,172 @@ export default function useContribution(options: UseContributionOptions = {}): U
 
   // Voltar para etapa anterior
   const handleBack = useCallback(() => {
-    setPaymentState(prev => ({
+    setPaymentState((prev) => ({
       ...prev,
       currentStep: 1,
       showPaymentDetails: false,
       paymentDetails: null,
       transactionId: null,
       pixStatus: 'idle',
-      countdown: 180
+      countdown: 180,
     }))
     devLog('Returned to step 1')
   }, [])
 
   // Submissão do formulário principal
-  const handleFormSubmit = useCallback(async (data: ContributionData) => {
-    devLog('Form submission started:', data)
-    
-    // Atualiza dados do formulário
-    updateFormData(data)
-    
-    // Avança para etapa 2 (Pagamento)
-    setCurrentStep(2)
-    
-    // Se for cartão, apenas mostra o formulário
-    if (data.paymentMethod === 'credit_card') {
-      setPaymentState(prev => ({ ...prev, showPaymentDetails: true }))
-      return
-    }
+  const handleFormSubmit = useCallback(
+    async (data: ContributionData) => {
+      devLog('Form submission started:', data)
 
-    // Para PIX e Boleto, processa o pagamento
-    setPaymentState(prev => ({ ...prev, isProcessing: true, paymentDetails: null }))
-    
-    try {
-      const payload = { 
-        ...data,
-        amount: Number(data.amount) // Garante que amount é número
-      }
-      const response = await fetch('/api/v1/transacoes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      
-      const result = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Falha ao processar o pagamento.')
+      // Atualiza dados do formulário
+      updateFormData(data)
+
+      // Avança para etapa 2 (Pagamento)
+      setCurrentStep(2)
+
+      // Se for cartão, apenas mostra o formulário
+      if (data.paymentMethod === 'credit_card') {
+        setPaymentState((prev) => ({ ...prev, showPaymentDetails: true }))
+        return
       }
 
-      devLog('Payment created successfully:', result)
+      // Para PIX e Boleto, processa o pagamento
+      setPaymentState((prev) => ({ ...prev, isProcessing: true, paymentDetails: null }))
 
-      // Atualiza estado com dados do pagamento
-      setPaymentState(prev => ({
-        ...prev,
-        paymentDetails: result.data,
-        transactionId: result.transaction?.id || generateTransactionId(),
-        showPaymentDetails: true,
-        pixStatus: data.paymentMethod === 'pix' ? 'pending' : 'idle',
-        countdown: data.paymentMethod === 'pix' ? 180 : prev.countdown
-      }))
+      try {
+        const payload = {
+          ...data,
+          amount: Number(data.amount), // Garante que amount é número
+        }
+        const response = await fetch('/api/v1/transacoes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
 
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      console.warn('Payment creation failed:', errorMessage) // warn em vez de error para não exibir overlay vermelho
-      
-      // Mensagem amigável para erros de método não habilitado
-      let userMessage = errorMessage
-      if (errorMessage.includes('not enabled') || errorMessage.includes('não está habilitado')) {
-        userMessage = `${errorMessage}\n\n💡 Tente usar outro método de pagamento (PIX ou Cartão).`
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Falha ao processar o pagamento.')
+        }
+
+        devLog('Payment created successfully:', result)
+
+        // Atualiza estado com dados do pagamento
+        setPaymentState((prev) => ({
+          ...prev,
+          paymentDetails: result.data,
+          transactionId: result.transaction?.id || generateTransactionId(),
+          showPaymentDetails: true,
+          pixStatus: data.paymentMethod === 'pix' ? 'pending' : 'idle',
+          countdown: data.paymentMethod === 'pix' ? 180 : prev.countdown,
+        }))
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        console.warn('Payment creation failed:', errorMessage) // warn em vez de error para não exibir overlay vermelho
+
+        // Mensagem amigável para erros de método não habilitado
+        let userMessage = errorMessage
+        if (errorMessage.includes('not enabled') || errorMessage.includes('não está habilitado')) {
+          userMessage = `${errorMessage}\n\n💡 Tente usar outro método de pagamento (PIX ou Cartão).`
+        }
+
+        toast({
+          title: 'Erro no Pagamento',
+          description: userMessage,
+          variant: 'destructive',
+        })
+
+        onError?.(errorMessage)
+
+        // Volta para o formulário em caso de erro
+        setCurrentStep(1)
+        setPaymentState((prev) => ({ ...prev, showPaymentDetails: false }))
+      } finally {
+        setPaymentState((prev) => ({ ...prev, isProcessing: false }))
       }
-      
-      toast({
-        title: 'Erro no Pagamento',
-        description: userMessage,
-        variant: 'destructive',
-      })
-      
-      onError?.(errorMessage)
-      
-      // Volta para o formulário em caso de erro
-      setCurrentStep(1)
-      setPaymentState(prev => ({ ...prev, showPaymentDetails: false }))
-    } finally {
-      setPaymentState(prev => ({ ...prev, isProcessing: false }))
-    }
-  }, [updateFormData, setCurrentStep, toast, onError])
+    },
+    [updateFormData, setCurrentStep, toast, onError],
+  )
 
   // Pagamento com cartão
-  const handleCardPayment = useCallback(async (cardData: CardData, installments?: number) => {
-    devLog('Card payment started:', { holder: cardData.holder, installments })
-    
-    const payload = {
-      ...formData,
-      amount: Number(formData.amount), // Garante que amount é número
-      card: cardData,
-      installments: installments || 1,
-    }
-    
-    setPaymentState(prev => ({ ...prev, isProcessing: true }))
-    
-    try {
-      const response = await fetch('/api/v1/transacoes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      
-      const result = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Falha ao processar o pagamento com cartão.')
+  const handleCardPayment = useCallback(
+    async (cardData: CardData, installments?: number) => {
+      devLog('Card payment started:', { holder: cardData.holder, installments })
+
+      const payload = {
+        ...formData,
+        amount: Number(formData.amount), // Garante que amount é número
+        card: cardData,
+        installments: installments || 1,
       }
 
-      devLog('Card payment successful:', result)
+      setPaymentState((prev) => ({ ...prev, isProcessing: true }))
 
-      // Avança para etapa 3 (Confirmação)
-      setCurrentStep(3)
-      
-      toast({
-        title: 'Sucesso!',
-        description: 'Pagamento com cartão aprovado.',
-        variant: 'default',
-      })
-      
-      onSuccess?.(result.transaction)
-      
-      // Reset após sucesso
-      setTimeout(() => {
-        handleReset()
-      }, 3000)
+      try {
+        const response = await fetch('/api/v1/transacoes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
 
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      console.warn('Card payment failed:', errorMessage) // warn em vez de error
-      
-      toast({
-        title: 'Erro no Pagamento',
-        description: errorMessage,
-        variant: 'destructive'
-      })
-      
-      onError?.(errorMessage)
-    } finally {
-      setPaymentState(prev => ({ ...prev, isProcessing: false }))
-    }
-  }, [formData, setCurrentStep, toast, onSuccess, onError, handleReset])
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Falha ao processar o pagamento com cartão.')
+        }
+
+        devLog('Card payment successful:', result)
+
+        // Avança para etapa 3 (Confirmação)
+        setCurrentStep(3)
+
+        toast({
+          title: 'Sucesso!',
+          description: 'Pagamento com cartão aprovado.',
+          variant: 'default',
+        })
+
+        onSuccess?.(result.transaction)
+
+        // Reset após sucesso
+        setTimeout(() => {
+          handleReset()
+        }, 3000)
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        console.warn('Card payment failed:', errorMessage) // warn em vez de error
+
+        toast({
+          title: 'Erro no Pagamento',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+
+        onError?.(errorMessage)
+      } finally {
+        setPaymentState((prev) => ({ ...prev, isProcessing: false }))
+      }
+    },
+    [formData, setCurrentStep, toast, onSuccess, onError, handleReset],
+  )
 
   return {
     // Estado
     formData,
     paymentState,
     cardState,
-    
+
     // Ações
     updateFormData,
     updateCardState,
     setCurrentStep,
     setPixStatus,
-    
+
     // Handlers
     handleFormSubmit,
     handleCardPayment,
     handleReset,
-    handleBack
+    handleBack,
   }
 }

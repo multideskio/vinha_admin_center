@@ -35,7 +35,7 @@ export default async function PastorLayout({
   // ✅ CORRIGIDO BUG #8: Removido try-catch desnecessário
   // redirect() lança NEXT_REDIRECT como comportamento normal, não deve ser capturado
   const { user } = await validateRequest()
-  
+
   if (!user || user.role !== 'pastor') {
     redirect('/auth/login')
   }

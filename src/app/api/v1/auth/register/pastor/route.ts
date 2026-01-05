@@ -22,26 +22,23 @@ export async function POST(request: NextRequest) {
   try {
     // 1. Rate limiting
     const clientIP = getClientIP(request)
-    const rateLimitResult = rateLimit(
-      `register:pastor:${clientIP}`,
-      rateLimitPresets.register
-    )
-    
+    const rateLimitResult = rateLimit(`register:pastor:${clientIP}`, rateLimitPresets.register)
+
     if (!rateLimitResult.allowed) {
       const resetInMinutes = Math.ceil((rateLimitResult.resetAt - Date.now()) / 60000)
       return NextResponse.json(
-        { 
+        {
           error: `Muitas tentativas de registro. Tente novamente em ${resetInMinutes} minutos.`,
-          resetAt: rateLimitResult.resetAt
+          resetAt: rateLimitResult.resetAt,
         },
-        { 
+        {
           status: 429,
           headers: {
             'X-RateLimit-Limit': String(rateLimitPresets.register.maxAttempts),
             'X-RateLimit-Remaining': '0',
             'X-RateLimit-Reset': String(rateLimitResult.resetAt),
-          }
-        }
+          },
+        },
       )
     }
 
@@ -52,10 +49,7 @@ export async function POST(request: NextRequest) {
     // 3. Verificar COMPANY_INIT
     const COMPANY_ID = process.env.COMPANY_INIT
     if (!COMPANY_ID) {
-      return NextResponse.json(
-        { error: 'Configuração do sistema inválida' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Configuração do sistema inválida' }, { status: 500 })
     }
 
     // 4. Verificar se email já existe
@@ -66,10 +60,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'Este email já está cadastrado' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Este email já está cadastrado' }, { status: 400 })
     }
 
     // 5. Verificar se CPF já existe
@@ -80,14 +71,12 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (existingCPF) {
-      return NextResponse.json(
-        { error: 'Este CPF já está cadastrado' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Este CPF já está cadastrado' }, { status: 400 })
     }
 
     // 6. Gerar senha temporária (8 caracteres aleatórios)
-    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase()
+    const tempPassword =
+      Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase()
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
     // 7. Criar usuário
@@ -135,22 +124,15 @@ export async function POST(request: NextRequest) {
         message: 'Cadastro realizado com sucesso! Verifique seu email para a senha temporária.',
         userId: newUser.id,
       },
-      { status: 201 }
+      { status: 201 },
     )
   } catch (error) {
     console.error('Error registering pastor:', error)
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 })
     }
 
-    return NextResponse.json(
-      { error: 'Erro ao criar cadastro. Tente novamente.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao criar cadastro. Tente novamente.' }, { status: 500 })
   }
 }
-

@@ -5,6 +5,7 @@ Use este template para reportar bugs identificados no projeto.
 ---
 
 ## Bug ID
+
 **#[Número]** - [Título Curto do Bug]
 
 ---
@@ -17,6 +18,7 @@ Use este template para reportar bugs identificados no projeto.
 **Resolvido em:** YYYY-MM-DD (se aplicável)
 
 **Arquivos Afetados:**
+
 - `caminho/para/arquivo.ts` (linha XX-YY)
 - `caminho/para/outro.ts` (linha ZZ)
 
@@ -44,6 +46,7 @@ Use este template para reportar bugs identificados no projeto.
 **Severidade:** [Alta/Média/Baixa]
 
 **Consequências:**
+
 - [ ] Quebra funcionalidade crítica
 - [ ] Dados podem ser perdidos/corrompidos
 - [ ] Vulnerabilidade de segurança
@@ -62,6 +65,7 @@ Use este template para reportar bugs identificados no projeto.
 [Explique POR QUE o bug acontece. Qual é a causa técnica?]
 
 **Exemplo:**
+
 - Lógica invertida (usando `lte` em vez de `gte`)
 - Falta validação de entrada
 - Configuração incorreta
@@ -73,6 +77,7 @@ Use este template para reportar bugs identificados no projeto.
 ## ✅ Solução Proposta
 
 ### Opção 1 (Recomendada)
+
 ```typescript
 // Código corrigido
 // Adicionar comentários ✅ indicando as melhorias
@@ -82,12 +87,15 @@ Use este template para reportar bugs identificados no projeto.
 [Explique por que esta solução resolve o problema]
 
 **Prós:**
+
 - [Listar vantagens]
 
 **Contras:**
+
 - [Listar desvantagens, se houver]
 
 ### Opção 2 (Alternativa)
+
 [Se houver solução alternativa]
 
 ---
@@ -108,17 +116,21 @@ Use este template para reportar bugs identificados no projeto.
 ## 🧪 Como Testar
 
 ### Pré-requisitos
+
 - [O que é necessário para reproduzir]
 
 ### Passos para Reproduzir
+
 1. [Passo 1]
 2. [Passo 2]
 3. [Passo 3]
 
 ### Comportamento Atual (Bugado)
+
 [O que acontece atualmente]
 
 ### Comportamento Esperado (Correto)
+
 [O que deveria acontecer]
 
 ---
@@ -126,15 +138,19 @@ Use este template para reportar bugs identificados no projeto.
 ## 🔗 Referências
 
 **Issues Relacionados:**
+
 - #[número] - [descrição]
 
 **Pull Requests:**
+
 - #[número] - [descrição]
 
 **Documentação:**
+
 - [Link para doc relevante]
 
 **Discussões:**
+
 - [Link para discussão relevante]
 
 ---
@@ -182,4 +198,3 @@ Marcar quando completar:
 **Criado por:** @username  
 **Data:** YYYY-MM-DD  
 **Última atualização:** YYYY-MM-DD
-

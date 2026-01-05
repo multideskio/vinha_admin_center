@@ -2,7 +2,17 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Church, ChevronLeft, Download, RefreshCw, Calendar, MapPin, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import {
+  Church,
+  ChevronLeft,
+  Download,
+  RefreshCw,
+  Calendar,
+  MapPin,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -53,10 +63,17 @@ export default function RelatorioIgrejasPage() {
   const [allChurches, setAllChurches] = React.useState<ChurchData[]>([])
   const [byRegion, setByRegion] = React.useState<Record<string, RegionData>>({})
   const [regions, setRegions] = React.useState<Region[]>([])
-  const [summary, setSummary] = React.useState({ totalChurches: 0, totalRevenue: 0, totalTransactions: 0 })
+  const [summary, setSummary] = React.useState({
+    totalChurches: 0,
+    totalRevenue: 0,
+    totalTransactions: 0,
+  })
   const [period, setPeriod] = React.useState({ from: '', to: '' })
   const [isLoading, setIsLoading] = React.useState(true)
-  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({
     from: undefined,
     to: undefined,
   })
@@ -110,7 +127,7 @@ export default function RelatorioIgrejasPage() {
     (range: { from: Date | undefined; to: Date | undefined }) => {
       setDateRange(range)
     },
-    []
+    [],
   )
 
   const handleExportCSV = () => {
@@ -124,7 +141,16 @@ export default function RelatorioIgrejasPage() {
     }
 
     try {
-      const headers = ['Nome', 'CNPJ', 'Cidade', 'Estado', 'Região', 'Arrecadação', 'Transações', 'Última Contribuição']
+      const headers = [
+        'Nome',
+        'CNPJ',
+        'Cidade',
+        'Estado',
+        'Região',
+        'Arrecadação',
+        'Transações',
+        'Última Contribuição',
+      ]
       const rows = allChurches.map((c) => [
         c.nomeFantasia,
         c.cnpj,
@@ -135,12 +161,18 @@ export default function RelatorioIgrejasPage() {
         c.transactionCount,
         c.lastTransaction ? c.lastTransaction.date : 'Nunca',
       ])
-      const csv = [headers.join(','), ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(','))].join('\n')
+      const csv = [
+        headers.join(','),
+        ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(',')),
+      ].join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `relatorio-igrejas-${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute(
+        'download',
+        `relatorio-igrejas-${new Date().toISOString().slice(0, 10)}.csv`,
+      )
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -151,7 +183,11 @@ export default function RelatorioIgrejasPage() {
         variant: 'success',
       })
     } catch (e) {
-      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o CSV.', variant: 'destructive' })
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível gerar o CSV.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -177,13 +213,13 @@ export default function RelatorioIgrejasPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/relatorios">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -204,7 +240,7 @@ export default function RelatorioIgrejasPage() {
                 Período: {period.from} até {period.to}
               </p>
             </div>
-            <Button 
+            <Button
               onClick={handleExportCSV}
               className="bg-white text-videira-purple hover:bg-white/90 shadow-lg font-semibold gap-2"
             >
@@ -264,7 +300,9 @@ export default function RelatorioIgrejasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.totalChurches}</div>
-            <p className="text-xs text-muted-foreground mt-1">{Object.keys(byRegion).length} regiões</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {Object.keys(byRegion).length} regiões
+            </p>
           </CardContent>
         </Card>
 
@@ -275,7 +313,9 @@ export default function RelatorioIgrejasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.totalRevenue)}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                summary.totalRevenue,
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">No período</p>
           </CardContent>
@@ -310,7 +350,7 @@ export default function RelatorioIgrejasPage() {
                   </div>
                   <p className="text-2xl font-bold text-primary">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      data.totalRevenue
+                      data.totalRevenue,
                     )}
                   </p>
                 </div>
@@ -335,59 +375,60 @@ export default function RelatorioIgrejasPage() {
           ) : (
             <>
               <div className="rounded-md border overflow-auto max-h-[600px]">
-              <Table>
-                <TableHeader className="sticky top-0 bg-muted z-10">
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Cidade/UF</TableHead>
-                    <TableHead>Região</TableHead>
-                    <TableHead className="text-right">Arrecadação</TableHead>
-                    <TableHead className="text-center">Transações</TableHead>
-                    <TableHead>Última Contrib.</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {churches.map((church) => (
-                    <TableRow key={church.id}>
-                      <TableCell className="font-medium">
-                        <Link
-                          href={`/admin/igrejas/${church.id}`}
-                          className="hover:underline text-primary"
-                        >
-                          {church.nomeFantasia}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        {church.cidade}/{church.estado}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{church.regionName}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                          church.totalRevenue
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">{church.transactionCount}</TableCell>
-                      <TableCell className="text-sm">
-                        {church.lastTransaction ? (
-                          <div>
-                            <div>{church.lastTransaction.date}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Intl.NumberFormat('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              }).format(church.lastTransaction.amount)}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">Nunca</span>
-                        )}
-                      </TableCell>
+                <Table>
+                  <TableHeader className="sticky top-0 bg-muted z-10">
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Cidade/UF</TableHead>
+                      <TableHead>Região</TableHead>
+                      <TableHead className="text-right">Arrecadação</TableHead>
+                      <TableHead className="text-center">Transações</TableHead>
+                      <TableHead>Última Contrib.</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {churches.map((church) => (
+                      <TableRow key={church.id}>
+                        <TableCell className="font-medium">
+                          <Link
+                            href={`/admin/igrejas/${church.id}`}
+                            className="hover:underline text-primary"
+                          >
+                            {church.nomeFantasia}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          {church.cidade}/{church.estado}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{church.regionName}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(church.totalRevenue)}
+                        </TableCell>
+                        <TableCell className="text-center">{church.transactionCount}</TableCell>
+                        <TableCell className="text-sm">
+                          {church.lastTransaction ? (
+                            <div>
+                              <div>{church.lastTransaction.date}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Intl.NumberFormat('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                }).format(church.lastTransaction.amount)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">Nunca</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Paginação */}
@@ -445,4 +486,3 @@ export default function RelatorioIgrejasPage() {
     </div>
   )
 }
-

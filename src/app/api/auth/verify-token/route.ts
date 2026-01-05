@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
     const token = searchParams.get('token')
     if (!token) return NextResponse.json({ error: 'Token obrigatório' }, { status: 400 })
 
-    const [reset] = await db.select().from(passwordResetTokens)
+    const [reset] = await db
+      .select()
+      .from(passwordResetTokens)
       .where(and(eq(passwordResetTokens.token, token), eq(passwordResetTokens.used, false)))
       .limit(1)
     if (!reset) return NextResponse.json({ valid: false }, { status: 400 })

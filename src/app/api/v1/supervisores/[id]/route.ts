@@ -22,8 +22,11 @@ const supervisorUpdateSchema = supervisorProfileSchema
   })
   .partial()
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -77,8 +80,11 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function PUT(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -146,8 +152,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

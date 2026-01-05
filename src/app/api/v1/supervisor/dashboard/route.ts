@@ -28,19 +28,22 @@ const calculateChange = (current: number, previous: number): string => {
 export async function GET(request: Request): Promise<NextResponse> {
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if ((sessionUser.role as UserRole) !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
   const supervisorId = sessionUser.id
 
@@ -49,7 +52,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { searchParams } = new URL(request.url)
     const startDateParam = searchParams.get('startDate')
     const endDateParam = searchParams.get('endDate')
-    
+
     // Usar datas fornecidas ou padrão (mês atual)
     const now = new Date()
     const startOfCurrentMonth = startDateParam ? new Date(startDateParam) : startOfMonth(now)
@@ -115,9 +118,9 @@ export async function GET(request: Request): Promise<NextResponse> {
             .from(users)
             .where(
               and(
-                gte(users.createdAt, startOfCurrentMonth), 
+                gte(users.createdAt, startOfCurrentMonth),
                 lt(users.createdAt, endOfCurrentMonth),
-                inArray(users.id, networkUserIds)
+                inArray(users.id, networkUserIds),
               ),
             )
         : [{ value: 0 }]
@@ -185,60 +188,65 @@ export async function GET(request: Request): Promise<NextResponse> {
             .groupBy(transactions.paymentMethod)
         : []
 
-    const recentTransactions = networkUserIds.length > 0 
-      ? await db
-          .select({
-            id: transactions.id,
-            name: users.email,
-            amount: transactions.amount,
-            date: transactions.createdAt,
-            status: transactions.status,
-          })
-          .from(transactions)
-          .innerJoin(users, eq(transactions.contributorId, users.id))
-          .where(
-            and(
-              gte(transactions.createdAt, startOfCurrentMonth),
-              lt(transactions.createdAt, endOfCurrentMonth),
-              inArray(transactions.contributorId, networkUserIds)
+    const recentTransactions =
+      networkUserIds.length > 0
+        ? await db
+            .select({
+              id: transactions.id,
+              name: users.email,
+              amount: transactions.amount,
+              date: transactions.createdAt,
+              status: transactions.status,
+            })
+            .from(transactions)
+            .innerJoin(users, eq(transactions.contributorId, users.id))
+            .where(
+              and(
+                gte(transactions.createdAt, startOfCurrentMonth),
+                lt(transactions.createdAt, endOfCurrentMonth),
+                inArray(transactions.contributorId, networkUserIds),
+              ),
             )
-          )
-          .orderBy(desc(transactions.createdAt))
-          .limit(10)
-      : []
+            .orderBy(desc(transactions.createdAt))
+            .limit(10)
+        : []
 
-    const recentRegistrations = networkUserIds.length > 0
-      ? await db
-          .select({
-            id: users.id,
-            name: users.email,
-            role: users.role,
-            date: users.createdAt,
-          })
-          .from(users)
-          .where(
-            and(
-              gte(users.createdAt, startOfCurrentMonth),
-              lt(users.createdAt, endOfCurrentMonth),
-              inArray(users.id, networkUserIds)
+    const recentRegistrations =
+      networkUserIds.length > 0
+        ? await db
+            .select({
+              id: users.id,
+              name: users.email,
+              role: users.role,
+              date: users.createdAt,
+            })
+            .from(users)
+            .where(
+              and(
+                gte(users.createdAt, startOfCurrentMonth),
+                lt(users.createdAt, endOfCurrentMonth),
+                inArray(users.id, networkUserIds),
+              ),
             )
-          )
-          .orderBy(desc(users.createdAt))
-          .limit(10)
-      : []
+            .orderBy(desc(users.createdAt))
+            .limit(10)
+        : []
 
     const startOfSixMonthsAgo = startOfMonth(subMonths(now, 5))
-    const newMembersByMonthData = networkUserIds.length > 0
-      ? await db
-          .select({
-            month: sql<string>`TO_CHAR(${users.createdAt}, 'YYYY-MM')`,
-            count: count(users.id),
-          })
-          .from(users)
-          .where(and(gte(users.createdAt, startOfSixMonthsAgo), inArray(users.id, networkUserIds)))
-          .groupBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
-          .orderBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
-      : []
+    const newMembersByMonthData =
+      networkUserIds.length > 0
+        ? await db
+            .select({
+              month: sql<string>`TO_CHAR(${users.createdAt}, 'YYYY-MM')`,
+              count: count(users.id),
+            })
+            .from(users)
+            .where(
+              and(gte(users.createdAt, startOfSixMonthsAgo), inArray(users.id, networkUserIds)),
+            )
+            .groupBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
+            .orderBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM')`)
+        : []
 
     const monthNames = [
       'Jan',

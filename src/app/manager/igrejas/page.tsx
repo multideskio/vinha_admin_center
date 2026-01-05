@@ -203,7 +203,7 @@ const ChurchFormModal = ({
     try {
       const response = await fetch(`/api/v1/cep?cep=${cep}`)
       if (!response.ok) return
-      
+
       const data = await response.json()
       form.setValue('address', data.address || '')
       form.setValue('neighborhood', data.neighborhood || '')
@@ -618,8 +618,6 @@ export default function IgrejasPage() {
     fetchData()
   }, [fetchData])
 
-
-
   const filteredChurches = churches.filter((church) =>
     (church.nomeFantasia || '').toLowerCase().includes(searchTerm.toLowerCase()),
   )
@@ -655,79 +653,79 @@ export default function IgrejasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8" />
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-48" />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : paginatedChurches.length > 0 ? (
+                paginatedChurches.map((church) => (
+                  <TableRow key={church.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={church.avatarUrl || 'https://placehold.co/40x40.png'}
+                          alt={church.nomeFantasia || 'Igreja'}
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover ring-2 ring-videira-cyan/30"
+                          unoptimized
+                        />
+                        <span className="font-semibold">{sanitizeText(church.nomeFantasia)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {sanitizeText(church.cnpj)}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {sanitizeText(church.email)}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={church.status === 'active' ? 'success' : 'destructive'}>
+                        {church.status === 'active' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/manager/igrejas/${church.id}`}>Editar</Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    Nenhuma igreja encontrada.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : paginatedChurches.length > 0 ? (
-              paginatedChurches.map((church) => (
-                <TableRow key={church.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={church.avatarUrl || 'https://placehold.co/40x40.png'}
-                        alt={church.nomeFantasia || 'Igreja'}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover ring-2 ring-videira-cyan/30"
-                        unoptimized
-                      />
-                      <span className="font-semibold">{sanitizeText(church.nomeFantasia)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {sanitizeText(church.cnpj)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {sanitizeText(church.email)}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Badge variant={church.status === 'active' ? 'success' : 'destructive'}>
-                      {church.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/manager/igrejas/${church.id}`}>Editar</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  Nenhuma igreja encontrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+              )}
+            </TableBody>
           </Table>
         </div>
         <PaginationControls />
@@ -749,7 +747,10 @@ export default function IgrejasPage() {
         ) : paginatedChurches.length > 0 ? (
           paginatedChurches.map((church, index) => {
             return (
-              <Card key={church.id} className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
+              <Card
+                key={church.id}
+                className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all"
+              >
                 <CardContent className="pt-6">
                   <div className="flex flex-col gap-4">
                     <div className="flex items-start gap-4">
@@ -766,7 +767,10 @@ export default function IgrejasPage() {
                           <h3 className="text-lg font-bold leading-tight">
                             {sanitizeText(church.nomeFantasia)}
                           </h3>
-                          <Badge variant={church.status === 'active' ? 'success' : 'destructive'} className="text-xs">
+                          <Badge
+                            variant={church.status === 'active' ? 'success' : 'destructive'}
+                            className="text-xs"
+                          >
                             {church.status === 'active' ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </div>
@@ -782,20 +786,26 @@ export default function IgrejasPage() {
                         <span>{sanitizeText(church.cnpj)}</span>
                       </p>
                       <p className="flex items-center gap-2 text-muted-foreground">
-                        <Mail size={14} className="text-videira-cyan" /> 
+                        <Mail size={14} className="text-videira-cyan" />
                         <span>{sanitizeText(church.email)}</span>
                       </p>
                       <p className="flex items-center gap-2 text-muted-foreground">
-                        <Phone size={14} className="text-videira-cyan" /> 
+                        <Phone size={14} className="text-videira-cyan" />
                         <span>{sanitizeText(church.phone)}</span>
                       </p>
                       <p className="flex items-center gap-2 text-muted-foreground">
                         <MapPin size={14} className="text-videira-cyan" />
-                        <span>{sanitizeText(church.city)} - {sanitizeText(church.state)}</span>
+                        <span>
+                          {sanitizeText(church.city)} - {sanitizeText(church.state)}
+                        </span>
                       </p>
                     </div>
                     <Link href={`/manager/igrejas/${church.id}`} className="w-full">
-                      <Button variant="outline" size="sm" className="w-full border-2 hover:bg-videira-cyan/10 hover:border-videira-cyan hover:text-videira-cyan transition-all">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-2 hover:bg-videira-cyan/10 hover:border-videira-cyan hover:text-videira-cyan transition-all"
+                      >
                         <Pencil className="mr-2 h-4 w-4" />
                         Editar Perfil
                       </Button>
@@ -851,7 +861,7 @@ export default function IgrejasPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>

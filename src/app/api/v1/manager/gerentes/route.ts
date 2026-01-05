@@ -18,7 +18,7 @@ if (!COMPANY_ID) {
 }
 const VALIDATED_COMPANY_ID = COMPANY_ID as string
 
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET(_request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -72,13 +72,16 @@ export async function GET(request: Request): Promise<NextResponse> {
 export async function POST(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem criar gerentes.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Apenas administradores podem criar gerentes.' },
+      { status: 403 },
+    )
   }
 
   // Esta funcionalidade foi movida para /api/v1/admin/gerentes
   // Mantendo apenas para compatibilidade, mas bloqueando acesso
   return NextResponse.json(
     { error: 'Use /api/v1/admin/gerentes para criar gerentes.' },
-    { status: 410 }
+    { status: 410 },
   )
 }

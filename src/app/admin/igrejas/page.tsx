@@ -20,7 +20,6 @@ import {
   ChevronsRight,
   Building2,
   RefreshCw,
-  Users,
   AlertTriangle,
   Church as ChurchIcon,
 } from 'lucide-react'
@@ -37,7 +36,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -126,16 +124,22 @@ type Church = z.infer<typeof churchSchema> & {
   avatarUrl?: string
 }
 
-const DeleteChurchDialog = ({ churchId, onConfirm }: { churchId: string; onConfirm: (id: string, reason: string) => void }) => {
+const DeleteChurchDialog = ({
+  churchId,
+  onConfirm,
+}: {
+  churchId: string
+  onConfirm: (id: string, reason: string) => void
+}) => {
   const [reason, setReason] = React.useState('')
   const [isOpen, setIsOpen] = React.useState(false)
-  
+
   const handleConfirm = () => {
     onConfirm(churchId, reason)
     setIsOpen(false)
     setReason('')
   }
-  
+
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
@@ -150,7 +154,7 @@ const DeleteChurchDialog = ({ churchId, onConfirm }: { churchId: string; onConfi
             Confirmar Exclusão da Igreja
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo 
+            Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo
             detalhado para a exclusão desta igreja.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -171,8 +175,8 @@ const DeleteChurchDialog = ({ churchId, onConfirm }: { churchId: string; onConfi
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleConfirm} 
+          <AlertDialogAction
+            onClick={handleConfirm}
             disabled={!reason.trim()}
             className="bg-destructive hover:bg-destructive/90 font-semibold"
           >
@@ -353,10 +357,7 @@ const ChurchFormModal = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSave)}
-            className="space-y-4 p-4"
-          >
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4">
             <Alert className="bg-videira-blue/10 border-videira-blue/30">
               <AlertTriangle className="h-4 w-4 text-videira-blue" />
               <AlertDescription className="text-videira-blue">
@@ -677,8 +678,8 @@ const ChurchFormModal = ({
               <DialogClose asChild>
                 <Button variant="outline">Cancelar</Button>
               </DialogClose>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isFetchingCep || isFetchingCnpj}
                 className="bg-videira-blue hover:bg-videira-blue/90 text-white"
               >
@@ -732,10 +733,10 @@ export default function IgrejasPage() {
 
   const handleDelete = async (churchId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/v1/igrejas/${churchId}`, { 
+      const response = await fetch(`/api/v1/igrejas/${churchId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deletionReason: reason })
+        body: JSON.stringify({ deletionReason: reason }),
       })
       if (!response.ok) throw new Error('Falha ao excluir a igreja.')
       toast({ title: 'Sucesso!', description: 'Igreja excluída com sucesso.', variant: 'success' })
@@ -746,9 +747,10 @@ export default function IgrejasPage() {
     }
   }
 
-  const filteredChurches = churches.filter((church) =>
-    church.nomeFantasia.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    church.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredChurches = churches.filter(
+    (church) =>
+      church.nomeFantasia.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      church.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const totalPages = Math.ceil(filteredChurches.length / itemsPerPage)
@@ -831,7 +833,7 @@ export default function IgrejasPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/igrejas/${church.id}`}>
-                          <Button 
+                          <Button
                             size="sm"
                             className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                           >
@@ -888,13 +890,13 @@ export default function IgrejasPage() {
         ) : paginatedChurches.length > 0 ? (
           paginatedChurches.map((church, index) => {
             return (
-              <Card 
+              <Card
                 key={church.id}
                 className={cn(
-                  "shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4",
-                  index % 3 === 0 && "border-t-videira-cyan",
-                  index % 3 === 1 && "border-t-videira-blue",
-                  index % 3 === 2 && "border-t-videira-purple"
+                  'shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4',
+                  index % 3 === 0 && 'border-t-videira-cyan',
+                  index % 3 === 1 && 'border-t-videira-blue',
+                  index % 3 === 2 && 'border-t-videira-purple',
                 )}
               >
                 <CardContent className="pt-6">
@@ -909,9 +911,7 @@ export default function IgrejasPage() {
                     />
                     <div className="flex-1 space-y-2 min-w-[200px]">
                       <div className="flex items-start justify-between">
-                        <h3 className="text-lg font-bold">
-                          {church.nomeFantasia}
-                        </h3>
+                        <h3 className="text-lg font-bold">{church.nomeFantasia}</h3>
                         <Badge variant={church.status === 'active' ? 'success' : 'destructive'}>
                           {church.status === 'active' ? 'Ativo' : 'Inativo'}
                         </Badge>
@@ -945,7 +945,7 @@ export default function IgrejasPage() {
                       recipientEmail={church.email}
                       recipientPhone={church.phone || ''}
                     >
-                      <Button 
+                      <Button
                         size="sm"
                         className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                       >
@@ -954,7 +954,7 @@ export default function IgrejasPage() {
                       </Button>
                     </SendMessageDialog>
                     <Link href={`/admin/igrejas/${church.id}`}>
-                      <Button 
+                      <Button
                         size="sm"
                         className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                       >
@@ -981,7 +981,9 @@ export default function IgrejasPage() {
   const PaginationControls = () => (
     <div className="flex items-center justify-between mt-6">
       <div className="text-sm text-muted-foreground">
-        Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredChurches.length)} de {filteredChurches.length} resultados
+        Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
+        {Math.min(currentPage * itemsPerPage, filteredChurches.length)} de {filteredChurches.length}{' '}
+        resultados
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -1037,7 +1039,7 @@ export default function IgrejasPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -1049,7 +1051,8 @@ export default function IgrejasPage() {
                 Gerencie as igrejas da organização
               </p>
               <p className="text-sm text-white/70 mt-1">
-                {churches.length} {churches.length === 1 ? 'igreja cadastrada' : 'igrejas cadastradas'}
+                {churches.length}{' '}
+                {churches.length === 1 ? 'igreja cadastrada' : 'igrejas cadastradas'}
               </p>
             </div>
             <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
@@ -1090,7 +1093,7 @@ export default function IgrejasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-blue">
-              {churches.filter(c => c.status === 'active').length}
+              {churches.filter((c) => c.status === 'active').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">No sistema</p>
           </CardContent>
@@ -1107,7 +1110,7 @@ export default function IgrejasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-purple">
-              {churches.filter(c => c.status === 'inactive').length}
+              {churches.filter((c) => c.status === 'inactive').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">Desativadas</p>
           </CardContent>
@@ -1157,8 +1160,8 @@ export default function IgrejasPage() {
                     size="icon"
                     onClick={() => setViewMode('table')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'table' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'table' && 'bg-videira-blue text-white',
                     )}
                   >
                     <List className="h-5 w-5" />
@@ -1173,8 +1176,8 @@ export default function IgrejasPage() {
                     size="icon"
                     onClick={() => setViewMode('card')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'card' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'card' && 'bg-videira-blue text-white',
                     )}
                   >
                     <Grid3x3 className="h-5 w-5" />

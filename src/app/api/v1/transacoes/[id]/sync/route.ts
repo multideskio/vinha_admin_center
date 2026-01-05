@@ -5,10 +5,7 @@ import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { queryPayment } from '@/lib/cielo'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -27,10 +24,7 @@ export async function POST(
     }
 
     if (!transaction.gatewayTransactionId) {
-      return NextResponse.json(
-        { error: 'Transação sem ID do gateway' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Transação sem ID do gateway' }, { status: 400 })
     }
 
     // Verificar se tem mais de 15 minutos
@@ -40,10 +34,7 @@ export async function POST(
 
     if (transaction.status === 'pending' && diffMinutes > 15) {
       // Cancelar transação pendente com mais de 15 minutos
-      await db
-        .update(transactions)
-        .set({ status: 'refused' })
-        .where(eq(transactions.id, id))
+      await db.update(transactions).set({ status: 'refused' }).where(eq(transactions.id, id))
 
       return NextResponse.json({
         success: true,
@@ -63,7 +54,7 @@ export async function POST(
 
     // Consultar status na Cielo
     const cieloResponse = await queryPayment(transaction.gatewayTransactionId)
-    
+
     // Mapear status da Cielo
     let newStatus: 'approved' | 'pending' | 'refused' | 'refunded' = 'pending'
     if (cieloResponse.Payment?.Status === 2) {
@@ -76,10 +67,7 @@ export async function POST(
 
     // Atualizar no banco se mudou
     if (newStatus !== transaction.status) {
-      await db
-        .update(transactions)
-        .set({ status: newStatus })
-        .where(eq(transactions.id, id))
+      await db.update(transactions).set({ status: newStatus }).where(eq(transactions.id, id))
     }
 
     return NextResponse.json({
@@ -92,7 +80,7 @@ export async function POST(
     console.error('Error syncing transaction:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Erro ao sincronizar' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

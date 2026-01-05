@@ -19,7 +19,7 @@ const notificationRuleSchema = z.object({
 })
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -33,9 +33,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const [updatedRule] = await db
       .update(notificationRules)
       .set({ ...validatedData, updatedAt: new Date() })
-      .where(
-        and(eq(notificationRules.id, id), eq(notificationRules.companyId, user.companyId)),
-      )
+      .where(and(eq(notificationRules.id, id), eq(notificationRules.companyId, user.companyId)))
       .returning()
 
     if (!updatedRule) {
@@ -56,7 +54,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 }
 
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -66,9 +64,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   try {
     const [deletedRule] = await db
       .delete(notificationRules)
-      .where(
-        and(eq(notificationRules.id, id), eq(notificationRules.companyId, user.companyId)),
-      )
+      .where(and(eq(notificationRules.id, id), eq(notificationRules.companyId, user.companyId)))
       .returning()
 
     if (!deletedRule) {

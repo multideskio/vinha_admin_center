@@ -53,22 +53,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error sending message:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
-
 
 async function sendWhatsApp(to: string, message: string, companyId: string) {
   const [settings] = await db

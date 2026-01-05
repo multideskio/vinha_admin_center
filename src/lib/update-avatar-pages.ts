@@ -7,17 +7,17 @@ export const AVATAR_PAGES = [
   // Supervisores
   'src/app/admin/supervisores/[id]/page.tsx',
   'src/app/manager/supervisores/[id]/page.tsx',
-  
-  // Pastores  
+
+  // Pastores
   'src/app/admin/pastores/[id]/page.tsx',
   'src/app/manager/pastores/[id]/page.tsx',
   'src/app/supervisor/pastores/[id]/page.tsx',
-  
+
   // Igrejas
   'src/app/admin/igrejas/[id]/page.tsx',
   'src/app/manager/igrejas/[id]/page.tsx',
   'src/app/supervisor/igrejas/[id]/page.tsx',
-  
+
   // Perfis próprios
   'src/app/supervisor/perfil/page.tsx',
   'src/app/pastor/perfil/page.tsx',
@@ -76,7 +76,8 @@ export const getUpdatedPhotoHandler = (entityType: string, idParam: string = 'id
   }`
 
 // Padrão para encontrar handlePhotoChange antigo
-export const OLD_PHOTO_HANDLER_PATTERN = /const handlePhotoChange = \(event: React\.ChangeEvent<HTMLInputElement>\) => \{[\s\S]*?\n {2}\}/
+export const OLD_PHOTO_HANDLER_PATTERN =
+  /const handlePhotoChange = \(event: React\.ChangeEvent<HTMLInputElement>\) => \{[\s\S]*?\n {2}\}/
 
 // Função para usar AvatarUpload component
 export const getAvatarUploadUsage = (entityVar: string, idVar: string, entityType: string) => `

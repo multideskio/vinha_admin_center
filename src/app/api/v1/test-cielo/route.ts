@@ -13,8 +13,8 @@ export async function GET() {
       .where(
         and(
           eq(gatewayConfigurations.companyId, COMPANY_ID),
-          eq(gatewayConfigurations.gatewayName, 'Cielo')
-        )
+          eq(gatewayConfigurations.gatewayName, 'Cielo'),
+        ),
       )
       .limit(1)
 
@@ -25,8 +25,10 @@ export async function GET() {
       })
     }
 
-    const merchantId = config.environment === 'production' ? config.prodClientId : config.devClientId
-    const merchantKey = config.environment === 'production' ? config.prodClientSecret : config.devClientSecret
+    const merchantId =
+      config.environment === 'production' ? config.prodClientId : config.devClientId
+    const merchantKey =
+      config.environment === 'production' ? config.prodClientSecret : config.devClientSecret
 
     return NextResponse.json({
       exists: true,
@@ -40,8 +42,11 @@ export async function GET() {
       acceptedMethods: config.acceptedPaymentMethods,
     })
   } catch (error) {
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Erro desconhecido',
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      },
+      { status: 500 },
+    )
   }
 }

@@ -27,10 +27,7 @@ export async function GET(request: NextRequest) {
     const templateType = searchParams.get('type')
 
     if (!companyId) {
-      return NextResponse.json(
-        { error: 'companyId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'companyId is required' }, { status: 400 })
     }
 
     const templates = templateType
@@ -40,21 +37,15 @@ export async function GET(request: NextRequest) {
           .where(
             and(
               eq(messageTemplates.companyId, companyId),
-              eq(messageTemplates.templateType, templateType)
-            )
+              eq(messageTemplates.templateType, templateType),
+            ),
           )
-      : await db
-          .select()
-          .from(messageTemplates)
-          .where(eq(messageTemplates.companyId, companyId))
+      : await db.select().from(messageTemplates).where(eq(messageTemplates.companyId, companyId))
 
     return NextResponse.json({ templates })
   } catch (error) {
     console.error('Error fetching templates:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -70,7 +61,7 @@ export async function POST(request: NextRequest) {
       if (!validation.isValid) {
         return NextResponse.json(
           { error: 'Invalid WhatsApp template', details: validation.errors },
-          { status: 400 }
+          { status: 400 },
         )
       }
     }
@@ -80,31 +71,25 @@ export async function POST(request: NextRequest) {
       if (!validation.isValid) {
         return NextResponse.json(
           { error: 'Invalid email template', details: validation.errors },
-          { status: 400 }
+          { status: 400 },
         )
       }
     }
 
-    const [template] = await db
-      .insert(messageTemplates)
-      .values(data)
-      .returning()
+    const [template] = await db.insert(messageTemplates).values(data).returning()
 
     return NextResponse.json({ template }, { status: 201 })
   } catch (error) {
     console.error('Error creating template:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -115,10 +100,7 @@ export async function PUT(request: NextRequest) {
     const templateId = searchParams.get('id')
 
     if (!templateId) {
-      return NextResponse.json(
-        { error: 'Template ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Template ID is required' }, { status: 400 })
     }
 
     const body = await request.json()
@@ -130,7 +112,7 @@ export async function PUT(request: NextRequest) {
       if (!validation.isValid) {
         return NextResponse.json(
           { error: 'Invalid WhatsApp template', details: validation.errors },
-          { status: 400 }
+          { status: 400 },
         )
       }
     }
@@ -140,7 +122,7 @@ export async function PUT(request: NextRequest) {
       if (!validation.isValid) {
         return NextResponse.json(
           { error: 'Invalid email template', details: validation.errors },
-          { status: 400 }
+          { status: 400 },
         )
       }
     }
@@ -152,26 +134,20 @@ export async function PUT(request: NextRequest) {
       .returning()
 
     if (!template) {
-      return NextResponse.json(
-        { error: 'Template not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Template not found' }, { status: 404 })
     }
 
     return NextResponse.json({ template })
   } catch (error) {
     console.error('Error updating template:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -9,22 +9,20 @@ import { EmailService } from '@/lib/notifications'
 import { otherSettings } from '@/db/schema'
 import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
 
-
-
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const clientIP = getClientIP(request)
     const rateLimitResult = rateLimit(
       `forgot-password:${clientIP}`,
-      rateLimitPresets.forgotPassword
+      rateLimitPresets.forgotPassword,
     )
-    
+
     if (!rateLimitResult.allowed) {
       const resetInMinutes = Math.ceil((rateLimitResult.resetAt - Date.now()) / 60000)
       return NextResponse.json(
         { error: `Muitas tentativas. Tente novamente em ${resetInMinutes} minutos.` },
-        { status: 429 }
+        { status: 429 },
       )
     }
 
@@ -50,12 +48,17 @@ export async function POST(request: NextRequest) {
       expiresAt,
     })
     // Busca settings da empresa
-    const [settings] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, user.companyId)).limit(1)
-    if (!settings) return NextResponse.json({ error: 'Configuração não encontrada' }, { status: 500 })
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, user.companyId))
+      .limit(1)
+    if (!settings)
+      return NextResponse.json({ error: 'Configuração não encontrada' }, { status: 500 })
 
     // ✅ CORRIGIDO: Usar URL do .env
     const host = process.env.NEXT_PUBLIC_APP_URL
-    
+
     if (!host) {
       console.error('[FORGOT_PASSWORD] NEXT_PUBLIC_APP_URL não configurada no .env')
       return NextResponse.json({ error: 'Configuração do sistema inválida' }, { status: 500 })

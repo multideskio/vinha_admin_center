@@ -5,24 +5,30 @@ import { eq, desc, and } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
-  
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
+
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
@@ -45,14 +51,14 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       .where(
         and(
           // Transações onde o pastor é o contribuinte
-          eq(transactions.contributorId, id)
-        )
+          eq(transactions.contributorId, id),
+        ),
       )
       .orderBy(desc(transactions.createdAt))
       .limit(50) // Limitar a 50 transações mais recentes
 
     // Formatar as transações para o formato esperado pelo frontend
-    const formattedTransactions = pastorTransactions.map(transaction => ({
+    const formattedTransactions = pastorTransactions.map((transaction) => ({
       id: transaction.id,
       amount: transaction.amount,
       status: transaction.status,
@@ -67,9 +73,6 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     })
   } catch (error) {
     console.error('Erro ao buscar transações do pastor:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }

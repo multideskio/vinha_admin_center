@@ -11,7 +11,14 @@ import * as React from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Calendar as CalendarIcon, Building, User, Loader2, ChevronsUpDown, Check } from 'lucide-react'
+import {
+  Calendar as CalendarIcon,
+  Building,
+  User,
+  Loader2,
+  ChevronsUpDown,
+  Check,
+} from 'lucide-react'
 import { format, subYears } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
@@ -30,19 +37,25 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { cn } from '@/lib/utils'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 
 // Validação de CPF
 const validateCPF = (cpf: string): boolean => {
   const cleaned = cpf.replace(/\D/g, '')
-  
+
   if (cleaned.length !== 11) return false
   if (/^(\d)\1{10}$/.test(cleaned)) return false // Todos os dígitos iguais
-  
+
   // Valida primeiro dígito verificador
   let sum = 0
   for (let i = 0; i < 9; i++) {
@@ -51,7 +64,7 @@ const validateCPF = (cpf: string): boolean => {
   let digit = 11 - (sum % 11)
   if (digit >= 10) digit = 0
   if (digit !== parseInt(cleaned.charAt(9))) return false
-  
+
   // Valida segundo dígito verificador
   sum = 0
   for (let i = 0; i < 10; i++) {
@@ -60,17 +73,17 @@ const validateCPF = (cpf: string): boolean => {
   digit = 11 - (sum % 11)
   if (digit >= 10) digit = 0
   if (digit !== parseInt(cleaned.charAt(10))) return false
-  
+
   return true
 }
 
 // Validação de CNPJ
 const validateCNPJ = (cnpj: string): boolean => {
   const cleaned = cnpj.replace(/\D/g, '')
-  
+
   if (cleaned.length !== 14) return false
   if (/^(\d)\1{13}$/.test(cleaned)) return false // Todos os dígitos iguais
-  
+
   // Valida primeiro dígito verificador
   let sum = 0
   let pos = 5
@@ -80,7 +93,7 @@ const validateCNPJ = (cnpj: string): boolean => {
   }
   let digit = sum % 11 < 2 ? 0 : 11 - (sum % 11)
   if (digit !== parseInt(cleaned.charAt(12))) return false
-  
+
   // Valida segundo dígito verificador
   sum = 0
   pos = 6
@@ -90,24 +103,21 @@ const validateCNPJ = (cnpj: string): boolean => {
   }
   digit = sum % 11 < 2 ? 0 : 11 - (sum % 11)
   if (digit !== parseInt(cleaned.charAt(13))) return false
-  
+
   return true
 }
 
 const pastorSchema = z.object({
   firstName: z.string().min(1, 'O nome é obrigatório.'),
   lastName: z.string().min(1, 'O sobrenome é obrigatório.'),
-  cpf: z.string()
-    .min(14, 'O CPF é obrigatório.')
-    .refine(validateCPF, 'CPF inválido.'),
-  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.' })
-    .refine((date) => {
-      const age = new Date().getFullYear() - date.getFullYear()
-      const monthDiff = new Date().getMonth() - date.getMonth()
-      const dayDiff = new Date().getDate() - date.getDate()
-      const adjustedAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age
-      return adjustedAge >= 18
-    }, 'Você deve ter pelo menos 18 anos.'),
+  cpf: z.string().min(14, 'O CPF é obrigatório.').refine(validateCPF, 'CPF inválido.'),
+  birthDate: z.date({ required_error: 'A data de nascimento é obrigatória.' }).refine((date) => {
+    const age = new Date().getFullYear() - date.getFullYear()
+    const monthDiff = new Date().getMonth() - date.getMonth()
+    const dayDiff = new Date().getDate() - date.getDate()
+    const adjustedAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age
+    return adjustedAge >= 18
+  }, 'Você deve ter pelo menos 18 anos.'),
   email: z.string().email('E-mail inválido.'),
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
 })
@@ -115,9 +125,7 @@ const pastorSchema = z.object({
 const churchSchema = z.object({
   nomeFantasia: z.string().min(1, 'O nome fantasia é obrigatório.'),
   razaoSocial: z.string().min(1, 'A razão social é obrigatória.'),
-  cnpj: z.string()
-    .min(18, 'O CNPJ é obrigatório.')
-    .refine(validateCNPJ, 'CNPJ inválido.'),
+  cnpj: z.string().min(18, 'O CNPJ é obrigatório.').refine(validateCNPJ, 'CNPJ inválido.'),
   email: z.string().email('E-mail inválido.'),
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
 })
@@ -126,11 +134,11 @@ type PastorFormValues = z.infer<typeof pastorSchema>
 type ChurchFormValues = z.infer<typeof churchSchema>
 type Supervisor = { id: string; name: string }
 
-const PastorForm = ({ 
-  supervisors, 
+const PastorForm = ({
+  supervisors,
   onSearchChange,
-  isSearching
-}: { 
+  isSearching,
+}: {
   supervisors: Supervisor[]
   onSearchChange: (search: string) => void
   isSearching: boolean
@@ -138,7 +146,7 @@ const PastorForm = ({
   const [openSupervisor, setOpenSupervisor] = React.useState(false)
   const { toast } = useToast()
   const router = useRouter()
-  
+
   const form = useForm<PastorFormValues>({
     resolver: zodResolver(pastorSchema),
     defaultValues: {
@@ -152,7 +160,7 @@ const PastorForm = ({
   const onSubmit = async (data: PastorFormValues) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout para registro
-    
+
     try {
       const response = await fetch('/api/v1/auth/register/pastor', {
         method: 'POST',
@@ -163,36 +171,36 @@ const PastorForm = ({
         }),
         signal: controller.signal,
       })
-      
+
       clearTimeout(timeoutId)
-      
+
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Falha ao criar conta')
       }
-      
-      toast({ 
-        title: 'Sucesso!', 
+
+      toast({
+        title: 'Sucesso!',
         description: result.message || 'Conta criada. Verifique seu email.',
       })
-      
+
       // Redirecionar para login após 2 segundos
       setTimeout(() => router.push('/auth/login'), 2000)
     } catch (error) {
       clearTimeout(timeoutId)
-      
+
       if ((error as Error).name === 'AbortError') {
-        toast({ 
-          title: 'Erro', 
-          description: 'Tempo esgotado. Tente novamente.', 
-          variant: 'destructive' 
+        toast({
+          title: 'Erro',
+          description: 'Tempo esgotado. Tente novamente.',
+          variant: 'destructive',
         })
       } else {
-        toast({ 
-          title: 'Erro', 
-          description: (error as Error).message || 'Erro ao criar conta', 
-          variant: 'destructive' 
+        toast({
+          title: 'Erro',
+          description: (error as Error).message || 'Erro ao criar conta',
+          variant: 'destructive',
         })
       }
     }
@@ -328,7 +336,7 @@ const PastorForm = ({
                         role="combobox"
                         className={cn(
                           'w-full justify-between border-2',
-                          !field.value && 'text-muted-foreground'
+                          !field.value && 'text-muted-foreground',
                         )}
                       >
                         {field.value
@@ -340,8 +348,8 @@ const PastorForm = ({
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <Command shouldFilter={false}>
-                      <CommandInput 
-                        placeholder="Buscar supervisor..." 
+                      <CommandInput
+                        placeholder="Buscar supervisor..."
                         onValueChange={onSearchChange}
                       />
                       <CommandList>
@@ -366,7 +374,7 @@ const PastorForm = ({
                               <Check
                                 className={cn(
                                   'mr-2 h-4 w-4',
-                                  field.value === supervisor.id ? 'opacity-100' : 'opacity-0'
+                                  field.value === supervisor.id ? 'opacity-100' : 'opacity-0',
                                 )}
                               />
                               {supervisor.name}
@@ -382,12 +390,7 @@ const PastorForm = ({
             )}
           />
         </div>
-        <Button 
-          type="submit" 
-          className="w-full" 
-          size="lg"
-          disabled={form.formState.isSubmitting}
-        >
+        <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -402,11 +405,11 @@ const PastorForm = ({
   )
 }
 
-const ChurchForm = ({ 
+const ChurchForm = ({
   supervisors,
   onSearchChange,
-  isSearching
-}: { 
+  isSearching,
+}: {
   supervisors: Supervisor[]
   onSearchChange: (search: string) => void
   isSearching: boolean
@@ -414,7 +417,7 @@ const ChurchForm = ({
   const [openSupervisor, setOpenSupervisor] = React.useState(false)
   const { toast } = useToast()
   const router = useRouter()
-  
+
   const form = useForm<ChurchFormValues>({
     resolver: zodResolver(churchSchema),
     defaultValues: {
@@ -428,7 +431,7 @@ const ChurchForm = ({
   const onSubmit = async (data: ChurchFormValues) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout para registro
-    
+
     try {
       const response = await fetch('/api/v1/auth/register/church', {
         method: 'POST',
@@ -436,36 +439,36 @@ const ChurchForm = ({
         body: JSON.stringify(data),
         signal: controller.signal,
       })
-      
+
       clearTimeout(timeoutId)
-      
+
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Falha ao criar conta')
       }
-      
-      toast({ 
-        title: 'Sucesso!', 
+
+      toast({
+        title: 'Sucesso!',
         description: result.message || 'Conta criada. Verifique seu email.',
       })
-      
+
       // Redirecionar para login após 2 segundos
       setTimeout(() => router.push('/auth/login'), 2000)
     } catch (error) {
       clearTimeout(timeoutId)
-      
+
       if ((error as Error).name === 'AbortError') {
-        toast({ 
-          title: 'Erro', 
-          description: 'Tempo esgotado. Tente novamente.', 
-          variant: 'destructive' 
+        toast({
+          title: 'Erro',
+          description: 'Tempo esgotado. Tente novamente.',
+          variant: 'destructive',
         })
       } else {
-        toast({ 
-          title: 'Erro', 
-          description: (error as Error).message || 'Erro ao criar conta', 
-          variant: 'destructive' 
+        toast({
+          title: 'Erro',
+          description: (error as Error).message || 'Erro ao criar conta',
+          variant: 'destructive',
         })
       }
     }
@@ -563,7 +566,7 @@ const ChurchForm = ({
                         role="combobox"
                         className={cn(
                           'w-full justify-between border-2',
-                          !field.value && 'text-muted-foreground'
+                          !field.value && 'text-muted-foreground',
                         )}
                       >
                         {field.value
@@ -575,8 +578,8 @@ const ChurchForm = ({
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <Command shouldFilter={false}>
-                      <CommandInput 
-                        placeholder="Buscar supervisor..." 
+                      <CommandInput
+                        placeholder="Buscar supervisor..."
                         onValueChange={onSearchChange}
                       />
                       <CommandList>
@@ -601,7 +604,7 @@ const ChurchForm = ({
                               <Check
                                 className={cn(
                                   'mr-2 h-4 w-4',
-                                  field.value === supervisor.id ? 'opacity-100' : 'opacity-0'
+                                  field.value === supervisor.id ? 'opacity-100' : 'opacity-0',
                                 )}
                               />
                               {supervisor.name}
@@ -617,12 +620,7 @@ const ChurchForm = ({
             )}
           />
         </div>
-        <Button 
-          type="submit" 
-          className="w-full" 
-          size="lg"
-          disabled={form.formState.isSubmitting}
-        >
+        <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -649,10 +647,10 @@ export default function NovaContaPage() {
     async function fetchSupervisors(): Promise<void> {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
-      
+
       try {
         const response = await fetch('/api/v1/supervisores?minimal=true&limit=50', {
-          signal: controller.signal
+          signal: controller.signal,
         })
         clearTimeout(timeoutId)
         if (!response.ok) throw new Error('Falha ao carregar supervisores')
@@ -692,11 +690,11 @@ export default function NovaContaPage() {
       setIsSearching(true)
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
-      
+
       try {
         const response = await fetch(
           `/api/v1/supervisores?minimal=true&search=${encodeURIComponent(searchQuery)}&limit=100`,
-          { signal: controller.signal }
+          { signal: controller.signal },
         )
         clearTimeout(timeoutId)
         if (!response.ok) throw new Error('Falha ao buscar supervisores')
@@ -746,33 +744,44 @@ export default function NovaContaPage() {
         ) : (
           <Tabs defaultValue="pastor">
             <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 h-auto">
-              <TabsTrigger 
-                value="pastor" 
+              <TabsTrigger
+                value="pastor"
                 className="gap-2 data-[state=active]:bg-videira-blue data-[state=active]:text-white font-semibold py-3"
               >
-                <User className="h-4 w-4" /> 
+                <User className="h-4 w-4" />
                 Cadastro de Pastor
               </TabsTrigger>
-              <TabsTrigger 
-                value="igreja" 
+              <TabsTrigger
+                value="igreja"
                 className="gap-2 data-[state=active]:bg-videira-purple data-[state=active]:text-white font-semibold py-3"
               >
-                <Building className="h-4 w-4" /> 
+                <Building className="h-4 w-4" />
                 Cadastro de Igreja
               </TabsTrigger>
             </TabsList>
             <TabsContent value="pastor" className="mt-6">
-              <PastorForm supervisors={supervisors} onSearchChange={setSearchQuery} isSearching={isSearching} />
+              <PastorForm
+                supervisors={supervisors}
+                onSearchChange={setSearchQuery}
+                isSearching={isSearching}
+              />
             </TabsContent>
             <TabsContent value="igreja" className="mt-6">
-              <ChurchForm supervisors={supervisors} onSearchChange={setSearchQuery} isSearching={isSearching} />
+              <ChurchForm
+                supervisors={supervisors}
+                onSearchChange={setSearchQuery}
+                isSearching={isSearching}
+              />
             </TabsContent>
           </Tabs>
         )}
         <div className="mt-6 text-center border-t pt-6">
           <p className="text-sm text-muted-foreground">
             Já tem uma conta?{' '}
-            <Link href="/auth/login" className="text-videira-blue hover:text-videira-cyan font-semibold transition-colors">
+            <Link
+              href="/auth/login"
+              className="text-videira-blue hover:text-videira-cyan font-semibold transition-colors"
+            >
               Faça o login
             </Link>
           </p>

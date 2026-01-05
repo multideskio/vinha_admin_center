@@ -3,6 +3,7 @@
 ## 📋 Visão Geral
 
 Sistema completo de monitoramento de emails via AWS SNS que detecta automaticamente:
+
 - **Bounces** (emails que não foram entregues)
 - **Complaints** (marcações como spam)
 - **Blacklist automática** de emails problemáticos
@@ -10,6 +11,7 @@ Sistema completo de monitoramento de emails via AWS SNS que detecta automaticame
 ## 🎯 Funcionalidades
 
 ### ✅ Implementado
+
 - Endpoint webhook para receber notificações SNS
 - Blacklist automática de bounces permanentes
 - Blacklist automática de complaints (spam)
@@ -27,6 +29,7 @@ aws sns create-topic --name vinha-ses-notifications --region us-east-1
 ```
 
 Ou via Console AWS:
+
 1. Acesse **SNS** > **Topics**
 2. Clique em **Create topic**
 3. Nome: `vinha-ses-notifications`
@@ -61,6 +64,7 @@ aws ses set-identity-headers-in-notifications-enabled \
 ```
 
 Ou via Console AWS:
+
 1. Acesse **SES** > **Verified identities**
 2. Selecione seu domínio/email
 3. Aba **Notifications**
@@ -79,6 +83,7 @@ aws sns subscribe \
 ```
 
 Ou via Console AWS:
+
 1. Acesse **SNS** > **Topics** > `vinha-ses-notifications`
 2. Clique em **Create subscription**
 3. Protocol: **HTTPS**
@@ -92,6 +97,7 @@ O endpoint `/api/v1/sns/webhook` confirmará automaticamente a subscription quan
 ## 📡 Endpoint Webhook
 
 ### URL
+
 ```
 POST https://seu-dominio.com/api/v1/sns/webhook
 ```
@@ -99,6 +105,7 @@ POST https://seu-dominio.com/api/v1/sns/webhook
 ### Tipos de Mensagens
 
 #### 1. SubscriptionConfirmation
+
 Primeira mensagem enviada pelo SNS para confirmar a subscription.
 
 ```json
@@ -139,7 +146,8 @@ Primeira mensagem enviada pelo SNS para confirmar a subscription.
 }
 ```
 
-**Ação:** 
+**Ação:**
+
 - Se `bounceType === 'Permanent'`: adiciona à blacklist
 - Se `bounceType === 'Transient'`: apenas loga (não adiciona à blacklist)
 
@@ -185,6 +193,7 @@ GET /api/v1/email-blacklist?active=false
 ```
 
 **Resposta:**
+
 ```json
 {
   "blacklist": [
@@ -225,17 +234,20 @@ DELETE /api/v1/email-blacklist?email=usuario@exemplo.com
 ## 📊 Tipos de Bounce
 
 ### Permanent (Adiciona à Blacklist)
+
 - **General**: Email não existe
 - **NoEmail**: Endereço inválido
 - **Suppressed**: Email na lista de supressão da AWS
 
 ### Transient (Não Adiciona à Blacklist)
+
 - **General**: Erro temporário
 - **MailboxFull**: Caixa de entrada cheia
 - **MessageTooLarge**: Mensagem muito grande
 - **ContentRejected**: Conteúdo rejeitado
 
 ### Undetermined
+
 - Bounce de tipo desconhecido (não adiciona à blacklist)
 
 ## 📝 Logs
@@ -243,7 +255,7 @@ DELETE /api/v1/email-blacklist?email=usuario@exemplo.com
 Todas as notificações são registradas na tabela `notification_logs`:
 
 ```sql
-SELECT * FROM notification_logs 
+SELECT * FROM notification_logs
 WHERE notification_type IN ('sns_bounce', 'sns_complaint')
 ORDER BY sent_at DESC;
 ```
@@ -251,8 +263,9 @@ ORDER BY sent_at DESC;
 ## 🔍 Monitoramento
 
 ### Verificar Bounces Recentes
+
 ```sql
-SELECT 
+SELECT
   email,
   reason,
   error_code,
@@ -266,8 +279,9 @@ ORDER BY last_attempt_at DESC;
 ```
 
 ### Verificar Complaints Recentes
+
 ```sql
-SELECT 
+SELECT
   email,
   reason,
   error_code,
@@ -281,13 +295,14 @@ ORDER BY last_attempt_at DESC;
 ```
 
 ### Taxa de Bounce
+
 ```sql
-SELECT 
+SELECT
   COUNT(*) FILTER (WHERE status = 'sent') as enviados,
   COUNT(*) FILTER (WHERE status = 'failed') as falhas,
   ROUND(
-    COUNT(*) FILTER (WHERE status = 'failed')::numeric / 
-    COUNT(*)::numeric * 100, 
+    COUNT(*) FILTER (WHERE status = 'failed')::numeric /
+    COUNT(*)::numeric * 100,
     2
   ) as taxa_falha_pct
 FROM notification_logs
@@ -305,7 +320,7 @@ await sendEmail({
   to: 'bounce@simulator.amazonses.com', // Simula bounce
   subject: 'Teste Bounce',
   html: '<p>Teste</p>',
-  userId: 'user-id'
+  userId: 'user-id',
 })
 ```
 
@@ -316,7 +331,7 @@ await sendEmail({
   to: 'complaint@simulator.amazonses.com', // Simula complaint
   subject: 'Teste Complaint',
   html: '<p>Teste</p>',
-  userId: 'user-id'
+  userId: 'user-id',
 })
 ```
 
@@ -327,7 +342,7 @@ await sendEmail({
 tail -f logs/sns-webhook.log
 
 # Ou verificar no banco
-SELECT * FROM notification_logs 
+SELECT * FROM notification_logs
 WHERE notification_type IN ('sns_bounce', 'sns_complaint')
 ORDER BY sent_at DESC LIMIT 10;
 ```
@@ -343,7 +358,7 @@ const validator = new MessageValidator()
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  
+
   try {
     await validator.validate(body)
     // Processar mensagem...
@@ -354,6 +369,7 @@ export async function POST(request: NextRequest) {
 ```
 
 Instalar dependência:
+
 ```bash
 npm install sns-validator
 ```
@@ -361,12 +377,14 @@ npm install sns-validator
 ## 📈 Métricas Importantes
 
 ### KPIs para Monitorar
+
 - **Taxa de Bounce**: < 5% (ideal < 2%)
 - **Taxa de Complaint**: < 0.1%
 - **Emails na Blacklist**: Monitorar crescimento
 - **Tentativas de envio para blacklist**: Deve ser 0
 
 ### Alertas Recomendados
+
 - Taxa de bounce > 5% em 24h
 - Taxa de complaint > 0.1% em 24h
 - Mais de 10 emails adicionados à blacklist em 1h
@@ -374,16 +392,19 @@ npm install sns-validator
 ## 🔧 Troubleshooting
 
 ### Webhook não recebe notificações
+
 1. Verificar se o endpoint está acessível publicamente
 2. Verificar se a subscription está confirmada no SNS
 3. Verificar logs do CloudWatch no SNS
 
 ### Emails não vão para blacklist
+
 1. Verificar se `bounceType === 'Permanent'`
 2. Verificar logs da tabela `notification_logs`
 3. Verificar se o webhook está processando corretamente
 
 ### Falso positivo na blacklist
+
 1. Remover manualmente: `DELETE /api/v1/email-blacklist?email=...`
 2. Investigar motivo do bounce/complaint
 3. Considerar adicionar whitelist se necessário

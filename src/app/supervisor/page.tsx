@@ -1,7 +1,6 @@
-
-import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation'
 
 export default function SupervisorPage() {
-  redirect('/supervisor/dashboard');
-  return null;
+  redirect('/supervisor/dashboard')
+  return null
 }

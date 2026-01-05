@@ -59,16 +59,19 @@ async function verifyTransactionOwnership(
   return true
 }
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   if (!['igreja', 'church_account'].includes(sessionUser.role)) {
     return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
   }
@@ -146,7 +149,9 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
     const formattedData = {
       id: payment.PaymentId,
-      date: payment.ReceivedDate ? format(parseISO(payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss') : 'N/A',
+      date: payment.ReceivedDate
+        ? format(parseISO(payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss')
+        : 'N/A',
       amount: payment.Amount / 100,
       status,
       contributor: {
@@ -158,7 +163,12 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
         address: `${church?.address ?? ''}, ${church?.city ?? ''} - ${church?.state ?? ''}`,
       },
       payment: {
-        method: payment.Type === 'CreditCard' ? 'Cartão de Crédito' : payment.Type === 'Pix' ? 'Pix' : 'Boleto',
+        method:
+          payment.Type === 'CreditCard'
+            ? 'Cartão de Crédito'
+            : payment.Type === 'Pix'
+              ? 'Pix'
+              : 'Boleto',
         details:
           payment.Type === 'CreditCard' && payment.CreditCard
             ? `${payment.CreditCard.Brand} final ${payment.CreditCard.CardNumber.slice(-4)}`

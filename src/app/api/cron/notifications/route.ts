@@ -17,19 +17,21 @@ export async function GET(request: NextRequest) {
 
     // ✅ CORRIGIDO: Verificar autenticação com timing-safe comparison
     const authHeader = request.headers.get('authorization')
-    
+
     if (!authHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const token = authHeader.replace('Bearer ', '')
-    
+
     // ✅ CORRIGIDO: Usar timingSafeEqual para prevenir timing attacks
     const expectedToken = Buffer.from(CRON_SECRET)
     const receivedToken = Buffer.from(token)
 
-    if (expectedToken.length !== receivedToken.length || 
-        !timingSafeEqual(expectedToken, receivedToken)) {
+    if (
+      expectedToken.length !== receivedToken.length ||
+      !timingSafeEqual(expectedToken, receivedToken)
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -42,10 +44,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Cron job error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

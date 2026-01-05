@@ -23,11 +23,5 @@ export default function ContribuicoesPage() {
     // Lógica específica de erro para supervisor
   }
 
-  return (
-    <ContributionForm
-      userRole="supervisor"
-      onSuccess={handleSuccess}
-      onError={handleError}
-    />
-  )
+  return <ContributionForm userRole="supervisor" onSuccess={handleSuccess} onError={handleError} />
 }

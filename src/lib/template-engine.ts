@@ -40,7 +40,7 @@ export function processTemplate(template: string, variables: TemplateVariables):
 
 function processConditionals(template: string, variables: TemplateVariables): string {
   const conditionalRegex = /{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g
-  
+
   return template.replace(conditionalRegex, (match, variable, content) => {
     const value = variables[variable]
     return value ? content : ''
@@ -49,25 +49,34 @@ function processConditionals(template: string, variables: TemplateVariables): st
 
 export function validateTemplate(template: string): { isValid: boolean; errors: string[] } {
   const errors: string[] = []
-  
+
   // Verificar se todas as tags estão fechadas
   const openTags = template.match(/{{#if\s+\w+}}/g) || []
   const closeTags = template.match(/{{\/if}}/g) || []
-  
+
   if (openTags.length !== closeTags.length) {
     errors.push('Tags condicionais não estão balanceadas')
   }
 
   // ✅ CORRIGIDO: Lista expandida de variáveis válidas (incluindo aliases PT-BR)
   const validVariables = [
-    'name', 'churchName', 'amount', 'dueDate', 'paymentLink', 'paidAt',
+    'name',
+    'churchName',
+    'amount',
+    'dueDate',
+    'paymentLink',
+    'paidAt',
     // Aliases PT-BR
-    'nome_usuario', 'nome_igreja', 'valor_transacao', 'data_vencimento', 
-    'link_pagamento', 'data_pagamento'
+    'nome_usuario',
+    'nome_igreja',
+    'valor_transacao',
+    'data_vencimento',
+    'link_pagamento',
+    'data_pagamento',
   ]
-  
+
   const variables = template.match(/{{(\w+)}}/g) || []
-  const invalidVars = variables.filter(v => {
+  const invalidVars = variables.filter((v) => {
     const varName = v.replace(/[{}]/g, '')
     return !validVariables.includes(varName)
   })
@@ -78,6 +87,6 @@ export function validateTemplate(template: string): { isValid: boolean; errors: 
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   }
 }

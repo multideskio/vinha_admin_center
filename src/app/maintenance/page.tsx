@@ -18,7 +18,10 @@ export default async function MaintenancePage() {
         </p>
         {company?.supportEmail && (
           <p className="text-sm text-muted-foreground">
-            Dúvidas? Entre em contato: <a href={`mailto:${company.supportEmail}`} className="underline">{company.supportEmail}</a>
+            Dúvidas? Entre em contato:{' '}
+            <a href={`mailto:${company.supportEmail}`} className="underline">
+              {company.supportEmail}
+            </a>
           </p>
         )}
       </div>

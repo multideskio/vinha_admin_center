@@ -6,13 +6,19 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { users, adminProfiles, managerProfiles, supervisorProfiles, pastorProfiles } from '@/db/schema'
+import {
+  users,
+  adminProfiles,
+  managerProfiles,
+  supervisorProfiles,
+  pastorProfiles,
+} from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
 export async function GET(): Promise<NextResponse> {
   const { user } = await validateRequest()
-  
+
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
@@ -28,7 +34,7 @@ export async function GET(): Promise<NextResponse> {
       .from(users)
       .where(eq(users.id, user.id))
       .limit(1)
-    
+
     avatarUrl = userData?.avatarUrl
 
     // Buscar nome baseado no role
@@ -41,7 +47,7 @@ export async function GET(): Promise<NextResponse> {
         .from(adminProfiles)
         .where(eq(adminProfiles.userId, user.id))
         .limit(1)
-      
+
       if (profile) {
         firstName = profile.firstName
         lastName = profile.lastName
@@ -55,7 +61,7 @@ export async function GET(): Promise<NextResponse> {
         .from(managerProfiles)
         .where(eq(managerProfiles.userId, user.id))
         .limit(1)
-      
+
       if (profile) {
         firstName = profile.firstName
         lastName = profile.lastName
@@ -69,7 +75,7 @@ export async function GET(): Promise<NextResponse> {
         .from(supervisorProfiles)
         .where(eq(supervisorProfiles.userId, user.id))
         .limit(1)
-      
+
       if (profile) {
         firstName = profile.firstName
         lastName = profile.lastName
@@ -83,7 +89,7 @@ export async function GET(): Promise<NextResponse> {
         .from(pastorProfiles)
         .where(eq(pastorProfiles.userId, user.id))
         .limit(1)
-      
+
       if (profile) {
         firstName = profile.firstName
         lastName = profile.lastName
@@ -106,10 +112,6 @@ export async function GET(): Promise<NextResponse> {
     })
   } catch (error: unknown) {
     console.error('Erro ao buscar dados do usuário:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar dados do usuário' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao buscar dados do usuário' }, { status: 500 })
   }
 }
-

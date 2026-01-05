@@ -20,7 +20,20 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Loader2, Smartphone, CheckCircle, XCircle, QrCode, RefreshCw, LogOut, RotateCcw, ChevronLeft, Save, Send, AlertTriangle } from 'lucide-react'
+import {
+  Loader2,
+  Smartphone,
+  CheckCircle,
+  XCircle,
+  QrCode,
+  RefreshCw,
+  LogOut,
+  RotateCcw,
+  ChevronLeft,
+  Save,
+  Send,
+  AlertTriangle,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -43,7 +56,9 @@ export default function WhatsappSettingsPage() {
   const [testMessage, setTestMessage] = React.useState(
     'Olá! Esta é uma mensagem de teste do sistema Vinha.',
   )
-  const [connectionStatus, setConnectionStatus] = React.useState<'disconnected' | 'connecting' | 'connected'>('disconnected')
+  const [connectionStatus, setConnectionStatus] = React.useState<
+    'disconnected' | 'connecting' | 'connected'
+  >('disconnected')
   const [qrCode, setQrCode] = React.useState<string | null>(null)
   const [instanceInfo, setInstanceInfo] = React.useState<Record<string, unknown> | null>(null)
   const [isConnecting, setIsConnecting] = React.useState(false)
@@ -111,7 +126,7 @@ export default function WhatsappSettingsPage() {
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error('Falha ao salvar configurações do WhatsApp.')
-      
+
       if (instanceResult.created) {
         toast({
           title: 'Instância criada!',
@@ -133,7 +148,7 @@ export default function WhatsappSettingsPage() {
         if (connectionStateResponse.ok) {
           const connectionData = await connectionStateResponse.json()
           const isConnected = connectionData.instance?.state === 'open'
-          
+
           if (isConnected) {
             toast({
               title: 'Configurações salvas!',
@@ -143,7 +158,8 @@ export default function WhatsappSettingsPage() {
           } else {
             toast({
               title: 'Instância encontrada!',
-              description: 'A instância já existe mas não está conectada. Clique em "Conectar WhatsApp" para conectar.',
+              description:
+                'A instância já existe mas não está conectada. Clique em "Conectar WhatsApp" para conectar.',
               variant: 'default',
             })
           }
@@ -155,7 +171,7 @@ export default function WhatsappSettingsPage() {
           })
         }
       }
-      
+
       // Verificar status da instância após salvar
       await checkInstanceStatus()
     } catch (error) {
@@ -182,7 +198,7 @@ export default function WhatsappSettingsPage() {
           instanceName: config.apiInstance,
         }),
       })
-      
+
       if (!response.ok) {
         // Silently handle - instance not configured yet
         if (!isConnecting) {
@@ -191,10 +207,10 @@ export default function WhatsappSettingsPage() {
         }
         return
       }
-      
+
       const data = await response.json()
       console.log('Status response:', data)
-      
+
       if (data.connected && data.status === 'open') {
         console.log('Instância conectada! Atualizando estado...')
         setConnectionStatus('connected')
@@ -202,7 +218,7 @@ export default function WhatsappSettingsPage() {
         setQrCode(null)
         setIsConnecting(false)
         setQrCodeExpired(false)
-        
+
         // Buscar informações detalhadas do perfil
         await fetchInstanceInfo()
       } else if (!isConnecting) {
@@ -234,7 +250,7 @@ export default function WhatsappSettingsPage() {
           instanceName: config.apiInstance,
         }),
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         if (data.connected) {
@@ -251,7 +267,7 @@ export default function WhatsappSettingsPage() {
     setConnectionStatus('connecting')
     setQrCode(null)
     setQrCodeExpired(false)
-    
+
     try {
       const config = form.getValues()
       const response = await fetch('/api/v1/whatsapp/connect', {
@@ -263,13 +279,13 @@ export default function WhatsappSettingsPage() {
           instanceName: config.apiInstance,
         }),
       })
-      
+
       if (!response.ok) {
         throw new Error('Erro ao conectar instância')
       }
-      
+
       const data = await response.json()
-      
+
       if (data.success) {
         if (data.connected) {
           // Já está conectado
@@ -291,7 +307,7 @@ export default function WhatsappSettingsPage() {
             description: 'Escaneie o QR Code com seu WhatsApp.',
             variant: 'success',
           })
-          
+
           // Polling para verificar conexão
           const interval = setInterval(async () => {
             const config = form.getValues()
@@ -305,11 +321,11 @@ export default function WhatsappSettingsPage() {
                   instanceName: config.apiInstance,
                 }),
               })
-              
+
               if (statusResponse.ok) {
                 const statusData = await statusResponse.json()
                 console.log('Status polling response:', statusData)
-                
+
                 if (statusData.connected && statusData.status === 'open') {
                   clearInterval(interval)
                   setConnectionStatus('connected')
@@ -317,14 +333,14 @@ export default function WhatsappSettingsPage() {
                   setQrCode(null)
                   setIsConnecting(false)
                   setQrCodeExpired(false)
-                  
+
                   // Buscar informações detalhadas do perfil
                   try {
                     await fetchInstanceInfo()
                   } catch (error) {
                     console.error('Erro ao buscar info da instância:', error)
                   }
-                  
+
                   toast({
                     title: 'Conectado!',
                     description: 'WhatsApp conectado com sucesso.',
@@ -336,21 +352,22 @@ export default function WhatsappSettingsPage() {
               console.error('Erro no polling:', error)
             }
           }, 3000)
-          
+
           // Limpar interval após 2 minutos
           setTimeout(() => {
             clearInterval(interval)
-            
+
             // Verificar o status atual antes de expirar
             setIsConnecting(false)
             setQrCodeExpired(true)
             toast({
               title: 'QR Code expirado',
-              description: 'O QR Code expirou. Clique em "Gerar Novo QR Code" para tentar novamente.',
+              description:
+                'O QR Code expirou. Clique em "Gerar Novo QR Code" para tentar novamente.',
               variant: 'destructive',
             })
           }, 120000)
-          
+
           // Note: Cleanup will be handled by component unmount or when connection succeeds
         } else {
           throw new Error('QR Code não foi gerado')
@@ -431,7 +448,7 @@ export default function WhatsappSettingsPage() {
       })
 
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Falha ao fazer logout.')
       }
@@ -448,7 +465,6 @@ export default function WhatsappSettingsPage() {
       setQrCode(null)
       setIsConnecting(false)
       setQrCodeExpired(false)
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
@@ -485,7 +501,7 @@ export default function WhatsappSettingsPage() {
       })
 
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Falha ao reiniciar.')
       }
@@ -500,7 +516,6 @@ export default function WhatsappSettingsPage() {
       setTimeout(() => {
         checkInstanceStatus()
       }, 2000)
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({
@@ -543,13 +558,13 @@ export default function WhatsappSettingsPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/configuracoes">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -594,355 +609,360 @@ export default function WhatsappSettingsPage() {
                     Configure a URL, API Key e nome da instância do WhatsApp
                   </CardDescription>
                 </CardHeader>
-              <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="apiUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL da API</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://api.seuservico.com"
-                          {...field}
-                          value={field.value ?? ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="apiInstance"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome da Instância</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="ex: sua_instancia"
-                          {...field}
-                          value={field.value ?? ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="apiKey"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>API Key</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Sua chave de API secreta"
-                          {...field}
-                          value={field.value ?? ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end pt-4">
-                  <Button 
-                    type="submit" 
-                    disabled={isSaving}
-                    className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Salvar Configurações
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-              </CardContent>
-            </Card>
-          </form>
-        </Form>
-              
-        {/* Card de Teste */}
-        <Card className="shadow-lg border-t-4 border-t-green-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30">
-                <Send className="h-5 w-5 text-green-600" />
-              </div>
-              Testar Envio de Mensagem
-            </CardTitle>
-            <CardDescription>
-              Envie uma mensagem de teste para validar a configuração
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label className="font-semibold">Número de Telefone (com DDI)</Label>
-              <Input
-                placeholder="Ex: 5562981154120"
-                value={testPhone}
-                onChange={(e) => setTestPhone(e.target.value)}
-                className="border-2"
-              />
-              <p className="text-xs text-muted-foreground">
-                Formato: DDI + DDD + Número (sem espaços ou caracteres especiais)
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label className="font-semibold">Mensagem</Label>
-              <Textarea
-                placeholder="Digite sua mensagem de teste..."
-                value={testMessage}
-                onChange={(e) => setTestMessage(e.target.value)}
-                rows={4}
-                className="border-2"
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={handleSendTestMessage}
-                disabled={isTesting || connectionStatus !== 'connected'}
-                className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-              >
-                {isTesting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Enviar Mensagem de Teste
-                  </>
-                )}
-              </Button>
-            </div>
-            {connectionStatus !== 'connected' && (
-              <Alert className="bg-amber-500/10 border-amber-500/30">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-600">
-                  <strong>WhatsApp desconectado.</strong> Conecte primeiro para testar o envio.
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="apiUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL da API</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://api.seuservico.com"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="apiInstance"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome da Instância</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="ex: sua_instancia"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="apiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API Key</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Sua chave de API secreta"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end pt-4">
+                      <Button
+                        type="submit"
+                        disabled={isSaving}
+                        className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Salvando...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" />
+                            Salvar Configurações
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
+          </Form>
 
-      {/* Status WhatsApp - 30% */}
-      <div className="lg:col-span-3">
-        <div className="sticky top-4">
-          {/* Mockup de Celular com estilo Videira */}
-          <div className="mx-auto max-w-sm">
-            <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-[2.5rem] p-2 shadow-2xl ring-4 ring-videira-cyan/20">
-            {/* Tela do celular */}
-            <div className="bg-white rounded-[2rem] overflow-hidden h-[600px] flex flex-col">
-              {/* Header do WhatsApp */}
-              <div className="bg-green-600 text-white p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="h-5 w-5" />
-                  <span className="font-medium">WhatsApp Business</span>
+          {/* Card de Teste */}
+          <Card className="shadow-lg border-t-4 border-t-green-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30">
+                  <Send className="h-5 w-5 text-green-600" />
                 </div>
+                Testar Envio de Mensagem
+              </CardTitle>
+              <CardDescription>
+                Envie uma mensagem de teste para validar a configuração
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-semibold">Número de Telefone (com DDI)</Label>
+                <Input
+                  placeholder="Ex: 5562981154120"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  className="border-2"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Formato: DDI + DDD + Número (sem espaços ou caracteres especiais)
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold">Mensagem</Label>
+                <Textarea
+                  placeholder="Digite sua mensagem de teste..."
+                  value={testMessage}
+                  onChange={(e) => setTestMessage(e.target.value)}
+                  rows={4}
+                  className="border-2"
+                />
+              </div>
+              <div className="flex justify-end">
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={checkInstanceStatus}
-                  disabled={isConnecting}
-                  className="text-white hover:bg-green-700 h-8 w-8 p-0"
+                  onClick={handleSendTestMessage}
+                  disabled={isTesting || connectionStatus !== 'connected'}
+                  className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
-                  <RefreshCw className="h-3 w-3" />
+                  {isTesting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Enviar Mensagem de Teste
+                    </>
+                  )}
                 </Button>
               </div>
-              
-              {/* Conteúdo */}
-              <div className="flex-1 p-4 bg-gray-50 flex flex-col justify-center items-center space-y-4">
-                {/* Status Badge */}
-                <div className="text-center">
-                  {connectionStatus === 'connected' && (
-                    <Badge variant="success" className="flex items-center gap-1 justify-center">
-                      <CheckCircle className="h-3 w-3" />
-                      Conectado
-                    </Badge>
-                  )}
-                  {connectionStatus === 'connecting' && (
-                    <Badge variant="warning" className="flex items-center gap-1 justify-center">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Conectando...
-                    </Badge>
-                  )}
-                  {connectionStatus === 'disconnected' && (
-                    <Badge variant="destructive" className="flex items-center gap-1 justify-center">
-                      <XCircle className="h-3 w-3" />
-                      Desconectado
-                    </Badge>
-                  )}
-                </div>
+              {connectionStatus !== 'connected' && (
+                <Alert className="bg-amber-500/10 border-amber-500/30">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-600">
+                    <strong>WhatsApp desconectado.</strong> Conecte primeiro para testar o envio.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-                {/* Perfil Conectado */}
-                {connectionStatus === 'connected' && instanceInfo && (
-                  <div className="text-center space-y-4">
-                    <Avatar className="h-20 w-20 mx-auto border-4 border-green-500">
-                      <AvatarImage src={String(instanceInfo.profilePictureUrl || '')} />
-                      <AvatarFallback className="bg-green-100">
-                        <Smartphone className="h-10 w-10 text-green-600" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="space-y-1">
-                      <p className="font-semibold text-gray-800 text-lg">
-                        {String(instanceInfo.profileName || 'WhatsApp Business')}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {String(instanceInfo.number || 'Número não disponível')}
-                      </p>
-                      {Boolean(instanceInfo.description) && (
-                        <p className="text-xs text-gray-500 px-2">
-                          {String(instanceInfo.description)}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-center gap-1 text-green-600">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs font-medium">Online</span>
-                      </div>
-                      {Boolean(instanceInfo.businessProfile) && (
-                        <div className="mt-2 p-2 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-blue-600 font-medium">Perfil Business</p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Botões de Ação */}
-                    <div className="flex gap-2 justify-center pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRestart}
-                        disabled={isRestarting || isLoggingOut}
-                        className="flex items-center gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-                      >
-                        {isRestarting ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <RotateCcw className="h-3 w-3" />
-                        )}
-                        {isRestarting ? 'Reiniciando...' : 'Restart'}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleLogout}
-                        disabled={isLoggingOut || isRestarting}
-                        className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                      >
-                        {isLoggingOut ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <LogOut className="h-3 w-3" />
-                        )}
-                        {isLoggingOut ? 'Desconectando...' : 'Logout'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* QR Code */}
-                {qrCode && (connectionStatus === 'connecting' || qrCodeExpired) && (
-                  <div className="text-center space-y-4">
-                    <div className="space-y-2">
-                      <QrCode className="h-8 w-8 mx-auto text-gray-600" />
-                      <p className="text-sm text-gray-600 font-medium">
-                        {qrCodeExpired ? 'QR Code Expirado' : 'Escaneie o QR Code'}
-                      </p>
-                    </div>
-                    <div className={`bg-white p-3 rounded-xl shadow-inner ${qrCodeExpired ? 'opacity-50' : ''}`}>
-                      <img
-                        src={qrCode}
-                        alt="QR Code WhatsApp"
-                        className="w-40 h-40 mx-auto rounded-lg"
-                      />
-                      {qrCodeExpired && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-                          <div className="text-white text-center">
-                            <XCircle className="h-8 w-8 mx-auto mb-2" />
-                            <p className="text-sm font-medium">Expirado</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {!qrCodeExpired ? (
-                      <div className="text-xs text-gray-500 px-4 leading-relaxed">
-                        <p>1. Abra o WhatsApp no seu celular</p>
-                        <p>2. Toque em Menu → Aparelhos conectados</p>
-                        <p>3. Toque em &quot;Conectar um aparelho&quot;</p>
-                        <p>4. Aponte para esta tela</p>
-                      </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          setQrCodeExpired(false)
-                          connectInstance()
-                        }}
-                        disabled={isConnecting}
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full flex items-center gap-2 mx-auto"
-                      >
-                        {isConnecting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4" />
-                        )}
-                        {isConnecting ? 'Gerando...' : 'Gerar Novo QR Code'}
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {/* Botão Conectar */}
-                {connectionStatus === 'disconnected' && (
-                  <div className="text-center space-y-4">
-                    <div className="space-y-2">
-                      <Smartphone className="h-16 w-16 mx-auto text-gray-400" />
-                      <p className="text-gray-600 font-medium">WhatsApp Desconectado</p>
-                      <p className="text-xs text-gray-500 px-4">
-                        Conecte seu WhatsApp para começar a enviar mensagens
-                      </p>
+        {/* Status WhatsApp - 30% */}
+        <div className="lg:col-span-3">
+          <div className="sticky top-4">
+            {/* Mockup de Celular com estilo Videira */}
+            <div className="mx-auto max-w-sm">
+              <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-[2.5rem] p-2 shadow-2xl ring-4 ring-videira-cyan/20">
+                {/* Tela do celular */}
+                <div className="bg-white rounded-[2rem] overflow-hidden h-[600px] flex flex-col">
+                  {/* Header do WhatsApp */}
+                  <div className="bg-green-600 text-white p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="h-5 w-5" />
+                      <span className="font-medium">WhatsApp Business</span>
                     </div>
                     <Button
                       type="button"
-                      onClick={connectInstance}
+                      variant="ghost"
+                      size="sm"
+                      onClick={checkInstanceStatus}
                       disabled={isConnecting}
-                      className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-full flex items-center gap-2 mx-auto"
+                      className="text-white hover:bg-green-700 h-8 w-8 p-0"
                     >
-                      {isConnecting ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <QrCode className="h-4 w-4" />
-                      )}
-                      {isConnecting ? 'Conectando...' : 'Conectar WhatsApp'}
+                      <RefreshCw className="h-3 w-3" />
                     </Button>
                   </div>
-                )}
+
+                  {/* Conteúdo */}
+                  <div className="flex-1 p-4 bg-gray-50 flex flex-col justify-center items-center space-y-4">
+                    {/* Status Badge */}
+                    <div className="text-center">
+                      {connectionStatus === 'connected' && (
+                        <Badge variant="success" className="flex items-center gap-1 justify-center">
+                          <CheckCircle className="h-3 w-3" />
+                          Conectado
+                        </Badge>
+                      )}
+                      {connectionStatus === 'connecting' && (
+                        <Badge variant="warning" className="flex items-center gap-1 justify-center">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Conectando...
+                        </Badge>
+                      )}
+                      {connectionStatus === 'disconnected' && (
+                        <Badge
+                          variant="destructive"
+                          className="flex items-center gap-1 justify-center"
+                        >
+                          <XCircle className="h-3 w-3" />
+                          Desconectado
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Perfil Conectado */}
+                    {connectionStatus === 'connected' && instanceInfo && (
+                      <div className="text-center space-y-4">
+                        <Avatar className="h-20 w-20 mx-auto border-4 border-green-500">
+                          <AvatarImage src={String(instanceInfo.profilePictureUrl || '')} />
+                          <AvatarFallback className="bg-green-100">
+                            <Smartphone className="h-10 w-10 text-green-600" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-1">
+                          <p className="font-semibold text-gray-800 text-lg">
+                            {String(instanceInfo.profileName || 'WhatsApp Business')}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {String(instanceInfo.number || 'Número não disponível')}
+                          </p>
+                          {Boolean(instanceInfo.description) && (
+                            <p className="text-xs text-gray-500 px-2">
+                              {String(instanceInfo.description)}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-center gap-1 text-green-600">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-xs font-medium">Online</span>
+                          </div>
+                          {Boolean(instanceInfo.businessProfile) && (
+                            <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                              <p className="text-xs text-blue-600 font-medium">Perfil Business</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Botões de Ação */}
+                        <div className="flex gap-2 justify-center pt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRestart}
+                            disabled={isRestarting || isLoggingOut}
+                            className="flex items-center gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            {isRestarting ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3 w-3" />
+                            )}
+                            {isRestarting ? 'Reiniciando...' : 'Restart'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut || isRestarting}
+                            className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            {isLoggingOut ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <LogOut className="h-3 w-3" />
+                            )}
+                            {isLoggingOut ? 'Desconectando...' : 'Logout'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* QR Code */}
+                    {qrCode && (connectionStatus === 'connecting' || qrCodeExpired) && (
+                      <div className="text-center space-y-4">
+                        <div className="space-y-2">
+                          <QrCode className="h-8 w-8 mx-auto text-gray-600" />
+                          <p className="text-sm text-gray-600 font-medium">
+                            {qrCodeExpired ? 'QR Code Expirado' : 'Escaneie o QR Code'}
+                          </p>
+                        </div>
+                        <div
+                          className={`bg-white p-3 rounded-xl shadow-inner ${qrCodeExpired ? 'opacity-50' : ''}`}
+                        >
+                          <img
+                            src={qrCode}
+                            alt="QR Code WhatsApp"
+                            className="w-40 h-40 mx-auto rounded-lg"
+                          />
+                          {qrCodeExpired && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                              <div className="text-white text-center">
+                                <XCircle className="h-8 w-8 mx-auto mb-2" />
+                                <p className="text-sm font-medium">Expirado</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {!qrCodeExpired ? (
+                          <div className="text-xs text-gray-500 px-4 leading-relaxed">
+                            <p>1. Abra o WhatsApp no seu celular</p>
+                            <p>2. Toque em Menu → Aparelhos conectados</p>
+                            <p>3. Toque em &quot;Conectar um aparelho&quot;</p>
+                            <p>4. Aponte para esta tela</p>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              setQrCodeExpired(false)
+                              connectInstance()
+                            }}
+                            disabled={isConnecting}
+                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full flex items-center gap-2 mx-auto"
+                          >
+                            {isConnecting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4" />
+                            )}
+                            {isConnecting ? 'Gerando...' : 'Gerar Novo QR Code'}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Botão Conectar */}
+                    {connectionStatus === 'disconnected' && (
+                      <div className="text-center space-y-4">
+                        <div className="space-y-2">
+                          <Smartphone className="h-16 w-16 mx-auto text-gray-400" />
+                          <p className="text-gray-600 font-medium">WhatsApp Desconectado</p>
+                          <p className="text-xs text-gray-500 px-4">
+                            Conecte seu WhatsApp para começar a enviar mensagens
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={connectInstance}
+                          disabled={isConnecting}
+                          className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-full flex items-center gap-2 mx-auto"
+                        >
+                          {isConnecting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <QrCode className="h-4 w-4" />
+                          )}
+                          {isConnecting ? 'Conectando...' : 'Conectar WhatsApp'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    </div>
     </div>
   )
 }

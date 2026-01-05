@@ -34,28 +34,19 @@ export async function GET(request: NextRequest) {
 
     if (channel) {
       query = query.where(
-        and(
-          eq(notificationLogs.companyId, companyId),
-          eq(notificationLogs.channel, channel)
-        )
+        and(eq(notificationLogs.companyId, companyId), eq(notificationLogs.channel, channel)),
       )
     }
 
-    const logs = await query
-      .orderBy(desc(notificationLogs.sentAt))
-      .limit(limit)
-      .offset(offset)
+    const logs = await query.orderBy(desc(notificationLogs.sentAt)).limit(limit).offset(offset)
 
     const countResult = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(notificationLogs)
       .where(
         channel
-          ? and(
-              eq(notificationLogs.companyId, companyId),
-              eq(notificationLogs.channel, channel)
-            )
-          : eq(notificationLogs.companyId, companyId)
+          ? and(eq(notificationLogs.companyId, companyId), eq(notificationLogs.channel, channel))
+          : eq(notificationLogs.companyId, companyId),
       )
 
     return NextResponse.json({ logs, total: countResult[0]?.count || 0 })
@@ -67,7 +58,7 @@ export async function GET(request: NextRequest) {
     })
     return NextResponse.json(
       { error: 'Erro ao buscar logs', details: errorMessage },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

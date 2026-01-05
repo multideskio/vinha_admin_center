@@ -14,8 +14,8 @@ export async function GET() {
         and(
           eq(gatewayConfigurations.companyId, COMPANY_ID),
           eq(gatewayConfigurations.gatewayName, 'Cielo'),
-          eq(gatewayConfigurations.isActive, true)
-        )
+          eq(gatewayConfigurations.isActive, true),
+        ),
       )
       .limit(1)
 
@@ -25,7 +25,7 @@ export async function GET() {
 
     const methods = config.acceptedPaymentMethods
       .split(',')
-      .map(m => m.trim())
+      .map((m) => m.trim())
       .filter(Boolean)
 
     return NextResponse.json({ methods })

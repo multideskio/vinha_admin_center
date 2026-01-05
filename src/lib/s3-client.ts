@@ -2,7 +2,12 @@
  * @fileoverview Cliente S3 configurável baseado nas configurações da empresa
  */
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { db } from '@/db/drizzle'
 import { otherSettings } from '@/db/schema'
@@ -49,8 +54,8 @@ export class S3Service {
     }
 
     // Para AWS S3 padrão, não usar endpoint customizado
-    const isAwsS3 = endpointUrl && (endpointUrl.includes('amazonaws.com') || 
-                    endpointUrl === 's3.amazonaws.com')
+    const isAwsS3 =
+      endpointUrl && (endpointUrl.includes('amazonaws.com') || endpointUrl === 's3.amazonaws.com')
 
     this.client = new S3Client({
       ...(isAwsS3 ? {} : { endpoint: endpointUrl }),
@@ -66,7 +71,7 @@ export class S3Service {
   async uploadFile(
     file: Buffer | Uint8Array,
     key: string,
-    contentType: string = 'application/octet-stream'
+    contentType: string = 'application/octet-stream',
   ): Promise<string> {
     if (!this.client || !this.config) {
       throw new Error('S3 client not initialized')
@@ -80,24 +85,24 @@ export class S3Service {
     })
 
     await this.client.send(command)
-    
+
     // Retornar URL do CloudFront se configurado
     if (this.config.cloudfrontUrl) {
       return `${this.config.cloudfrontUrl}/${key}`
     }
-    
+
     // ✅ CORRIGIDO: Formato correto de URL S3
-    const isAwsS3 = this.config.endpoint.includes('amazonaws.com') || 
-                    this.config.endpoint === 's3.amazonaws.com'
-    
+    const isAwsS3 =
+      this.config.endpoint.includes('amazonaws.com') || this.config.endpoint === 's3.amazonaws.com'
+
     if (isAwsS3) {
       // Virtual-hosted style (padrão AWS)
       return `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`
     }
-    
+
     // Para S3-compatible (MinIO, DigitalOcean Spaces, etc)
     const endpoint = this.config.endpoint.replace(/\/$/, '') // Remove trailing slash
-    return this.config.forcePathStyle 
+    return this.config.forcePathStyle
       ? `${endpoint}/${this.config.bucket}/${key}`
       : `${endpoint}/${key}`
   }

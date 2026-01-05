@@ -1,58 +1,62 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 
 // Force recompilation
 const statusRequestSchema = z.object({
   apiUrl: z.string().url(),
   apiKey: z.string().min(1),
   instanceName: z.string().min(1),
-});
+})
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { apiUrl, apiKey, instanceName } = statusRequestSchema.parse(body);
+    const body = await request.json()
+    const { apiUrl, apiKey, instanceName } = statusRequestSchema.parse(body)
 
     // Remove trailing slash from apiUrl
-    const baseUrl = apiUrl.replace(/\/$/, '');
-    
+    const baseUrl = apiUrl.replace(/\/$/, '')
+
     // Check instance status using Evolution API v2
     const response = await fetch(`${baseUrl}/instance/fetchInstances`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': apiKey,
+        apikey: apiKey,
       },
-    });
+    })
 
     if (!response.ok) {
       return NextResponse.json(
         { error: 'Erro ao verificar status da instância' },
-        { status: response.status }
-      );
+        { status: response.status },
+      )
     }
 
-    const instances = await response.json();
-    console.log('Instances response:', JSON.stringify(instances, null, 2));
-    
+    const instances = await response.json()
+    console.log('Instances response:', JSON.stringify(instances, null, 2))
+
     // A nova estrutura da Evolution API retorna os dados diretamente no nível raiz
-    let instance = null;
-    
+    let instance = null
+
     if (Array.isArray(instances)) {
       // Procurar pela instância usando os novos campos da API
-      instance = instances.find((inst: {
-        name?: string
-        instanceName?: string
-        instance?: {
-          instanceName?: string
+      instance = instances.find(
+        (inst: {
           name?: string
-        }
-      }) => {
-        return inst.name === instanceName || 
-               inst.instanceName === instanceName ||
-               inst.instance?.instanceName === instanceName ||
-               inst.instance?.name === instanceName;
-      });
+          instanceName?: string
+          instance?: {
+            instanceName?: string
+            name?: string
+          }
+        }) => {
+          return (
+            inst.name === instanceName ||
+            inst.instanceName === instanceName ||
+            inst.instance?.instanceName === instanceName ||
+            inst.instance?.name === instanceName
+          )
+        },
+      )
     }
 
     if (!instance) {
@@ -60,16 +64,16 @@ export async function POST(request: NextRequest) {
         status: 'not_found',
         connected: false,
         message: 'Instância não encontrada',
-        debug: { instances, instanceName }
-      });
+        debug: { instances, instanceName },
+      })
     }
 
     // A nova API retorna os dados diretamente no objeto da instância
-    const connectionState = instance.connectionStatus || 'close';
-    const isConnected = connectionState === 'open';
+    const connectionState = instance.connectionStatus || 'close'
+    const isConnected = connectionState === 'open'
 
     // Extrair o número do ownerJid (formato: 556281204120@s.whatsapp.net)
-    const phoneNumber = instance.ownerJid ? instance.ownerJid.split('@')[0] : null;
+    const phoneNumber = instance.ownerJid ? instance.ownerJid.split('@')[0] : null
 
     return NextResponse.json({
       status: connectionState,
@@ -85,22 +89,15 @@ export async function POST(request: NextRequest) {
         integration: instance.integration || null,
         createdAt: instance.createdAt || null,
         updatedAt: instance.updatedAt || null,
-      }
-    });
-
+      },
+    })
   } catch (error) {
-    console.error('Erro ao verificar status:', error);
-    
+    console.error('Erro ao verificar status:', error)
+
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 })
     }
 
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

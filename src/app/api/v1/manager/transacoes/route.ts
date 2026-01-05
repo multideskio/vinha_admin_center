@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, churchProfiles, supervisorProfiles, pastorProfiles, managerProfiles } from '@/db/schema'
+import {
+  transactions,
+  churchProfiles,
+  supervisorProfiles,
+  pastorProfiles,
+  managerProfiles,
+} from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
 import { eq, inArray, desc, asc, count, and, gte, lte } from 'drizzle-orm'
 
@@ -46,10 +52,7 @@ export async function GET(request: Request) {
           .orderBy(sortOrder(transactions.createdAt))
           .limit(limit)
           .offset(offset),
-        db
-          .select({ total: count() })
-          .from(transactions)
-          .where(whereClause),
+        db.select({ total: count() }).from(transactions).where(whereClause),
       ])
 
       const total = totalResult[0]?.total || 0
@@ -80,22 +83,24 @@ export async function GET(request: Request) {
     const supervisorUserIds = supervisors.map((s) => s.userId)
 
     // Get all pastors under these supervisors
-    const pastors = supervisorUserIds.length > 0
-      ? await db
-          .select({ userId: pastorProfiles.userId })
-          .from(pastorProfiles)
-          .where(inArray(pastorProfiles.supervisorId, supervisorUserIds))
-      : []
+    const pastors =
+      supervisorUserIds.length > 0
+        ? await db
+            .select({ userId: pastorProfiles.userId })
+            .from(pastorProfiles)
+            .where(inArray(pastorProfiles.supervisorId, supervisorUserIds))
+        : []
 
     const pastorUserIds = pastors.map((p) => p.userId)
 
     // Get all churches under these supervisors
-    const churches = supervisorUserIds.length > 0
-      ? await db
-          .select({ userId: churchProfiles.userId })
-          .from(churchProfiles)
-          .where(inArray(churchProfiles.supervisorId, supervisorUserIds))
-      : []
+    const churches =
+      supervisorUserIds.length > 0
+        ? await db
+            .select({ userId: churchProfiles.userId })
+            .from(churchProfiles)
+            .where(inArray(churchProfiles.supervisorId, supervisorUserIds))
+        : []
 
     const churchUserIds = churches.map((c) => c.userId)
 
@@ -103,7 +108,10 @@ export async function GET(request: Request) {
     const allContributorIds = [user.id, ...supervisorUserIds, ...pastorUserIds, ...churchUserIds]
 
     if (allContributorIds.length === 1) {
-      return NextResponse.json({ transactions: [], pagination: { page, limit, total: 0, totalPages: 0 } })
+      return NextResponse.json({
+        transactions: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+      })
     }
     const conditions = [inArray(transactions.contributorId, allContributorIds)]
     if (startDate) conditions.push(gte(transactions.createdAt, new Date(startDate)))
@@ -125,35 +133,48 @@ export async function GET(request: Request) {
         .orderBy(sortOrder(transactions.createdAt))
         .limit(limit)
         .offset(offset),
-      db
-        .select({ total: count() })
-        .from(transactions)
-        .where(whereClause),
+      db.select({ total: count() }).from(transactions).where(whereClause),
     ])
 
     // Get contributor names from profiles
     const contributorIds = [...new Set(allTransactions.map((t) => t.contributorId))]
-    
+
     const [managers, supervisorsData, pastorsData, churchesData] = await Promise.all([
-      db.select({ userId: managerProfiles.userId, firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
+      db
+        .select({
+          userId: managerProfiles.userId,
+          firstName: managerProfiles.firstName,
+          lastName: managerProfiles.lastName,
+        })
         .from(managerProfiles)
         .where(inArray(managerProfiles.userId, contributorIds)),
-      db.select({ userId: supervisorProfiles.userId, firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+      db
+        .select({
+          userId: supervisorProfiles.userId,
+          firstName: supervisorProfiles.firstName,
+          lastName: supervisorProfiles.lastName,
+        })
         .from(supervisorProfiles)
         .where(inArray(supervisorProfiles.userId, contributorIds)),
-      db.select({ userId: pastorProfiles.userId, firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+      db
+        .select({
+          userId: pastorProfiles.userId,
+          firstName: pastorProfiles.firstName,
+          lastName: pastorProfiles.lastName,
+        })
         .from(pastorProfiles)
         .where(inArray(pastorProfiles.userId, contributorIds)),
-      db.select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
+      db
+        .select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
         .from(churchProfiles)
         .where(inArray(churchProfiles.userId, contributorIds)),
     ])
 
     const contributorMap = new Map<string, string>()
-    managers.forEach(m => contributorMap.set(m.userId, `${m.firstName} ${m.lastName}`))
-    supervisorsData.forEach(s => contributorMap.set(s.userId, `${s.firstName} ${s.lastName}`))
-    pastorsData.forEach(p => contributorMap.set(p.userId, `${p.firstName} ${p.lastName}`))
-    churchesData.forEach(c => contributorMap.set(c.userId, c.nomeFantasia))
+    managers.forEach((m) => contributorMap.set(m.userId, `${m.firstName} ${m.lastName}`))
+    supervisorsData.forEach((s) => contributorMap.set(s.userId, `${s.firstName} ${s.lastName}`))
+    pastorsData.forEach((p) => contributorMap.set(p.userId, `${p.firstName} ${p.lastName}`))
+    churchesData.forEach((c) => contributorMap.set(c.userId, c.nomeFantasia))
 
     const total = totalResult[0]?.total || 0
     const formattedTransactions = allTransactions.map((transaction) => ({
@@ -177,9 +198,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Error fetching manager transactions:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar transações' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao buscar transações' }, { status: 500 })
   }
 }

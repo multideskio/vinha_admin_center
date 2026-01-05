@@ -11,26 +11,31 @@ Este documento descreve como configurar o Amazon SNS para receber notificações
 ## 🔐 Melhorias de Segurança Implementadas
 
 ### ✅ 1. Validação de Assinatura SNS
+
 - **Biblioteca:** `sns-validator`
 - **Função:** Valida que mensagens SNS são autênticas
 - **Proteção:** Previne ataques de falsificação de mensagens
 
 ### ✅ 2. Autenticação JWT
+
 - **APIs Protegidas:** `/api/v1/notification-logs` e `/api/v1/email-blacklist`
 - **Função:** Apenas usuários autenticados podem consultar logs e gerenciar blacklist
 - **Middleware:** `validateRequest` de `@/lib/jwt`
 
 ### ✅ 3. Validação de Input (Zod)
+
 - **Endpoint:** POST `/api/v1/email-blacklist`
 - **Schema:** Valida email, reason e errorMessage
 - **Proteção:** Previne dados inválidos no banco
 
 ### ✅ 4. Validação de Environment Variables
+
 - **Variável:** `COMPANY_INIT`
 - **Validação:** Erro lançado se não configurada
 - **Proteção:** Garante que sistema não rode sem configuração
 
 ### ✅ 5. Error Handling Aprimorado
+
 - **Logging detalhado:** Stack traces, timestamps e contexto
 - **Respostas estruturadas:** Mensagens de erro claras
 - **Isolamento de erros:** Bounces/complaints não afetam uns aos outros
@@ -84,6 +89,7 @@ aws sns subscribe \
 ```
 
 **Importante:** Após executar este comando:
+
 1. O SNS enviará uma mensagem de confirmação ao endpoint
 2. O webhook **automaticamente** confirmará a subscrição
 3. Verifique os logs da aplicação para confirmar
@@ -148,20 +154,20 @@ COMPANY_INIT=sua-company-uuid-aqui
 
 ### Tipos de Bounce
 
-| Tipo | Blacklist? | Descrição |
-|------|-----------|-----------|
-| **Permanent** | ✅ Sim | Email não existe, domínio inválido |
-| **Transient** | ❌ Não | Caixa cheia, servidor temporariamente indisponível |
-| **Undetermined** | ❌ Não | Causa desconhecida |
+| Tipo             | Blacklist? | Descrição                                          |
+| ---------------- | ---------- | -------------------------------------------------- |
+| **Permanent**    | ✅ Sim     | Email não existe, domínio inválido                 |
+| **Transient**    | ❌ Não     | Caixa cheia, servidor temporariamente indisponível |
+| **Undetermined** | ❌ Não     | Causa desconhecida                                 |
 
 ### Tipos de Complaint
 
-| Tipo | Blacklist? | Descrição |
-|------|-----------|-----------|
-| **abuse** | ✅ Sim | Marcado como spam/abuse |
-| **fraud** | ✅ Sim | Reportado como fraude |
-| **virus** | ✅ Sim | Conteúdo malicioso |
-| **other** | ✅ Sim | Outras reclamações |
+| Tipo      | Blacklist? | Descrição               |
+| --------- | ---------- | ----------------------- |
+| **abuse** | ✅ Sim     | Marcado como spam/abuse |
+| **fraud** | ✅ Sim     | Reportado como fraude   |
+| **virus** | ✅ Sim     | Conteúdo malicioso      |
+| **other** | ✅ Sim     | Outras reclamações      |
 
 ---
 
@@ -186,6 +192,7 @@ bounce@simulator.amazonses.com
 ```
 
 Após alguns segundos:
+
 - ✅ Email aparece na aba **Bloqueados** (`/admin/configuracoes/smtp`)
 - ✅ Log registrado em **Histórico**
 
@@ -199,6 +206,7 @@ complaint@simulator.amazonses.com
 ```
 
 Após alguns segundos:
+
 - ✅ Email aparece na aba **Bloqueados**
 - ✅ Motivo: "Spam" ou "User complaint"
 
@@ -215,11 +223,13 @@ GET /api/v1/notification-logs?channel=email&page=1&limit=20
 ```
 
 **Query Params:**
+
 - `channel` (opcional): `email`, `sms`, `whatsapp`, `push`
 - `page` (opcional): número da página (default: 1)
 - `limit` (opcional): itens por página (default: 20)
 
 **Resposta:**
+
 ```json
 {
   "logs": [
@@ -249,11 +259,13 @@ GET /api/v1/email-blacklist?active=true&page=1&limit=20
 ```
 
 **Query Params:**
+
 - `active` (opcional): `true` | `false`
 - `page` (opcional): número da página
 - `limit` (opcional): itens por página
 
 **Resposta:**
+
 ```json
 {
   "blacklist": [
@@ -284,6 +296,7 @@ Content-Type: application/json
 ```
 
 **Validação Zod:**
+
 - `email`: Obrigatório, formato de email válido
 - `reason`: Opcional, valores permitidos: `bounce`, `complaint`, `manual`
 - `errorMessage`: Opcional, string
@@ -310,6 +323,7 @@ Content-Type: application/json
 ```
 
 **Processamento:**
+
 1. ✅ Valida assinatura SNS (rejeita se inválida)
 2. ✅ Confirma subscrição (se `SubscriptionConfirmation`)
 3. ✅ Processa Bounce/Complaint (se `Notification`)
@@ -329,19 +343,19 @@ console.log('SNS message validated successfully')
 // Falha na validação SNS
 console.error('SNS signature validation failed:', {
   error: 'Invalid signature',
-  messageId: 'abc123'
+  messageId: 'abc123',
 })
 
 // Bounce processado
 console.log('Bounce processed:', {
   email: 'user@example.com',
-  bounceType: 'Permanent'
+  bounceType: 'Permanent',
 })
 
 // Complaint processado
 console.log('Complaint processed:', {
   email: 'user@example.com',
-  complaintType: 'abuse'
+  complaintType: 'abuse',
 })
 ```
 
@@ -361,6 +375,7 @@ console.log('Complaint processed:', {
 **Causa:** Webhook não está acessível ou validação SNS está falhando
 
 **Solução:**
+
 ```bash
 # Verificar logs da aplicação
 # Deve aparecer: "Subscription confirmed"
@@ -376,6 +391,7 @@ aws sns confirm-subscription \
 **Causa possível:** Bounce é do tipo `Transient` (temporário)
 
 **Solução:** Apenas bounces **Permanent** vão para blacklist. Verifique o tipo:
+
 ```bash
 # Logs devem mostrar:
 Bounce processed: { bounceType: 'Permanent' }
@@ -386,6 +402,7 @@ Bounce processed: { bounceType: 'Permanent' }
 **Causa:** Mensagem não vem do SNS ou certificado expirado
 
 **Solução:**
+
 1. Verificar que o endpoint está recebendo mensagens do SNS real
 2. Biblioteca `sns-validator` valida automaticamente certificados
 3. Verificar logs para detalhes do erro
@@ -395,6 +412,7 @@ Bounce processed: { bounceType: 'Permanent' }
 **Causa:** Falta de autenticação JWT
 
 **Solução:**
+
 ```bash
 # Incluir header de autorização
 Authorization: Bearer SEU_JWT_TOKEN
@@ -427,4 +445,3 @@ Authorization: Bearer SEU_JWT_TOKEN
 **Última atualização:** 2025-11-06  
 **Versão:** 1.0.0  
 **Mantido por:** Time de Desenvolvimento Vinha Admin
-

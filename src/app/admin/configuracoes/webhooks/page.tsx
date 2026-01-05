@@ -293,8 +293,9 @@ export default function WebhooksPage() {
                 Funcionalidade em Desenvolvimento
               </h3>
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                A interface de webhooks está disponível, mas o sistema de disparo automático de eventos ainda não foi implementado. 
-                Webhooks cadastrados aqui não receberão notificações até que esta funcionalidade seja concluída.
+                A interface de webhooks está disponível, mas o sistema de disparo automático de
+                eventos ainda não foi implementado. Webhooks cadastrados aqui não receberão
+                notificações até que esta funcionalidade seja concluída.
               </p>
               <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
                 Status: Planejado para versão futura | Prioridade: Baixa

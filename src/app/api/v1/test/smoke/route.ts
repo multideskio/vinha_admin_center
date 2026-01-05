@@ -24,8 +24,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Nenhum usuário encontrado para teste.' }, { status: 400 })
     }
 
-    const [settings] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, user.companyId)).limit(1)
-    if (!settings) return NextResponse.json({ error: 'Configurações da empresa não encontradas.' }, { status: 400 })
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, user.companyId))
+      .limit(1)
+    if (!settings)
+      return NextResponse.json(
+        { error: 'Configurações da empresa não encontradas.' },
+        { status: 400 },
+      )
 
     const service = new NotificationService({
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
@@ -38,7 +46,7 @@ export async function GET(request: NextRequest) {
       companyId: user.companyId,
     })
 
-    const name = (target.email?.split('@')[0] || 'Membro')
+    const name = target.email?.split('@')[0] || 'Membro'
     const amount = '100,00'
     const dueDate = new Date(Date.now() + 3 * 86400000).toLocaleDateString('pt-BR')
     const paidAt = new Date().toLocaleString('pt-BR')

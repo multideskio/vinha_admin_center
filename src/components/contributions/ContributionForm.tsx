@@ -32,7 +32,7 @@ export default function ContributionForm({
   userRole,
   onSuccess,
   onError,
-  className
+  className,
 }: ContributionFormProps) {
   const [availablePaymentMethods, setAvailablePaymentMethods] = React.useState<string[]>([])
   const [isLoadingMethods, setIsLoadingMethods] = React.useState(true)
@@ -67,14 +67,14 @@ export default function ContributionForm({
     handleFormSubmit,
     handleCardPayment,
     handleReset,
-    handleBack
+    handleBack,
   } = useContribution({ onSuccess, onError })
 
   // Hook do timer PIX
   const { seconds: pixCountdown, reset: resetTimer } = usePaymentTimer({
     initialSeconds: PIX_COUNTDOWN_SECONDS,
     isActive: paymentState.pixStatus === 'pending',
-    onExpired: () => setPixStatus('expired')
+    onExpired: () => setPixStatus('expired'),
   })
 
   // Hook de sincronização PIX
@@ -86,17 +86,19 @@ export default function ContributionForm({
       setPixStatus('confirmed')
       setCurrentStep(3)
     },
-    onError: (error) => onError?.(error)
+    onError: (error) => onError?.(error),
   })
 
   // Handlers
   const handleDataFormSubmit = (data: ContributionData) => {
     // Valida se o método de pagamento está disponível
     if (!availablePaymentMethods.includes(data.paymentMethod)) {
-      onError?.(`Método de pagamento "${data.paymentMethod}" não está disponível. Configure em Admin > Gateways.`)
+      onError?.(
+        `Método de pagamento "${data.paymentMethod}" não está disponível. Configure em Admin > Gateways.`,
+      )
       return
     }
-    
+
     updateFormData(data)
     handleFormSubmit(data)
   }
@@ -145,8 +147,18 @@ export default function ContributionForm({
                   <div className="relative mb-6">
                     <div className="absolute inset-0 bg-red-500/30 rounded-full blur-2xl animate-pulse" />
                     <div className="relative bg-gradient-to-br from-red-500 to-red-600 p-4 rounded-full w-fit mx-auto shadow-2xl">
-                      <svg className="h-12 w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="h-12 w-12 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={3}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                     </div>
                   </div>
@@ -154,7 +166,8 @@ export default function ContributionForm({
                     ⏰ Tempo Esgotado
                   </h3>
                   <p className="text-base text-red-700 dark:text-red-300 mb-6 font-medium">
-                    O tempo para pagamento via PIX expirou.<br />
+                    O tempo para pagamento via PIX expirou.
+                    <br />
                     Gere um novo código para continuar sua contribuição.
                   </p>
                   <Button
@@ -255,10 +268,10 @@ export default function ContributionForm({
                   onClick={() => handleDataFormSubmit(formData)}
                   size="lg"
                   disabled={
-                    isLoadingMethods || 
-                    paymentState.isProcessing || 
-                    !formData.amount || 
-                    formData.amount <= 0 || 
+                    isLoadingMethods ||
+                    paymentState.isProcessing ||
+                    !formData.amount ||
+                    formData.amount <= 0 ||
                     availablePaymentMethods.length === 0 ||
                     !availablePaymentMethods.includes(formData.paymentMethod)
                   }
@@ -277,14 +290,22 @@ export default function ContributionForm({
                   ) : availablePaymentMethods.length === 0 ? (
                     <>
                       <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       Métodos Indisponíveis
                     </>
                   ) : (
                     <>
                       <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
+                        <path
+                          fillRule="evenodd"
+                          d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       Prosseguir com Segurança
                     </>
@@ -302,16 +323,34 @@ export default function ContributionForm({
             <div className="grid grid-cols-3 gap-4 mb-3">
               <div className="flex flex-col items-center gap-2 p-3 bg-white/50 dark:bg-black/20 rounded-xl backdrop-blur-sm">
                 <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                  <svg className="h-5 w-5 text-green-700 dark:text-green-300" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-green-700 dark:text-green-300"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
-                <span className="text-xs font-bold text-green-700 dark:text-green-300">SSL 256-bit</span>
+                <span className="text-xs font-bold text-green-700 dark:text-green-300">
+                  SSL 256-bit
+                </span>
               </div>
               <div className="flex flex-col items-center gap-2 p-3 bg-white/50 dark:bg-black/20 rounded-xl backdrop-blur-sm">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                  <svg className="h-5 w-5 text-blue-700 dark:text-blue-300" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-blue-700 dark:text-blue-300"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <span className="text-xs font-bold text-blue-700 dark:text-blue-300">PCI-DSS</span>
@@ -322,14 +361,22 @@ export default function ContributionForm({
                     C
                   </div>
                 </div>
-                <span className="text-xs font-bold text-purple-700 dark:text-purple-300">Cielo</span>
+                <span className="text-xs font-bold text-purple-700 dark:text-purple-300">
+                  Cielo
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
               </svg>
-              <span className="font-medium">Dados criptografados ponta a ponta • Não armazenamos informações de cartão</span>
+              <span className="font-medium">
+                Dados criptografados ponta a ponta • Não armazenamos informações de cartão
+              </span>
             </div>
           </div>
         </div>
@@ -338,7 +385,7 @@ export default function ContributionForm({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6 max-w-6xl mx-auto pb-8", className)}>
+    <div className={cn('flex flex-col gap-6 max-w-6xl mx-auto pb-8', className)}>
       {/* Indicador de Progresso com Videira */}
       <div className="relative overflow-hidden rounded-2xl p-1">
         <div className="absolute inset-0 videira-gradient opacity-20" />
@@ -363,7 +410,11 @@ export default function ContributionForm({
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
               <div className="flex items-center gap-1">
                 <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="font-medium">SSL 256-bit</span>
               </div>
@@ -373,8 +424,8 @@ export default function ContributionForm({
           </div>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          Sistema de pagamento certificado PCI-DSS com criptografia de ponta a ponta.
-          Seus dados estão 100% protegidos.
+          Sistema de pagamento certificado PCI-DSS com criptografia de ponta a ponta. Seus dados
+          estão 100% protegidos.
         </p>
       </div>
 
@@ -382,7 +433,7 @@ export default function ContributionForm({
       <Card className="shadow-2xl border-t-4 border-t-videira-cyan relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-videira-cyan/5 to-transparent rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-videira-purple/5 to-transparent rounded-full blur-3xl" />
-        
+
         <CardHeader className="pb-4 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -395,9 +446,51 @@ export default function ContributionForm({
                 )}
                 {paymentState.currentStep === 2 && (
                   <>
-                    {formData.paymentMethod === 'pix' && <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h4" /></svg>}
-                    {formData.paymentMethod === 'credit_card' && <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>}
-                    {formData.paymentMethod === 'boleto' && <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                    {formData.paymentMethod === 'pix' && (
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h4"
+                        />
+                      </svg>
+                    )}
+                    {formData.paymentMethod === 'credit_card' && (
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                        />
+                      </svg>
+                    )}
+                    {formData.paymentMethod === 'boleto' && (
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    )}
                     {formData.paymentMethod === 'pix' && 'Pagamento via PIX'}
                     {formData.paymentMethod === 'credit_card' && 'Pagamento com Cartão'}
                     {formData.paymentMethod === 'boleto' && 'Pagamento via Boleto'}
@@ -406,21 +499,32 @@ export default function ContributionForm({
                 {paymentState.currentStep === 3 && (
                   <>
                     <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     Pagamento Confirmado
                   </>
                 )}
               </CardTitle>
               <CardDescription className="text-sm mt-1">
-                {paymentState.currentStep === 1 && "Preencha os dados e escolha o método de pagamento"}
-                {paymentState.currentStep === 2 && formData.paymentMethod === 'pix' && "Escaneie o QR Code ou copie a chave PIX para finalizar o pagamento"}
-                {paymentState.currentStep === 2 && formData.paymentMethod === 'credit_card' && "Preencha os dados do seu cartão para finalizar o pagamento"}
-                {paymentState.currentStep === 2 && formData.paymentMethod === 'boleto' && "Seu boleto foi gerado com sucesso. Você pode baixar o PDF ou copiar o código de barras."}
-                {paymentState.currentStep === 3 && "Sua contribuição foi processada com sucesso!"}
+                {paymentState.currentStep === 1 &&
+                  'Preencha os dados e escolha o método de pagamento'}
+                {paymentState.currentStep === 2 &&
+                  formData.paymentMethod === 'pix' &&
+                  'Escaneie o QR Code ou copie a chave PIX para finalizar o pagamento'}
+                {paymentState.currentStep === 2 &&
+                  formData.paymentMethod === 'credit_card' &&
+                  'Preencha os dados do seu cartão para finalizar o pagamento'}
+                {paymentState.currentStep === 2 &&
+                  formData.paymentMethod === 'boleto' &&
+                  'Seu boleto foi gerado com sucesso. Você pode baixar o PDF ou copiar o código de barras.'}
+                {paymentState.currentStep === 3 && 'Sua contribuição foi processada com sucesso!'}
               </CardDescription>
             </div>
-            
+
             {/* Botão Voltar (apenas na etapa 2) */}
             {paymentState.currentStep === 2 && paymentState.showPaymentDetails && (
               <Button
@@ -430,17 +534,20 @@ export default function ContributionForm({
                 className="flex items-center gap-2"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
                 Voltar
               </Button>
             )}
           </div>
         </CardHeader>
-        
-        <CardContent>
-          {renderContent()}
-        </CardContent>
+
+        <CardContent>{renderContent()}</CardContent>
       </Card>
     </div>
   )

@@ -17,7 +17,7 @@ export default async function RoadmapPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -83,7 +83,8 @@ export default async function RoadmapPage() {
       {/* Card de Conteúdo */}
       <Card className="shadow-lg border-t-4 border-t-videira-purple">
         <CardContent className="pt-6">
-          <div className="prose prose-slate dark:prose-invert max-w-none
+          <div
+            className="prose prose-slate dark:prose-invert max-w-none
             prose-headings:text-foreground
             prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-4 prose-h1:mt-8
             prose-h2:text-2xl prose-h2:font-bold prose-h2:mb-3 prose-h2:mt-6 prose-h2:text-videira-blue
@@ -100,7 +101,8 @@ export default async function RoadmapPage() {
             prose-th:bg-videira-blue/10 prose-th:border prose-th:p-2
             prose-td:border prose-td:p-2
             prose-blockquote:border-l-4 prose-blockquote:border-l-videira-purple prose-blockquote:pl-4 prose-blockquote:italic
-          ">
+          "
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
           </div>
         </CardContent>

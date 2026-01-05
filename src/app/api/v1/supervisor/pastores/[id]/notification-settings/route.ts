@@ -21,35 +21,37 @@ const notificationSettingsSchema = z.object({
   }),
 })
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
-  
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
+
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
 
   try {
     // Verificar se o pastor existe
-    const pastor = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1)
+    const pastor = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1)
 
     if (pastor.length === 0) {
       return NextResponse.json({ error: 'Pastor não encontrado.' }, { status: 404 })
@@ -85,45 +87,46 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     return NextResponse.json({ ...defaultSettings, ...formattedSettings })
   } catch (error) {
     console.error('Erro ao buscar configurações de notificação:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
-  
+export async function PUT(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
+
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
 
   try {
     const body = await request.json()
-    
+
     // Validar dados de entrada
     const validatedSettings = notificationSettingsSchema.parse(body)
 
     // Primeiro, deletar configurações existentes
-    await db
-      .delete(userNotificationSettings)
-      .where(eq(userNotificationSettings.userId, id))
+    await db.delete(userNotificationSettings).where(eq(userNotificationSettings.userId, id))
 
     // Inserir novas configurações
     const settingsToInsert = []
@@ -148,14 +151,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Dados inválidos.', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     console.error('Erro ao atualizar configurações de notificação:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }

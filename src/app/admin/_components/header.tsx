@@ -88,7 +88,14 @@ type AdminHeaderProps = {
   companyName?: string
 }
 
-export function AdminHeader({ userName, userEmail, userFallback, avatarUrl, companyLogo, companyName }: AdminHeaderProps): JSX.Element {
+export function AdminHeader({
+  userName,
+  userEmail,
+  userFallback,
+  avatarUrl,
+  companyLogo,
+  companyName,
+}: AdminHeaderProps): JSX.Element {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       <Sheet>
@@ -188,7 +195,7 @@ export function AdminHeader({ userName, userEmail, userFallback, avatarUrl, comp
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer"
             onClick={async () => {
               const result = await logoutUser()

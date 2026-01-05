@@ -65,7 +65,10 @@ export default async function ManagerLayout({
   return (
     <ErrorBoundary>
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <ManagerSidebar companyLogo={company?.logoUrl || undefined} companyName={company?.name || undefined} />
+        <ManagerSidebar
+          companyLogo={company?.logoUrl || undefined}
+          companyName={company?.name || undefined}
+        />
         <div className="flex flex-col">
           <ManagerHeader
             userName={userName}

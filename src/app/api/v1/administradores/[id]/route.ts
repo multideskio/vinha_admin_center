@@ -40,8 +40,11 @@ const deleteSchema = z.object({
   deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
 })
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -94,8 +97,11 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function PUT(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -131,9 +137,12 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address) profileUpdateData.address = validatedData.address
       if (validatedData.role) profileUpdateData.permission = validatedData.role
-      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook || null
-      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram || null
-      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website || null
+      if (validatedData.facebook !== undefined)
+        profileUpdateData.facebook = validatedData.facebook || null
+      if (validatedData.instagram !== undefined)
+        profileUpdateData.instagram = validatedData.instagram || null
+      if (validatedData.website !== undefined)
+        profileUpdateData.website = validatedData.website || null
 
       if (Object.keys(profileUpdateData).length > 0) {
         await tx.update(adminProfiles).set(profileUpdateData).where(eq(adminProfiles.userId, id))
@@ -156,8 +165,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

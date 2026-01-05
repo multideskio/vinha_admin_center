@@ -1,10 +1,6 @@
-import { Grape, Sparkles } from 'lucide-react';
+import { Grape, Sparkles } from 'lucide-react'
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       {/* Left side - Form */}
@@ -16,7 +12,7 @@ export default function AuthLayout({
       <div className="hidden lg:block relative overflow-hidden">
         {/* Gradiente Videira de fundo */}
         <div className="absolute inset-0 videira-gradient opacity-95" />
-        
+
         {/* Padrão de bolinhas decorativas */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 right-10 h-64 w-64 rounded-full bg-white blur-3xl" />
@@ -34,12 +30,8 @@ export default function AuthLayout({
                   <Grape className="h-10 w-10 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-white drop-shadow-lg">
-                    Vinha Admin
-                  </h1>
-                  <p className="text-white/90 text-sm font-medium">
-                    Sistema de Gestão Ministerial
-                  </p>
+                  <h1 className="text-4xl font-bold text-white drop-shadow-lg">Vinha Admin</h1>
+                  <p className="text-white/90 text-sm font-medium">Sistema de Gestão Ministerial</p>
                 </div>
               </div>
             </div>
@@ -48,13 +40,12 @@ export default function AuthLayout({
             <div className="mt-8 p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
               <div className="space-y-3">
                 <p className="text-lg text-white/95 leading-relaxed italic">
-                  &ldquo;Trazei todos os dízimos à casa do tesouro, para que haja mantimento na minha casa, 
-                  e depois fazei prova de mim, diz o Senhor dos Exércitos, se eu não vos abrir as janelas 
-                  do céu e não derramar sobre vós uma bênção tal, que dela vos advenha a maior abastança.&rdquo;
+                  &ldquo;Trazei todos os dízimos à casa do tesouro, para que haja mantimento na
+                  minha casa, e depois fazei prova de mim, diz o Senhor dos Exércitos, se eu não vos
+                  abrir as janelas do céu e não derramar sobre vós uma bênção tal, que dela vos
+                  advenha a maior abastança.&rdquo;
                 </p>
-                <p className="text-white/70 text-sm font-medium text-right">
-                  Malaquias 3:10
-                </p>
+                <p className="text-white/70 text-sm font-medium text-right">Malaquias 3:10</p>
               </div>
             </div>
 
@@ -69,5 +60,5 @@ export default function AuthLayout({
         </div>
       </div>
     </div>
-  );
+  )
 }

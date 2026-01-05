@@ -20,12 +20,12 @@ interface SendMessageDialogProps {
   defaultTab?: 'email' | 'whatsapp'
 }
 
-export function SendMessageDialog({ 
-  recipientName, 
-  recipientEmail, 
-  recipientPhone, 
+export function SendMessageDialog({
+  recipientName,
+  recipientEmail,
+  recipientPhone,
   children,
-  defaultTab = 'email'
+  defaultTab = 'email',
 }: SendMessageDialogProps) {
   const [open, setOpen] = useState(false)
   const [emailSubject, setEmailSubject] = useState('')
@@ -122,9 +122,7 @@ export function SendMessageDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Enviar Mensagem para {recipientName}</DialogTitle>
@@ -140,7 +138,7 @@ export function SendMessageDialog({
               WhatsApp
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="email" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email-to">Para:</Label>
@@ -165,16 +163,12 @@ export function SendMessageDialog({
                 onChange={(e) => setEmailMessage(e.target.value)}
               />
             </div>
-            <Button 
-              onClick={handleSendEmail} 
-              disabled={isSending}
-              className="w-full"
-            >
+            <Button onClick={handleSendEmail} disabled={isSending} className="w-full">
               <Send className="h-4 w-4 mr-2" />
               {isSending ? 'Enviando...' : 'Enviar Email'}
             </Button>
           </TabsContent>
-          
+
           <TabsContent value="whatsapp" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="whatsapp-to">Para:</Label>
@@ -190,11 +184,7 @@ export function SendMessageDialog({
                 onChange={(e) => setWhatsappMessage(e.target.value)}
               />
             </div>
-            <Button 
-              onClick={handleSendWhatsApp} 
-              disabled={isSending}
-              className="w-full"
-            >
+            <Button onClick={handleSendWhatsApp} disabled={isSending} className="w-full">
               <Send className="h-4 w-4 mr-2" />
               {isSending ? 'Enviando...' : 'Enviar WhatsApp'}
             </Button>

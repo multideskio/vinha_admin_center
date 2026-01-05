@@ -91,37 +91,43 @@ export default function PastorDashboardPage() {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const fetchData = React.useCallback(async (startDate?: string, endDate?: string) => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (startDate) params.append('startDate', startDate)
-      if (endDate) params.append('endDate', endDate)
-      
-      const response = await fetch(`/api/v1/pastor/dashboard?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error('Falha ao carregar os dados do dashboard.')
-      }
-      const dashboardData = await response.json()
-      setData(dashboardData)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [toast])
+  const fetchData = React.useCallback(
+    async (startDate?: string, endDate?: string) => {
+      setIsLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (startDate) params.append('startDate', startDate)
+        if (endDate) params.append('endDate', endDate)
 
-  const handleDateRangeChange = React.useCallback((range: DateRange | undefined) => {
-    setDateRange(range)
-    const startDate = range?.from ? format(range.from, 'yyyy-MM-dd') : undefined
-    const endDate = range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
-    fetchData(startDate, endDate)
-  }, [fetchData])
+        const response = await fetch(`/api/v1/pastor/dashboard?${params.toString()}`)
+        if (!response.ok) {
+          throw new Error('Falha ao carregar os dados do dashboard.')
+        }
+        const dashboardData = await response.json()
+        setData(dashboardData)
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [toast],
+  )
+
+  const handleDateRangeChange = React.useCallback(
+    (range: DateRange | undefined) => {
+      setDateRange(range)
+      const startDate = range?.from ? format(range.from, 'yyyy-MM-dd') : undefined
+      const endDate = range?.to ? format(range.to, 'yyyy-MM-dd') : undefined
+      fetchData(startDate, endDate)
+    },
+    [fetchData],
+  )
 
   React.useEffect(() => {
     fetchData()
@@ -187,7 +193,7 @@ export default function PastorDashboardPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -205,11 +211,11 @@ export default function PastorDashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <DateRangePicker
-                value={dateRange}
-                onChange={handleDateRangeChange}
-              />
-              <Button asChild className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+              <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+              <Button
+                asChild
+                className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
+              >
                 <Link href="/pastor/perfil">
                   <Pencil className="mr-2 h-4 w-4" />
                   Editar Perfil
@@ -222,9 +228,21 @@ export default function PastorDashboardPage() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {kpiDisplayData.map((kpi, index) => {
           const colorClasses = [
-            { card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30', iconColor: 'h-4 w-4 text-videira-cyan' },
-            { card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30', iconColor: 'h-4 w-4 text-videira-blue' },
-            { card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30', iconColor: 'h-4 w-4 text-videira-purple' },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30',
+              iconColor: 'h-4 w-4 text-videira-cyan',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30',
+              iconColor: 'h-4 w-4 text-videira-blue',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30',
+              iconColor: 'h-4 w-4 text-videira-purple',
+            },
           ] as const
           const classes = colorClasses[index % colorClasses.length]!
           return (

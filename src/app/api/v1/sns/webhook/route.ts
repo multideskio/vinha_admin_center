@@ -63,7 +63,7 @@ interface SESMessage {
 
 export async function POST(request: NextRequest) {
   try {
-    const rawBody = await request.json() as Record<string, unknown>
+    const rawBody = (await request.json()) as Record<string, unknown>
 
     // CRÍTICO: Validar assinatura SNS
     try {
@@ -81,10 +81,7 @@ export async function POST(request: NextRequest) {
         error: validationError instanceof Error ? validationError.message : 'Unknown error',
         messageId: rawBody.MessageId,
       })
-      return NextResponse.json(
-        { error: 'Assinatura SNS inválida' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Assinatura SNS inválida' }, { status: 403 })
     }
 
     // Após validação, podemos fazer cast seguro
@@ -126,7 +123,7 @@ export async function POST(request: NextRequest) {
     })
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: errorMessage },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -136,57 +133,52 @@ async function handleBounce(bounce: SESBounce, messageId: string) {
     for (const recipient of bounce.bouncedRecipients) {
       const email = recipient.emailAddress.toLowerCase()
 
-    // Apenas bounces permanentes vão para blacklist
-    if (bounce.bounceType === 'Permanent') {
-      const existing = await db
-        .select()
-        .from(emailBlacklist)
-        .where(
-          and(
-            eq(emailBlacklist.companyId, companyId),
-            eq(emailBlacklist.email, email)
-          )
-        )
-        .limit(1)
+      // Apenas bounces permanentes vão para blacklist
+      if (bounce.bounceType === 'Permanent') {
+        const existing = await db
+          .select()
+          .from(emailBlacklist)
+          .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
+          .limit(1)
 
-      if (existing.length > 0 && existing[0]) {
-        await db
-          .update(emailBlacklist)
-          .set({
+        if (existing.length > 0 && existing[0]) {
+          await db
+            .update(emailBlacklist)
+            .set({
+              lastAttemptAt: new Date(),
+              attemptCount: existing[0].attemptCount + 1,
+              errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
+              isActive: true,
+            })
+            .where(eq(emailBlacklist.id, existing[0].id))
+        } else {
+          await db.insert(emailBlacklist).values({
+            companyId: companyId,
+            email,
+            reason: 'bounce',
+            errorCode: bounce.bounceSubType,
+            errorMessage: recipient.diagnosticCode || `Permanent bounce: ${bounce.bounceSubType}`,
+            firstFailedAt: new Date(),
             lastAttemptAt: new Date(),
-            attemptCount: existing[0].attemptCount + 1,
-            errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
+            attemptCount: 1,
             isActive: true,
           })
-          .where(eq(emailBlacklist.id, existing[0].id))
-      } else {
-        await db.insert(emailBlacklist).values({
-          companyId: companyId,
-          email,
-          reason: 'bounce',
-          errorCode: bounce.bounceSubType,
-          errorMessage: recipient.diagnosticCode || `Permanent bounce: ${bounce.bounceSubType}`,
-          firstFailedAt: new Date(),
-          lastAttemptAt: new Date(),
-          attemptCount: 1,
-          isActive: true,
-        })
+        }
       }
-    }
 
-    // Log da notificação
-    await db.insert(notificationLogs).values({
-      companyId: companyId,
-      userId: companyId, // Sistema
-      notificationType: 'sns_bounce',
-      channel: 'email',
-      status: 'failed',
-      recipient: email,
-      subject: `Bounce: ${bounce.bounceType}`,
-      messageContent: JSON.stringify({ bounce, messageId }),
-      errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
-      errorCode: bounce.bounceSubType,
-    })
+      // Log da notificação
+      await db.insert(notificationLogs).values({
+        companyId: companyId,
+        userId: companyId, // Sistema
+        notificationType: 'sns_bounce',
+        channel: 'email',
+        status: 'failed',
+        recipient: email,
+        subject: `Bounce: ${bounce.bounceType}`,
+        messageContent: JSON.stringify({ bounce, messageId }),
+        errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
+        errorCode: bounce.bounceSubType,
+      })
     }
   } catch (error) {
     console.error('Erro ao processar bounce:', {
@@ -203,55 +195,50 @@ async function handleComplaint(complaint: SESComplaint, messageId: string) {
     for (const recipient of complaint.complainedRecipients) {
       const email = recipient.emailAddress.toLowerCase()
 
-    const existing = await db
-      .select()
-      .from(emailBlacklist)
-      .where(
-        and(
-          eq(emailBlacklist.companyId, companyId),
-          eq(emailBlacklist.email, email)
-        )
-      )
-      .limit(1)
+      const existing = await db
+        .select()
+        .from(emailBlacklist)
+        .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
+        .limit(1)
 
-    if (existing.length > 0 && existing[0]) {
-      await db
-        .update(emailBlacklist)
-        .set({
-          lastAttemptAt: new Date(),
-          attemptCount: existing[0].attemptCount + 1,
+      if (existing.length > 0 && existing[0]) {
+        await db
+          .update(emailBlacklist)
+          .set({
+            lastAttemptAt: new Date(),
+            attemptCount: existing[0].attemptCount + 1,
+            reason: 'complaint',
+            errorMessage: complaint.complaintFeedbackType || 'User complaint',
+            isActive: true,
+          })
+          .where(eq(emailBlacklist.id, existing[0].id))
+      } else {
+        await db.insert(emailBlacklist).values({
+          companyId: companyId,
+          email,
           reason: 'complaint',
-          errorMessage: complaint.complaintFeedbackType || 'User complaint',
+          errorCode: complaint.complaintFeedbackType || 'abuse',
+          errorMessage: `User marked as spam: ${complaint.complaintFeedbackType || 'unknown'}`,
+          firstFailedAt: new Date(),
+          lastAttemptAt: new Date(),
+          attemptCount: 1,
           isActive: true,
         })
-        .where(eq(emailBlacklist.id, existing[0].id))
-    } else {
-      await db.insert(emailBlacklist).values({
-        companyId: companyId,
-        email,
-        reason: 'complaint',
-        errorCode: complaint.complaintFeedbackType || 'abuse',
-        errorMessage: `User marked as spam: ${complaint.complaintFeedbackType || 'unknown'}`,
-        firstFailedAt: new Date(),
-        lastAttemptAt: new Date(),
-        attemptCount: 1,
-        isActive: true,
-      })
-    }
+      }
 
-    // Log da notificação
-    await db.insert(notificationLogs).values({
-      companyId: companyId,
-      userId: companyId, // Sistema
-      notificationType: 'sns_complaint',
-      channel: 'email',
-      status: 'failed',
-      recipient: email,
-      subject: 'Complaint received',
-      messageContent: JSON.stringify({ complaint, messageId }),
-      errorMessage: complaint.complaintFeedbackType || 'User complaint',
-      errorCode: complaint.complaintFeedbackType || 'abuse',
-    })
+      // Log da notificação
+      await db.insert(notificationLogs).values({
+        companyId: companyId,
+        userId: companyId, // Sistema
+        notificationType: 'sns_complaint',
+        channel: 'email',
+        status: 'failed',
+        recipient: email,
+        subject: 'Complaint received',
+        messageContent: JSON.stringify({ complaint, messageId }),
+        errorMessage: complaint.complaintFeedbackType || 'User complaint',
+        errorCode: complaint.complaintFeedbackType || 'abuse',
+      })
     }
   } catch (error) {
     console.error('Erro ao processar complaint:', {

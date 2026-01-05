@@ -31,16 +31,17 @@ export async function createUserWithWelcome(userData: {
     .returning()
 
   const newUser = newUserResult[0]
-  
+
   if (!newUser) {
     throw new Error('Failed to create user')
   }
 
   // Enviar boas-vindas automaticamente
   await sendWelcomeNotification(newUser.id, {
-    name: userData.firstName && userData.lastName 
-      ? `${userData.firstName} ${userData.lastName}` 
-      : 'Novo Membro',
+    name:
+      userData.firstName && userData.lastName
+        ? `${userData.firstName} ${userData.lastName}`
+        : 'Novo Membro',
     churchName: userData.churchName || 'Nossa Igreja',
     email: userData.email,
     phone: userData.phone,
@@ -56,7 +57,7 @@ export async function sendWelcomeNotification(
     churchName: string
     email: string
     phone?: string
-  }
+  },
 ) {
   try {
     // Buscar dados do usuário
@@ -103,14 +104,11 @@ export async function sendWelcomeNotification(
       data.name,
       data.churchName,
       data.phone,
-      data.email
+      data.email,
     )
 
     // Marcar como enviado
-    await db
-      .update(users)
-      .set({ welcomeSent: true })
-      .where(eq(users.id, userId))
+    await db.update(users).set({ welcomeSent: true }).where(eq(users.id, userId))
 
     return { success: true, result }
   } catch (error) {

@@ -18,12 +18,14 @@ const sendNotificationSchema = z.object({
     email: z.string().email().optional(),
     phone: z.string().optional(),
   }),
-  data: z.object({
-    churchName: z.string().optional(),
-    amount: z.string().optional(),
-    dueDate: z.string().optional(),
-    paymentLink: z.string().url().optional(),
-  }).optional(),
+  data: z
+    .object({
+      churchName: z.string().optional(),
+      amount: z.string().optional(),
+      dueDate: z.string().optional(),
+      paymentLink: z.string().url().optional(),
+    })
+    .optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -45,10 +47,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (!settings) {
-      return NextResponse.json(
-        { error: 'Company settings not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Company settings not found' }, { status: 404 })
     }
 
     const notificationService = new NotificationService({
@@ -71,7 +70,7 @@ export async function POST(request: NextRequest) {
           recipient.name,
           data?.churchName || 'Nossa Igreja',
           recipient.phone,
-          recipient.email
+          recipient.email,
         )
         break
 
@@ -79,10 +78,10 @@ export async function POST(request: NextRequest) {
         if (!data?.amount || !data?.dueDate) {
           return NextResponse.json(
             { error: 'Amount and dueDate are required for payment reminders' },
-            { status: 400 }
+            { status: 400 },
           )
         }
-        
+
         result = await notificationService.sendPaymentReminder(
           user.id, // ✅ CORRIGIDO: Usar ID real do usuário autenticado
           recipient.name,
@@ -90,15 +89,12 @@ export async function POST(request: NextRequest) {
           data.dueDate,
           recipient.phone,
           recipient.email,
-          data.paymentLink
+          data.paymentLink,
         )
         break
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid notification type' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Invalid notification type' }, { status: 400 })
     }
 
     return NextResponse.json({
@@ -106,20 +102,16 @@ export async function POST(request: NextRequest) {
       results: result,
       message: 'Notifications sent successfully',
     })
-
   } catch (error) {
     console.error('Notification send error:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

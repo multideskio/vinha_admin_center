@@ -161,13 +161,13 @@ export default function S3SettingsPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/configuracoes">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -202,19 +202,22 @@ export default function S3SettingsPage() {
           <div className="flex items-start gap-3">
             <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Avatares de usuários</span> - Fotos de perfil de pastores, supervisores, gerentes
+              <span className="font-semibold text-foreground">Avatares de usuários</span> - Fotos de
+              perfil de pastores, supervisores, gerentes
             </p>
           </div>
           <div className="flex items-start gap-3">
             <div className="h-2 w-2 rounded-full bg-videira-blue mt-2 ring-2 ring-videira-blue/30" />
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Logos da empresa</span> - Logotipo da organização
+              <span className="font-semibold text-foreground">Logos da empresa</span> - Logotipo da
+              organização
             </p>
           </div>
           <div className="flex items-start gap-3">
             <div className="h-2 w-2 rounded-full bg-videira-purple mt-2 ring-2 ring-videira-purple/30" />
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Arquivos gerais</span> - Uploads via API /api/v1/upload
+              <span className="font-semibold text-foreground">Arquivos gerais</span> - Uploads via
+              API /api/v1/upload
             </p>
           </div>
         </CardContent>
@@ -308,7 +311,11 @@ export default function S3SettingsPage() {
                     <FormItem className="md:col-span-2">
                       <FormLabel>CloudFront URL (Opcional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://d1v03qm1k6ud1f.cloudfront.net" {...field} value={field.value || ''} />
+                        <Input
+                          placeholder="https://d1v03qm1k6ud1f.cloudfront.net"
+                          {...field}
+                          value={field.value || ''}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -333,8 +340,10 @@ export default function S3SettingsPage() {
               <Alert className="bg-videira-blue/10 border-videira-blue/30">
                 <AlertTriangle className="h-4 w-4 text-videira-blue" />
                 <AlertDescription className="text-videira-blue">
-                  <strong>AWS S3:</strong> Use <code className="bg-white px-1 rounded">s3.amazonaws.com</code> como endpoint.
-                  Para MinIO ou DigitalOcean, use a URL completa (ex: <code className="bg-white px-1 rounded">https://minio.seuservidor.com</code>).
+                  <strong>AWS S3:</strong> Use{' '}
+                  <code className="bg-white px-1 rounded">s3.amazonaws.com</code> como endpoint.
+                  Para MinIO ou DigitalOcean, use a URL completa (ex:{' '}
+                  <code className="bg-white px-1 rounded">https://minio.seuservidor.com</code>).
                 </AlertDescription>
               </Alert>
               <div className="flex justify-end gap-3 pt-4">
@@ -356,8 +365,8 @@ export default function S3SettingsPage() {
                     </>
                   )}
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isSaving}
                   className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
                 >

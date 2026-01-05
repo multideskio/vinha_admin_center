@@ -15,12 +15,12 @@ interface ClickableAvatarProps {
   enableModal?: boolean
 }
 
-export function ClickableAvatar({ 
-  src, 
-  alt = 'Avatar', 
-  fallback = 'U', 
+export function ClickableAvatar({
+  src,
+  alt = 'Avatar',
+  fallback = 'U',
   className,
-  enableModal = true 
+  enableModal = true,
 }: ClickableAvatarProps) {
   if (!src || !enableModal) {
     return (

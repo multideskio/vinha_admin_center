@@ -187,8 +187,6 @@ const PastorFormModal = ({
       .slice(0, 9)
   }
 
-
-
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const cep = e.target.value.replace(/\D/g, '')
     if (cep.length !== 8) return
@@ -514,7 +512,7 @@ export default function PastoresPage(): JSX.Element {
     setIsLoading(true)
     try {
       const url = new URL('/api/v1/supervisor/pastores', window.location.origin)
-      
+
       // Adicionar parâmetros de data se selecionados
       if (dateRange?.from) {
         const startDate = (dateRange.from as Date).toISOString().substring(0, 10)
@@ -583,103 +581,103 @@ export default function PastoresPage(): JSX.Element {
     <Card className="shadow-lg border-t-4 border-t-videira-blue">
       <CardContent className="pt-6">
         <div className="rounded-md border-2">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
-              <TableHead className="font-semibold">Nome</TableHead>
-              <TableHead className="hidden md:table-cell font-semibold">Email</TableHead>
-              <TableHead className="hidden md:table-cell font-semibold">Celular</TableHead>
-              <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : paginatedPastores.length > 0 ? (
-              paginatedPastores.map((pastor) => (
-                <TableRow key={pastor.id}>
-                  <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {pastor.email}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {pastor.phone}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
-                      {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/supervisor/pastores/${pastor.id}`}>Editar</Link>
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o
-                                pastor.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => pastor.id && handleDelete(pastor.id)}
-                              >
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  Nenhum pastor encontrado.
-                </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                <TableHead className="font-semibold">Nome</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Email</TableHead>
+                <TableHead className="hidden md:table-cell font-semibold">Celular</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                <TableHead>
+                  <span className="sr-only">Ações</span>
+                </TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-48" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : paginatedPastores.length > 0 ? (
+                paginatedPastores.map((pastor) => (
+                  <TableRow key={pastor.id}>
+                    <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {pastor.email}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {pastor.phone}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
+                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/supervisor/pastores/${pastor.id}`}>Editar</Link>
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                              Excluir
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Essa ação não pode ser desfeita. Isso excluirá permanentemente o
+                                  pastor.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => pastor.id && handleDelete(pastor.id)}
+                                >
+                                  Continuar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    Nenhum pastor encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
         <PaginationControls />
       </CardContent>
@@ -699,7 +697,10 @@ export default function PastoresPage(): JSX.Element {
           ))
         ) : paginatedPastores.length > 0 ? (
           paginatedPastores.map((pastor, index) => (
-            <Card key={pastor.id} className="shadow-lg hover:shadow-xl transition-all border-l-4 border-l-videira-blue">
+            <Card
+              key={pastor.id}
+              className="shadow-lg hover:shadow-xl transition-all border-l-4 border-l-videira-blue"
+            >
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <ClickableAvatar
@@ -734,7 +735,12 @@ export default function PastoresPage(): JSX.Element {
                   </div>
                 </div>
                 <div className="flex justify-end mt-4">
-                  <Button variant="outline" size="sm" className="hover:bg-videira-blue hover:text-white transition-colors" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="hover:bg-videira-blue hover:text-white transition-colors"
+                    asChild
+                  >
                     <Link href={`/supervisor/pastores/${pastor.id}`}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar
@@ -784,7 +790,7 @@ export default function PastoresPage(): JSX.Element {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -795,7 +801,8 @@ export default function PastoresPage(): JSX.Element {
                 Exibindo {filteredPastores.length} de {pastores.length} resultados
                 {dateRange?.from && dateRange?.to && (
                   <span className="ml-2">
-                    • Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
+                    • Período: {dateRange.from.toLocaleDateString('pt-BR')} -{' '}
+                    {dateRange.to.toLocaleDateString('pt-BR')}
                   </span>
                 )}
               </p>
@@ -820,10 +827,7 @@ export default function PastoresPage(): JSX.Element {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <DateRangePicker 
-                value={dateRange}
-                onChange={setDateRange}
-              />
+              <DateRangePicker value={dateRange} onChange={setDateRange} />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -854,7 +858,10 @@ export default function PastoresPage(): JSX.Element {
               </TooltipProvider>
 
               <PastorFormModal onSave={fetchData}>
-                <Button size="sm" className="gap-1 bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+                <Button
+                  size="sm"
+                  className="gap-1 bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
+                >
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Novo Pastor</span>
                 </Button>

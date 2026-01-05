@@ -49,7 +49,7 @@ export function useLayoutData(userId: string, role: string): UseLayoutDataReturn
 
         // Chama API route para carregar dados
         const response = await fetch(`/api/v1/layout-data?userId=${userId}&role=${role}`)
-        
+
         if (!response.ok) {
           throw new Error('Falha ao carregar dados do layout')
         }
@@ -71,4 +71,3 @@ export function useLayoutData(userId: string, role: string): UseLayoutDataReturn
 
   return { data, loading, error }
 }
-

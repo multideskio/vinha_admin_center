@@ -9,25 +9,27 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const clientIP = getClientIP(request)
-    const rateLimitResult = rateLimit(
-      `reset-password:${clientIP}`,
-      rateLimitPresets.resetPassword
-    )
-    
+    const rateLimitResult = rateLimit(`reset-password:${clientIP}`, rateLimitPresets.resetPassword)
+
     if (!rateLimitResult.allowed) {
       const resetInMinutes = Math.ceil((rateLimitResult.resetAt - Date.now()) / 60000)
       return NextResponse.json(
         { error: `Muitas tentativas. Tente novamente em ${resetInMinutes} minutos.` },
-        { status: 429 }
+        { status: 429 },
       )
     }
 
     const { token, password } = await request.json()
-    if (!token || !password) return NextResponse.json({ error: 'Token e senha obrigatórios' }, { status: 400 })
-    if (password.length < 8) return NextResponse.json({ error: 'Senha muito curta' }, { status: 400 })
+    if (!token || !password)
+      return NextResponse.json({ error: 'Token e senha obrigatórios' }, { status: 400 })
+    if (password.length < 8)
+      return NextResponse.json({ error: 'Senha muito curta' }, { status: 400 })
 
-    const [reset] = await db.select().from(passwordResetTokens)
-      .where(and(eq(passwordResetTokens.token, token), eq(passwordResetTokens.used, false))).limit(1)
+    const [reset] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(and(eq(passwordResetTokens.token, token), eq(passwordResetTokens.used, false)))
+      .limit(1)
     if (!reset) return NextResponse.json({ error: 'Token inválido ou expirado' }, { status: 400 })
     if (new Date(reset.expiresAt) < new Date()) {
       return NextResponse.json({ error: 'Token expirado' }, { status: 400 })
@@ -36,7 +38,10 @@ export async function POST(request: NextRequest) {
     // Atualiza a senha
     const hashed = await bcrypt.hash(password, 10)
     await db.update(users).set({ password: hashed }).where(eq(users.id, reset.userId))
-    await db.update(passwordResetTokens).set({ used: true }).where(eq(passwordResetTokens.id, reset.id))
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.id, reset.id))
 
     return NextResponse.json({ success: true })
   } catch (error) {

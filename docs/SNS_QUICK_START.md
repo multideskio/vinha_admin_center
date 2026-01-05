@@ -24,6 +24,7 @@ npm run test:sns
 ```
 
 Ou adicione ao `package.json`:
+
 ```json
 {
   "scripts": {
@@ -56,7 +57,7 @@ curl -X DELETE "https://seu-dominio.com/api/v1/email-blacklist?email=test@exampl
 SELECT * FROM email_blacklist WHERE is_active = true;
 
 -- Ver logs SNS
-SELECT * FROM notification_logs 
+SELECT * FROM notification_logs
 WHERE notification_type IN ('sns_bounce', 'sns_complaint')
 ORDER BY sent_at DESC LIMIT 10;
 ```
@@ -78,7 +79,7 @@ await sendEmail({ to: 'success@simulator.amazonses.com', ... })
 
 ```sql
 -- Estatísticas gerais
-SELECT 
+SELECT
   reason,
   COUNT(*) as total,
   COUNT(*) FILTER (WHERE is_active = true) as ativos
@@ -86,13 +87,13 @@ FROM email_blacklist
 GROUP BY reason;
 
 -- Taxa de bounce (últimos 30 dias)
-SELECT 
+SELECT
   DATE(sent_at) as dia,
   COUNT(*) FILTER (WHERE status = 'sent') as enviados,
   COUNT(*) FILTER (WHERE status = 'failed') as falhas,
   ROUND(
-    COUNT(*) FILTER (WHERE status = 'failed')::numeric / 
-    COUNT(*)::numeric * 100, 
+    COUNT(*) FILTER (WHERE status = 'failed')::numeric /
+    COUNT(*)::numeric * 100,
     2
   ) as taxa_falha_pct
 FROM notification_logs
@@ -107,12 +108,14 @@ ORDER BY dia DESC;
 ### Webhook não recebe notificações?
 
 1. **Verificar subscription:**
+
 ```bash
 aws sns list-subscriptions-by-topic \
   --topic-arn arn:aws:sns:us-east-1:ACCOUNT_ID:vinha-ses-notifications
 ```
 
 2. **Verificar endpoint público:**
+
 ```bash
 curl -X POST https://seu-dominio.com/api/v1/sns/webhook \
   -H "Content-Type: application/json" \
@@ -120,6 +123,7 @@ curl -X POST https://seu-dominio.com/api/v1/sns/webhook \
 ```
 
 3. **Ver logs CloudWatch:**
+
 ```bash
 aws logs tail /aws/sns/us-east-1/ACCOUNT_ID/vinha-ses-notifications --follow
 ```

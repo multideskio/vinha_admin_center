@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
     })
     if (!dashRes.ok) {
       const errText = await dashRes.text()
-      return NextResponse.json({ error: 'Falha ao carregar dados do dashboard', details: errText }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Falha ao carregar dados do dashboard', details: errText },
+        { status: 500 },
+      )
     }
     const dashboard = await dashRes.json()
 
@@ -78,7 +81,7 @@ ${JSON.stringify(dashboard)}`
     }
     const aiJson = await aiRes.json()
     const content = aiJson.choices?.[0]?.message?.content?.trim() || ''
-    
+
     // Parse JSON response
     let summary = ''
     let cards
@@ -89,13 +92,15 @@ ${JSON.stringify(dashboard)}`
     } catch {
       // Fallback se OpenAI retornar texto ao invés de JSON
       summary = content.substring(0, 300)
-      cards = [{
-        type: 'info',
-        title: 'Análise Gerada',
-        description: content.substring(0, 200),
-        metric: null,
-        text: content
-      }]
+      cards = [
+        {
+          type: 'info',
+          title: 'Análise Gerada',
+          description: content.substring(0, 200),
+          metric: null,
+          text: content,
+        },
+      ]
     }
 
     return NextResponse.json({ summary, cards })

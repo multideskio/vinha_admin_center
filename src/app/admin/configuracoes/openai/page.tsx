@@ -1,7 +1,19 @@
 'use client'
 
 import * as React from 'react'
-import { Eye, EyeOff, Loader2, Trash2, CheckCircle2, Shield, Bot, Info, ChevronLeft, Save, Sparkles } from 'lucide-react'
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Trash2,
+  CheckCircle2,
+  Shield,
+  Bot,
+  Info,
+  ChevronLeft,
+  Save,
+  Sparkles,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -38,14 +50,22 @@ export default function OpenAISettingsPage() {
   const save = React.useCallback(async () => {
     setSaving(true)
     try {
-      const res = await fetch('/api/v1/settings/openai', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openaiApiKey: value }) })
+      const res = await fetch('/api/v1/settings/openai', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ openaiApiKey: value }),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Falha ao salvar')
       toast({ title: 'Sucesso', description: 'Chave OpenAI salva.', variant: 'success' })
       setValue('')
       load()
     } catch (e: unknown) {
-      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
@@ -54,12 +74,20 @@ export default function OpenAISettingsPage() {
   const clear = React.useCallback(async () => {
     setSaving(true)
     try {
-      const res = await fetch('/api/v1/settings/openai', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openaiApiKey: '' }) })
+      const res = await fetch('/api/v1/settings/openai', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ openaiApiKey: '' }),
+      })
       if (!res.ok) throw new Error('Falha ao limpar')
       toast({ title: 'Removida', description: 'Chave OpenAI removida.', variant: 'success' })
       load()
     } catch (e: unknown) {
-      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
@@ -73,13 +101,13 @@ export default function OpenAISettingsPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/configuracoes">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -117,9 +145,7 @@ export default function OpenAISettingsPage() {
               </div>
               Chave da API OpenAI
             </CardTitle>
-            <CardDescription>
-              Configure sua API key para habilitar recursos de IA
-            </CardDescription>
+            <CardDescription>Configure sua API key para habilitar recursos de IA</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-1">
@@ -131,7 +157,9 @@ export default function OpenAISettingsPage() {
             <Alert className="bg-videira-purple/10 border-videira-purple/30">
               <Info className="h-4 w-4 text-videira-purple" />
               <AlertDescription className="text-videira-purple text-sm">
-                <strong>Formato:</strong> A chave deve começar com <code className="bg-white px-1 rounded text-xs">sk-</code> ou <code className="bg-white px-1 rounded text-xs">sk-proj-</code>
+                <strong>Formato:</strong> A chave deve começar com{' '}
+                <code className="bg-white px-1 rounded text-xs">sk-</code> ou{' '}
+                <code className="bg-white px-1 rounded text-xs">sk-proj-</code>
               </AlertDescription>
             </Alert>
 
@@ -144,10 +172,10 @@ export default function OpenAISettingsPage() {
                   onChange={(e) => setValue(e.target.value)}
                   className="w-full pr-10 border-2"
                 />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute top-1/2 -translate-y-1/2 right-1" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1/2 -translate-y-1/2 right-1"
                   onClick={() => setShow((s) => !s)}
                   type="button"
                 >
@@ -157,8 +185,8 @@ export default function OpenAISettingsPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button 
-                onClick={save} 
+              <Button
+                onClick={save}
                 disabled={saving || !value.trim()}
                 className="flex-1 bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
               >
@@ -175,8 +203,8 @@ export default function OpenAISettingsPage() {
                 )}
               </Button>
               {hasKey && (
-                <Button 
-                  onClick={clear} 
+                <Button
+                  onClick={clear}
                   disabled={saving}
                   className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
@@ -260,7 +288,9 @@ export default function OpenAISettingsPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-videira-blue mt-1.5" />
-                  <span>Modelo usado: <code className="bg-muted px-1 rounded">gpt-4o-mini</code></span>
+                  <span>
+                    Modelo usado: <code className="bg-muted px-1 rounded">gpt-4o-mini</code>
+                  </span>
                 </li>
               </ul>
             </div>

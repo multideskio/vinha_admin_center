@@ -74,24 +74,30 @@ async function verifyTransactionOwnership(
   return false
 }
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
-  
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
+
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
@@ -125,7 +131,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     console.log('[SUPERVISOR] Consultando transação na Cielo:', {
       transactionId: transaction.id,
       gatewayTransactionId: transaction.gatewayTransactionId,
-      url: `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`
+      url: `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
     })
 
     const response = await fetch(
@@ -150,31 +156,31 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       } catch (parseError) {
         console.error('Erro ao fazer parse da resposta de erro da Cielo:', parseError)
       }
-      
+
       console.error('Erro ao consultar transação na Cielo:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorBody
+        body: errorBody,
       })
-      
+
       // Se for 404, significa que a transação ainda não foi processada pela Cielo
       if (response.status === 404) {
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             pending: true,
             message: 'Transação ainda não processada pela Cielo.',
             transaction: {
               id: transaction.id,
               gatewayTransactionId: transaction.gatewayTransactionId,
               status: transaction.status,
-              amount: transaction.amount
-            }
+              amount: transaction.amount,
+            },
           },
-          { status: 202 }
+          { status: 202 },
         )
       }
-      
+
       throw new Error('Falha ao consultar o status da transação na Cielo.')
     }
 

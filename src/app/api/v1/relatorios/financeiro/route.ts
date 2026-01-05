@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions, users, pastorProfiles, churchProfiles } from '@/db/schema'
-import { and, eq, gte, lt, desc, sql } from 'drizzle-orm'
+import { and, eq, gte, lt, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-    
+
     // Filtros
     const from = searchParams.get('from')
     const to = searchParams.get('to')
@@ -32,10 +32,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const endDate = to ? new Date(to) : endOfMonth(now)
 
     // Construir condições
-    const conditions = [
-      gte(transactions.createdAt, startDate),
-      lt(transactions.createdAt, endDate),
-    ]
+    const conditions = [gte(transactions.createdAt, startDate), lt(transactions.createdAt, endDate)]
 
     if (method && method !== 'all') {
       if (method === 'pix' || method === 'credit_card' || method === 'boleto') {
@@ -44,7 +41,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     if (status && status !== 'all') {
-      if (status === 'approved' || status === 'pending' || status === 'refused' || status === 'refunded') {
+      if (
+        status === 'approved' ||
+        status === 'pending' ||
+        status === 'refused' ||
+        status === 'refunded'
+      ) {
         conditions.push(eq(transactions.status, status))
       }
     }
@@ -106,7 +108,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           status: t.status,
           date: format(new Date(t.date), 'dd/MM/yyyy HH:mm'),
         }
-      })
+      }),
     )
 
     // Calcular resumo
@@ -127,17 +129,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .reduce((sum, t) => sum + t.amount, 0)
 
     // Agrupar por método
-    const byMethod = enrichedTransactions.reduce((acc, t) => {
-      if (!acc[t.method]) {
-        acc[t.method] = { count: 0, total: 0 }
-      }
-      const methodData = acc[t.method]
-      if (methodData) {
-        methodData.count++
-        methodData.total += t.amount
-      }
-      return acc
-    }, {} as Record<string, { count: number; total: number }>)
+    const byMethod = enrichedTransactions.reduce(
+      (acc, t) => {
+        if (!acc[t.method]) {
+          acc[t.method] = { count: 0, total: 0 }
+        }
+        const methodData = acc[t.method]
+        if (methodData) {
+          methodData.count++
+          methodData.total += t.amount
+        }
+        return acc
+      },
+      {} as Record<string, { count: number; total: number }>,
+    )
 
     return NextResponse.json({
       transactions: enrichedTransactions,
@@ -161,8 +166,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         error: 'Erro ao buscar relatório financeiro',
         details: error instanceof Error ? error.message : 'Erro desconhecido',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
-

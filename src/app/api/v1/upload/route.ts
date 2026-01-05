@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const folder = formData.get('folder') as string || 'uploads'
-    const filename = formData.get('filename') as string || file.name
+    const folder = (formData.get('folder') as string) || 'uploads'
+    const filename = (formData.get('filename') as string) || file.name
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -51,19 +51,19 @@ export async function POST(request: NextRequest) {
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: `File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
-        { status: 413 }
+        { status: 413 },
       )
     }
 
     // ✅ CORRIGIDO: Validar tipo de arquivo
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid file type',
           allowedTypes: ALLOWED_FILE_TYPES,
           receivedType: file.type,
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
     const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
 
     // ✅ CORRIGIDO: Validar dados com schema seguro
-    const validatedData = uploadSchema.parse({ 
-      folder, 
-      filename: sanitizedFilename 
+    const validatedData = uploadSchema.parse({
+      folder,
+      filename: sanitizedFilename,
     })
 
     // Converter arquivo para buffer
@@ -93,10 +93,10 @@ export async function POST(request: NextRequest) {
 
     // Inicializar serviço S3
     const s3Service = await createS3Service(userData.companyId)
-    
+
     // Gerar chave única
     const key = s3Service.generateKey(validatedData.folder, validatedData.filename)
-    
+
     // Upload do arquivo
     const url = await s3Service.uploadFile(buffer, key, file.type)
 
@@ -108,14 +108,13 @@ export async function POST(request: NextRequest) {
       size: file.size,
       type: file.type,
     })
-
   } catch (error) {
     console.error('Upload error:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -123,15 +122,12 @@ export async function POST(request: NextRequest) {
       if (error.message.includes('S3 configuration')) {
         return NextResponse.json(
           { error: 'S3 not configured. Please configure S3 settings first.' },
-          { status: 400 }
+          { status: 400 },
         )
       }
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -162,17 +158,13 @@ export async function DELETE(request: NextRequest) {
 
     // Inicializar serviço S3
     const s3Service = await createS3Service(userData.companyId)
-    
+
     // Deletar arquivo
     await s3Service.deleteFile(key)
 
     return NextResponse.json({ success: true })
-
   } catch (error) {
     console.error('Delete error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

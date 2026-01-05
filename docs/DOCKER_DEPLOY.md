@@ -3,11 +3,13 @@
 ## 🚀 Deploy Rápido
 
 ### 1. Build da Imagem
+
 ```bash
 docker build -t vinha-admin-center:0.1.0 .
 ```
 
 ### 2. Executar com Docker Compose
+
 ```bash
 # Criar arquivo .env na raiz
 cp .env.example .env
@@ -30,6 +32,7 @@ docker-compose exec app npm run db:seed
 ```
 
 ### 3. Acessar Sistema
+
 ```
 http://localhost:9002
 ```
@@ -39,6 +42,7 @@ http://localhost:9002
 ## 🔧 Comandos Úteis
 
 ### Gerenciamento
+
 ```bash
 # Parar serviços
 docker-compose down
@@ -57,6 +61,7 @@ docker-compose exec app npm run db:studio
 ```
 
 ### Backup do Banco
+
 ```bash
 # Backup
 docker-compose exec db pg_dump -U vinha vinha_admin > backup.sql
@@ -70,6 +75,7 @@ docker-compose exec -T db psql -U vinha vinha_admin < backup.sql
 ## 🌐 Deploy em Produção
 
 ### Variáveis de Ambiente Obrigatórias
+
 ```env
 DATABASE_URL=postgresql://user:pass@host:5432/db
 COMPANY_INIT=uuid-da-empresa
@@ -99,6 +105,7 @@ EVOLUTION_API_KEY=
 ```
 
 ### Docker Hub
+
 ```bash
 # Tag
 docker tag vinha-admin-center:0.1.0 seu-usuario/vinha-admin-center:0.1.0
@@ -116,11 +123,13 @@ docker run -d -p 9002:9002 --env-file .env seu-usuario/vinha-admin-center:0.1.0
 ## 📊 Monitoramento
 
 ### Health Check
+
 ```bash
 curl http://localhost:9002/api/health
 ```
 
 ### Logs
+
 ```bash
 # Últimas 100 linhas
 docker-compose logs --tail=100 app
@@ -137,6 +146,7 @@ docker-compose logs app | grep ERROR
 ## 🔒 Segurança
 
 ### Recomendações
+
 - ✅ Use secrets do Docker Swarm/Kubernetes em produção
 - ✅ Não commite o arquivo .env
 - ✅ Use HTTPS com reverse proxy (Nginx/Traefik)
@@ -144,6 +154,7 @@ docker-compose logs app | grep ERROR
 - ✅ Atualize imagens base regularmente
 
 ### Reverse Proxy (Nginx)
+
 ```nginx
 server {
     listen 80;
@@ -165,6 +176,7 @@ server {
 ## 🎯 Troubleshooting
 
 ### Container não inicia
+
 ```bash
 # Ver logs detalhados
 docker-compose logs app
@@ -177,6 +189,7 @@ docker-compose exec app sh
 ```
 
 ### Banco de dados não conecta
+
 ```bash
 # Verificar se o PostgreSQL está rodando
 docker-compose ps
@@ -189,6 +202,7 @@ docker-compose exec app echo $DATABASE_URL
 ```
 
 ### Build falha
+
 ```bash
 # Limpar cache
 docker builder prune

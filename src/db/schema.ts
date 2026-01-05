@@ -447,8 +447,12 @@ export const cieloLogs = pgTable('cielo_logs', {
 
 // Tabela de Tokens para Recuperação de Senha
 export const passwordResetTokens = pgTable('password_reset_tokens', {
-  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: uuid('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
   token: varchar('token', { length: 255 }).unique().notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   used: boolean('used').default(false).notNull(),
@@ -588,5 +592,3 @@ export const emailBlacklistRelations = relations(emailBlacklist, ({ one }) => ({
 export const userActionLogsRelations = relations(userActionLogs, ({ one }) => ({
   user: one(users, { fields: [userActionLogs.userId], references: [users.id] }),
 }))
-
-

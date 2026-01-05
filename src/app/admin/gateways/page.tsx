@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, PlusCircle, CreditCard, Plus } from 'lucide-react'
+import { MoreHorizontal, CreditCard, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 import { Badge } from '@/components/ui/badge'
@@ -77,7 +77,7 @@ export default function GatewaysPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -89,7 +89,8 @@ export default function GatewaysPage() {
                 Gerencie os gateways para processamento de transações
               </p>
               <p className="text-sm text-white/70 mt-1">
-                {gateways.length} {gateways.length === 1 ? 'gateway configurado' : 'gateways configurados'}
+                {gateways.length}{' '}
+                {gateways.length === 1 ? 'gateway configurado' : 'gateways configurados'}
               </p>
             </div>
             <DropdownMenu>
@@ -139,112 +140,115 @@ export default function GatewaysPage() {
           {isLoading ? (
             <div className="rounded-md border-2">
               <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipos de Pagamento</TableHead>
-                  <TableHead>Ambiente</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-48" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-6 w-16 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-8 w-8" />
-                    </TableCell>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipos de Pagamento</TableHead>
+                    <TableHead>Ambiente</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Ações</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-48" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : gateways.length > 0 ? (
             <div className="rounded-md border-2">
               <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipos de Pagamento</TableHead>
-                  <TableHead>Ambiente</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {gateways.map((gateway) => (
-                  <TableRow key={gateway.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium text-lg">{gateway.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <div className="flex flex-wrap gap-2">
-                        {(gateway.acceptedPaymentMethods || '').split(',').map(
-                          (method) =>
-                            method.trim() && (
-                              <Badge key={method} variant="secondary" className="font-medium">
-                                {method}
-                              </Badge>
-                            ),
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={gateway.environment === 'production' ? 'destructive' : 'warning'}
-                        className="font-semibold"
-                      >
-                        {gateway.environment === 'production' ? 'Produção' : 'Desenvolvimento'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={gateway.isActive ? 'success' : 'secondary'} className="font-semibold">
-                        {gateway.isActive ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={gateway.href}>
-                          <Button 
-                            size="sm"
-                            className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-                          >
-                            Configurar
-                          </Button>
-                        </Link>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              {gateway.isActive ? 'Desativar' : 'Ativar'}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipos de Pagamento</TableHead>
+                    <TableHead>Ambiente</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Ações</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {gateways.map((gateway) => (
+                    <TableRow key={gateway.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium text-lg">{gateway.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div className="flex flex-wrap gap-2">
+                          {(gateway.acceptedPaymentMethods || '').split(',').map(
+                            (method) =>
+                              method.trim() && (
+                                <Badge key={method} variant="secondary" className="font-medium">
+                                  {method}
+                                </Badge>
+                              ),
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={gateway.environment === 'production' ? 'destructive' : 'warning'}
+                          className="font-semibold"
+                        >
+                          {gateway.environment === 'production' ? 'Produção' : 'Desenvolvimento'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={gateway.isActive ? 'success' : 'secondary'}
+                          className="font-semibold"
+                        >
+                          {gateway.isActive ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={gateway.href}>
+                            <Button
+                              size="sm"
+                              className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                            >
+                              Configurar
+                            </Button>
+                          </Link>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                              <DropdownMenuItem>
+                                {gateway.isActive ? 'Desativar' : 'Ativar'}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="text-center p-12">

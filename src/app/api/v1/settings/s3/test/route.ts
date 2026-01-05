@@ -28,9 +28,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Para AWS S3 padrão, não usar endpoint customizado
-    const isAwsS3 = endpointUrl.includes('amazonaws.com') || 
-                    endpointUrl === 's3.amazonaws.com' ||
-                    validatedData.endpoint === 's3.amazonaws.com'
+    const isAwsS3 =
+      endpointUrl.includes('amazonaws.com') ||
+      endpointUrl === 's3.amazonaws.com' ||
+      validatedData.endpoint === 's3.amazonaws.com'
 
     const s3Client = new S3Client({
       ...(isAwsS3 ? {} : { endpoint: endpointUrl }),

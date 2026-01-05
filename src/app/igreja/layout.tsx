@@ -56,7 +56,8 @@ export default async function ChurchLayout({
     getCompanySettings(),
   ])
 
-  const churchName = userData?.nomeFantasia || userData?.razaoSocial || user.email?.split('@')[0] || 'Igreja'
+  const churchName =
+    userData?.nomeFantasia || userData?.razaoSocial || user.email?.split('@')[0] || 'Igreja'
   const userFallback = userData?.nomeFantasia
     ? userData.nomeFantasia.substring(0, 2).toUpperCase()
     : 'IG'

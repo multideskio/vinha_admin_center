@@ -23,23 +23,26 @@ async function verifyPastor(pastorId: string, supervisorId: string): Promise<boo
 }
 
 export async function GET(_: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  
+  const params = await props.params
+
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
@@ -101,23 +104,26 @@ export async function GET(_: Request, props: { params: Promise<{ id: string }> }
 }
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  
+  const params = await props.params
+
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
@@ -167,7 +173,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         profileUpdateData.birthDate = validatedData.birthDate.toISOString()
       // Campos de redes sociais
       if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
-      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.instagram !== undefined)
+        profileUpdateData.instagram = validatedData.instagram
       if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {
@@ -192,23 +199,26 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 }
 
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  
+  const params = await props.params
+
   // Primeiro tenta autenticação JWT (usuário logado via web)
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     // Se não há usuário logado, tenta autenticação por API Key
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
-    
+
     // Se nem JWT nem API Key funcionaram, retorna 401
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   // Verifica se o usuário tem a role correta
   if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Acesso negado. Role supervisor necessária.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Role supervisor necessária.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params

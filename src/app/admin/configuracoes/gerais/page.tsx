@@ -146,13 +146,13 @@ export default function GeneralSettingsPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/configuracoes">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -165,9 +165,7 @@ export default function GeneralSettingsPage() {
               <Settings className="h-8 w-8" />
               Configurações Gerais
             </h1>
-            <p className="text-base text-white/90 mt-2 font-medium">
-              Ajustes gerais da plataforma
-            </p>
+            <p className="text-base text-white/90 mt-2 font-medium">Ajustes gerais da plataforma</p>
           </div>
         </div>
       </div>
@@ -261,8 +259,8 @@ export default function GeneralSettingsPage() {
               />
             </CardContent>
             <CardContent>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSaving}
                 className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
               >

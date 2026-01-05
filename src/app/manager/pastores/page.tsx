@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   List,
   Grid3x3,
-  FileText,
   Phone,
   Mail,
   MapPin,
@@ -205,7 +204,7 @@ const PastorFormModal = ({
       if (!response.ok) {
         throw new Error('CEP não encontrado')
       }
-      
+
       const data = await response.json()
       form.setValue('address', data.address || '')
       form.setValue('neighborhood', data.neighborhood || '')
@@ -527,9 +526,7 @@ export default function PastoresPage() {
   }
 
   const filteredPastors = pastors.filter((pastor) =>
-    `${pastor.firstName} ${pastor.lastName}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase()),
+    `${pastor.firstName} ${pastor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const totalPages = Math.ceil(filteredPastors.length / itemsPerPage)
@@ -563,103 +560,105 @@ export default function PastoresPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8" />
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-48" />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : paginatedPastors.length > 0 ? (
+                paginatedPastors.map((pastor) => (
+                  <TableRow key={pastor.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={pastor.avatarUrl || 'https://placehold.co/40x40.png'}
+                          alt={`${pastor.firstName} ${pastor.lastName}`}
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover ring-2 ring-videira-purple/30"
+                          data-ai-hint="person"
+                        />
+                        <span className="font-semibold">
+                          {sanitizeText(`${pastor.firstName} ${pastor.lastName}`)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {sanitizeText(pastor.email)}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge variant="outline" className="font-medium">
+                        {sanitizeText(pastor.supervisorName) || 'N/A'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
+                        {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/manager/pastores/${pastor.id}`}>Editar</Link>
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+                              Excluir
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Essa ação não pode ser desfeita. Isso excluirá permanentemente o
+                                  pastor.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => pastor.id && handleDelete(pastor.id)}
+                                >
+                                  Continuar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    Nenhum pastor encontrado.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : paginatedPastors.length > 0 ? (
-              paginatedPastors.map((pastor) => (
-                <TableRow key={pastor.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={pastor.avatarUrl || 'https://placehold.co/40x40.png'}
-                        alt={`${pastor.firstName} ${pastor.lastName}`}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover ring-2 ring-videira-purple/30"
-                        data-ai-hint="person"
-                      />
-                      <span className="font-semibold">{sanitizeText(`${pastor.firstName} ${pastor.lastName}`)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {sanitizeText(pastor.email)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline" className="font-medium">
-                      {sanitizeText(pastor.supervisorName) || 'N/A'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
-                      {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/manager/pastores/${pastor.id}`}>Editar</Link>
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                            Excluir
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o
-                                pastor.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => pastor.id && handleDelete(pastor.id)}
-                              >
-                                Continuar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  Nenhum pastor encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+              )}
+            </TableBody>
           </Table>
         </div>
         <PaginationControls />
@@ -680,7 +679,10 @@ export default function PastoresPage() {
           ))
         ) : paginatedPastors.length > 0 ? (
           paginatedPastors.map((pastor, index) => (
-            <Card key={pastor.id} className="shadow-lg border-t-4 border-t-videira-purple hover:shadow-xl transition-all">
+            <Card
+              key={pastor.id}
+              className="shadow-lg border-t-4 border-t-videira-purple hover:shadow-xl transition-all"
+            >
               <CardContent className="pt-6">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start gap-4">
@@ -689,8 +691,8 @@ export default function PastoresPage() {
                       alt={`Foto de ${pastor.firstName}`}
                       width={80}
                       height={80}
-                      className="rounded-xl object-cover w-20 h-20 ring-2 ring-videira-purple/30" 
-                      unoptimized 
+                      className="rounded-xl object-cover w-20 h-20 ring-2 ring-videira-purple/30"
+                      unoptimized
                       data-ai-hint="person"
                     />
                     <div className="flex-1 space-y-2">
@@ -698,7 +700,10 @@ export default function PastoresPage() {
                         <h3 className="text-lg font-bold leading-tight">
                           {sanitizeText(pastor.firstName)} {sanitizeText(pastor.lastName)}
                         </h3>
-                        <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'} className="text-xs">
+                        <Badge
+                          variant={pastor.status === 'active' ? 'success' : 'destructive'}
+                          className="text-xs"
+                        >
                           {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
                         </Badge>
                       </div>
@@ -710,20 +715,26 @@ export default function PastoresPage() {
                   </div>
                   <div className="space-y-2 text-sm">
                     <p className="flex items-center gap-2 text-muted-foreground">
-                      <Mail size={14} className="text-videira-purple" /> 
+                      <Mail size={14} className="text-videira-purple" />
                       <span>{sanitizeText(pastor.email)}</span>
                     </p>
                     <p className="flex items-center gap-2 text-muted-foreground">
-                      <Phone size={14} className="text-videira-purple" /> 
+                      <Phone size={14} className="text-videira-purple" />
                       <span>{sanitizeText(pastor.phone)}</span>
                     </p>
                     <p className="flex items-center gap-2 text-muted-foreground">
                       <MapPin size={14} className="text-videira-purple" />
-                      <span>{sanitizeText(pastor.city)} - {sanitizeText(pastor.state)}</span>
+                      <span>
+                        {sanitizeText(pastor.city)} - {sanitizeText(pastor.state)}
+                      </span>
                     </p>
                   </div>
                   <Link href={`/manager/pastores/${pastor.id}`} className="w-full">
-                    <Button variant="outline" size="sm" className="w-full border-2 hover:bg-videira-purple/10 hover:border-videira-purple hover:text-videira-purple transition-all">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-2 hover:bg-videira-purple/10 hover:border-videira-purple hover:text-videira-purple transition-all"
+                    >
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar Perfil
                     </Button>
@@ -778,7 +789,7 @@ export default function PastoresPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>

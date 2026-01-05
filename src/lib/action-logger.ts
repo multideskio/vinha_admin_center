@@ -6,7 +6,7 @@ export async function logUserAction(
   action: string,
   entityType: string,
   entityId: string,
-  details?: string
+  details?: string,
 ) {
   try {
     await db.insert(userActionLogs).values({

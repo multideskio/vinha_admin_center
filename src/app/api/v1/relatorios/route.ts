@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     let data: Record<string, unknown> = {}
 
     const filters = { startDate, endDate, paymentMethod, paymentStatus }
-    
+
     switch (reportType) {
       case 'fin-01':
         data = await generateFinancialReport(user.companyId, filters)
@@ -58,17 +58,26 @@ type Filters = {
 
 async function generateFinancialReport(companyId: string, filters: Filters) {
   const conditions = [eq(transactions.companyId, companyId)]
-  
+
   if (filters.startDate && filters.endDate) {
-    conditions.push(between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)))
+    conditions.push(
+      between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)),
+    )
   }
   if (filters.paymentMethod) {
-    conditions.push(eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'))
+    conditions.push(
+      eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'),
+    )
   }
   if (filters.paymentStatus) {
-    conditions.push(eq(transactions.status, filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded'))
+    conditions.push(
+      eq(
+        transactions.status,
+        filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded',
+      ),
+    )
   }
-  
+
   const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
 
   const txs = await db
@@ -84,14 +93,14 @@ async function generateFinancialReport(companyId: string, filters: Filters) {
     .orderBy(desc(transactions.createdAt))
 
   const total = txs.reduce((sum, tx) => sum + parseFloat(tx.amount), 0)
-  const approved = txs.filter(tx => tx.status === 'approved').length
-  const pending = txs.filter(tx => tx.status === 'pending').length
-  const refused = txs.filter(tx => tx.status === 'refused').length
+  const approved = txs.filter((tx) => tx.status === 'approved').length
+  const pending = txs.filter((tx) => tx.status === 'pending').length
+  const refused = txs.filter((tx) => tx.status === 'refused').length
 
   return {
     title: 'Relatório Financeiro Completo',
     headers: ['ID', 'Valor', 'Status', 'Método', 'Data'],
-    rows: txs.map(tx => [
+    rows: txs.map((tx) => [
       tx.id.substring(0, 8),
       `R$ ${parseFloat(tx.amount).toFixed(2)}`,
       tx.status,
@@ -119,13 +128,16 @@ async function generateMembershipReport(companyId: string, filters: Filters) {
     .from(users)
     .where(and(eq(users.companyId, companyId), isNull(users.deletedAt)))
 
-  const byRole = allUsers.reduce((acc, user) => {
-    acc[user.role] = (acc[user.role] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+  const byRole = allUsers.reduce(
+    (acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>,
+  )
 
-  const active = allUsers.filter(u => u.status === 'active').length
-  const inactive = allUsers.filter(u => u.status === 'inactive').length
+  const active = allUsers.filter((u) => u.status === 'active').length
+  const inactive = allUsers.filter((u) => u.status === 'inactive').length
 
   return {
     title: 'Relatório de Membresia',
@@ -140,8 +152,12 @@ async function generateMembershipReport(companyId: string, filters: Filters) {
 }
 
 async function generateChurchesReport(companyId: string, filters: Filters) {
-  const whereClause = and(eq(users.companyId, companyId), eq(users.role, 'church_account'), isNull(users.deletedAt))
-  
+  const whereClause = and(
+    eq(users.companyId, companyId),
+    eq(users.role, 'church_account'),
+    isNull(users.deletedAt),
+  )
+
   const churches = await db
     .select({
       id: users.id,
@@ -157,7 +173,7 @@ async function generateChurchesReport(companyId: string, filters: Filters) {
   return {
     title: 'Relatório de Igrejas',
     headers: ['Nome', 'Cidade', 'Estado', 'Status'],
-    rows: churches.map(ch => [
+    rows: churches.map((ch) => [
       ch.nomeFantasia || 'N/A',
       ch.city || 'N/A',
       ch.state || 'N/A',
@@ -165,7 +181,7 @@ async function generateChurchesReport(companyId: string, filters: Filters) {
     ]),
     summary: [
       { label: 'Total de Igrejas', value: churches.length },
-      { label: 'Ativas', value: churches.filter(c => c.status === 'active').length },
+      { label: 'Ativas', value: churches.filter((c) => c.status === 'active').length },
     ],
   }
 }
@@ -173,16 +189,23 @@ async function generateChurchesReport(companyId: string, filters: Filters) {
 async function generateContributionsReport(companyId: string, filters: Filters) {
   const conditions = [
     eq(transactions.companyId, companyId),
-    eq(transactions.status, (filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded') || 'approved')
+    eq(
+      transactions.status,
+      (filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded') || 'approved',
+    ),
   ]
-  
+
   if (filters.startDate && filters.endDate) {
-    conditions.push(between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)))
+    conditions.push(
+      between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)),
+    )
   }
   if (filters.paymentMethod) {
-    conditions.push(eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'))
+    conditions.push(
+      eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'),
+    )
   }
-  
+
   const whereClause = and(...conditions)
 
   const contributions = await db
@@ -193,15 +216,18 @@ async function generateContributionsReport(companyId: string, filters: Filters) 
     .from(transactions)
     .where(whereClause)
 
-  const byMethod = contributions.reduce((acc, c) => {
-    const method = c.paymentMethod
-    if (!acc[method]) {
-      acc[method] = { count: 0, total: 0 }
-    }
-    acc[method].count++
-    acc[method].total += parseFloat(c.amount)
-    return acc
-  }, {} as Record<string, { count: number; total: number }>)
+  const byMethod = contributions.reduce(
+    (acc, c) => {
+      const method = c.paymentMethod
+      if (!acc[method]) {
+        acc[method] = { count: 0, total: 0 }
+      }
+      acc[method].count++
+      acc[method].total += parseFloat(c.amount)
+      return acc
+    },
+    {} as Record<string, { count: number; total: number }>,
+  )
 
   const totalAmount = contributions.reduce((sum, c) => sum + parseFloat(c.amount), 0)
 
@@ -242,15 +268,23 @@ async function generateDefaultersReport(companyId: string, filters: Filters) {
     })
     .from(users)
     .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-    .where(and(eq(users.companyId, companyId), eq(users.role, 'church_account'), isNull(users.deletedAt)))
+    .where(
+      and(
+        eq(users.companyId, companyId),
+        eq(users.role, 'church_account'),
+        isNull(users.deletedAt),
+      ),
+    )
 
   const now = new Date()
-  const startDate = filters.startDate ? new Date(filters.startDate) : new Date(now.getFullYear(), 0, 1)
+  const startDate = filters.startDate
+    ? new Date(filters.startDate)
+    : new Date(now.getFullYear(), 0, 1)
   const endDate = filters.endDate ? new Date(filters.endDate) : now
 
   const rows: string[][] = []
   const months: string[] = []
-  
+
   // Gerar lista de meses no período
   const current = new Date(startDate)
   while (current <= endDate) {
@@ -279,8 +313,8 @@ async function generateDefaultersReport(companyId: string, filters: Filters) {
           and(
             eq(transactions.contributorId, pastor.id),
             eq(transactions.status, 'approved'),
-            between(transactions.createdAt, monthStart, monthEnd)
-          )
+            between(transactions.createdAt, monthStart, monthEnd),
+          ),
         )
         .limit(1)
 
@@ -309,24 +343,42 @@ async function generateDefaultersReport(companyId: string, filters: Filters) {
           and(
             eq(transactions.contributorId, church.id),
             eq(transactions.status, 'approved'),
-            between(transactions.createdAt, monthStart, monthEnd)
-          )
+            between(transactions.createdAt, monthStart, monthEnd),
+          ),
         )
         .limit(1)
 
       monthlyStatus.push(payment.length > 0 ? '✓ Pago' : '✗ Não pago')
     }
 
-    rows.push([church.nomeFantasia || 'N/A', 'Igreja', church.titheDay?.toString() || 'N/A', ...monthlyStatus])
+    rows.push([
+      church.nomeFantasia || 'N/A',
+      'Igreja',
+      church.titheDay?.toString() || 'N/A',
+      ...monthlyStatus,
+    ])
   }
 
   const totalPeople = pastors.length + churches.length
-  const monthHeaders = months.map(m => {
+  const monthHeaders = months.map((m) => {
     const parts = m.split('-')
     const year = parts[0]
     const month = parts[1]
     if (!year || !month) return 'N/A'
-    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    const monthNames = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ]
     return `${monthNames[parseInt(month) - 1]}/${year}`
   })
 

@@ -14,7 +14,6 @@ import {
   Mail,
   Smartphone,
   UserCog,
-  Settings,
   Save,
   ShieldCheck,
   Bell,
@@ -77,7 +76,9 @@ export default function AdminProfilePage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
-  const [notificationSettings, setNotificationSettings] = React.useState<Record<string, { email: boolean; whatsapp: boolean }>>({
+  const [notificationSettings, setNotificationSettings] = React.useState<
+    Record<string, { email: boolean; whatsapp: boolean }>
+  >({
     payment_notifications: { email: false, whatsapp: false },
     due_date_reminders: { email: false, whatsapp: false },
     network_reports: { email: false, whatsapp: false },
@@ -134,7 +135,7 @@ export default function AdminProfilePage() {
       const response = await fetch('/api/v1/me')
       if (!response.ok) return
       const userData = await response.json()
-      
+
       if (!userData.id) return
 
       const settingsResponse = await fetch(`/api/v1/users/${userData.id}/notification-settings`)
@@ -193,7 +194,7 @@ export default function AdminProfilePage() {
         }
 
         const result = await response.json()
-        
+
         const updateResponse = await fetch('/api/v1/admin/perfil', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -206,10 +207,10 @@ export default function AdminProfilePage() {
 
         await updateResponse.json()
         setPreviewImage(result.url)
-        setAdmin(prev => prev ? { ...prev, avatarUrl: result.url } : null)
-        
+        setAdmin((prev) => (prev ? { ...prev, avatarUrl: result.url } : null))
+
         await fetchAdmin()
-        
+
         toast({
           title: 'Sucesso',
           description: 'Avatar atualizado com sucesso!',
@@ -225,7 +226,10 @@ export default function AdminProfilePage() {
     }
   }
 
-  const handleSocialLinkBlur = async (field: 'facebook' | 'instagram' | 'website', value: string) => {
+  const handleSocialLinkBlur = async (
+    field: 'facebook' | 'instagram' | 'website',
+    value: string,
+  ) => {
     try {
       const response = await fetch('/api/v1/admin/perfil', {
         method: 'PUT',
@@ -251,9 +255,17 @@ export default function AdminProfilePage() {
         body: JSON.stringify(notificationSettings),
       })
       if (!response.ok) throw new Error('Falha ao salvar configurações')
-      toast({ title: 'Sucesso', description: 'Configurações salvas com sucesso.', variant: 'success' })
+      toast({
+        title: 'Sucesso',
+        description: 'Configurações salvas com sucesso.',
+        variant: 'success',
+      })
     } catch (error) {
-      toast({ title: 'Erro', description: 'Falha ao salvar configurações.', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: 'Falha ao salvar configurações.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -266,7 +278,7 @@ export default function AdminProfilePage() {
             <Skeleton className="h-20 w-full" />
           </CardContent>
         </Card>
-        
+
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <Card className="shadow-lg border-t-4 border-t-videira-cyan">
@@ -328,7 +340,7 @@ export default function AdminProfilePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center justify-between">
             <div>
@@ -341,13 +353,13 @@ export default function AdminProfilePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge 
+              <Badge
                 variant={admin.status === 'active' ? 'success' : 'destructive'}
                 className={cn(
-                  "text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all",
-                  admin.status === 'active' 
-                    ? "bg-green-500 text-white border-green-400 hover:bg-green-600" 
-                    : "bg-red-500 text-white border-red-400 hover:bg-red-600"
+                  'text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all',
+                  admin.status === 'active'
+                    ? 'bg-green-500 text-white border-green-400 hover:bg-green-600'
+                    : 'bg-red-500 text-white border-red-400 hover:bg-red-600',
                 )}
               >
                 <CheckCircle2 className="h-4 w-4 mr-1" />
@@ -366,7 +378,8 @@ export default function AdminProfilePage() {
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={previewImage || admin.avatarUrl || undefined} />
                   <AvatarFallback className="text-lg">
-                    {admin.firstName?.[0]}{admin.lastName?.[0]}
+                    {admin.firstName?.[0]}
+                    {admin.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
@@ -400,7 +413,9 @@ export default function AdminProfilePage() {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => window.open(`https://wa.me/55${admin.phone?.replace(/\D/g, '')}`, '_blank')}
+                  onClick={() =>
+                    window.open(`https://wa.me/55${admin.phone?.replace(/\D/g, '')}`, '_blank')
+                  }
                   className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >
                   <Smartphone className="h-4 w-4 mr-1" />
@@ -452,14 +467,14 @@ export default function AdminProfilePage() {
         <div className="lg:col-span-2">
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2 gap-2 bg-muted/50 p-1 rounded-lg">
-              <TabsTrigger 
+              <TabsTrigger
                 value="profile"
                 className="data-[state=active]:bg-videira-blue data-[state=active]:text-white font-semibold"
               >
                 <UserCog className="h-4 w-4 mr-2" />
                 Dados Pessoais
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="configuracoes"
                 className="data-[state=active]:bg-videira-purple data-[state=active]:text-white font-semibold"
               >
@@ -550,7 +565,11 @@ export default function AdminProfilePage() {
                             <FormItem>
                               <FormLabel>CEP</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ''} placeholder="00000-000" />
+                                <Input
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  placeholder="00000-000"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -607,7 +626,11 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>Endereço</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value ?? ''} placeholder="Rua, número, complemento" />
+                              <Input
+                                {...field}
+                                value={field.value ?? ''}
+                                placeholder="Rua, número, complemento"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -623,7 +646,12 @@ export default function AdminProfilePage() {
                           <FormItem>
                             <FormLabel>Nova Senha (opcional)</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value ?? ''} type="password" placeholder="••••••••" />
+                              <Input
+                                {...field}
+                                value={field.value ?? ''}
+                                type="password"
+                                placeholder="••••••••"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -633,13 +661,14 @@ export default function AdminProfilePage() {
                       <Alert className="bg-videira-blue/10 border-videira-blue/30">
                         <Lock className="h-4 w-4 text-videira-blue" />
                         <AlertDescription className="text-videira-blue text-sm">
-                          <strong>Segurança:</strong> Deixe em branco se não desejar alterar a senha.
+                          <strong>Segurança:</strong> Deixe em branco se não desejar alterar a
+                          senha.
                         </AlertDescription>
                       </Alert>
 
                       <div className="flex justify-end gap-2">
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           disabled={isSaving}
                           className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
                         >
@@ -676,15 +705,13 @@ export default function AdminProfilePage() {
                 <CardContent className="space-y-6">
                   {Object.entries(notificationSettings).map(([key, value]) => (
                     <div key={key} className="space-y-3">
-                      <div className="font-semibold capitalize">
-                        {key.replace(/_/g, ' ')}
-                      </div>
+                      <div className="font-semibold capitalize">{key.replace(/_/g, ' ')}</div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">E-mail</span>
                         <Switch
                           checked={value.email}
                           onCheckedChange={(checked) =>
-                            setNotificationSettings(prev => ({
+                            setNotificationSettings((prev) => ({
                               ...prev,
                               [key]: { email: checked, whatsapp: prev[key]?.whatsapp || false },
                             }))
@@ -696,7 +723,7 @@ export default function AdminProfilePage() {
                         <Switch
                           checked={value.whatsapp}
                           onCheckedChange={(checked) =>
-                            setNotificationSettings(prev => ({
+                            setNotificationSettings((prev) => ({
                               ...prev,
                               [key]: { email: prev[key]?.email || false, whatsapp: checked },
                             }))
@@ -724,4 +751,3 @@ export default function AdminProfilePage() {
     </div>
   )
 }
-

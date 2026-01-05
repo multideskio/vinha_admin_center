@@ -63,12 +63,18 @@ const statusMap: {
   refunded: { text: 'Reembolsada', variant: 'outline' },
 }
 
-const methodMap: { 
-  [key: string]: { text: string; color: string } 
+const methodMap: {
+  [key: string]: { text: string; color: string }
 } = {
   pix: { text: 'PIX', color: 'bg-videira-cyan/15 text-videira-cyan border-videira-cyan/30' },
-  credit_card: { text: 'Cartão', color: 'bg-videira-blue/15 text-videira-blue border-videira-blue/30' },
-  boleto: { text: 'Boleto', color: 'bg-videira-purple/15 text-videira-purple border-videira-purple/30' },
+  credit_card: {
+    text: 'Cartão',
+    color: 'bg-videira-blue/15 text-videira-blue border-videira-blue/30',
+  },
+  boleto: {
+    text: 'Boleto',
+    color: 'bg-videira-purple/15 text-videira-purple border-videira-purple/30',
+  },
 }
 
 export default function TransacoesPage() {
@@ -76,7 +82,10 @@ export default function TransacoesPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string[]>([])
-  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({
     from: undefined,
     to: undefined,
   })
@@ -90,7 +99,7 @@ export default function TransacoesPage() {
       const params = new URLSearchParams()
       if (dateRange.from) params.append('from', dateRange.from.toISOString())
       if (dateRange.to) params.append('to', dateRange.to.toISOString())
-      
+
       const response = await fetch(`/api/v1/transacoes?${params.toString()}`)
       if (!response.ok) {
         throw new Error('Falha ao carregar as transações.')
@@ -113,10 +122,13 @@ export default function TransacoesPage() {
     fetchTransactions()
   }, [fetchTransactions])
 
-  const handleDateRangeChange = React.useCallback((range: { from: Date | undefined; to: Date | undefined }) => {
-    setDateRange(range)
-    setCurrentPage(1) // Reset para página 1 ao mudar filtro
-  }, [])
+  const handleDateRangeChange = React.useCallback(
+    (range: { from: Date | undefined; to: Date | undefined }) => {
+      setDateRange(range)
+      setCurrentPage(1) // Reset para página 1 ao mudar filtro
+    },
+    [],
+  )
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter((prev) =>
@@ -126,9 +138,10 @@ export default function TransacoesPage() {
   }
 
   const filteredTransactions = transactions
-    .filter((transaction) =>
-      transaction.contributor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.contributorEmail.toLowerCase().includes(searchTerm.toLowerCase()),
+    .filter(
+      (transaction) =>
+        transaction.contributor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.contributorEmail.toLowerCase().includes(searchTerm.toLowerCase()),
     )
     .filter((transaction) => statusFilter.length === 0 || statusFilter.includes(transaction.status))
 
@@ -143,10 +156,10 @@ export default function TransacoesPage() {
       const params = new URLSearchParams()
       if (dateRange.from) params.append('from', dateRange.from.toISOString())
       if (dateRange.to) params.append('to', dateRange.to.toISOString())
-      
+
       const response = await fetch(`/api/v1/transacoes/export?${params.toString()}`)
       if (!response.ok) throw new Error('Falha ao exportar')
-      
+
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -154,7 +167,7 @@ export default function TransacoesPage() {
       a.download = `transacoes-${new Date().toISOString().split('T')[0]}.csv`
       a.click()
       window.URL.revokeObjectURL(url)
-      
+
       toast({
         title: 'Sucesso',
         description: 'Transações exportadas com sucesso',
@@ -177,7 +190,7 @@ export default function TransacoesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
             <ArrowRightLeft className="h-8 w-8" />
@@ -204,7 +217,7 @@ export default function TransacoesPage() {
                 {filteredTransactions.length} transações encontradas
               </CardDescription>
             </div>
-            <Button 
+            <Button
               onClick={fetchTransactions}
               size="icon"
               className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md"
@@ -231,7 +244,7 @@ export default function TransacoesPage() {
             <div className="flex gap-2 w-full sm:w-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
+                  <Button
                     size="sm"
                     className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold gap-2"
                   >
@@ -255,7 +268,7 @@ export default function TransacoesPage() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button 
+              <Button
                 size="sm"
                 onClick={handleExportCSV}
                 className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold gap-2"
@@ -274,9 +287,15 @@ export default function TransacoesPage() {
                 <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
                   <TableHead className="font-semibold">Contribuinte</TableHead>
                   <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
-                  <TableHead className="hidden xl:table-cell font-semibold">Data Pagamento</TableHead>
-                  <TableHead className="hidden xl:table-cell font-semibold">Forma Pagamento</TableHead>
-                  <TableHead className="hidden md:table-cell text-right font-semibold">Valor</TableHead>
+                  <TableHead className="hidden xl:table-cell font-semibold">
+                    Data Pagamento
+                  </TableHead>
+                  <TableHead className="hidden xl:table-cell font-semibold">
+                    Forma Pagamento
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell text-right font-semibold">
+                    Valor
+                  </TableHead>
                   <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
                   <TableHead>
                     <span className="sr-only">Ações</span>
@@ -316,7 +335,9 @@ export default function TransacoesPage() {
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
                           <span>{transaction.contributor}</span>
-                          <span className="text-xs text-muted-foreground">{transaction.contributorEmail}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {transaction.contributorEmail}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">
@@ -332,7 +353,7 @@ export default function TransacoesPage() {
                           : '-'}
                       </TableCell>
                       <TableCell className="hidden xl:table-cell">
-                        <Badge className={cn("border", methodMap[transaction.method]?.color)}>
+                        <Badge className={cn('border', methodMap[transaction.method]?.color)}>
                           {methodMap[transaction.method]?.text || transaction.method}
                         </Badge>
                       </TableCell>
@@ -363,9 +384,12 @@ export default function TransacoesPage() {
                             <DropdownMenuItem
                               onClick={async () => {
                                 try {
-                                  const response = await fetch(`/api/v1/transacoes/${transaction.id}/sync`, {
-                                    method: 'POST',
-                                  })
+                                  const response = await fetch(
+                                    `/api/v1/transacoes/${transaction.id}/sync`,
+                                    {
+                                      method: 'POST',
+                                    },
+                                  )
                                   if (!response.ok) throw new Error('Falha ao sincronizar')
                                   toast({
                                     title: 'Sucesso',
@@ -376,7 +400,10 @@ export default function TransacoesPage() {
                                 } catch (error) {
                                   toast({
                                     title: 'Erro',
-                                    description: error instanceof Error ? error.message : 'Erro ao sincronizar',
+                                    description:
+                                      error instanceof Error
+                                        ? error.message
+                                        : 'Erro ao sincronizar',
                                     variant: 'destructive',
                                   })
                                 }
@@ -395,7 +422,9 @@ export default function TransacoesPage() {
                     <TableCell colSpan={7} className="text-center h-24">
                       <div className="flex flex-col items-center gap-2 py-8">
                         <ArrowRightLeft className="h-12 w-12 text-muted-foreground" />
-                        <p className="text-lg font-medium text-muted-foreground">Nenhuma transação encontrada</p>
+                        <p className="text-lg font-medium text-muted-foreground">
+                          Nenhuma transação encontrada
+                        </p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -408,7 +437,9 @@ export default function TransacoesPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-muted-foreground">
-                Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} de {filteredTransactions.length} resultados
+                Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
+                {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} de{' '}
+                {filteredTransactions.length} resultados
               </div>
               <div className="flex items-center gap-2">
                 <Button

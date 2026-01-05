@@ -1,32 +1,25 @@
+'use client'
 
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Settings,
-  ArrowRightLeft,
-  Handshake,
-  Grape,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import packageJson from '../../../../package.json';
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Settings, ArrowRightLeft, Handshake, Grape } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import packageJson from '../../../../package.json'
 
 const menuItems = [
   { href: '/igreja/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'cyan' },
   { href: '/igreja/transacoes', label: 'Transações', icon: ArrowRightLeft, gradient: 'blue' },
   { href: '/igreja/contribuir', label: 'Contribuir', icon: Handshake, gradient: 'purple' },
-];
+]
 
 const settingsItem = {
   href: '/igreja/perfil',
   label: 'Meu Perfil',
   icon: Settings,
-};
+}
 
 export function IgrejaSidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   const getGradientClass = (gradient: string) => {
     switch (gradient) {
@@ -43,7 +36,7 @@ export function IgrejaSidebar() {
 
   const getIconColor = (gradient: string, isActive: boolean) => {
     if (!isActive) return 'text-muted-foreground group-hover:text-foreground'
-    
+
     switch (gradient) {
       case 'cyan':
         return 'text-videira-cyan'
@@ -71,7 +64,9 @@ export function IgrejaSidebar() {
                 <span className="text-base font-bold text-white drop-shadow-lg">
                   Vinha Ministérios
                 </span>
-                <p className="text-xs text-white/80 font-medium">Painel Igreja - v{packageJson.version}</p>
+                <p className="text-xs text-white/80 font-medium">
+                  Painel Igreja - v{packageJson.version}
+                </p>
               </div>
             </Link>
           </div>
@@ -84,7 +79,7 @@ export function IgrejaSidebar() {
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/igreja/dashboard' && pathname.startsWith(item.href))
-              
+
               return (
                 <Link
                   key={item.href}
@@ -95,19 +90,23 @@ export function IgrejaSidebar() {
                     'border-l-3 border-l-transparent',
                     'hover:shadow-sm hover:scale-[1.02]',
                     getGradientClass(item.gradient),
-                    isActive ? 'font-semibold border-l-4' : 'font-medium'
+                    isActive ? 'font-semibold border-l-4' : 'font-medium',
                   )}
                 >
-                  <item.icon 
+                  <item.icon
                     className={cn(
                       'h-5 w-5 transition-all duration-200',
-                      getIconColor(item.gradient, isActive)
-                    )} 
+                      getIconColor(item.gradient, isActive),
+                    )}
                   />
-                  <span className={cn(
-                    'text-base transition-colors',
-                    isActive ? getIconColor(item.gradient, true) : 'text-muted-foreground group-hover:text-foreground'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-base transition-colors',
+                      isActive
+                        ? getIconColor(item.gradient, true)
+                        : 'text-muted-foreground group-hover:text-foreground',
+                    )}
+                  >
                     {item.label}
                   </span>
                   {isActive && (
@@ -136,14 +135,16 @@ export function IgrejaSidebar() {
                 'hover:shadow-sm hover:bg-primary/10',
                 pathname.startsWith(settingsItem.href)
                   ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
-                  : 'font-medium text-muted-foreground hover:text-foreground'
+                  : 'font-medium text-muted-foreground hover:text-foreground',
               )}
             >
-              <settingsItem.icon 
+              <settingsItem.icon
                 className={cn(
                   'h-5 w-5 transition-all',
-                  pathname.startsWith(settingsItem.href) ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                )} 
+                  pathname.startsWith(settingsItem.href)
+                    ? 'text-primary'
+                    : 'text-muted-foreground group-hover:text-foreground',
+                )}
               />
               <span className="text-base">{settingsItem.label}</span>
             </Link>
@@ -151,5 +152,5 @@ export function IgrejaSidebar() {
         </div>
       </div>
     </div>
-  );
+  )
 }

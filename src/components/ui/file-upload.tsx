@@ -41,16 +41,16 @@ export function FileUpload({
     if (!fileList) return
 
     const newFiles = Array.from(fileList)
-    
+
     // Validar tamanho
-    const oversizedFiles = newFiles.filter(file => file.size > maxSize * 1024 * 1024)
+    const oversizedFiles = newFiles.filter((file) => file.size > maxSize * 1024 * 1024)
     if (oversizedFiles.length > 0) {
       onError?.(`Arquivo(s) muito grande(s). Máximo: ${maxSize}MB`)
       return
     }
 
     if (multiple) {
-      setFiles(prev => [...prev, ...newFiles])
+      setFiles((prev) => [...prev, ...newFiles])
     } else {
       setFiles(newFiles.slice(0, 1))
     }
@@ -59,16 +59,16 @@ export function FileUpload({
   const handleUpload = async (file: File) => {
     try {
       const result = await upload(file, folder)
-      
+
       if (result.success && result.url && result.key && result.filename) {
         onUpload?.({
           url: result.url,
           key: result.key,
           filename: result.filename,
         })
-        
+
         // Remover arquivo da lista após upload
-        setFiles(prev => prev.filter(f => f !== file))
+        setFiles((prev) => prev.filter((f) => f !== file))
       } else {
         onError?.(result.error || 'Upload failed')
       }
@@ -78,7 +78,7 @@ export function FileUpload({
   }
 
   const removeFile = (file: File) => {
-    setFiles(prev => prev.filter(f => f !== file))
+    setFiles((prev) => prev.filter((f) => f !== file))
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -123,7 +123,7 @@ export function FileUpload({
         className={cn(
           'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
           dragActive ? 'border-primary bg-primary/5' : 'border-gray-300',
-          'hover:border-primary hover:bg-primary/5'
+          'hover:border-primary hover:bg-primary/5',
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -135,10 +135,8 @@ export function FileUpload({
         <p className="text-sm text-gray-600 mb-2">
           Clique para selecionar ou arraste arquivos aqui
         </p>
-        <p className="text-xs text-gray-400">
-          Máximo: {maxSize}MB por arquivo
-        </p>
-        
+        <p className="text-xs text-gray-400">Máximo: {maxSize}MB por arquivo</p>
+
         <input
           ref={inputRef}
           type="file"
@@ -164,23 +162,17 @@ export function FileUpload({
               ) : (
                 <File className="h-8 w-8 text-gray-500" />
               )}
-              
+
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{file.name}</p>
-                <p className="text-xs text-gray-500">
-                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
+                <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleUpload(file)}
-                  disabled={isUploading}
-                >
+                <Button size="sm" onClick={() => handleUpload(file)} disabled={isUploading}>
                   Upload
                 </Button>
-                
+
                 <Button
                   size="sm"
                   variant="ghost"

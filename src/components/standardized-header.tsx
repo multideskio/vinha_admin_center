@@ -314,13 +314,16 @@ export function StandardizedHeader({
         <SheetContent side="left" className="flex flex-col">
           <nav className="grid gap-2 text-lg font-medium">
             {/* Logo Mobile */}
-            <Link href={`${basePath}/dashboard`} className="flex items-center gap-2 text-lg font-semibold">
+            <Link
+              href={`${basePath}/dashboard`}
+              className="flex items-center gap-2 text-lg font-semibold"
+            >
               {companyLogo ? (
                 <>
-                  <img 
-                    src={companyLogo} 
-                    alt={`Logo ${companyName}`} 
-                    className="h-6 object-contain" 
+                  <img
+                    src={companyLogo}
+                    alt={`Logo ${companyName}`}
+                    className="h-6 object-contain"
                     onError={handleLogoError}
                   />
                   <Logo className="h-6 w-6 text-primary hidden" />
@@ -390,7 +393,7 @@ export function StandardizedHeader({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          
+
           {/* Menu Items Dinâmicos */}
           {dropdownItems.map((item) => {
             const IconComponent = iconMap[item.icon] || User
@@ -405,9 +408,9 @@ export function StandardizedHeader({
           })}
 
           <DropdownMenuSeparator />
-          
+
           {/* Logout */}
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer"
             onClick={async () => {
               const result = await logoutUser()

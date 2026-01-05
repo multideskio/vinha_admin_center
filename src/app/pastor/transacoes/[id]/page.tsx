@@ -55,7 +55,9 @@ export default function TransacaoDetalhePage() {
 
       const formattedData: TransactionDetail = {
         id: payment.PaymentId,
-        date: payment.ReceivedDate ? format(parseISO(payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss') : 'N/A',
+        date: payment.ReceivedDate
+          ? format(parseISO(payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss')
+          : 'N/A',
         amount: payment.Amount / 100,
         status,
         contributor: {
@@ -64,7 +66,12 @@ export default function TransacaoDetalhePage() {
         },
         church: null,
         payment: {
-          method: payment.Type === 'CreditCard' ? 'Cartão de Crédito' : payment.Type === 'Pix' ? 'Pix' : 'Boleto',
+          method:
+            payment.Type === 'CreditCard'
+              ? 'Cartão de Crédito'
+              : payment.Type === 'Pix'
+                ? 'Pix'
+                : 'Boleto',
           details:
             payment.Type === 'CreditCard' && payment.CreditCard
               ? `${payment.CreditCard.Brand} final ${payment.CreditCard.CardNumber.slice(-4)}`

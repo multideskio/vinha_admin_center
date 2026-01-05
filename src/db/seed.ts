@@ -5,11 +5,7 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import * as bcrypt from 'bcrypt'
 import * as schema from './schema'
-import {
-  users,
-  adminProfiles,
-  companies,
-} from './schema'
+import { users, adminProfiles, companies } from './schema'
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in the environment variables')
@@ -40,7 +36,7 @@ async function main(): Promise<void> {
 
   // Limpa as tabelas na ordem correta para evitar erros de chave estrangeira
   console.log('Cleaning existing data...')
-  
+
   // Primeiro deletar todas as tabelas dependentes
   await db.delete(schema.apiKeys)
   await db.delete(schema.notificationLogs)
@@ -53,14 +49,14 @@ async function main(): Promise<void> {
   await db.delete(schema.transactions)
   await db.delete(schema.sessions)
   await db.delete(schema.passwordResetTokens)
-  
+
   // Depois deletar perfis
   await db.delete(schema.adminProfiles)
   await db.delete(schema.pastorProfiles)
   await db.delete(schema.churchProfiles)
   await db.delete(schema.supervisorProfiles)
   await db.delete(schema.managerProfiles)
-  
+
   // Por último, usuários, regiões e empresas
   await db.delete(users)
   await db.delete(schema.regions)

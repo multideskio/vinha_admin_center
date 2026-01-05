@@ -1,30 +1,34 @@
-import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
-import { db } from '@/db/drizzle';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import type { UserRole } from './types';
+import { SignJWT, jwtVerify } from 'jose'
+import { cookies } from 'next/headers'
+import { db } from '@/db/drizzle'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import type { UserRole } from './types'
 
 // Chave secreta para assinar os JWTs
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production'
-);
+  process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
+)
 
-const JWT_COOKIE_NAME = 'auth_token';
-const JWT_EXPIRES_IN = '30d'; // 30 dias
+const JWT_COOKIE_NAME = 'auth_token'
+const JWT_EXPIRES_IN = '30d' // 30 dias
 
 export interface JWTPayload {
-  userId: string;
-  email: string;
-  role: UserRole;
-  iat: number;
-  exp: number;
+  userId: string
+  email: string
+  role: UserRole
+  iat: number
+  exp: number
 }
 
 /**
  * Cria um token JWT para o usuário
  */
-export async function createJWT(user: { id: string; email: string; role: UserRole }): Promise<string> {
+export async function createJWT(user: {
+  id: string
+  email: string
+  role: UserRole
+}): Promise<string> {
   const token = await new SignJWT({
     userId: user.id,
     email: user.email,
@@ -33,9 +37,9 @@ export async function createJWT(user: { id: string; email: string; role: UserRol
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(JWT_EXPIRES_IN)
-    .sign(JWT_SECRET);
+    .sign(JWT_SECRET)
 
-  return token;
+  return token
 }
 
 /**
@@ -43,8 +47,8 @@ export async function createJWT(user: { id: string; email: string; role: UserRol
  */
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    
+    const { payload } = await jwtVerify(token, JWT_SECRET)
+
     // Validate that the payload has the required properties
     if (
       typeof payload.userId === 'string' &&
@@ -58,14 +62,14 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
         email: payload.email,
         role: payload.role as UserRole,
         iat: payload.iat,
-        exp: payload.exp
-      };
+        exp: payload.exp,
+      }
     }
-    
-    return null;
+
+    return null
   } catch (error) {
     // Silenciar erro de verificação - token inválido/expirado
-    return null;
+    return null
   }
 }
 
@@ -73,58 +77,58 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
  * Define o cookie JWT no navegador
  */
 export async function setJWTCookie(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  
+  const cookieStore = await cookies()
+
   cookieStore.set(JWT_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 30 * 24 * 60 * 60, // 30 dias em segundos
-  });
+  })
 }
 
 /**
  * Remove o cookie JWT
  */
 export async function clearJWTCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  
+  const cookieStore = await cookies()
+
   cookieStore.set(JWT_COOKIE_NAME, '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 0,
-  });
+  })
 }
 
 /**
  * Obtém o token JWT do cookie
  */
 export async function getJWTFromCookie(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(JWT_COOKIE_NAME);
-  return token?.value || null;
+  const cookieStore = await cookies()
+  const token = cookieStore.get(JWT_COOKIE_NAME)
+  return token?.value || null
 }
 
 /**
  * Valida a requisição usando JWT
  */
 export async function validateJWTRequest(): Promise<{
-  user: { id: string; email: string; role: UserRole } | null;
-  token: string | null;
+  user: { id: string; email: string; role: UserRole } | null
+  token: string | null
 }> {
-  const token = await getJWTFromCookie();
-  
+  const token = await getJWTFromCookie()
+
   if (!token) {
-    return { user: null, token: null };
+    return { user: null, token: null }
   }
 
-  const payload = await verifyJWT(token);
-  
+  const payload = await verifyJWT(token)
+
   if (!payload) {
-    return { user: null, token: null };
+    return { user: null, token: null }
   }
 
   // Verificar se o usuário ainda existe no banco de dados
@@ -137,10 +141,10 @@ export async function validateJWTRequest(): Promise<{
       })
       .from(users)
       .where(eq(users.id, payload.userId))
-      .limit(1);
+      .limit(1)
 
     if (!dbUser) {
-      return { user: null, token: null };
+      return { user: null, token: null }
     }
 
     return {
@@ -150,10 +154,10 @@ export async function validateJWTRequest(): Promise<{
         role: dbUser.role as UserRole,
       },
       token,
-    };
+    }
   } catch (error) {
-    console.error('Erro ao validar usuário no banco:', error);
-    return { user: null, token: null };
+    console.error('Erro ao validar usuário no banco:', error)
+    return { user: null, token: null }
   }
 }
 
@@ -162,19 +166,25 @@ export async function validateJWTRequest(): Promise<{
  * Substitui a validateRequest do Lucia
  */
 export async function validateRequest(): Promise<{
-  user: { id: string; email: string; role: UserRole; companyId: string; avatarUrl: string | null } | null;
-  session: { id: string } | null;
+  user: {
+    id: string
+    email: string
+    role: UserRole
+    companyId: string
+    avatarUrl: string | null
+  } | null
+  session: { id: string } | null
 }> {
-  const token = await getJWTFromCookie();
-  
+  const token = await getJWTFromCookie()
+
   if (!token) {
-    return { user: null, session: null };
+    return { user: null, session: null }
   }
 
-  const payload = await verifyJWT(token);
-  
+  const payload = await verifyJWT(token)
+
   if (!payload) {
-    return { user: null, session: null };
+    return { user: null, session: null }
   }
 
   try {
@@ -188,12 +198,12 @@ export async function validateRequest(): Promise<{
       })
       .from(users)
       .where(eq(users.id, payload.userId))
-      .limit(1);
+      .limit(1)
 
-    const dbUser = dbUsers[0];
+    const dbUser = dbUsers[0]
 
     if (!dbUser) {
-      return { user: null, session: null };
+      return { user: null, session: null }
     }
 
     return {
@@ -205,9 +215,9 @@ export async function validateRequest(): Promise<{
         avatarUrl: dbUser.avatarUrl,
       },
       session: { id: token },
-    };
+    }
   } catch (error) {
-    console.error('Erro ao validar usuário no banco:', error);
-    return { user: null, session: null };
+    console.error('Erro ao validar usuário no banco:', error)
+    return { user: null, session: null }
   }
 }

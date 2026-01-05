@@ -75,8 +75,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 
-
-
 import {
   churchProfileSchema,
   type TransactionStatus,
@@ -160,80 +158,83 @@ const TransactionsTab = ({ churchId }: { churchId: string }) => {
       </CardHeader>
       <CardContent>
         <div className="rounded-md border-2">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
-              <TableHead className="font-semibold">ID da Transação</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold">Data</TableHead>
-              <TableHead className="text-right font-semibold">Valor</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-4 w-16 ml-auto" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 ml-auto" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                      {statusMap[transaction.status]?.text || transaction.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{transaction.date}</TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      transaction.amount,
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/supervisor/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
-                  Nenhuma transação encontrada para esta igreja.
-                </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                <TableHead className="font-semibold">ID da Transação</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Data</TableHead>
+                <TableHead className="text-right font-semibold">Valor</TableHead>
+                <TableHead>
+                  <span className="sr-only">Ações</span>
+                </TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : transactions.length > 0 ? (
+                transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                        {statusMap[transaction.status]?.text || transaction.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{transaction.date}</TableCell>
+                    <TableCell className="text-right">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(transaction.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/supervisor/transacoes/${transaction.id}`}>
+                              Ver Detalhes
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">
+                    Nenhuma transação encontrada para esta igreja.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>
@@ -420,7 +421,7 @@ export default function IgrejaProfilePage() {
       })
       if (!response.ok) throw new Error('Falha ao atualizar a igreja.')
       toast({ title: 'Sucesso', description: 'Igreja atualizada com sucesso.', variant: 'success' })
-      
+
       // Recarregar dados após salvar
       await fetchData()
     } catch (error) {
@@ -470,7 +471,7 @@ export default function IgrejaProfilePage() {
         description: `Link do ${fieldName} atualizado.`,
         variant: 'success',
       })
-      
+
       // Atualizar estado local
       setChurch((prev) => (prev ? { ...prev, [fieldName]: value } : null))
     } catch (error) {
@@ -502,7 +503,7 @@ export default function IgrejaProfilePage() {
         }
 
         const result = await response.json()
-        
+
         // Atualizar avatar no banco
         const updateResponse = await fetch(`/api/v1/supervisor/igrejas/${id}`, {
           method: 'PUT',
@@ -515,8 +516,8 @@ export default function IgrejaProfilePage() {
         }
 
         setPreviewImage(result.url)
-        setChurch(prev => prev ? { ...prev, avatarUrl: result.url } : null)
-        
+        setChurch((prev) => (prev ? { ...prev, avatarUrl: result.url } : null))
+
         toast({
           title: 'Sucesso',
           description: 'Avatar atualizado com sucesso!',
@@ -559,10 +560,14 @@ export default function IgrejaProfilePage() {
       <div className="relative overflow-hidden rounded-2xl">
         <div className="absolute inset-0 videira-gradient opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        
+
         <div className="relative z-10 p-6 flex items-center gap-4">
           <Link href="/supervisor/igrejas">
-            <Button variant="ghost" size="icon" className="bg-white/20 hover:bg-white/30 text-white">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-white/20 hover:bg-white/30 text-white"
+            >
               <ChevronLeft className="h-5 w-5" />
             </Button>
           </Link>
@@ -579,428 +584,431 @@ export default function IgrejaProfilePage() {
         {/* Left Column: Profile Card */}
         <div className="lg:col-span-1">
           <Card className="shadow-lg border-t-4 border-t-videira-cyan">
-          <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage
-                  src={previewImage || church.avatarUrl || 'https://placehold.co/96x96.png'}
-                  alt={church.nomeFantasia ?? ''}
-                  data-ai-hint="church building"
+            <CardContent className="flex flex-col items-center pt-6 text-center">
+              <div className="relative">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage
+                    src={previewImage || church.avatarUrl || 'https://placehold.co/96x96.png'}
+                    alt={church.nomeFantasia ?? ''}
+                    data-ai-hint="church building"
+                  />
+                  <AvatarFallback>{church.nomeFantasia?.[0]}</AvatarFallback>
+                </Avatar>
+                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                    <Camera className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <span className="sr-only">Trocar foto</span>
+                </Label>
+                <Input
+                  id="photo-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
                 />
-                <AvatarFallback>{church.nomeFantasia?.[0]}</AvatarFallback>
-              </Avatar>
-              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                  <Camera className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <h2 className="mt-4 text-xl font-semibold">{church.nomeFantasia}</h2>
+              <p className="text-muted-foreground">Igreja</p>
+            </CardContent>
+            <Separator />
+            <CardContent className="pt-6">
+              <h3 className="mb-4 font-semibold">Redes sociais</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Facebook className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={church.facebook || ''}
+                    placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                  />
                 </div>
-                <span className="sr-only">Trocar foto</span>
-              </Label>
-              <Input
-                id="photo-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handlePhotoChange}
-              />
-            </div>
-            <h2 className="mt-4 text-xl font-semibold">{church.nomeFantasia}</h2>
-            <p className="text-muted-foreground">Igreja</p>
-          </CardContent>
-          <Separator />
-          <CardContent className="pt-6">
-            <h3 className="mb-4 font-semibold">Redes sociais</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Facebook className="h-5 w-5 text-muted-foreground" />
-                <Input 
-                  defaultValue={church.facebook || ''} 
-                  placeholder="https://facebook.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
-                />
+                <div className="flex items-center gap-3">
+                  <Instagram className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={church.instagram || ''}
+                    placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={church.website || ''}
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5 text-muted-foreground" />
-                <Input 
-                  defaultValue={church.instagram || ''} 
-                  placeholder="https://instagram.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input 
-                  defaultValue={church.website || ''} 
-                  placeholder="https://website.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Right Column: Tabs and Form */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="profile">
             <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-videira-cyan/10 to-videira-purple/10">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Dados da Igreja
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Transações
-            </TabsTrigger>
-            <TabsTrigger value="configuracoes" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Configurações
-            </TabsTrigger>
-            <TabsTrigger value="delete" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Excluir
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
-            <Card className="shadow-lg border-t-4 border-t-videira-purple">
-              <CardContent className="pt-6">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="cnpj"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CNPJ</FormLabel>
-                            <FormControl>
-                              <Input {...field} disabled value={church.cnpj ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Dados da Igreja
+              </TabsTrigger>
+              <TabsTrigger value="transactions" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Transações
+              </TabsTrigger>
+              <TabsTrigger value="configuracoes" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Configurações
+              </TabsTrigger>
+              <TabsTrigger value="delete" className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Excluir
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+              <Card className="shadow-lg border-t-4 border-t-videira-purple">
+                <CardContent className="pt-6">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="cnpj"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CNPJ</FormLabel>
+                              <FormControl>
+                                <Input {...field} disabled value={church.cnpj ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" {...field} value={field.value ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="razaoSocial"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Razão Social</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="nomeFantasia"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome Fantasia</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="razaoSocial"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Razão Social</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="nomeFantasia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome Fantasia</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="cep"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CEP</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Estado/UF</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cidade</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="cep"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CEP</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="state"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Estado/UF</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cidade</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="neighborhood"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Bairro</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Endereço</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="neighborhood"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bairro</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Endereço</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="foundationDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Data de Fundação</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={'outline'}
-                                    className={cn(
-                                      'w-full pl-3 text-left font-normal',
-                                      !field.value && 'text-muted-foreground',
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(new Date(field.value), 'dd/MM/yyyy', { locale: ptBR })
-                                    ) : (
-                                      <span>dd/mm/aaaa</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value ? new Date(field.value) : undefined}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > new Date() || date < new Date('1900-01-01')
-                                  }
-                                  initialFocus
-                                  locale={ptBR}
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="foundationDate"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Data de Fundação</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant={'outline'}
+                                      className={cn(
+                                        'w-full pl-3 text-left font-normal',
+                                        !field.value && 'text-muted-foreground',
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(new Date(field.value), 'dd/MM/yyyy', {
+                                          locale: ptBR,
+                                        })
+                                      ) : (
+                                        <span>dd/mm/aaaa</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value ? new Date(field.value) : undefined}
+                                    onSelect={field.onChange}
+                                    disabled={(date) =>
+                                      date > new Date() || date < new Date('1900-01-01')
+                                    }
+                                    initialFocus
+                                    locale={ptBR}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="titheDay"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Dia do dízimo</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  {...field}
+                                  value={field.value?.toString() ?? ''}
                                 />
-                              </PopoverContent>
-                            </Popover>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Celular</FormLabel>
+                              <FormControl>
+                                <PhoneInput
+                                  country={'br'}
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  inputClass="!w-full"
+                                  containerClass="phone-input-wrapper"
+                                  inputStyle={{
+                                    width: '100%',
+                                    height: '40px',
+                                    fontSize: '14px',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'calc(var(--radius) - 2px)',
+                                    backgroundColor: 'hsl(var(--background))',
+                                    color: 'hsl(var(--foreground))',
+                                  }}
+                                  buttonStyle={{
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRight: 'none',
+                                    backgroundColor: 'hsl(var(--background))',
+                                    borderRadius:
+                                      'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
+                                  }}
+                                  dropdownStyle={{
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'calc(var(--radius) - 2px)',
+                                    color: 'hsl(var(--foreground))',
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Separator />
+                      <h3 className="text-lg font-medium">Dados do Tesoureiro</h3>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="treasurerFirstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="treasurerLastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Sobrenome</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="treasurerCpf"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CPF</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Alert
+                        variant="destructive"
+                        className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
+                      >
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <AlertDescription>
+                          <strong>Importante</strong> - É necessário ter um usuário para a igreja
+                          poder acessar o sistema.
+                        </AlertDescription>
+                      </Alert>
+
+                      <FormField
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Crie ou atualize a senha da igreja</FormLabel>
+                            <FormControl>
+                              <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  type="password"
+                                  placeholder="Nova senha"
+                                  className="pl-9"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="titheDay"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Dia do dízimo</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                {...field}
-                                value={field.value?.toString() ?? ''}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Celular</FormLabel>
-                            <FormControl>
-                              <PhoneInput
-                                country={'br'}
-                                value={field.value}
-                                onChange={field.onChange}
-                                inputClass="!w-full"
-                                containerClass="phone-input-wrapper"
-                                inputStyle={{
-                                  width: '100%',
-                                  height: '40px',
-                                  fontSize: '14px',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  color: 'hsl(var(--foreground))',
-                                }}
-                                buttonStyle={{
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRight: 'none',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                                }}
-                                dropdownStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  color: 'hsl(var(--foreground))',
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
 
-                    <Separator />
-                    <h3 className="text-lg font-medium">Dados do Tesoureiro</h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="treasurerFirstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="treasurerLastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sobrenome</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="treasurerCpf"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CPF</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                      <div className="flex justify-end">
+                        <Button type="submit" disabled={isSaving}>
+                          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Alterar cadastro
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                    <Alert
-                      variant="destructive"
-                      className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
-                    >
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                      <AlertDescription>
-                        <strong>Importante</strong> - É necessário ter um usuário para a igreja
-                        poder acessar o sistema.
-                      </AlertDescription>
-                    </Alert>
+            <TabsContent value="transactions">
+              <TransactionsTab churchId={id as string} />
+            </TabsContent>
 
-                    <FormField
-                      control={form.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Crie ou atualize a senha da igreja</FormLabel>
-                          <FormControl>
-                            <div className="relative mt-1">
-                              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                type="password"
-                                placeholder="Nova senha"
-                                className="pl-9"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            <TabsContent value="configuracoes">
+              <SettingsTab churchId={id as string} />
+            </TabsContent>
 
-                    <div className="flex justify-end">
-                      <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Alterar cadastro
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="transactions">
-            <TransactionsTab churchId={id as string} />
-          </TabsContent>
-          
-          <TabsContent value="configuracoes">
-            <SettingsTab churchId={id as string} />
-          </TabsContent>
-          
-          <TabsContent value="delete">
-            <Card className="border-destructive shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
-                <CardDescription>
-                  Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente esta
-                  igreja.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="destructive" onClick={handleDelete}>
-                  Excluir permanentemente
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="delete">
+              <Card className="border-destructive shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-destructive">Excluir Cadastro</CardTitle>
+                  <CardDescription>
+                    Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente
+                    esta igreja.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="destructive" onClick={handleDelete}>
+                    Excluir permanentemente
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

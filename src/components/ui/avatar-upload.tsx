@@ -57,7 +57,7 @@ export function AvatarUpload({
       if (result.success && result.url) {
         setPreviewUrl(result.url)
         onUploadComplete?.(result.url)
-        
+
         toast({
           title: 'Sucesso',
           description: 'Avatar atualizado com sucesso!',
@@ -86,7 +86,7 @@ export function AvatarUpload({
             width={size === 'sm' ? 64 : size === 'md' ? 96 : 128}
             height={size === 'sm' ? 64 : size === 'md' ? 96 : 128}
           />
-          
+
           <div className="absolute bottom-0 right-0">
             <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border">
               <Camera className="h-4 w-4 text-muted-foreground" />
@@ -109,11 +109,8 @@ export function AvatarUpload({
         width={size === 'sm' ? 64 : size === 'md' ? 96 : 128}
         height={size === 'sm' ? 64 : size === 'md' ? 96 : 128}
       />
-      
-      <Label 
-        htmlFor="avatar-upload" 
-        className="absolute bottom-0 right-0 cursor-pointer"
-      >
+
+      <Label htmlFor="avatar-upload" className="absolute bottom-0 right-0 cursor-pointer">
         <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
           {isUploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -123,7 +120,7 @@ export function AvatarUpload({
         </div>
         <span className="sr-only">Trocar foto</span>
       </Label>
-      
+
       <Input
         id="avatar-upload"
         type="file"

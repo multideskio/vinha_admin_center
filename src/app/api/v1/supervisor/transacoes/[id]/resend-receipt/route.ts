@@ -9,14 +9,14 @@ import { createTransactionReceiptEmail } from '@/lib/email-templates'
 
 const COMPANY_ID = process.env.COMPANY_INIT || ''
 
-export async function POST(
-  request: Request,
-  props: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
   const { user } = await validateRequest()
 
-  console.log('[RESEND_RECEIPT] Iniciando reenvio de comprovante', { transactionId: params.id, userId: user?.id })
+  console.log('[RESEND_RECEIPT] Iniciando reenvio de comprovante', {
+    transactionId: params.id,
+    userId: user?.id,
+  })
 
   if (!user || user.role !== 'supervisor') {
     console.log('[RESEND_RECEIPT] Acesso negado', { user: user?.id, role: user?.role })
@@ -46,7 +46,9 @@ export async function POST(
 
     console.log('[RESEND_RECEIPT] Transação encontrada', transaction)
 
-    console.log('[RESEND_RECEIPT] Buscando contribuidor', { contributorId: transaction.contributorId })
+    console.log('[RESEND_RECEIPT] Buscando contribuidor', {
+      contributorId: transaction.contributorId,
+    })
     const [contributor] = await db
       .select({ email: users.email })
       .from(users)
@@ -54,7 +56,9 @@ export async function POST(
       .limit(1)
 
     if (!contributor) {
-      console.log('[RESEND_RECEIPT] Contribuidor não encontrado', { contributorId: transaction.contributorId })
+      console.log('[RESEND_RECEIPT] Contribuidor não encontrado', {
+        contributorId: transaction.contributorId,
+      })
       return NextResponse.json({ error: 'Contribuidor não encontrado' }, { status: 404 })
     }
 
@@ -72,12 +76,12 @@ export async function POST(
       return NextResponse.json({ error: 'Configurações de email não encontradas' }, { status: 500 })
     }
 
-    console.log('[RESEND_RECEIPT] Configurações SMTP encontradas', { 
+    console.log('[RESEND_RECEIPT] Configurações SMTP encontradas', {
       host: settings.smtpHost,
       port: settings.smtpPort,
       user: settings.smtpUser,
       hasPassword: !!settings.smtpPass,
-      from: settings.smtpFrom
+      from: settings.smtpFrom,
     })
 
     const [company] = await db.select().from(companies).where(eq(companies.id, COMPANY_ID)).limit(1)
@@ -97,7 +101,6 @@ export async function POST(
         to: contributor.email,
         subject: `✅ Comprovante de Pagamento - ${company?.name || 'Vinha Ministérios'}`,
         html: emailHtml,
-
       })
 
       console.log('[RESEND_RECEIPT] Email enviado com sucesso')
@@ -131,20 +134,23 @@ export async function POST(
       'resend_receipt',
       'transaction',
       id,
-      `Comprovante reenviado para ${contributor.email}`
+      `Comprovante reenviado para ${contributor.email}`,
     )
 
     console.log('[RESEND_RECEIPT] Processo concluído com sucesso')
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Comprovante reenviado para ${contributor.email}` 
+    return NextResponse.json({
+      success: true,
+      message: `Comprovante reenviado para ${contributor.email}`,
     })
   } catch (error) {
     console.error('[RESEND_RECEIPT] Erro geral:', error)
-    return NextResponse.json({ 
-      error: 'Erro ao reenviar comprovante',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: 'Erro ao reenviar comprovante',
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
+      },
+      { status: 500 },
+    )
   }
 }

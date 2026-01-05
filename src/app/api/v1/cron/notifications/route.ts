@@ -16,7 +16,10 @@ export async function GET(request: Request) {
   const ip = (request.headers as any).get?.('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
   const rl = await rateLimit('api:cron:notifications', ip, 2, 60)
   if (!rl.allowed) {
-    return NextResponse.json({ error: 'Cron executado muitas vezes. Aguarde um minuto.' }, { status: 429 })
+    return NextResponse.json(
+      { error: 'Cron executado muitas vezes. Aguarde um minuto.' },
+      { status: 429 },
+    )
   }
 
   const results = { processed: 0, sent: 0, failed: 0, errors: [] as string[] }
@@ -55,26 +58,30 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: 'Cron failed', details: error instanceof Error ? error.message : 'Unknown' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
-async function processNewUsers(rule: { messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean }) {
+async function processNewUsers(rule: {
+  messageTemplate: string
+  sendViaEmail: boolean
+  sendViaWhatsapp: boolean
+}) {
   const recentUsers = await db
     .select()
     .from(users)
     .where(
       and(
         eq(users.welcomeSent, false),
-        gte(users.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000))
-      )
+        gte(users.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
+      ),
     )
     .limit(50)
 
   for (const user of recentUsers) {
     const notificationService = new NotificationService({ companyId: user.companyId })
-    
+
     // ✅ CORRIGIDO: Usar template configurado da regra
     const variables: Record<string, string> = {
       nome_usuario: user.email.split('@')[0] || 'Membro',
@@ -111,7 +118,11 @@ async function processNewUsers(rule: { messageTemplate: string; sendViaEmail: bo
   }
 }
 
-async function processPayments(rule: { messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean }) {
+async function processPayments(rule: {
+  messageTemplate: string
+  sendViaEmail: boolean
+  sendViaWhatsapp: boolean
+}) {
   const recentTransactions = await db
     .select({ transaction: transactions, user: users })
     .from(transactions)
@@ -119,8 +130,8 @@ async function processPayments(rule: { messageTemplate: string; sendViaEmail: bo
     .where(
       and(
         eq(transactions.status, 'approved'),
-        gte(transactions.createdAt, new Date(Date.now() - 2 * 60 * 60 * 1000))
-      )
+        gte(transactions.createdAt, new Date(Date.now() - 2 * 60 * 60 * 1000)),
+      ),
     )
     .limit(50)
 
@@ -131,8 +142,8 @@ async function processPayments(rule: { messageTemplate: string; sendViaEmail: bo
       .where(
         and(
           eq(notificationLogs.userId, user.id),
-          eq(notificationLogs.notificationType, `payment_received_${transaction.id}`)
-        )
+          eq(notificationLogs.notificationType, `payment_received_${transaction.id}`),
+        ),
       )
       .limit(1)
 
@@ -164,9 +175,9 @@ async function processPayments(rule: { messageTemplate: string; sendViaEmail: bo
       }
 
       if (rule.sendViaWhatsapp && user.phone) {
-        await notificationService.sendWhatsApp({ 
-          phone: user.phone, 
-          message: message 
+        await notificationService.sendWhatsApp({
+          phone: user.phone,
+          message: message,
         })
       }
 
@@ -184,7 +195,13 @@ async function processPayments(rule: { messageTemplate: string; sendViaEmail: bo
   }
 }
 
-async function processReminders(rule: { id: string; messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean; daysOffset: number }) {
+async function processReminders(rule: {
+  id: string
+  messageTemplate: string
+  sendViaEmail: boolean
+  sendViaWhatsapp: boolean
+  daysOffset: number
+}) {
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() + rule.daysOffset)
   const today = new Date().toISOString().split('T')[0]
@@ -202,8 +219,8 @@ async function processReminders(rule: { id: string; messageTemplate: string; sen
       .where(
         and(
           eq(notificationLogs.userId, user.id),
-          eq(notificationLogs.notificationType, `reminder_${rule.id}_${today}`)
-        )
+          eq(notificationLogs.notificationType, `reminder_${rule.id}_${today}`),
+        ),
       )
       .limit(1)
 
@@ -258,7 +275,13 @@ async function processReminders(rule: { id: string; messageTemplate: string; sen
   }
 }
 
-async function processOverdue(rule: { id: string; messageTemplate: string; sendViaEmail: boolean; sendViaWhatsapp: boolean; daysOffset: number }) {
+async function processOverdue(rule: {
+  id: string
+  messageTemplate: string
+  sendViaEmail: boolean
+  sendViaWhatsapp: boolean
+  daysOffset: number
+}) {
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() - rule.daysOffset)
   const today = new Date().toISOString().split('T')[0]
@@ -276,8 +299,8 @@ async function processOverdue(rule: { id: string; messageTemplate: string; sendV
       .where(
         and(
           eq(notificationLogs.userId, user.id),
-          eq(notificationLogs.notificationType, `overdue_${rule.id}_${today}`)
-        )
+          eq(notificationLogs.notificationType, `overdue_${rule.id}_${today}`),
+        ),
       )
       .limit(1)
 

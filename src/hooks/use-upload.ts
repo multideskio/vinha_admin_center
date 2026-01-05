@@ -48,12 +48,11 @@ export function useUpload(): UseUploadReturn {
 
       setProgress(100)
       return result
-
     } catch (error) {
       console.error('Upload error:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Upload failed'
+        error: error instanceof Error ? error.message : 'Upload failed',
       }
     } finally {
       setIsUploading(false)
@@ -69,7 +68,6 @@ export function useUpload(): UseUploadReturn {
 
       const result = await response.json()
       return result.success || false
-
     } catch (error) {
       console.error('Delete error:', error)
       return false

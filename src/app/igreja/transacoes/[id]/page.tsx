@@ -2,7 +2,13 @@
 
 import * as React from 'react'
 import { useParams } from 'next/navigation'
-import { ChevronLeft, Copy, Download, ArrowRightLeft, User, MessageSquareWarning } from 'lucide-react'
+import {
+  ChevronLeft,
+  Download,
+  ArrowRightLeft,
+  User,
+  MessageSquareWarning,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,7 +17,6 @@ import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { type TransactionStatus } from '@/lib/types'
-import { cn } from '@/lib/utils'
 
 type TransactionDetail = {
   id: string
@@ -89,7 +94,7 @@ export default function TransacaoDetalhePage(): JSX.Element {
       <div className="relative overflow-hidden rounded-2xl">
         <div className="absolute inset-0 videira-gradient opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -131,12 +136,16 @@ export default function TransacaoDetalhePage(): JSX.Element {
               <div>
                 <p className="text-sm text-muted-foreground">Valor</p>
                 <p className="text-lg font-bold text-videira-cyan">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                    transaction.amount,
+                  )}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Data</p>
-                <p className="font-semibold">{new Date(transaction.date).toLocaleDateString('pt-BR')}</p>
+                <p className="font-semibold">
+                  {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                </p>
               </div>
             </div>
             <Separator />

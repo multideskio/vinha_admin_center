@@ -158,7 +158,7 @@ export default function TransacoesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -169,7 +169,8 @@ export default function TransacoesPage() {
                 Gerencie as transações financeiras da sua supervisão
                 {dateRange?.from && dateRange?.to && (
                   <span className="ml-2">
-                    • Período: {dateRange.from.toLocaleDateString('pt-BR')} - {dateRange.to.toLocaleDateString('pt-BR')}
+                    • Período: {dateRange.from.toLocaleDateString('pt-BR')} -{' '}
+                    {dateRange.to.toLocaleDateString('pt-BR')}
                   </span>
                 )}
               </p>
@@ -197,7 +198,11 @@ export default function TransacoesPage() {
               <DateRangePicker value={dateRange} onChange={setDateRange} />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-10 bg-white/20 hover:bg-white/30 text-white border-white/30">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-10 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  >
                     <ListFilter className="h-4 w-4 mr-2" />
                     Status
                   </Button>
@@ -216,7 +221,12 @@ export default function TransacoesPage() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="outline" size="sm" onClick={handleExport} className="h-10 bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="h-10 bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Exportar
               </Button>
@@ -228,128 +238,102 @@ export default function TransacoesPage() {
       <Card className="shadow-lg border-t-4 border-t-videira-cyan">
         <CardContent className="pt-6">
           <div className="rounded-md border-2">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
-                <TableHead className="font-semibold">Contribuinte</TableHead>
-                <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
-                <TableHead className="hidden md:table-cell text-right font-semibold">Valor</TableHead>
-                <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
-                <TableHead className="hidden md:table-cell font-semibold">Motivo Solicitação</TableHead>
-                <TableHead>
-                  <span className="sr-only">Ações</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-40" />
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <Skeleton className="h-4 w-48" />
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Skeleton className="h-4 w-20 ml-auto" />
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Skeleton className="h-4 w-32" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-8 w-8" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : paginatedTransactions.length > 0 ? (
-                paginatedTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.contributor}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-muted-foreground">
-                      {transaction.church || 'N/A'}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(transaction.amount)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                        {statusMap[transaction.status]?.text || transaction.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {transaction.refundRequestReason ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <span className="truncate max-w-[150px] inline-block">
-                                {transaction.refundRequestReason}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>{transaction.refundRequestReason}</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/supervisor/transacoes/${transaction.id}`}>
-                              Ver Detalhes
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={async () => {
-                              try {
-                                const res = await fetch(
-                                  `/api/v1/supervisor/transacoes/${transaction.id}/resend-receipt`,
-                                  { method: 'POST' }
-                                )
-                                const data = await res.json()
-                                if (res.ok) {
-                                  toast({
-                                    title: 'Sucesso',
-                                    description: data.message,
-                                    variant: 'success',
-                                  })
-                                } else {
-                                  throw new Error(data.error)
-                                }
-                              } catch (error) {
-                                toast({
-                                  title: 'Erro',
-                                  description:
-                                    error instanceof Error ? error.message : 'Erro ao reenviar comprovante',
-                                  variant: 'destructive',
-                                })
-                              }
-                            }}
-                          >
-                            Reenviar Comprovante
-                          </DropdownMenuItem>
-                          {transaction.status === 'pending' && (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                  <TableHead className="font-semibold">Contribuinte</TableHead>
+                  <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
+                  <TableHead className="hidden md:table-cell text-right font-semibold">
+                    Valor
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                  <TableHead className="hidden md:table-cell font-semibold">
+                    Motivo Solicitação
+                  </TableHead>
+                  <TableHead>
+                    <span className="sr-only">Ações</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-40" />
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Skeleton className="h-4 w-48" />
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Skeleton className="h-4 w-20 ml-auto" />
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : paginatedTransactions.length > 0 ? (
+                  paginatedTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">{transaction.contributor}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
+                        {transaction.church || 'N/A'}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-right">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(transaction.amount)}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                          {statusMap[transaction.status]?.text || transaction.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {transaction.refundRequestReason ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <span className="truncate max-w-[150px] inline-block">
+                                  {transaction.refundRequestReason}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>{transaction.refundRequestReason}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/supervisor/transacoes/${transaction.id}`}>
+                                Ver Detalhes
+                              </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={async () => {
                                 try {
                                   const res = await fetch(
-                                    `/api/v1/supervisor/transacoes/${transaction.id}/sync`,
-                                    { method: 'POST' }
+                                    `/api/v1/supervisor/transacoes/${transaction.id}/resend-receipt`,
+                                    { method: 'POST' },
                                   )
                                   const data = await res.json()
                                   if (res.ok) {
@@ -358,7 +342,6 @@ export default function TransacoesPage() {
                                       description: data.message,
                                       variant: 'success',
                                     })
-                                    fetchTransactions()
                                   } else {
                                     throw new Error(data.error)
                                   }
@@ -366,29 +349,64 @@ export default function TransacoesPage() {
                                   toast({
                                     title: 'Erro',
                                     description:
-                                      error instanceof Error ? error.message : 'Erro ao sincronizar',
+                                      error instanceof Error
+                                        ? error.message
+                                        : 'Erro ao reenviar comprovante',
                                     variant: 'destructive',
                                   })
                                 }
                               }}
                             >
-                              Sincronizar Status
+                              Reenviar Comprovante
                             </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            {transaction.status === 'pending' && (
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  try {
+                                    const res = await fetch(
+                                      `/api/v1/supervisor/transacoes/${transaction.id}/sync`,
+                                      { method: 'POST' },
+                                    )
+                                    const data = await res.json()
+                                    if (res.ok) {
+                                      toast({
+                                        title: 'Sucesso',
+                                        description: data.message,
+                                        variant: 'success',
+                                      })
+                                      fetchTransactions()
+                                    } else {
+                                      throw new Error(data.error)
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      title: 'Erro',
+                                      description:
+                                        error instanceof Error
+                                          ? error.message
+                                          : 'Erro ao sincronizar',
+                                      variant: 'destructive',
+                                    })
+                                  }
+                                }}
+                              >
+                                Sincronizar Status
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">
+                      Nenhuma transação encontrada.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
-                    Nenhuma transação encontrada.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
           </div>
           <div className="flex items-center justify-end space-x-2 py-4">
             <Button

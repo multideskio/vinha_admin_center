@@ -1,9 +1,11 @@
 # UX - Melhorias na Experiência do Usuário - Sistema de Gerentes
 
 ## 🎯 Objetivo
+
 Aprimorar a experiência do usuário (UX) no sistema de gerentes, tanto na área admin quanto no acesso manager, implementando micro-interações, melhorias de acessibilidade, performance visual e feedback avançado.
 
 ## 📋 Escopo
+
 - [ ] Implementar micro-interações avançadas
 - [ ] Melhorar acessibilidade (A11Y)
 - [ ] Otimizar performance visual
@@ -14,7 +16,9 @@ Aprimorar a experiência do usuário (UX) no sistema de gerentes, tanto na área
 ## 🔧 Implementação
 
 ### 1. Micro-interações Avançadas
+
 **Arquivos a modificar:**
+
 - `src/app/admin/gerentes/page.tsx`
 - `src/app/admin/gerentes/[id]/page.tsx`
 - `src/app/manager/perfil/page.tsx`
@@ -22,12 +26,13 @@ Aprimorar a experiência do usuário (UX) no sistema de gerentes, tanto na área
 **Melhorias:**
 
 #### 1.1 Animações de Entrada/Saída
+
 ```typescript
 // Adicionar animações Framer Motion para modais
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.8, y: 20 },
   visible: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.8, y: -20 }
+  exit: { opacity: 0, scale: 0.8, y: -20 },
 }
 
 // Animações para cards na listagem
@@ -36,32 +41,37 @@ const cardVariants = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1 }
-  })
+    transition: { delay: i * 0.1 },
+  }),
 }
 ```
 
 #### 1.2 Hover States Elaborados
+
 ```typescript
 // Cards com transformações suaves
-className="hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+className = 'hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 hover:-translate-y-1'
 
 // Botões com efeitos de ripple
-className="relative overflow-hidden before:absolute before:inset-0 before:bg-white/20 before:scale-0 hover:before:scale-100 before:transition-transform before:duration-300"
+className =
+  'relative overflow-hidden before:absolute before:inset-0 before:bg-white/20 before:scale-0 hover:before:scale-100 before:transition-transform before:duration-300'
 ```
 
 #### 1.3 Loading States com Progress
+
 ```typescript
 // Progress bar para uploads
 const [uploadProgress, setUploadProgress] = useState(0)
 
 // Skeleton com shimmer effect
-className="animate-pulse bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] animate-shimmer"
+className =
+  'animate-pulse bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] animate-shimmer'
 ```
 
 ### 2. Melhorias de Acessibilidade (A11Y)
 
 #### 2.1 Focus Management
+
 ```typescript
 // Trap focus em modais
 import { useFocusTrap } from '@/hooks/use-focus-trap'
@@ -75,6 +85,7 @@ useEffect(() => {
 ```
 
 #### 2.2 ARIA Labels Descritivos
+
 ```typescript
 // Labels mais específicos
 aria-label="Editar perfil do gerente João Silva"
@@ -84,6 +95,7 @@ aria-live="polite" // Para feedback dinâmico
 ```
 
 #### 2.3 Keyboard Navigation
+
 ```typescript
 // Navegação por teclado em tabelas
 const handleKeyDown = (e: KeyboardEvent, index: number) => {
@@ -104,12 +116,13 @@ const handleKeyDown = (e: KeyboardEvent, index: number) => {
 ### 3. Performance Visual
 
 #### 3.1 Lazy Loading para Avatares
+
 ```typescript
 // Componente LazyAvatar
 const LazyAvatar = ({ src, alt, fallback }: AvatarProps) => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(false)
-  
+
   return (
     <div ref={ref} className="relative">
       {isInView && (
@@ -130,6 +143,7 @@ const LazyAvatar = ({ src, alt, fallback }: AvatarProps) => {
 ```
 
 #### 3.2 Virtualization para Listas Grandes
+
 ```typescript
 // Implementar react-window para listas com 100+ itens
 import { FixedSizeList as List } from 'react-window'
@@ -155,6 +169,7 @@ const VirtualizedManagerList = ({ managers }: { managers: Manager[] }) => {
 ```
 
 #### 3.3 Image Optimization
+
 ```typescript
 // Otimização automática de imagens
 const OptimizedAvatar = ({ src, size = 96 }: AvatarProps) => {
@@ -182,14 +197,15 @@ const OptimizedAvatar = ({ src, size = 96 }: AvatarProps) => {
 ### 4. Feedback Avançado
 
 #### 4.1 Undo Actions
+
 ```typescript
 // Sistema de undo para exclusões
 const useUndoableAction = () => {
   const [undoStack, setUndoStack] = useState<UndoAction[]>([])
-  
+
   const executeWithUndo = async (action: () => Promise<void>, undoAction: () => Promise<void>, description: string) => {
     await action()
-    
+
     toast({
       title: "Ação executada",
       description: (
@@ -207,6 +223,7 @@ const useUndoableAction = () => {
 ```
 
 #### 4.2 Bulk Operations
+
 ```typescript
 // Seleção múltipla com feedback visual
 const [selectedManagers, setSelectedManagers] = useState<Set<string>>(new Set())
@@ -233,34 +250,33 @@ const BulkActionBar = ({ selectedCount }: { selectedCount: number }) => (
 ```
 
 #### 4.3 Real-time Updates
+
 ```typescript
 // WebSocket para atualizações em tempo real
 const useRealtimeManagers = () => {
   const [managers, setManagers] = useState<Manager[]>([])
-  
+
   useEffect(() => {
     const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL!)
-    
+
     ws.onmessage = (event) => {
       const { type, data } = JSON.parse(event.data)
-      
+
       switch (type) {
         case 'MANAGER_UPDATED':
-          setManagers(prev => prev.map(m => 
-            m.id === data.id ? { ...m, ...data } : m
-          ))
+          setManagers((prev) => prev.map((m) => (m.id === data.id ? { ...m, ...data } : m)))
           toast({
-            title: "Atualização em tempo real",
+            title: 'Atualização em tempo real',
             description: `${data.firstName} ${data.lastName} foi atualizado`,
-            variant: "info"
+            variant: 'info',
           })
           break
       }
     }
-    
+
     return () => ws.close()
   }, [])
-  
+
   return managers
 }
 ```
@@ -268,12 +284,13 @@ const useRealtimeManagers = () => {
 ### 5. Funcionalidades UX Modernas
 
 #### 5.1 Command Palette (⌘K)
+
 ```typescript
 // Busca global com atalhos
 const CommandPalette = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
-  
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -281,15 +298,15 @@ const CommandPalette = () => {
         setIsOpen(true)
       }
     }
-    
+
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
-  
+
   return (
     <CommandDialog open={isOpen} onOpenChange={setIsOpen}>
-      <CommandInput 
-        placeholder="Buscar gerentes, ações..." 
+      <CommandInput
+        placeholder="Buscar gerentes, ações..."
         value={query}
         onValueChange={setQuery}
       />
@@ -315,12 +332,13 @@ const CommandPalette = () => {
 ```
 
 #### 5.2 Smart Search com Highlights
+
 ```typescript
 // Busca inteligente com destaque
 const SmartSearch = ({ onSearch }: { onSearch: (query: string) => void }) => {
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
-  
+
   const debouncedSearch = useMemo(
     () => debounce((searchQuery: string) => {
       onSearch(searchQuery)
@@ -332,7 +350,7 @@ const SmartSearch = ({ onSearch }: { onSearch: (query: string) => void }) => {
     }, 300),
     [onSearch]
   )
-  
+
   return (
     <div className="relative">
       <Input
@@ -366,6 +384,7 @@ const SmartSearch = ({ onSearch }: { onSearch: (query: string) => void }) => {
 ```
 
 #### 5.3 Contextual Tooltips
+
 ```typescript
 // Tooltips contextuais com informações úteis
 const ContextualTooltip = ({ manager }: { manager: Manager }) => (
@@ -380,7 +399,7 @@ const ContextualTooltip = ({ manager }: { manager: Manager }) => (
         <div className="space-y-1">
           <p className="font-medium">Status do Gerente</p>
           <p className="text-xs text-muted-foreground">
-            {manager.status === 'active' 
+            {manager.status === 'active'
               ? `Ativo desde ${formatDate(manager.createdAt)}`
               : `Inativo desde ${formatDate(manager.deletedAt)}`
             }
@@ -400,30 +419,35 @@ const ContextualTooltip = ({ manager }: { manager: Manager }) => (
 ## ✅ Critérios de Aceitação
 
 ### Micro-interações
+
 - [ ] Modais abrem/fecham com animações suaves (300ms)
 - [ ] Cards têm hover effects com transformações
 - [ ] Loading states mostram progresso real para uploads
 - [ ] Transições entre estados são fluidas
 
 ### Acessibilidade
+
 - [ ] Focus trap funciona em todos os modais
 - [ ] Navegação por teclado funciona em tabelas
 - [ ] ARIA labels são descritivos e específicos
 - [ ] Screen readers conseguem navegar facilmente
 
 ### Performance Visual
+
 - [ ] Avatares carregam apenas quando visíveis (lazy loading)
 - [ ] Listas com 100+ itens usam virtualização
 - [ ] Imagens são otimizadas automaticamente
 - [ ] Não há layout shifts durante carregamento
 
 ### Feedback Avançado
+
 - [ ] Ações destrutivas podem ser desfeitas (5s)
 - [ ] Seleção múltipla funciona com feedback visual
 - [ ] Atualizações em tempo real são mostradas
 - [ ] Toasts são informativos e acionáveis
 
 ### Funcionalidades Modernas
+
 - [ ] Command Palette (⌘K) funciona globalmente
 - [ ] Busca inteligente com sugestões e highlights
 - [ ] Tooltips contextuais mostram informações úteis
@@ -432,35 +456,41 @@ const ContextualTooltip = ({ manager }: { manager: Manager }) => (
 ## 🧪 Testes
 
 ### Testes de Usabilidade
+
 - [ ] **Teste A/B** - Comparar tempo de conclusão de tarefas antes/depois
 - [ ] **Teste de Acessibilidade** - Validar com screen readers
 - [ ] **Teste de Performance** - Medir tempo de carregamento e FPS
 - [ ] **Teste Mobile** - Validar experiência em dispositivos móveis
 
 ### Métricas de Sucesso
+
 - [ ] **Tempo de carregamento** < 2s para listagem de gerentes
 - [ ] **Tempo de conclusão** de tarefas reduzido em 30%
 - [ ] **Score de acessibilidade** > 95 (Lighthouse)
 - [ ] **Satisfação do usuário** > 4.5/5 (pesquisa pós-implementação)
 
 ## 📅 Estimativa
+
 - **Tempo:** 3-4 semanas (60-80 horas)
 - **Prioridade:** 🟡 Média (Melhoria de UX)
 - **Versão:** v0.4.0
 
 ## 🔗 Dependências
+
 - **Framer Motion** - Para animações
 - **React Window** - Para virtualização
 - **cmdk** - Para command palette
 - **@radix-ui/react-tooltip** - Para tooltips avançados
 
 ## 📚 Referências
+
 - **Design System Videira** - Manter consistência visual
 - **WCAG 2.1 AA** - Padrões de acessibilidade
 - **Material Design Motion** - Princípios de animação
 - **Apple HIG** - Diretrizes de interação
 
 ## 📝 Notas de Implementação
+
 - **Implementação incremental** - Uma funcionalidade por vez
 - **Testes contínuos** - Validar cada melhoria individualmente
 - **Feedback dos usuários** - Coletar opinões durante desenvolvimento

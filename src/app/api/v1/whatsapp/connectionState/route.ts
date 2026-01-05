@@ -23,14 +23,14 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${baseUrl}/instance/connectionState/${instanceName}`, {
       method: 'GET',
       headers: {
-        'apikey': apiKey,
+        apikey: apiKey,
       },
     })
 
     if (!response.ok) {
       return NextResponse.json(
         { error: 'Erro ao verificar estado de conexão da instância' },
-        { status: response.status }
+        { status: response.status },
       )
     }
 
@@ -40,22 +40,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       instance: {
         instanceName: data.instance?.instanceName || instanceName,
-        state: data.instance?.state || 'close'
-      }
+        state: data.instance?.state || 'close',
+      },
     })
   } catch (error) {
     console.error('Error checking connection state:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

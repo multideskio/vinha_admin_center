@@ -78,8 +78,8 @@ export async function GET(request: Request): Promise<NextResponse> {
           and(
             eq(users.role, 'supervisor'),
             isNull(users.deletedAt),
-            sql`(LOWER(${supervisorProfiles.firstName}) LIKE ${searchPattern} OR LOWER(${supervisorProfiles.lastName}) LIKE ${searchPattern})`
-          )
+            sql`(LOWER(${supervisorProfiles.firstName}) LIKE ${searchPattern} OR LOWER(${supervisorProfiles.lastName}) LIKE ${searchPattern})`,
+          ),
         )
         .orderBy(desc(users.createdAt))
         .limit(limit)
@@ -125,7 +125,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   // ✅ Apenas admin e manager podem criar supervisores
   if (user.role !== 'admin' && user.role !== 'manager') {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores e gerentes podem criar supervisores.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Apenas administradores e gerentes podem criar supervisores.' },
+      { status: 403 },
+    )
   }
 
   try {

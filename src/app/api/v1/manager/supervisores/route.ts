@@ -43,12 +43,12 @@ export async function GET(request: Request): Promise<NextResponse> {
           ),
         )
         .orderBy(desc(users.createdAt))
-      
-      const supervisorsWithName = result.map(s => ({
+
+      const supervisorsWithName = result.map((s) => ({
         id: s.id,
-        name: `${s.firstName} ${s.lastName}`
+        name: `${s.firstName} ${s.lastName}`,
       }))
-      
+
       return NextResponse.json({ supervisors: supervisorsWithName })
     }
 

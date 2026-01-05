@@ -43,8 +43,8 @@ export async function GET(request: NextRequest) {
       query = query.where(
         and(
           eq(emailBlacklist.companyId, companyId),
-          eq(emailBlacklist.isActive, isActive === 'true')
-        )
+          eq(emailBlacklist.isActive, isActive === 'true'),
+        ),
       )
     }
 
@@ -60,9 +60,9 @@ export async function GET(request: NextRequest) {
         isActive !== null
           ? and(
               eq(emailBlacklist.companyId, companyId),
-              eq(emailBlacklist.isActive, isActive === 'true')
+              eq(emailBlacklist.isActive, isActive === 'true'),
             )
-          : eq(emailBlacklist.companyId, companyId)
+          : eq(emailBlacklist.companyId, companyId),
       )
 
     return NextResponse.json({ blacklist, total: countResult[0]?.count || 0 })
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     })
     return NextResponse.json(
       { error: 'Erro ao buscar blacklist', details: errorMessage },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -88,13 +88,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     // Validar com Zod
     const validationResult = blacklistAddSchema.safeParse(body)
     if (!validationResult.success) {
       return NextResponse.json(
         { error: 'Dados inválidos', details: validationResult.error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -104,10 +104,7 @@ export async function POST(request: NextRequest) {
       .select()
       .from(emailBlacklist)
       .where(
-        and(
-          eq(emailBlacklist.companyId, companyId),
-          eq(emailBlacklist.email, email.toLowerCase())
-        )
+        and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email.toLowerCase())),
       )
       .limit(1)
 
@@ -138,10 +135,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 })
     }
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     console.error('Erro ao adicionar à blacklist:', {
@@ -150,7 +144,7 @@ export async function POST(request: NextRequest) {
     })
     return NextResponse.json(
       { error: 'Erro ao adicionar à blacklist', details: errorMessage },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -173,12 +167,7 @@ export async function DELETE(request: NextRequest) {
     await db
       .update(emailBlacklist)
       .set({ isActive: false })
-      .where(
-        and(
-          eq(emailBlacklist.companyId, companyId),
-          eq(emailBlacklist.email, email)
-        )
-      )
+      .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -189,7 +178,7 @@ export async function DELETE(request: NextRequest) {
     })
     return NextResponse.json(
       { error: 'Erro ao remover da blacklist', details: errorMessage },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

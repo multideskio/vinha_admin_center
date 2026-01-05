@@ -60,7 +60,12 @@ type HeaderProps = {
   avatarUrl?: string
 }
 
-export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl }: HeaderProps): JSX.Element {
+export function SupervisorHeader({
+  userName,
+  userEmail,
+  userFallback,
+  avatarUrl,
+}: HeaderProps): JSX.Element {
   const pathname = usePathname()
 
   return (
@@ -68,7 +73,11 @@ export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl 
       {/* Mobile Menu */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10">
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10"
+          >
             <PanelLeft className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
@@ -82,8 +91,12 @@ export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl 
                 <Grape className="h-6 w-6 text-white" />
               </div>
               <div>
-                <span className="text-base font-bold text-white drop-shadow-lg">Vinha Ministérios</span>
-                <p className="text-xs text-white/80 font-medium">Painel Supervisor - v{packageJson.version}</p>
+                <span className="text-base font-bold text-white drop-shadow-lg">
+                  Vinha Ministérios
+                </span>
+                <p className="text-xs text-white/80 font-medium">
+                  Painel Supervisor - v{packageJson.version}
+                </p>
               </div>
             </div>
           </div>
@@ -95,9 +108,10 @@ export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl 
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:bg-videira-blue/10 hover:text-videira-blue transition-all",
-                  (pathname === item.href || (item.href !== '/supervisor/dashboard' && pathname.startsWith(item.href))) &&
-                    'bg-videira-blue/15 text-videira-blue font-semibold'
+                  'flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:bg-videira-blue/10 hover:text-videira-blue transition-all',
+                  (pathname === item.href ||
+                    (item.href !== '/supervisor/dashboard' && pathname.startsWith(item.href))) &&
+                    'bg-videira-blue/15 text-videira-blue font-semibold',
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -107,8 +121,9 @@ export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl 
             <Link
               href={settingsItem.href}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:bg-videira-cyan/10 hover:text-videira-cyan transition-all",
-                pathname.startsWith(settingsItem.href) && 'bg-videira-cyan/15 text-videira-cyan font-semibold'
+                'flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground hover:bg-videira-cyan/10 hover:text-videira-cyan transition-all',
+                pathname.startsWith(settingsItem.href) &&
+                  'bg-videira-cyan/15 text-videira-cyan font-semibold',
               )}
             >
               <settingsItem.icon className="h-5 w-5" />
@@ -145,7 +160,9 @@ export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl 
                 alt={`@${userName}`}
                 data-ai-hint="user avatar"
               />
-              <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">{userFallback}</AvatarFallback>
+              <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">
+                {userFallback}
+              </AvatarFallback>
             </Avatar>
             <span className="sr-only">Toggle user menu</span>
           </Button>
@@ -169,7 +186,7 @@ export function SupervisorHeader({ userName, userEmail, userFallback, avatarUrl 
             <span>Ajuda</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer text-destructive focus:text-destructive"
             onClick={async () => {
               const result = await logoutUser()

@@ -1,6 +1,6 @@
 # 🤝 Guia de Desenvolvimento - Equipe Interna
 
-Guia para desenvolvedores da equipe **Multidesk.io** trabalhando no **Vinha Admin Center**. 
+Guia para desenvolvedores da equipe **Multidesk.io** trabalhando no **Vinha Admin Center**.
 
 ## 📋 Como Contribuir
 
@@ -29,6 +29,7 @@ Guia para desenvolvedores da equipe **Multidesk.io** trabalhando no **Vinha Admi
 ## 📝 Padrões de Código
 
 ### Commits
+
 Usamos [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
@@ -42,6 +43,7 @@ chore: tarefas de manutenção
 ```
 
 ### Código
+
 - **ESLint** e **Prettier** configurados
 - **TypeScript** obrigatório
 - Testes para novas funcionalidades
@@ -87,11 +89,13 @@ docs/             # Documentação
 Veja nosso [ROADMAP.md](docs/ROADMAP.md) para funcionalidades planejadas.
 
 ### Alta Prioridade
+
 - Testes automatizados
 - Melhorias de performance
 - Acessibilidade
 
 ### Média Prioridade
+
 - Novas integrações
 - Funcionalidades avançadas
 - Melhorias de UX

@@ -6,13 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import {
-  users,
-  churchProfiles,
-  supervisorProfiles,
-  regions,
-  transactions,
-} from '@/db/schema'
+import { users, churchProfiles, supervisorProfiles, regions, transactions } from '@/db/schema'
 import { and, eq, isNull, gte, lt, sql, count as countFn } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
@@ -26,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-    
+
     // Filtros
     const from = searchParams.get('from')
     const to = searchParams.get('to')
@@ -37,7 +31,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const endDate = to ? new Date(to) : endOfMonth(now)
 
     // Buscar todas as igrejas
-    let churchQuery = db
+    const churchQuery = db
       .select({
         id: users.id,
         nomeFantasia: churchProfiles.nomeFantasia,
@@ -58,9 +52,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const churches = await churchQuery
 
     // Filtrar por região se especificado
-    const filteredChurches = regionId
-      ? churches.filter((c) => c.regionId === regionId)
-      : churches
+    const filteredChurches = regionId ? churches.filter((c) => c.regionId === regionId) : churches
 
     // Enriquecer com dados de transações
     const enrichedChurches = await Promise.all(
@@ -76,8 +68,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               eq(transactions.contributorId, church.id),
               eq(transactions.status, 'approved'),
               gte(transactions.createdAt, startDate),
-              lt(transactions.createdAt, endDate)
-            )
+              lt(transactions.createdAt, endDate),
+            ),
           )
 
         // Total de transações no período
@@ -91,8 +83,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               eq(transactions.contributorId, church.id),
               eq(transactions.status, 'approved'),
               gte(transactions.createdAt, startDate),
-              lt(transactions.createdAt, endDate)
-            )
+              lt(transactions.createdAt, endDate),
+            ),
           )
 
         // Última transação
@@ -103,10 +95,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           })
           .from(transactions)
           .where(
-            and(
-              eq(transactions.contributorId, church.id),
-              eq(transactions.status, 'approved')
-            )
+            and(eq(transactions.contributorId, church.id), eq(transactions.status, 'approved')),
           )
           .orderBy(sql`${transactions.createdAt} DESC`)
           .limit(1)
@@ -128,26 +117,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             : null,
           createdAt: format(new Date(church.createdAt), 'dd/MM/yyyy'),
         }
-      })
+      }),
     )
 
     // Agrupar por região
-    const byRegion = enrichedChurches.reduce((acc, church) => {
-      if (!acc[church.regionName]) {
-        acc[church.regionName] = {
-          count: 0,
-          totalRevenue: 0,
-          churches: [],
+    const byRegion = enrichedChurches.reduce(
+      (acc, church) => {
+        if (!acc[church.regionName]) {
+          acc[church.regionName] = {
+            count: 0,
+            totalRevenue: 0,
+            churches: [],
+          }
         }
-      }
-      const regionData = acc[church.regionName]
-      if (regionData) {
-        regionData.count++
-        regionData.totalRevenue += church.totalRevenue
-        regionData.churches.push(church)
-      }
-      return acc
-    }, {} as Record<string, { count: number; totalRevenue: number; churches: typeof enrichedChurches }>)
+        const regionData = acc[church.regionName]
+        if (regionData) {
+          regionData.count++
+          regionData.totalRevenue += church.totalRevenue
+          regionData.churches.push(church)
+        }
+        return acc
+      },
+      {} as Record<
+        string,
+        { count: number; totalRevenue: number; churches: typeof enrichedChurches }
+      >,
+    )
 
     // Buscar lista de regiões para filtro
     const allRegions = await db
@@ -178,8 +173,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         error: 'Erro ao buscar relatório de igrejas',
         details: error instanceof Error ? error.message : 'Erro desconhecido',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
-

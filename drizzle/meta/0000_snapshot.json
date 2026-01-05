@@ -102,12 +102,8 @@
           "name": "admin_profiles_user_id_users_id_fk",
           "tableFrom": "admin_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -117,9 +113,7 @@
         "admin_profiles_cpf_unique": {
           "name": "admin_profiles_cpf_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "cpf"
-          ]
+          "columns": ["cpf"]
         }
       },
       "policies": {},
@@ -183,12 +177,8 @@
           "name": "api_keys_company_id_companies_id_fk",
           "tableFrom": "api_keys",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -198,9 +188,7 @@
         "api_keys_key_unique": {
           "name": "api_keys_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -327,12 +315,8 @@
           "name": "church_profiles_user_id_users_id_fk",
           "tableFrom": "church_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -340,12 +324,8 @@
           "name": "church_profiles_supervisor_id_users_id_fk",
           "tableFrom": "church_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "supervisor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supervisor_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -355,9 +335,7 @@
         "church_profiles_cnpj_unique": {
           "name": "church_profiles_cnpj_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "cnpj"
-          ]
+          "columns": ["cnpj"]
         }
       },
       "policies": {},
@@ -608,12 +586,8 @@
           "name": "gateway_configurations_company_id_companies_id_fk",
           "tableFrom": "gateway_configurations",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -720,12 +694,8 @@
           "name": "manager_profiles_user_id_users_id_fk",
           "tableFrom": "manager_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -735,9 +705,7 @@
         "manager_profiles_cpf_unique": {
           "name": "manager_profiles_cpf_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "cpf"
-          ]
+          "columns": ["cpf"]
         }
       },
       "policies": {},
@@ -819,12 +787,8 @@
           "name": "message_templates_company_id_companies_id_fk",
           "tableFrom": "message_templates",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -902,12 +866,8 @@
           "name": "notification_logs_company_id_companies_id_fk",
           "tableFrom": "notification_logs",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -915,12 +875,8 @@
           "name": "notification_logs_user_id_users_id_fk",
           "tableFrom": "notification_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1016,12 +972,8 @@
           "name": "notification_rules_company_id_companies_id_fk",
           "tableFrom": "notification_rules",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1147,12 +1099,8 @@
           "name": "other_settings_company_id_companies_id_fk",
           "tableFrom": "other_settings",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1283,12 +1231,8 @@
           "name": "pastor_profiles_user_id_users_id_fk",
           "tableFrom": "pastor_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1296,12 +1240,8 @@
           "name": "pastor_profiles_supervisor_id_users_id_fk",
           "tableFrom": "pastor_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "supervisor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supervisor_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1311,9 +1251,7 @@
         "pastor_profiles_cpf_unique": {
           "name": "pastor_profiles_cpf_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "cpf"
-          ]
+          "columns": ["cpf"]
         }
       },
       "policies": {},
@@ -1388,12 +1326,8 @@
           "name": "regions_company_id_companies_id_fk",
           "tableFrom": "regions",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1433,12 +1367,8 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1569,12 +1499,8 @@
           "name": "supervisor_profiles_user_id_users_id_fk",
           "tableFrom": "supervisor_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1582,12 +1508,8 @@
           "name": "supervisor_profiles_manager_id_users_id_fk",
           "tableFrom": "supervisor_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "manager_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["manager_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1595,12 +1517,8 @@
           "name": "supervisor_profiles_region_id_regions_id_fk",
           "tableFrom": "supervisor_profiles",
           "tableTo": "regions",
-          "columnsFrom": [
-            "region_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["region_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1610,9 +1528,7 @@
         "supervisor_profiles_cpf_unique": {
           "name": "supervisor_profiles_cpf_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "cpf"
-          ]
+          "columns": ["cpf"]
         }
       },
       "policies": {},
@@ -1712,12 +1628,8 @@
           "name": "transactions_company_id_companies_id_fk",
           "tableFrom": "transactions",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1725,12 +1637,8 @@
           "name": "transactions_contributor_id_users_id_fk",
           "tableFrom": "transactions",
           "tableTo": "users",
-          "columnsFrom": [
-            "contributor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["contributor_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1738,12 +1646,8 @@
           "name": "transactions_origin_church_id_users_id_fk",
           "tableFrom": "transactions",
           "tableTo": "users",
-          "columnsFrom": [
-            "origin_church_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["origin_church_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1809,12 +1713,8 @@
           "name": "user_action_logs_user_id_users_id_fk",
           "tableFrom": "user_action_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1863,12 +1763,8 @@
           "name": "user_notification_settings_user_id_users_id_fk",
           "tableFrom": "user_notification_settings",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1876,10 +1772,7 @@
       "compositePrimaryKeys": {
         "user_notification_settings_user_id_notification_type_pk": {
           "name": "user_notification_settings_user_id_notification_type_pk",
-          "columns": [
-            "user_id",
-            "notification_type"
-          ]
+          "columns": ["user_id", "notification_type"]
         }
       },
       "uniqueConstraints": {},
@@ -1995,12 +1888,8 @@
           "name": "users_company_id_companies_id_fk",
           "tableFrom": "users",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2010,9 +1899,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -2083,12 +1970,8 @@
           "name": "webhooks_company_id_companies_id_fk",
           "tableFrom": "webhooks",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2104,76 +1987,42 @@
     "public.api_key_status": {
       "name": "api_key_status",
       "schema": "public",
-      "values": [
-        "active",
-        "inactive"
-      ]
+      "values": ["active", "inactive"]
     },
     "public.notification_event_trigger": {
       "name": "notification_event_trigger",
       "schema": "public",
-      "values": [
-        "user_registered",
-        "payment_received",
-        "payment_due_reminder",
-        "payment_overdue"
-      ]
+      "values": ["user_registered", "payment_received", "payment_due_reminder", "payment_overdue"]
     },
     "public.notification_type": {
       "name": "notification_type",
       "schema": "public",
-      "values": [
-        "payment_notifications",
-        "due_date_reminders",
-        "network_reports"
-      ]
+      "values": ["payment_notifications", "due_date_reminders", "network_reports"]
     },
     "public.payment_method": {
       "name": "payment_method",
       "schema": "public",
-      "values": [
-        "pix",
-        "credit_card",
-        "boleto"
-      ]
+      "values": ["pix", "credit_card", "boleto"]
     },
     "public.permission_level": {
       "name": "permission_level",
       "schema": "public",
-      "values": [
-        "admin",
-        "superadmin"
-      ]
+      "values": ["admin", "superadmin"]
     },
     "public.transaction_status": {
       "name": "transaction_status",
       "schema": "public",
-      "values": [
-        "approved",
-        "pending",
-        "refused",
-        "refunded"
-      ]
+      "values": ["approved", "pending", "refused", "refunded"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "admin",
-        "manager",
-        "supervisor",
-        "pastor",
-        "church_account"
-      ]
+      "values": ["admin", "manager", "supervisor", "pastor", "church_account"]
     },
     "public.user_status": {
       "name": "user_status",
       "schema": "public",
-      "values": [
-        "active",
-        "inactive",
-        "pending_approval"
-      ]
+      "values": ["active", "inactive", "pending_approval"]
     },
     "public.webhook_event": {
       "name": "webhook_event",

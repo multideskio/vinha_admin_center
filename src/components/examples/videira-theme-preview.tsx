@@ -84,19 +84,13 @@ export function VideiraThemePreview() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
           {/* Primary - Blue */}
-          <Button className="bg-primary hover:bg-primary/90">
-            Ação Principal (Blue)
-          </Button>
+          <Button className="bg-primary hover:bg-primary/90">Ação Principal (Blue)</Button>
 
           {/* Secondary - Purple */}
-          <Button className="bg-secondary hover:bg-secondary/90">
-            Ação Secundária (Purple)
-          </Button>
+          <Button className="bg-secondary hover:bg-secondary/90">Ação Secundária (Purple)</Button>
 
           {/* Accent - Cyan */}
-          <Button className="bg-accent hover:bg-accent/90">
-            Destaque (Cyan)
-          </Button>
+          <Button className="bg-accent hover:bg-accent/90">Destaque (Cyan)</Button>
 
           {/* Com Gradiente */}
           <Button className="videira-gradient hover:opacity-90 text-white">
@@ -104,7 +98,10 @@ export function VideiraThemePreview() {
           </Button>
 
           {/* Outline com cor */}
-          <Button variant="outline" className="border-videira-blue text-videira-blue hover:bg-videira-blue/10">
+          <Button
+            variant="outline"
+            className="border-videira-blue text-videira-blue hover:bg-videira-blue/10"
+          >
             Outline Blue
           </Button>
         </CardContent>
@@ -230,4 +227,3 @@ export function VideiraThemePreview() {
     </div>
   )
 }
-

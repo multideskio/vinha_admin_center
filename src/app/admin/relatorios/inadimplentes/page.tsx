@@ -130,7 +130,10 @@ export default function InadimplentesPage() {
         d.lastPayment || 'Nunca',
         d.daysLate,
       ])
-      const csv = [headers.join(','), ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(','))].join('\n')
+      const csv = [
+        headers.join(','),
+        ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(',')),
+      ].join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -146,7 +149,11 @@ export default function InadimplentesPage() {
         variant: 'success',
       })
     } catch (e) {
-      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o CSV.', variant: 'destructive' })
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível gerar o CSV.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -185,13 +192,13 @@ export default function InadimplentesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/relatorios">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -209,7 +216,7 @@ export default function InadimplentesPage() {
                 Pastores e igrejas que não contribuíram nos últimos 3 meses
               </p>
             </div>
-            <Button 
+            <Button
               onClick={handleExportCSV}
               className="bg-white text-destructive hover:bg-white/90 shadow-lg font-semibold gap-2"
             >
@@ -289,9 +296,7 @@ export default function InadimplentesPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Lista Completa</CardTitle>
-              <CardDescription>
-                {pagination.total} inadimplentes encontrados
-              </CardDescription>
+              <CardDescription>{pagination.total} inadimplentes encontrados</CardDescription>
             </div>
             <Badge variant="destructive" className="text-lg px-4 py-2">
               {pagination.total}
@@ -363,8 +368,8 @@ export default function InadimplentesPage() {
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-muted-foreground">
                   Mostrando {(pagination.page - 1) * pagination.limit + 1} a{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}{' '}
-                  resultados
+                  {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
+                  {pagination.total} resultados
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -413,4 +418,3 @@ export default function InadimplentesPage() {
     </div>
   )
 }
-

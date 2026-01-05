@@ -10,11 +10,7 @@ export async function getCompanySettings() {
   }
 
   try {
-    const [company] = await db
-      .select()
-      .from(companies)
-      .where(eq(companies.id, COMPANY_ID))
-      .limit(1)
+    const [company] = await db.select().from(companies).where(eq(companies.id, COMPANY_ID)).limit(1)
 
     return company || null
   } catch (error) {

@@ -3,6 +3,7 @@
 ## Visão Geral
 
 Sistema completo de envio de emails com AWS SES, incluindo:
+
 - ✅ Logs detalhados com email completo
 - ✅ Blacklist automática de emails com problema
 - ✅ Verificação antes do envio
@@ -13,7 +14,9 @@ Sistema completo de envio de emails com AWS SES, incluindo:
 ### Tabelas do Banco de Dados
 
 #### notification_logs
+
 Logs completos de todas as notificações enviadas:
+
 ```sql
 - id: UUID
 - companyId: UUID
@@ -30,7 +33,9 @@ Logs completos de todas as notificações enviadas:
 ```
 
 #### email_blacklist
+
 Emails bloqueados automaticamente:
+
 ```sql
 - id: UUID
 - companyId: UUID
@@ -47,7 +52,9 @@ Emails bloqueados automaticamente:
 ## Fluxo de Envio
 
 ### 1. Verificação de Blacklist
+
 Antes de enviar, o sistema verifica se o email está na blacklist:
+
 ```typescript
 const [blacklisted] = await db
   .select()
@@ -56,27 +63,31 @@ const [blacklisted] = await db
     and(
       eq(emailBlacklist.companyId, COMPANY_ID),
       eq(emailBlacklist.email, to),
-      eq(emailBlacklist.isActive, true)
-    )
+      eq(emailBlacklist.isActive, true),
+    ),
   )
 ```
 
 ### 2. Envio via SES
+
 Se não estiver bloqueado, envia via AWS SES:
+
 ```typescript
 const command = new SendEmailCommand({
   Source: fromAddress,
   Destination: { ToAddresses: [to] },
   Message: {
     Subject: { Data: subject },
-    Body: { Html: { Data: html } }
-  }
+    Body: { Html: { Data: html } },
+  },
 })
 await sesClient.send(command)
 ```
 
 ### 3. Log Completo
+
 Registra todos os detalhes do envio:
+
 ```typescript
 await db.insert(notificationLogs).values({
   companyId: COMPANY_ID,
@@ -88,12 +99,14 @@ await db.insert(notificationLogs).values({
   subject: subject,
   messageContent: html,
   errorMessage: null,
-  errorCode: null
+  errorCode: null,
 })
 ```
 
 ### 4. Tratamento de Erros
+
 Se falhar, adiciona à blacklist se for erro permanente:
+
 ```typescript
 const errorCode = error.name || error.Code
 const errorMessage = error.message
@@ -106,6 +119,7 @@ if (shouldBlacklist(errorCode)) {
 ## Erros que Acionam Blacklist
 
 ### Erros Permanentes (Blacklist Automática)
+
 - `MessageRejected` - Email rejeitado pelo servidor
 - `MailFromDomainNotVerified` - Domínio não verificado
 - `InvalidParameterValue` - Email inválido
@@ -114,6 +128,7 @@ if (shouldBlacklist(errorCode)) {
 - Qualquer erro com `Complaint` - Usuário marcou como spam
 
 ### Erros Temporários (Não Blacklist)
+
 - `Throttling` - Rate limit
 - `ServiceUnavailable` - Serviço indisponível
 - `RequestTimeout` - Timeout
@@ -121,7 +136,9 @@ if (shouldBlacklist(errorCode)) {
 ## API de Gerenciamento
 
 ### GET /api/v1/email-blacklist
+
 Lista emails na blacklist:
+
 ```bash
 # Todos
 GET /api/v1/email-blacklist
@@ -134,6 +151,7 @@ GET /api/v1/email-blacklist?active=false
 ```
 
 Resposta:
+
 ```json
 {
   "blacklist": [
@@ -153,12 +171,15 @@ Resposta:
 ```
 
 ### DELETE /api/v1/email-blacklist?email=usuario@exemplo.com
+
 Remove email da blacklist (marca como inativo):
+
 ```bash
 DELETE /api/v1/email-blacklist?email=usuario@exemplo.com
 ```
 
 Resposta:
+
 ```json
 {
   "success": true
@@ -168,6 +189,7 @@ Resposta:
 ## Uso nos Serviços
 
 ### email.ts (Simples)
+
 ```typescript
 import { sendEmail } from '@/lib/email'
 
@@ -176,11 +198,12 @@ await sendEmail({
   subject: 'Bem-vindo',
   html: '<h1>Olá!</h1>',
   userId: 'user-uuid',
-  notificationType: 'welcome'
+  notificationType: 'welcome',
 })
 ```
 
 ### notifications.ts (Completo)
+
 ```typescript
 import { NotificationService } from '@/lib/notifications'
 
@@ -189,7 +212,7 @@ const notificationService = new NotificationService({
   sesRegion: 'us-east-1',
   sesAccessKeyId: 'xxx',
   sesSecretAccessKey: 'xxx',
-  fromEmail: 'contato@igreja.com'
+  fromEmail: 'contato@igreja.com',
 })
 
 await notificationService.sendWelcome(
@@ -197,30 +220,31 @@ await notificationService.sendWelcome(
   'João Silva',
   'Igreja Vinha',
   undefined, // phone
-  'joao@exemplo.com'
+  'joao@exemplo.com',
 )
 ```
 
 ## Monitoramento
 
 ### Consultar Logs
+
 ```sql
 -- Emails falhados nas últimas 24h
-SELECT 
+SELECT
   recipient,
   subject,
   errorCode,
   errorMessage,
   sentAt
 FROM notification_logs
-WHERE 
+WHERE
   channel = 'email'
   AND status = 'failed'
   AND sentAt > NOW() - INTERVAL '24 hours'
 ORDER BY sentAt DESC;
 
 -- Taxa de sucesso por tipo
-SELECT 
+SELECT
   notificationType,
   COUNT(*) as total,
   SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as success,
@@ -231,9 +255,10 @@ GROUP BY notificationType;
 ```
 
 ### Consultar Blacklist
+
 ```sql
 -- Emails bloqueados ativos
-SELECT 
+SELECT
   email,
   reason,
   errorCode,
@@ -245,7 +270,7 @@ WHERE isActive = true
 ORDER BY lastAttemptAt DESC;
 
 -- Emails com mais tentativas
-SELECT 
+SELECT
   email,
   attemptCount,
   reason,
@@ -278,6 +303,7 @@ npm run db:push
 ## Configuração AWS SES
 
 ### 1. Verificar Domínio
+
 ```bash
 # No console AWS SES
 1. Verified identities > Create identity
@@ -286,6 +312,7 @@ npm run db:push
 ```
 
 ### 2. Sair do Sandbox
+
 ```bash
 # Solicitar aumento de limite
 1. Account dashboard > Request production access
@@ -294,6 +321,7 @@ npm run db:push
 ```
 
 ### 3. Configurar SNS (Opcional)
+
 ```bash
 # Para receber notificações de bounce/complaint
 1. SNS > Create topic > email-bounces
@@ -305,18 +333,21 @@ npm run db:push
 ## Troubleshooting
 
 ### Email não está sendo enviado
+
 1. Verificar se está na blacklist
 2. Verificar credenciais SES
 3. Verificar se domínio está verificado
 4. Verificar logs em notification_logs
 
 ### Email vai para spam
+
 1. Configurar SPF, DKIM, DMARC
 2. Usar domínio verificado
 3. Evitar palavras de spam
 4. Incluir link de unsubscribe
 
 ### Taxa de bounce alta
+
 1. Validar emails antes de enviar
 2. Limpar lista regularmente
 3. Usar double opt-in

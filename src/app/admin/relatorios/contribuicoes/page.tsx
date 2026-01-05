@@ -2,7 +2,15 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { TrendingUp, ChevronLeft, Download, RefreshCw, Calendar, Award, DollarSign } from 'lucide-react'
+import {
+  TrendingUp,
+  ChevronLeft,
+  Download,
+  RefreshCw,
+  Calendar,
+  Award,
+  DollarSign,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -41,7 +49,10 @@ export default function RelatorioContribuicoesPage() {
   const [summary, setSummary] = React.useState<any>(null)
   const [period, setPeriod] = React.useState({ from: '', to: '' })
   const [isLoading, setIsLoading] = React.useState(true)
-  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({
     from: undefined,
     to: undefined,
   })
@@ -85,7 +96,7 @@ export default function RelatorioContribuicoesPage() {
     (range: { from: Date | undefined; to: Date | undefined }) => {
       setDateRange(range)
     },
-    []
+    [],
   )
 
   const handleExportCSV = () => {
@@ -99,7 +110,14 @@ export default function RelatorioContribuicoesPage() {
     }
 
     try {
-      const headers = ['Nome', 'Tipo', 'Info', 'Total Contribuído', 'Nº Contribuições', 'Última Contribuição']
+      const headers = [
+        'Nome',
+        'Tipo',
+        'Info',
+        'Total Contribuído',
+        'Nº Contribuições',
+        'Última Contribuição',
+      ]
       const rows = contributors.map((c) => [
         c.name,
         c.type,
@@ -108,12 +126,18 @@ export default function RelatorioContribuicoesPage() {
         c.contributionCount,
         c.lastContribution,
       ])
-      const csv = [headers.join(','), ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(','))].join('\n')
+      const csv = [
+        headers.join(','),
+        ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(',')),
+      ].join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `relatorio-contribuicoes-${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute(
+        'download',
+        `relatorio-contribuicoes-${new Date().toISOString().slice(0, 10)}.csv`,
+      )
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -124,7 +148,11 @@ export default function RelatorioContribuicoesPage() {
         variant: 'success',
       })
     } catch (e) {
-      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o CSV.', variant: 'destructive' })
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível gerar o CSV.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -163,13 +191,13 @@ export default function RelatorioContribuicoesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/relatorios">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -190,7 +218,7 @@ export default function RelatorioContribuicoesPage() {
                 Período: {period.from} até {period.to}
               </p>
             </div>
-            <Button 
+            <Button
               onClick={handleExportCSV}
               className="bg-white text-videira-cyan hover:bg-white/90 shadow-lg font-semibold gap-2"
             >
@@ -249,7 +277,7 @@ export default function RelatorioContribuicoesPage() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                  summary.totalAmount
+                  summary.totalAmount,
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">No período</p>
@@ -286,7 +314,7 @@ export default function RelatorioContribuicoesPage() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                  summary.averagePerContributor
+                  summary.averagePerContributor,
                 )}
               </div>
             </CardContent>
@@ -307,7 +335,10 @@ export default function RelatorioContribuicoesPage() {
           <CardContent>
             <div className="space-y-4">
               {topContributors.map((contributor, index) => (
-                <div key={contributor.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div
+                  key={contributor.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
                   <div className="flex items-center gap-4">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
                       {index + 1}
@@ -315,17 +346,21 @@ export default function RelatorioContribuicoesPage() {
                     <div>
                       <p className="font-medium">{contributor.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {roleMap[contributor.type]} {contributor.extraInfo && `• ${contributor.extraInfo}`}
+                        {roleMap[contributor.type]}{' '}
+                        {contributor.extraInfo && `• ${contributor.extraInfo}`}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        contributor.totalAmount
-                      )}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(contributor.totalAmount)}
                     </p>
-                    <p className="text-xs text-muted-foreground">{contributor.contributionCount} contrib.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {contributor.contributionCount} contrib.
+                    </p>
                   </div>
                 </div>
               ))}
@@ -345,15 +380,19 @@ export default function RelatorioContribuicoesPage() {
             <CardContent>
               <div className="space-y-3">
                 {summary.byMethod.map((item: any) => (
-                  <div key={item.method} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div
+                    key={item.method}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div>
                       <p className="font-medium">{methodMap[item.method] || item.method}</p>
                       <p className="text-xs text-muted-foreground">{item.count} transações</p>
                     </div>
                     <p className="text-lg font-bold">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        item.total
-                      )}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(item.total)}
                     </p>
                   </div>
                 ))}
@@ -369,15 +408,19 @@ export default function RelatorioContribuicoesPage() {
             <CardContent>
               <div className="space-y-3">
                 {summary.byContributorType.map((item: any) => (
-                  <div key={item.type} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div
+                    key={item.type}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div>
                       <p className="font-medium">{roleMap[item.type] || item.type}</p>
                       <p className="text-xs text-muted-foreground">{item.count} transações</p>
                     </div>
                     <p className="text-lg font-bold">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        item.total
-                      )}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(item.total)}
                     </p>
                   </div>
                 ))}
@@ -397,7 +440,9 @@ export default function RelatorioContribuicoesPage() {
           {contributors.length === 0 ? (
             <div className="text-center py-12">
               <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">Nenhuma contribuição encontrada</p>
+              <p className="text-lg font-medium text-muted-foreground">
+                Nenhuma contribuição encontrada
+              </p>
             </div>
           ) : (
             <div className="rounded-md border overflow-auto max-h-[600px]">
@@ -423,12 +468,15 @@ export default function RelatorioContribuicoesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{roleMap[contributor.type] || contributor.type}</Badge>
+                        <Badge variant="outline">
+                          {roleMap[contributor.type] || contributor.type}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold text-green-600 dark:text-green-400">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                          contributor.totalAmount
-                        )}
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(contributor.totalAmount)}
                       </TableCell>
                       <TableCell className="text-center">{contributor.contributionCount}</TableCell>
                       <TableCell className="text-sm">{contributor.lastContribution}</TableCell>
@@ -443,4 +491,3 @@ export default function RelatorioContribuicoesPage() {
     </div>
   )
 }
-

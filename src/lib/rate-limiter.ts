@@ -17,18 +17,18 @@ interface RateLimitOptions {
 
 export function rateLimit(
   identifier: string,
-  options: RateLimitOptions
+  options: RateLimitOptions,
 ): { allowed: boolean; remaining: number; resetAt: number } {
   const now = Date.now()
   const key = identifier
-  
+
   const entry = rateLimitStore.get(key)
-  
+
   // Se não existe entrada ou já expirou, cria nova
   if (!entry || now > entry.resetAt) {
     const resetAt = now + options.windowMs
     rateLimitStore.set(key, { count: 1, resetAt })
-    
+
     // Cleanup de entradas antigas (garbage collection simples)
     if (rateLimitStore.size > 10000) {
       for (const [k, v] of rateLimitStore.entries()) {
@@ -37,17 +37,17 @@ export function rateLimit(
         }
       }
     }
-    
+
     return {
       allowed: true,
       remaining: options.maxAttempts - 1,
       resetAt,
     }
   }
-  
+
   // Incrementa contador
   entry.count++
-  
+
   if (entry.count > options.maxAttempts) {
     return {
       allowed: false,
@@ -55,7 +55,7 @@ export function rateLimit(
       resetAt: entry.resetAt,
     }
   }
-  
+
   return {
     allowed: true,
     remaining: options.maxAttempts - entry.count,
@@ -79,17 +79,14 @@ export const rateLimitPresets = {
 export function getClientIP(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
   const realIP = request.headers.get('x-real-ip')
-  
+
   if (forwarded) {
     return forwarded.split(',')[0]?.trim() || 'unknown'
   }
-  
+
   if (realIP) {
     return realIP
   }
-  
+
   return 'unknown'
 }
-
-
-

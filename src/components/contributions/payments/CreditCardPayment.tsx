@@ -11,13 +11,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CreditCardPaymentProps, CardData } from '../types'
-import { formatCardNumber, formatExpiryDate, formatCVC, formatCurrency, isValidCardData } from '../utils'
+import {
+  formatCardNumber,
+  formatExpiryDate,
+  formatCVC,
+  formatCurrency,
+  isValidCardData,
+} from '../utils'
 
 export default function CreditCardPayment({
   amount,
   onSubmit,
   onBack,
-  isLoading = false
+  isLoading = false,
 }: CreditCardPaymentProps) {
   const [cardState, setCardState] = useState({
     number: '',
@@ -63,7 +69,7 @@ export default function CreditCardPayment({
     number: cardState.number,
     holder: cardState.name,
     expirationDate: cardState.expiry,
-    securityCode: cardState.cvc
+    securityCode: cardState.cvc,
   })
 
   return (
@@ -79,7 +85,8 @@ export default function CreditCardPayment({
           </h3>
         </div>
         <p className="text-sm text-muted-foreground font-medium">
-          Preencha os dados do seu cartão de crédito • <span className="font-bold text-videira-cyan">Até 12x sem juros</span>
+          Preencha os dados do seu cartão de crédito •{' '}
+          <span className="font-bold text-videira-cyan">Até 12x sem juros</span>
         </p>
       </div>
 
@@ -106,7 +113,9 @@ export default function CreditCardPayment({
           <div className="space-y-3">
             {/* Número do Cartão */}
             <div>
-              <Label className="text-xs font-bold text-muted-foreground mb-2 block">Número do Cartão</Label>
+              <Label className="text-xs font-bold text-muted-foreground mb-2 block">
+                Número do Cartão
+              </Label>
               <Input
                 type="text"
                 name="number"
@@ -121,7 +130,9 @@ export default function CreditCardPayment({
 
             {/* Nome no Cartão */}
             <div>
-              <Label className="text-xs font-bold text-muted-foreground mb-2 block">Nome no Cartão</Label>
+              <Label className="text-xs font-bold text-muted-foreground mb-2 block">
+                Nome no Cartão
+              </Label>
               <Input
                 type="text"
                 name="name"
@@ -137,7 +148,9 @@ export default function CreditCardPayment({
             {/* Validade e CVC */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-bold text-muted-foreground mb-2 block">Validade</Label>
+                <Label className="text-xs font-bold text-muted-foreground mb-2 block">
+                  Validade
+                </Label>
                 <Input
                   type="text"
                   name="expiry"
@@ -167,16 +180,19 @@ export default function CreditCardPayment({
 
           {/* Seletor de parcelas Premium */}
           <div className="relative overflow-hidden rounded-2xl border-2 border-videira-cyan/30 bg-gradient-to-br from-videira-cyan/5 to-videira-blue/5 p-4">
-            <Label className="text-sm font-bold text-videira-cyan mb-2 block">💳 Parcelamento</Label>
+            <Label className="text-sm font-bold text-videira-cyan mb-2 block">
+              💳 Parcelamento
+            </Label>
             <select
               value={installments}
-              onChange={e => setInstallments(Number(e.target.value))}
+              onChange={(e) => setInstallments(Number(e.target.value))}
               className="w-full rounded-lg px-4 py-3 border-2 border-muted focus:border-videira-cyan font-semibold bg-white dark:bg-black transition-all"
               disabled={isLoading}
             >
               {[...Array(12)].map((_, i) => (
                 <option key={i + 1} value={i + 1}>
-                  {`${i + 1}x de R$ ${(amount / (i + 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} {i === 0 ? '(à vista)' : ''}
+                  {`${i + 1}x de R$ ${(amount / (i + 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}{' '}
+                  {i === 0 ? '(à vista)' : ''}
                 </option>
               ))}
             </select>
@@ -195,7 +211,9 @@ export default function CreditCardPayment({
                     {formatCurrency(amount)}
                   </p>
                   <p className="text-xs text-green-700 dark:text-green-300 mt-2 font-medium">
-                    {installments}x de R$ {(amount / installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} sem juros
+                    {installments}x de R${' '}
+                    {(amount / installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}{' '}
+                    sem juros
                   </p>
                 </div>
                 <div className="text-right">
@@ -203,9 +221,7 @@ export default function CreditCardPayment({
                     <p className="text-xs font-bold text-green-600 dark:text-green-400">
                       ✓ Sem juros
                     </p>
-                    <p className="text-xs text-green-600 dark:text-green-400">
-                      até 12x
-                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400">até 12x</p>
                   </div>
                 </div>
               </div>
@@ -227,7 +243,11 @@ export default function CreditCardPayment({
             ) : (
               <>
                 <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Pagar {formatCurrency(amount)}
               </>
@@ -240,10 +260,10 @@ export default function CreditCardPayment({
             <div className="relative p-3">
               <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-1">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path 
-                    fillRule="evenodd" 
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" 
-                    clipRule="evenodd" 
+                  <path
+                    fillRule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z"
+                    clipRule="evenodd"
                   />
                 </svg>
                 <span className="text-sm font-bold">Transação 100% Segura</span>
@@ -265,7 +285,12 @@ export default function CreditCardPayment({
           className="flex items-center gap-2 border-2 hover:border-videira-cyan"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           Voltar
         </Button>

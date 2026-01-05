@@ -1,58 +1,62 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 
 // Force recompilation - connect API
 const connectRequestSchema = z.object({
   apiUrl: z.string().url(),
   apiKey: z.string().min(1),
   instanceName: z.string().min(1),
-});
+})
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { apiUrl, apiKey, instanceName } = connectRequestSchema.parse(body);
+    const body = await request.json()
+    const { apiUrl, apiKey, instanceName } = connectRequestSchema.parse(body)
 
     // Remove trailing slash from apiUrl
-    const baseUrl = apiUrl.replace(/\/$/, '');
+    const baseUrl = apiUrl.replace(/\/$/, '')
 
     // First, check if instance exists, if not create it
     const instancesResponse = await fetch(`${baseUrl}/instance/fetchInstances`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': apiKey,
+        apikey: apiKey,
       },
-    });
+    })
 
     if (!instancesResponse.ok) {
       return NextResponse.json(
         { error: 'Erro ao verificar instâncias existentes' },
-        { status: instancesResponse.status }
-      );
+        { status: instancesResponse.status },
+      )
     }
 
-    const instances = await instancesResponse.json();
-    console.log('Connect - Instances response:', JSON.stringify(instances, null, 2));
-    
+    const instances = await instancesResponse.json()
+    console.log('Connect - Instances response:', JSON.stringify(instances, null, 2))
+
     // A estrutura pode variar, vamos verificar diferentes possibilidades
-    let existingInstance = null;
-    
+    let existingInstance = null
+
     if (Array.isArray(instances)) {
       // Tentar diferentes estruturas possíveis
-      existingInstance = instances.find((inst: {
-        instanceName?: string
-        name?: string
-        instance?: {
+      existingInstance = instances.find(
+        (inst: {
           instanceName?: string
           name?: string
-        }
-      }) => {
-        return inst.instanceName === instanceName || 
-               inst.instance?.instanceName === instanceName ||
-               inst.name === instanceName ||
-               inst.instance?.name === instanceName;
-      });
+          instance?: {
+            instanceName?: string
+            name?: string
+          }
+        }) => {
+          return (
+            inst.instanceName === instanceName ||
+            inst.instance?.instanceName === instanceName ||
+            inst.name === instanceName ||
+            inst.instance?.name === instanceName
+          )
+        },
+      )
     }
 
     // Create instance if it doesn't exist
@@ -61,20 +65,20 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': apiKey,
+          apikey: apiKey,
         },
         body: JSON.stringify({
           instanceName: instanceName,
           integration: 'WHATSAPP-BAILEYS',
         }),
-      });
+      })
 
       if (!createResponse.ok) {
-        const errorData = await createResponse.json().catch(() => ({}));
+        const errorData = await createResponse.json().catch(() => ({}))
         return NextResponse.json(
           { error: 'Erro ao criar instância', details: errorData },
-          { status: createResponse.status }
-        );
+          { status: createResponse.status },
+        )
       }
     }
 
@@ -83,19 +87,19 @@ export async function POST(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': apiKey,
+        apikey: apiKey,
       },
-    });
+    })
 
     if (!connectResponse.ok) {
-      const errorData = await connectResponse.json().catch(() => ({}));
+      const errorData = await connectResponse.json().catch(() => ({}))
       return NextResponse.json(
         { error: 'Erro ao conectar instância', details: errorData },
-        { status: connectResponse.status }
-      );
+        { status: connectResponse.status },
+      )
     }
 
-    const connectData = await connectResponse.json();
+    const connectData = await connectResponse.json()
 
     // Check if QR code is available
     if (connectData.base64) {
@@ -103,8 +107,8 @@ export async function POST(request: NextRequest) {
         success: true,
         qrCode: connectData.base64,
         message: 'QR Code gerado com sucesso. Escaneie com seu WhatsApp.',
-        instanceName: instanceName
-      });
+        instanceName: instanceName,
+      })
     }
 
     // If no QR code, check connection status
@@ -117,30 +121,23 @@ export async function POST(request: NextRequest) {
         instance: {
           profileName: connectData.instance.profileName,
           profilePictureUrl: connectData.instance.profilePictureUrl,
-          number: connectData.instance.owner
-        }
-      });
+          number: connectData.instance.owner,
+        },
+      })
     }
 
     return NextResponse.json({
       success: false,
       message: 'Não foi possível obter QR Code. Tente novamente.',
-      details: connectData
-    });
-
+      details: connectData,
+    })
   } catch (error) {
-    console.error('Erro ao conectar:', error);
-    
+    console.error('Erro ao conectar:', error)
+
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 })
     }
 
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

@@ -44,29 +44,26 @@ export default function MyPage() {
     console.error('Contribution error:', error)
   }
 
-  return (
-    <ContributionForm
-      userRole="supervisor"
-      onSuccess={handleSuccess}
-      onError={handleError}
-    />
-  )
+  return <ContributionForm userRole="supervisor" onSuccess={handleSuccess} onError={handleError} />
 }
 ```
 
 ## 🎯 Funcionalidades
 
 ### ✅ Métodos de Pagamento
+
 - **PIX**: QR Code + chave copiável + sincronização automática
 - **Cartão de Crédito**: Visualização 3D + validação em tempo real
 - **Boleto Bancário**: Geração PDF + código de barras
 
 ### ✅ Sincronização Inteligente
+
 - **Automática**: Verificação em background com backoff exponencial
 - **Manual**: Botão para verificação sob demanda
 - **Resiliente**: 25 tentativas com tratamento de erros
 
 ### ✅ UX Otimizada
+
 - **Indicador de Progresso**: 3 passos visuais
 - **Countdown PIX**: Timer de 3 minutos com barra de progresso
 - **Responsivo**: Funciona em desktop, tablet e mobile
@@ -75,12 +72,14 @@ export default function MyPage() {
 ## 🔧 Configuração
 
 ### Dependências Necessárias
+
 - `react-hook-form` + `@hookform/resolvers`
 - `zod` para validação
 - `react-credit-cards-2` para visualização de cartão
 - `lucide-react` para ícones
 
 ### APIs Necessárias
+
 - `POST /api/v1/transacoes` - Criar transação
 - `GET /api/v1/transacoes/:id` - Consultar status
 
@@ -114,6 +113,7 @@ npm run test:e2e
 ## 📝 Changelog
 
 ### v1.0.0 (2025-10-29)
+
 - ✅ Componentização completa
 - ✅ Migração de todas as páginas
 - ✅ Hooks customizados implementados

@@ -30,7 +30,8 @@ const reportCards = [
   },
   {
     title: 'Relatório Geral',
-    description: 'Gere relatórios personalizados com filtros de período, método de pagamento e status',
+    description:
+      'Gere relatórios personalizados com filtros de período, método de pagamento e status',
     icon: FileText,
     href: '/admin/relatorios/geral',
     color: 'text-blue-600 dark:text-blue-400',
@@ -103,7 +104,7 @@ export default function RelatoriosPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -118,7 +119,7 @@ export default function RelatoriosPage() {
                 {reportCards.length} tipos de relatórios disponíveis
               </p>
             </div>
-            <Button 
+            <Button
               asChild
               className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2"
             >
@@ -136,57 +137,70 @@ export default function RelatoriosPage() {
         {reportCards.map((report, index) => {
           const borderColors = [
             'border-t-videira-cyan',
-            'border-t-videira-blue', 
+            'border-t-videira-blue',
             'border-t-videira-purple',
             'border-t-videira-cyan',
             'border-t-videira-blue',
             'border-t-videira-purple',
           ]
-          
+
           return (
             <Link key={report.href} href={report.href}>
-              <Card className={cn(
-                "h-full hover:shadow-2xl transition-all duration-300 hover:scale-[1.05] cursor-pointer group relative overflow-hidden",
-                "border-t-4",
-                borderColors[index]
-              )}>
+              <Card
+                className={cn(
+                  'h-full hover:shadow-2xl transition-all duration-300 hover:scale-[1.05] cursor-pointer group relative overflow-hidden',
+                  'border-t-4',
+                  borderColors[index],
+                )}
+              >
                 {/* Fundo com gradiente sutil */}
-                <div className={cn(
-                  "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none",
-                  index % 3 === 0 && "bg-gradient-to-br from-videira-cyan/5 to-transparent",
-                  index % 3 === 1 && "bg-gradient-to-br from-videira-blue/5 to-transparent",
-                  index % 3 === 2 && "bg-gradient-to-br from-videira-purple/5 to-transparent"
-                )} />
-                
+                <div
+                  className={cn(
+                    'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none',
+                    index % 3 === 0 && 'bg-gradient-to-br from-videira-cyan/5 to-transparent',
+                    index % 3 === 1 && 'bg-gradient-to-br from-videira-blue/5 to-transparent',
+                    index % 3 === 2 && 'bg-gradient-to-br from-videira-purple/5 to-transparent',
+                  )}
+                />
+
                 <CardHeader className="relative z-10">
                   <div className="flex items-start justify-between mb-4">
-                    <div className={cn(
-                      "p-4 rounded-2xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3",
-                      report.bgColor,
-                      "ring-2 ring-offset-2 ring-offset-background",
-                      index % 3 === 0 && "ring-videira-cyan/30",
-                      index % 3 === 1 && "ring-videira-blue/30",
-                      index % 3 === 2 && "ring-videira-purple/30"
-                    )}>
+                    <div
+                      className={cn(
+                        'p-4 rounded-2xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-3',
+                        report.bgColor,
+                        'ring-2 ring-offset-2 ring-offset-background',
+                        index % 3 === 0 && 'ring-videira-cyan/30',
+                        index % 3 === 1 && 'ring-videira-blue/30',
+                        index % 3 === 2 && 'ring-videira-purple/30',
+                      )}
+                    >
                       <report.icon className={`h-7 w-7 ${report.color}`} />
                     </div>
-                    {report.href === '/admin/relatorios/inadimplentes' && defaultersCount !== null ? (
-                      <Badge className={cn(
-                        "shadow-md",
-                        report.badgeVariant === 'destructive' ? "bg-destructive text-white" : ""
-                      )}>
+                    {report.href === '/admin/relatorios/inadimplentes' &&
+                    defaultersCount !== null ? (
+                      <Badge
+                        className={cn(
+                          'shadow-md',
+                          report.badgeVariant === 'destructive' ? 'bg-destructive text-white' : '',
+                        )}
+                      >
                         {defaultersCount} {defaultersCount === 1 ? 'inadimplente' : 'inadimplentes'}
                       </Badge>
                     ) : (
-                      <Badge variant={report.badgeVariant} className="shadow-md">{report.badge}</Badge>
+                      <Badge variant={report.badgeVariant} className="shadow-md">
+                        {report.badge}
+                      </Badge>
                     )}
                   </div>
-                  <CardTitle className={cn(
-                    "text-xl mb-2 transition-all duration-300",
-                    index % 3 === 0 && "group-hover:text-videira-cyan",
-                    index % 3 === 1 && "group-hover:text-videira-blue",
-                    index % 3 === 2 && "group-hover:text-videira-purple"
-                  )}>
+                  <CardTitle
+                    className={cn(
+                      'text-xl mb-2 transition-all duration-300',
+                      index % 3 === 0 && 'group-hover:text-videira-cyan',
+                      index % 3 === 1 && 'group-hover:text-videira-blue',
+                      index % 3 === 2 && 'group-hover:text-videira-purple',
+                    )}
+                  >
                     {report.title}
                   </CardTitle>
                   <CardDescription className="min-h-[40px] text-sm leading-relaxed">
@@ -194,13 +208,16 @@ export default function RelatoriosPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="relative z-10">
-                  <Button 
+                  <Button
                     className={cn(
-                      "w-full justify-between transition-all duration-300 shadow-md font-semibold",
-                      "bg-white dark:bg-background border-2",
-                      index % 3 === 0 && "border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white hover:shadow-lg",
-                      index % 3 === 1 && "border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white hover:shadow-lg",
-                      index % 3 === 2 && "border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white hover:shadow-lg"
+                      'w-full justify-between transition-all duration-300 shadow-md font-semibold',
+                      'bg-white dark:bg-background border-2',
+                      index % 3 === 0 &&
+                        'border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white hover:shadow-lg',
+                      index % 3 === 1 &&
+                        'border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white hover:shadow-lg',
+                      index % 3 === 2 &&
+                        'border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white hover:shadow-lg',
                     )}
                   >
                     <span className="font-semibold">Acessar Relatório</span>
@@ -228,25 +245,29 @@ export default function RelatoriosPage() {
           <div className="flex items-start gap-3">
             <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
             <p className="text-sm text-muted-foreground">
-              Use <span className="font-semibold text-foreground">filtros de data</span> para analisar períodos específicos e identificar tendências
+              Use <span className="font-semibold text-foreground">filtros de data</span> para
+              analisar períodos específicos e identificar tendências
             </p>
           </div>
           <div className="flex items-start gap-3">
             <div className="h-2 w-2 rounded-full bg-videira-blue mt-2 ring-2 ring-videira-blue/30" />
             <p className="text-sm text-muted-foreground">
-              Exporte relatórios em <span className="font-semibold text-foreground">CSV</span> para compartilhar com a equipe
+              Exporte relatórios em <span className="font-semibold text-foreground">CSV</span> para
+              compartilhar com a equipe
             </p>
           </div>
           <div className="flex items-start gap-3">
             <div className="h-2 w-2 rounded-full bg-videira-purple mt-2 ring-2 ring-videira-purple/30" />
             <p className="text-sm text-muted-foreground">
-              O relatório de <span className="font-semibold text-foreground">inadimplentes</span> é atualizado em tempo real
+              O relatório de <span className="font-semibold text-foreground">inadimplentes</span> é
+              atualizado em tempo real
             </p>
           </div>
           <div className="flex items-start gap-3">
             <div className="h-2 w-2 rounded-full bg-videira-cyan mt-2 ring-2 ring-videira-cyan/30" />
             <p className="text-sm text-muted-foreground">
-              Combine diferentes relatórios para uma <span className="font-semibold text-foreground">análise completa</span> da organização
+              Combine diferentes relatórios para uma{' '}
+              <span className="font-semibold text-foreground">análise completa</span> da organização
             </p>
           </div>
         </CardContent>

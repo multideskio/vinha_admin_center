@@ -17,7 +17,8 @@ export function S3ConfigWarning({ className }: S3ConfigWarningProps) {
       <AlertTriangle className="h-4 w-4" />
       <AlertDescription className="flex items-center justify-between">
         <span>
-          <strong>S3 não configurado.</strong> Configure as credenciais S3 para habilitar upload de arquivos.
+          <strong>S3 não configurado.</strong> Configure as credenciais S3 para habilitar upload de
+          arquivos.
         </span>
         <Button asChild size="sm" variant="outline">
           <Link href="/admin/configuracoes/s3">

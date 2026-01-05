@@ -11,7 +11,6 @@ import {
   ArrowRightLeft,
 } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -127,7 +126,7 @@ export default function TransacoesPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-          
+
           <div className="relative z-10 p-8">
             <div className="flex items-center justify-between">
               <div>
@@ -159,7 +158,11 @@ export default function TransacoesPage() {
               <div className="flex gap-2 w-full sm:w-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1 flex-1 border-2 hover:border-videira-cyan">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 flex-1 border-2 hover:border-videira-cyan"
+                    >
                       <ListFilter className="h-3.5 w-3.5" />
                       <span className="sr-only sm:not-sr-only">Filtro</span>
                     </Button>
@@ -178,7 +181,11 @@ export default function TransacoesPage() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="sm" variant="outline" className="gap-1 flex-1 border-2 hover:border-videira-cyan">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1 flex-1 border-2 hover:border-videira-cyan"
+                >
                   <Download className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only">Exportar</span>
                 </Button>
@@ -191,7 +198,9 @@ export default function TransacoesPage() {
                   <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
                     <TableHead className="font-semibold">Contribuinte</TableHead>
                     <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
-                    <TableHead className="hidden md:table-cell text-right font-semibold">Valor</TableHead>
+                    <TableHead className="hidden md:table-cell text-right font-semibold">
+                      Valor
+                    </TableHead>
                     <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
                     <TableHead className="hidden md:table-cell font-semibold">Data</TableHead>
                     <TableHead>
@@ -200,72 +209,68 @@ export default function TransacoesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-4 w-40" />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-4 w-48" />
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-4 w-20 ml-auto" />
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-4 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-8" />
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-40" />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Skeleton className="h-4 w-48" />
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Skeleton className="h-4 w-20 ml-auto" />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Skeleton className="h-6 w-24 rounded-full" />
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-8 w-8" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : paginatedTransactions.length > 0 ? (
+                    paginatedTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium">{transaction.contributor}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground">
+                          {transaction.church || 'N/A'}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-right">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(transaction.amount)}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                            {statusMap[transaction.status]?.text || transaction.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell>
+                          <Button size="icon" variant="ghost" asChild>
+                            <Link href={`/manager/transacoes/${transaction.id}`}>
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">Ver detalhes</span>
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center h-24">
+                        Nenhuma transação encontrada.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : paginatedTransactions.length > 0 ? (
-                  paginatedTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-medium">{transaction.contributor}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
-                        {transaction.church || 'N/A'}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-right">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(transaction.amount)}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                          {statusMap[transaction.status]?.text || transaction.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {new Date(transaction.date).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          asChild
-                        >
-                          <Link href={`/manager/transacoes/${transaction.id}`}>
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">Ver detalhes</span>
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">
-                      Nenhuma transação encontrada.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+                  )}
+                </TableBody>
               </Table>
             </div>
             <div className="flex items-center justify-between px-2 py-4">

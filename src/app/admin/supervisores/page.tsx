@@ -43,7 +43,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -237,10 +236,7 @@ const SupervisorFormModal = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSave)}
-            className="space-y-4 p-4"
-          >
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4">
             <Alert className="bg-videira-blue/10 border-videira-blue/30">
               <AlertTriangle className="h-4 w-4 text-videira-blue" />
               <AlertDescription className="text-videira-blue">
@@ -490,8 +486,8 @@ const SupervisorFormModal = ({
               <DialogClose asChild>
                 <Button variant="outline">Cancelar</Button>
               </DialogClose>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isFetchingCep}
                 className="bg-videira-blue hover:bg-videira-blue/90 text-white"
               >
@@ -566,11 +562,12 @@ export default function SupervisoresPage() {
     }
   }
 
-  const filteredSupervisors = supervisors.filter((supervisor) =>
-    `${supervisor.firstName} ${supervisor.lastName}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase()) ||
-    supervisor.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredSupervisors = supervisors.filter(
+    (supervisor) =>
+      `${supervisor.firstName} ${supervisor.lastName}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      supervisor.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const totalPages = Math.ceil(filteredSupervisors.length / itemsPerPage)
@@ -653,7 +650,7 @@ export default function SupervisoresPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/supervisores/${supervisor.id}`}>
-                          <Button 
+                          <Button
                             size="sm"
                             className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                           >
@@ -731,13 +728,13 @@ export default function SupervisoresPage() {
           ))
         ) : paginatedSupervisors.length > 0 ? (
           paginatedSupervisors.map((supervisor, index) => (
-            <Card 
-              key={supervisor.id} 
+            <Card
+              key={supervisor.id}
               className={cn(
-                "shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4",
-                index % 3 === 0 && "border-t-videira-cyan",
-                index % 3 === 1 && "border-t-videira-blue",
-                index % 3 === 2 && "border-t-videira-purple"
+                'shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4',
+                index % 3 === 0 && 'border-t-videira-cyan',
+                index % 3 === 1 && 'border-t-videira-blue',
+                index % 3 === 2 && 'border-t-videira-purple',
               )}
             >
               <CardContent className="pt-6">
@@ -780,7 +777,7 @@ export default function SupervisoresPage() {
                 </div>
                 <div className="flex justify-end mt-4 gap-2">
                   <Link href={`/admin/supervisores/${supervisor.id}`}>
-                    <Button 
+                    <Button
                       size="sm"
                       className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                     >
@@ -795,7 +792,9 @@ export default function SupervisoresPage() {
         ) : (
           <div className="col-span-full flex flex-col items-center gap-3 py-16">
             <UserCheck className="h-16 w-16 text-muted-foreground" />
-            <p className="text-lg font-medium text-muted-foreground">Nenhum supervisor encontrado</p>
+            <p className="text-lg font-medium text-muted-foreground">
+              Nenhum supervisor encontrado
+            </p>
           </div>
         )}
       </div>
@@ -806,7 +805,9 @@ export default function SupervisoresPage() {
   const PaginationControls = () => (
     <div className="flex items-center justify-between mt-6">
       <div className="text-sm text-muted-foreground">
-        Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredSupervisors.length)} de {filteredSupervisors.length} resultados
+        Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
+        {Math.min(currentPage * itemsPerPage, filteredSupervisors.length)} de{' '}
+        {filteredSupervisors.length} resultados
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -862,7 +863,7 @@ export default function SupervisoresPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -874,7 +875,8 @@ export default function SupervisoresPage() {
                 Gerencie os supervisores da organização
               </p>
               <p className="text-sm text-white/70 mt-1">
-                {supervisors.length} {supervisors.length === 1 ? 'supervisor cadastrado' : 'supervisores cadastrados'}
+                {supervisors.length}{' '}
+                {supervisors.length === 1 ? 'supervisor cadastrado' : 'supervisores cadastrados'}
               </p>
             </div>
             <SupervisorFormModal onSave={fetchData} managers={managers} regions={regions}>
@@ -915,7 +917,7 @@ export default function SupervisoresPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-blue">
-              {supervisors.filter(s => s.status === 'active').length}
+              {supervisors.filter((s) => s.status === 'active').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">No sistema</p>
           </CardContent>
@@ -931,9 +933,7 @@ export default function SupervisoresPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-videira-purple">
-              {regions.length}
-            </div>
+            <div className="text-3xl font-bold text-videira-purple">{regions.length}</div>
             <p className="text-sm text-muted-foreground mt-1">Registradas</p>
           </CardContent>
         </Card>
@@ -982,8 +982,8 @@ export default function SupervisoresPage() {
                     size="icon"
                     onClick={() => setViewMode('table')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'table' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'table' && 'bg-videira-blue text-white',
                     )}
                   >
                     <List className="h-5 w-5" />
@@ -998,8 +998,8 @@ export default function SupervisoresPage() {
                     size="icon"
                     onClick={() => setViewMode('card')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'card' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'card' && 'bg-videira-blue text-white',
                     )}
                   >
                     <Grid3x3 className="h-5 w-5" />

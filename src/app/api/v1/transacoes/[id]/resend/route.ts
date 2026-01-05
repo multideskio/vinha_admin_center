@@ -7,10 +7,7 @@ import { EmailService } from '@/lib/notifications'
 
 const COMPANY_ID = process.env.COMPANY_INIT || ''
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -39,7 +36,7 @@ export async function POST(
     if (transaction.status !== 'approved') {
       return NextResponse.json(
         { error: 'Apenas transações aprovadas podem ter comprovante reenviado' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -51,10 +48,7 @@ export async function POST(
       .limit(1)
 
     if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPass) {
-      return NextResponse.json(
-        { error: 'Configurações de email não encontradas' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Configurações de email não encontradas' }, { status: 500 })
     }
 
     // Enviar email com comprovante
@@ -131,10 +125,7 @@ export async function POST(
     })
 
     if (!emailSent) {
-      return NextResponse.json(
-        { error: 'Falha ao enviar email' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Falha ao enviar email' }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -145,7 +136,7 @@ export async function POST(
     console.error('Error resending receipt:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Erro ao reenviar comprovante' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

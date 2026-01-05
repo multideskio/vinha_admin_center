@@ -253,27 +253,45 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // Buscar nomes dos contribuintes
-    const contributorIds = recentTransactionsData.map(t => t.contributorId)
-    const contributorPastorNames = contributorIds.length > 0 ? await db
-      .select({ userId: pastorProfiles.userId, firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
-      .from(pastorProfiles)
-      .where(inArray(pastorProfiles.userId, contributorIds))
-    : []
-    const contributorChurchNames = contributorIds.length > 0 ? await db
-      .select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
-      .from(churchProfiles)
-      .where(inArray(churchProfiles.userId, contributorIds))
-    : []
-    const contributorSupervisorNames = contributorIds.length > 0 ? await db
-      .select({ userId: supervisorProfiles.userId, firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
-      .from(supervisorProfiles)
-      .where(inArray(supervisorProfiles.userId, contributorIds))
-    : []
+    const contributorIds = recentTransactionsData.map((t) => t.contributorId)
+    const contributorPastorNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              userId: pastorProfiles.userId,
+              firstName: pastorProfiles.firstName,
+              lastName: pastorProfiles.lastName,
+            })
+            .from(pastorProfiles)
+            .where(inArray(pastorProfiles.userId, contributorIds))
+        : []
+    const contributorChurchNames =
+      contributorIds.length > 0
+        ? await db
+            .select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
+            .from(churchProfiles)
+            .where(inArray(churchProfiles.userId, contributorIds))
+        : []
+    const contributorSupervisorNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              userId: supervisorProfiles.userId,
+              firstName: supervisorProfiles.firstName,
+              lastName: supervisorProfiles.lastName,
+            })
+            .from(supervisorProfiles)
+            .where(inArray(supervisorProfiles.userId, contributorIds))
+        : []
 
     const contributorNameMap = new Map<string, string>()
-    contributorPastorNames.forEach(p => contributorNameMap.set(p.userId, `${p.firstName} ${p.lastName}`))
-    contributorChurchNames.forEach(c => contributorNameMap.set(c.userId, c.nomeFantasia || ''))
-    contributorSupervisorNames.forEach(s => contributorNameMap.set(s.userId, `${s.firstName} ${s.lastName}`))
+    contributorPastorNames.forEach((p) =>
+      contributorNameMap.set(p.userId, `${p.firstName} ${p.lastName}`),
+    )
+    contributorChurchNames.forEach((c) => contributorNameMap.set(c.userId, c.nomeFantasia || ''))
+    contributorSupervisorNames.forEach((s) =>
+      contributorNameMap.set(s.userId, `${s.firstName} ${s.lastName}`),
+    )
 
     const recentTransactions = recentTransactionsData.map((t) => ({
       id: t.id,
@@ -290,31 +308,33 @@ export async function GET(): Promise<NextResponse> {
     }))
 
     const colors = ['#16a34a', '#3b82f6', '#f97316', '#ef4444', '#8b5cf6']
-    
-    const revenueByChurchData = churchIds.length > 0
-      ? await db
-          .select({
-            churchId: transactions.originChurchId,
-            revenue: sum(transactions.amount).mapWith(Number),
-          })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.status, 'approved'),
-              inArray(transactions.originChurchId, churchIds),
-            ),
-          )
-          .groupBy(transactions.originChurchId)
-      : []
 
-    const churchNames = churchIds.length > 0
-      ? await db
-          .select({ id: users.id, name: users.email })
-          .from(users)
-          .where(inArray(users.id, churchIds))
-      : []
+    const revenueByChurchData =
+      churchIds.length > 0
+        ? await db
+            .select({
+              churchId: transactions.originChurchId,
+              revenue: sum(transactions.amount).mapWith(Number),
+            })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.status, 'approved'),
+                inArray(transactions.originChurchId, churchIds),
+              ),
+            )
+            .groupBy(transactions.originChurchId)
+        : []
 
-    const churchNameMap = new Map(churchNames.map(c => [c.id, c.name]))
+    const churchNames =
+      churchIds.length > 0
+        ? await db
+            .select({ id: users.id, name: users.email })
+            .from(users)
+            .where(inArray(users.id, churchIds))
+        : []
+
+    const churchNameMap = new Map(churchNames.map((c) => [c.id, c.name]))
 
     const revenueByChurch = revenueByChurchData.map((item, index) => ({
       name: churchNameMap.get(item.churchId || '') || 'Igreja',
@@ -322,21 +342,22 @@ export async function GET(): Promise<NextResponse> {
       fill: colors[index % colors.length],
     }))
 
-    const contributionsByChurchData = churchIds.length > 0
-      ? await db
-          .select({
-            churchId: transactions.originChurchId,
-            count: count(transactions.id),
-          })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.status, 'approved'),
-              inArray(transactions.originChurchId, churchIds),
-            ),
-          )
-          .groupBy(transactions.originChurchId)
-      : []
+    const contributionsByChurchData =
+      churchIds.length > 0
+        ? await db
+            .select({
+              churchId: transactions.originChurchId,
+              count: count(transactions.id),
+            })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.status, 'approved'),
+                inArray(transactions.originChurchId, churchIds),
+              ),
+            )
+            .groupBy(transactions.originChurchId)
+        : []
 
     const membersByChurch = contributionsByChurchData.map((item, index) => ({
       name: churchNameMap.get(item.churchId || '') || 'Igreja',

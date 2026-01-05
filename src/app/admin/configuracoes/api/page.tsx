@@ -224,14 +224,22 @@ export default function ApiKeysPage() {
   const saveOpenAI = React.useCallback(async () => {
     setSavingOpenai(true)
     try {
-      const res = await fetch('/api/v1/settings/openai', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openaiApiKey: openaiInput }) })
+      const res = await fetch('/api/v1/settings/openai', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ openaiApiKey: openaiInput }),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Falha ao salvar chave OpenAI.')
       toast({ title: 'Sucesso', description: 'Chave OpenAI salva.', variant: 'success' })
       setOpenaiInput('')
       fetchOpenAI()
     } catch (e: unknown) {
-      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
     } finally {
       setSavingOpenai(false)
     }
@@ -324,7 +332,12 @@ export default function ApiKeysPage() {
                   onChange={(e) => setOpenaiInput(e.target.value)}
                   className="w-64"
                 />
-                <Button variant="ghost" size="icon" className="absolute top-1/2 -translate-y-1/2 right-1" onClick={() => setShowOpenai((s) => !s)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1/2 -translate-y-1/2 right-1"
+                  onClick={() => setShowOpenai((s) => !s)}
+                >
                   {showOpenai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>

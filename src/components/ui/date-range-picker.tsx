@@ -28,7 +28,7 @@ export function DateRangePicker({
     value || {
       from: subDays(new Date(), 7),
       to: new Date(),
-    }
+    },
   )
 
   React.useEffect(() => {
@@ -62,7 +62,8 @@ export function DateRangePicker({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, 'dd/MM/yyyy', { locale: ptBR })} - {format(date.to, 'dd/MM/yyyy', { locale: ptBR })}
+                  {format(date.from, 'dd/MM/yyyy', { locale: ptBR })} -{' '}
+                  {format(date.to, 'dd/MM/yyyy', { locale: ptBR })}
                 </>
               ) : (
                 format(date.from, 'dd/MM/yyyy', { locale: ptBR })
@@ -95,11 +96,7 @@ export function DateRangePicker({
             >
               Limpar
             </Button>
-            <Button
-              size="sm"
-              onClick={() => setOpen(false)}
-              disabled={!date?.from || !date?.to}
-            >
+            <Button size="sm" onClick={() => setOpen(false)} disabled={!date?.from || !date?.to}>
               Aplicar
             </Button>
           </div>

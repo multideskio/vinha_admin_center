@@ -5,7 +5,7 @@
 import { db } from '@/db/drizzle'
 import { users, otherSettings, userNotificationSettings } from '@/db/schema'
 import { NotificationService } from './notifications'
-import { eq, and, isNull, lte, gte } from 'drizzle-orm'
+import { eq, and, isNull, gte } from 'drizzle-orm'
 import { addDays, format } from 'date-fns'
 
 export class NotificationScheduler {
@@ -26,18 +26,15 @@ export class NotificationScheduler {
           and(
             gte(users.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)), // ✅ gte = últimas 24h
             eq(users.welcomeSent, false), // ✅ Apenas quem NÃO recebeu
-            isNull(users.deletedAt)
-          )
+            isNull(users.deletedAt),
+          ),
         )
 
       for (const user of newUsers) {
         await this.sendWelcomeNotification(user)
-        
+
         // ✅ CORRIGIDO: Marcar como enviado após sucesso
-        await db
-          .update(users)
-          .set({ welcomeSent: true })
-          .where(eq(users.id, user.id))
+        await db.update(users).set({ welcomeSent: true }).where(eq(users.id, user.id))
       }
     } catch (error) {
       console.error('Error processing welcome notifications:', error)
@@ -59,12 +56,7 @@ export class NotificationScheduler {
           companyId: users.companyId,
         })
         .from(users)
-        .where(
-          and(
-            eq(users.titheDay, currentDay + 3),
-            isNull(users.deletedAt)
-          )
-        )
+        .where(and(eq(users.titheDay, currentDay + 3), isNull(users.deletedAt)))
 
       for (const user of usersToRemind) {
         if (user.titheDay) {
@@ -106,7 +98,7 @@ export class NotificationScheduler {
         userName,
         churchName,
         user.phone || undefined,
-        user.email
+        user.email,
       )
     } catch (error) {
       console.error(`Error sending welcome notification to user ${user.id}:`, error)
@@ -137,7 +129,7 @@ export class NotificationScheduler {
 
       const dueDate = format(addDays(new Date(), 3), 'dd/MM/yyyy')
       const userName = 'Membro'
-      
+
       // Valor padrão ou buscar do histórico
       const amount = '100,00' // Implementar lógica para buscar valor real
 
@@ -147,7 +139,7 @@ export class NotificationScheduler {
         amount,
         dueDate,
         user.phone || undefined,
-        user.email
+        user.email,
       )
     } catch (error) {
       console.error(`Error sending payment reminder to user ${user.id}:`, error)
@@ -177,13 +169,16 @@ export class NotificationScheduler {
         .from(userNotificationSettings)
         .where(eq(userNotificationSettings.userId, userId))
 
-      return preferences.reduce((acc, pref) => {
-        acc[pref.notificationType] = {
-          email: pref.email,
-          whatsapp: pref.whatsapp,
-        }
-        return acc
-      }, {} as Record<string, { email: boolean; whatsapp: boolean }>)
+      return preferences.reduce(
+        (acc, pref) => {
+          acc[pref.notificationType] = {
+            email: pref.email,
+            whatsapp: pref.whatsapp,
+          }
+          return acc
+        },
+        {} as Record<string, { email: boolean; whatsapp: boolean }>,
+      )
     } catch (error) {
       console.error('Error fetching user notification preferences:', error)
       return {}
@@ -194,13 +189,10 @@ export class NotificationScheduler {
 // Função utilitária para executar o scheduler
 export async function runNotificationScheduler(): Promise<void> {
   const scheduler = new NotificationScheduler()
-  
+
   console.log('Running notification scheduler...')
-  
-  await Promise.all([
-    scheduler.processWelcomeNotifications(),
-    scheduler.processPaymentReminders(),
-  ])
-  
+
+  await Promise.all([scheduler.processWelcomeNotifications(), scheduler.processPaymentReminders()])
+
   console.log('Notification scheduler completed')
 }

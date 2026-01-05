@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles, pastorProfiles, supervisorProfiles, managerProfiles, adminProfiles } from '@/db/schema'
+import {
+  transactions,
+  users,
+  churchProfiles,
+  pastorProfiles,
+  supervisorProfiles,
+  managerProfiles,
+  adminProfiles,
+} from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -57,15 +62,16 @@ export async function GET(
 
       if (church) {
         churchName = church.name
-        churchAddress = church.address && church.city 
-          ? `${church.address}, ${church.city}, ${church.state}` 
-          : null
+        churchAddress =
+          church.address && church.city
+            ? `${church.address}, ${church.city}, ${church.state}`
+            : null
       }
     }
 
     // Buscar nome real do contribuinte baseado no role
     let contributorName = transaction.contributorEmail.split('@')[0]
-    
+
     try {
       if (transaction.contributorRole === 'pastor') {
         const [profile] = await db
@@ -76,7 +82,10 @@ export async function GET(
         if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
       } else if (transaction.contributorRole === 'supervisor') {
         const [profile] = await db
-          .select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+          .select({
+            firstName: supervisorProfiles.firstName,
+            lastName: supervisorProfiles.lastName,
+          })
           .from(supervisorProfiles)
           .where(eq(supervisorProfiles.userId, transaction.contributorId))
           .limit(1)

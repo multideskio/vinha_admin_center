@@ -12,16 +12,12 @@ import { useToast } from '@/hooks/use-toast'
 import { BoletoPaymentProps } from '../types'
 import { copyToClipboard, formatCurrency } from '../utils'
 
-export default function BoletoPayment({
-  amount,
-  paymentDetails,
-  onBack
-}: BoletoPaymentProps) {
+export default function BoletoPayment({ amount, paymentDetails, onBack }: BoletoPaymentProps) {
   const { toast } = useToast()
 
   const handleCopy = async (code: string | undefined, type: string) => {
     if (!code) return
-    
+
     const success = await copyToClipboard(code)
     if (success) {
       toast({
@@ -32,7 +28,7 @@ export default function BoletoPayment({
       toast({
         title: 'Erro',
         description: 'Não foi possível copiar o código.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -50,7 +46,8 @@ export default function BoletoPayment({
           </h3>
         </div>
         <p className="text-sm text-muted-foreground font-medium">
-          Use uma das opções abaixo para efetuar o pagamento de <span className="font-bold text-videira-cyan">{formatCurrency(amount)}</span>
+          Use uma das opções abaixo para efetuar o pagamento de{' '}
+          <span className="font-bold text-videira-cyan">{formatCurrency(amount)}</span>
         </p>
       </div>
 
@@ -71,7 +68,7 @@ export default function BoletoPayment({
                 Código de Barras
               </h4>
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-bold text-orange-700 dark:text-orange-300 block">
                 📋 Linha digitável:
@@ -88,12 +85,17 @@ export default function BoletoPayment({
                   onClick={() => handleCopy(paymentDetails.DigitableLine, 'Boleto')}
                   className="px-4 border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white font-bold transition-all"
                 >
-                  <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" 
+                  <svg
+                    className="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                     />
                   </svg>
                   Copiar
@@ -111,25 +113,37 @@ export default function BoletoPayment({
             <div className="relative p-4">
               <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Como pagar:
               </h4>
               <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-2 font-medium">
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</div>
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    1
+                  </div>
                   <span>Acesse o app ou site do seu banco</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</div>
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    2
+                  </div>
                   <span>Escolha "Pagar boleto"</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</div>
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    3
+                  </div>
                   <span>Digite o código ou baixe o PDF</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">✓</div>
+                  <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">
+                    ✓
+                  </div>
                   <span>Confirme o pagamento</span>
                 </li>
               </ul>
@@ -137,18 +151,18 @@ export default function BoletoPayment({
           </div>
 
           {/* Botão de Download Premium */}
-          <Button asChild className="w-full h-12 font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" size="lg">
-            <a 
-              href={paymentDetails.Url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
+          <Button
+            asChild
+            className="w-full h-12 font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            size="lg"
+          >
+            <a href={paymentDetails.Url} target="_blank" rel="noopener noreferrer">
               <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
               Baixar Boleto PDF
@@ -161,15 +175,15 @@ export default function BoletoPayment({
             <div className="relative p-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg flex-shrink-0">
-                  <svg 
-                    className="h-5 w-5 text-amber-600 dark:text-amber-400" 
-                    fill="currentColor" 
+                  <svg
+                    className="h-5 w-5 text-amber-600 dark:text-amber-400"
+                    fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path 
-                      fillRule="evenodd" 
-                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" 
-                      clipRule="evenodd" 
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
                     />
                   </svg>
                 </div>
@@ -178,7 +192,8 @@ export default function BoletoPayment({
                     ⏱️ Importante:
                   </p>
                   <p className="text-sm text-amber-700 dark:text-amber-300 font-medium mt-1">
-                    Vencimento em <span className="font-bold">3 dias úteis</span>. Confirmação em até 2 dias após pagamento.
+                    Vencimento em <span className="font-bold">3 dias úteis</span>. Confirmação em
+                    até 2 dias após pagamento.
                   </p>
                 </div>
               </div>
@@ -191,12 +206,19 @@ export default function BoletoPayment({
             <div className="relative p-4">
               <h5 className="text-sm font-bold text-videira-cyan mb-2 flex items-center gap-2">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Informações:
               </h5>
               <div className="text-sm text-muted-foreground space-y-1 font-medium">
-                <p>• Valor: <span className="font-bold text-videira-cyan">{formatCurrency(amount)}</span></p>
+                <p>
+                  • Valor:{' '}
+                  <span className="font-bold text-videira-cyan">{formatCurrency(amount)}</span>
+                </p>
                 <p>• Processamento: 1-2 dias úteis</p>
                 <p>• Confirmação automática após compensação</p>
               </div>
@@ -213,7 +235,12 @@ export default function BoletoPayment({
           className="flex items-center gap-2 border-2 hover:border-videira-cyan"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           Voltar
         </Button>

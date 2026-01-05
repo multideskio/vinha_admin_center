@@ -44,10 +44,10 @@ async function testComplaint() {
 
 async function testBlacklist() {
   console.log('\n🧪 Testando Blacklist...')
-  
+
   // Adicionar email de teste à blacklist
   const testEmail = 'blacklisted@test.com'
-  
+
   await db.insert(emailBlacklist).values({
     companyId: COMPANY_ID,
     email: testEmail,
@@ -59,9 +59,9 @@ async function testBlacklist() {
     attemptCount: 1,
     isActive: true,
   })
-  
+
   console.log(`✅ Email ${testEmail} adicionado à blacklist`)
-  
+
   // Tentar enviar para email blacklisted
   try {
     await sendEmail({
@@ -75,23 +75,21 @@ async function testBlacklist() {
   } catch (error: any) {
     console.log('✅ Email bloqueado corretamente:', error.message)
   }
-  
+
   // Limpar teste
-  await db
-    .delete(emailBlacklist)
-    .where(eq(emailBlacklist.email, testEmail))
-  
+  await db.delete(emailBlacklist).where(eq(emailBlacklist.email, testEmail))
+
   console.log('✅ Email removido da blacklist')
 }
 
 async function checkBlacklist() {
   console.log('\n📋 Emails na Blacklist:')
-  
+
   const blacklisted = await db
     .select()
     .from(emailBlacklist)
     .where(eq(emailBlacklist.companyId, COMPANY_ID))
-  
+
   if (blacklisted.length === 0) {
     console.log('   Nenhum email na blacklist')
   } else {

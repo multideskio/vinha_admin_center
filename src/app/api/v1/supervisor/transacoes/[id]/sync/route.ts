@@ -24,10 +24,7 @@ async function getCieloCredentials() {
   }
 }
 
-export async function POST(
-  request: Request,
-  props: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
   const { user } = await validateRequest()
 
@@ -51,7 +48,7 @@ export async function POST(
     if (transaction.status !== 'pending') {
       return NextResponse.json(
         { error: 'Apenas transações pendentes podem ser sincronizadas' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -70,7 +67,7 @@ export async function POST(
           MerchantId: credentials.merchantId || '',
           MerchantKey: credentials.merchantKey || '',
         },
-      }
+      },
     )
 
     if (!response.ok) {
@@ -92,7 +89,7 @@ export async function POST(
       'sync_transaction',
       'transaction',
       id,
-      `Transação sincronizada: ${transaction.status} → ${newStatus}`
+      `Transação sincronizada: ${transaction.status} → ${newStatus}`,
     )
 
     return NextResponse.json({

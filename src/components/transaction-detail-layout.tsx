@@ -1,7 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { ChevronLeft, Copy, Download, ArrowRightLeft, User, MessageSquareWarning } from 'lucide-react'
+import {
+  ChevronLeft,
+  Copy,
+  Download,
+  ArrowRightLeft,
+  User,
+  MessageSquareWarning,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -34,7 +41,11 @@ type TransactionDetailLayoutProps = {
   backLabel: string
 }
 
-export function TransactionDetailLayout({ transaction, backUrl, backLabel }: TransactionDetailLayoutProps) {
+export function TransactionDetailLayout({
+  transaction,
+  backUrl,
+  backLabel,
+}: TransactionDetailLayoutProps) {
   const { toast } = useToast()
 
   const statusMap: {
@@ -79,7 +90,7 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
       PAGAMENTO
       Método: ${methodMap[transaction.payment.method] || transaction.payment.method}
     `
-    
+
     const blob = new Blob([content], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -87,7 +98,7 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
     a.download = `transacao-${transaction.id}.txt`
     a.click()
     URL.revokeObjectURL(url)
-    
+
     toast({ title: 'Download iniciado', description: 'Comprovante baixado com sucesso.' })
   }
 
@@ -99,14 +110,14 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center justify-between">
             <div>
               <Link href={backUrl}>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-white/90 hover:text-white hover:bg-white/20 mb-3 -ml-2"
                 >
                   <ChevronLeft className="mr-2 h-4 w-4" />
@@ -117,24 +128,26 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
                 <ArrowRightLeft className="h-8 w-8" />
                 Detalhes da Transação
               </h1>
-              <p className="text-base text-white/90 mt-2 font-medium">
-                ID: {transaction.id}
-              </p>
+              <p className="text-base text-white/90 mt-2 font-medium">ID: {transaction.id}</p>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <Badge 
+              <Badge
                 variant={statusMap[transaction.status]?.variant || 'outline'}
                 className={cn(
-                  "text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all",
-                  transaction.status === 'approved' && "bg-green-500 text-white border-green-400 hover:bg-green-600",
-                  transaction.status === 'pending' && "bg-yellow-500 text-white border-yellow-400 hover:bg-yellow-600",
-                  transaction.status === 'refused' && "bg-red-500 text-white border-red-400 hover:bg-red-600",
-                  transaction.status === 'refunded' && "bg-gray-500 text-white border-gray-400 hover:bg-gray-600"
+                  'text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all',
+                  transaction.status === 'approved' &&
+                    'bg-green-500 text-white border-green-400 hover:bg-green-600',
+                  transaction.status === 'pending' &&
+                    'bg-yellow-500 text-white border-yellow-400 hover:bg-yellow-600',
+                  transaction.status === 'refused' &&
+                    'bg-red-500 text-white border-red-400 hover:bg-red-600',
+                  transaction.status === 'refunded' &&
+                    'bg-gray-500 text-white border-gray-400 hover:bg-gray-600',
                 )}
               >
                 {statusMap[transaction.status]?.text || transaction.status}
               </Badge>
-              <Button 
+              <Button
                 onClick={downloadPDF}
                 className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
               >
@@ -206,7 +219,7 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
               </div>
             </CardContent>
           </Card>
-          
+
           {transaction.refundRequestReason && (
             <Card className="shadow-lg border-t-4 border-t-destructive bg-gradient-to-br from-red-50/50 to-white">
               <CardHeader>
@@ -220,7 +233,7 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
               </CardContent>
             </Card>
           )}
-          
+
           <Card className="shadow-lg border-t-4 border-t-videira-blue">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -231,7 +244,9 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
             <CardContent className="grid gap-3">
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-muted-foreground">Método</span>
-                <span className="text-sm font-medium">{methodMap[transaction.payment.method] || transaction.payment.method}</span>
+                <span className="text-sm font-medium">
+                  {methodMap[transaction.payment.method] || transaction.payment.method}
+                </span>
               </div>
               {transaction.payment.details && (
                 <>
@@ -245,7 +260,7 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
           <Card className="shadow-lg border-t-4 border-t-videira-purple">
             <CardHeader>
@@ -266,13 +281,11 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
               </div>
             </CardContent>
           </Card>
-          
+
           {transaction.church && (
             <Card className="shadow-lg border-t-4 border-t-green-500">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  Igreja
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">Igreja</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-2">
                 <div className="grid gap-1">
@@ -292,4 +305,3 @@ export function TransactionDetailLayout({ transaction, backUrl, backLabel }: Tra
     </div>
   )
 }
-

@@ -164,7 +164,13 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   // ✅ Admin, Manager e Supervisor podem criar igrejas
   if (!['admin', 'manager', 'supervisor'].includes(user.role)) {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores, gerentes e supervisores podem criar igrejas.' }, { status: 403 })
+    return NextResponse.json(
+      {
+        error:
+          'Acesso negado. Apenas administradores, gerentes e supervisores podem criar igrejas.',
+      },
+      { status: 403 },
+    )
   }
 
   try {

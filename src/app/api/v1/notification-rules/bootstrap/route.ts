@@ -23,14 +23,16 @@ export async function POST(_request: NextRequest) {
         name: 'Lembrete de Pagamento',
         whatsappTemplate: 'Olá {name}! Lembramos que seu dízimo de R$ {amount} vence em {dueDate}.',
         emailSubjectTemplate: 'Lembrete de Pagamento - vence em {dueDate}',
-        emailHtmlTemplate: '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> vence em <strong>{dueDate}</strong>.</p>',
+        emailHtmlTemplate:
+          '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> vence em <strong>{dueDate}</strong>.</p>',
       },
       {
         templateType: 'payment_overdue',
         name: 'Pagamento em Atraso',
         whatsappTemplate: 'Olá {name}! Seu dízimo de R$ {amount} está em atraso desde {dueDate}.',
         emailSubjectTemplate: 'Pagamento em atraso desde {dueDate}',
-        emailHtmlTemplate: '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> está em atraso desde <strong>{dueDate}</strong>.</p>',
+        emailHtmlTemplate:
+          '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> está em atraso desde <strong>{dueDate}</strong>.</p>',
       },
     ] as const
 
@@ -38,7 +40,12 @@ export async function POST(_request: NextRequest) {
       const exists = await db
         .select({ id: messageTemplates.id })
         .from(messageTemplates)
-        .where(and(eq(messageTemplates.companyId, companyId), eq(messageTemplates.templateType, tpl.templateType)))
+        .where(
+          and(
+            eq(messageTemplates.companyId, companyId),
+            eq(messageTemplates.templateType, tpl.templateType),
+          ),
+        )
         .limit(1)
       if (exists.length === 0) {
         await db.insert(messageTemplates).values({
@@ -83,10 +90,7 @@ export async function POST(_request: NextRequest) {
         .select({ id: notificationRules.id })
         .from(notificationRules)
         .where(
-          and(
-            eq(notificationRules.companyId, companyId),
-            eq(notificationRules.name, rule.name)
-          )
+          and(eq(notificationRules.companyId, companyId), eq(notificationRules.name, rule.name)),
         )
         .limit(1)
       if (exists.length === 0) {

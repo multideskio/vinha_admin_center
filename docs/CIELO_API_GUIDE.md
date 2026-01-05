@@ -6,10 +6,10 @@ Este documento serve como um guia técnico completo para a integração com a AP
 
 A Cielo oferece dois ambientes distintos: um para testes (Sandbox) e outro para transações reais (Produção).
 
-| Ambiente                      | URL Transações                                   | URL Consultas                                      |
-| ----------------------------- | ------------------------------------------------ | -------------------------------------------------- |
+| Ambiente                      | URL Transações                                   | URL Consultas                                         |
+| ----------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
 | **Sandbox (Desenvolvimento)** | `https://apisandbox.cieloecommerce.cielo.com.br` | `https://apiquerysandbox.cieloecommerce.cielo.com.br` |
-| **Produção**                  | `https://api.cieloecommerce.cielo.com.br`        | `https://apiquery.cieloecommerce.cielo.com.br`     |
+| **Produção**                  | `https://api.cieloecommerce.cielo.com.br`        | `https://apiquery.cieloecommerce.cielo.com.br`        |
 
 **Autenticação:** Todas as requisições devem conter as suas credenciais no cabeçalho (header):
 

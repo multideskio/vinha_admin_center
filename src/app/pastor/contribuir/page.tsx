@@ -23,11 +23,5 @@ export default function ContribuirPage() {
     // Lógica específica de erro para pastor
   }
 
-  return (
-    <ContributionForm
-      userRole="pastor"
-      onSuccess={handleSuccess}
-      onError={handleError}
-    />
-  )
+  return <ContributionForm userRole="pastor" onSuccess={handleSuccess} onError={handleError} />
 }

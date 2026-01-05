@@ -117,12 +117,18 @@ export async function PUT(request: Request): Promise<NextResponse> {
       if (validatedData.city) profileUpdateData.city = validatedData.city
       if (validatedData.neighborhood) profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address) profileUpdateData.address = validatedData.address
-      if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook || null
-      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram || null
-      if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website || null
+      if (validatedData.facebook !== undefined)
+        profileUpdateData.facebook = validatedData.facebook || null
+      if (validatedData.instagram !== undefined)
+        profileUpdateData.instagram = validatedData.instagram || null
+      if (validatedData.website !== undefined)
+        profileUpdateData.website = validatedData.website || null
 
       if (Object.keys(profileUpdateData).length > 0) {
-        await tx.update(adminProfiles).set(profileUpdateData).where(eq(adminProfiles.userId, sessionUser.id))
+        await tx
+          .update(adminProfiles)
+          .set(profileUpdateData)
+          .where(eq(adminProfiles.userId, sessionUser.id))
       }
     })
 
@@ -141,4 +147,3 @@ export async function PUT(request: Request): Promise<NextResponse> {
     )
   }
 }
-

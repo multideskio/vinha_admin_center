@@ -69,12 +69,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           })
           .from(pastorProfiles)
           .leftJoin(users, eq(users.id, pastorProfiles.userId))
-          .where(
-            and(
-              isNull(users.deletedAt),
-              inArray(pastorProfiles.supervisorId, supervisorIds),
-            ),
-          )
+          .where(and(isNull(users.deletedAt), inArray(pastorProfiles.supervisorId, supervisorIds)))
           .orderBy(desc(users.createdAt))
       } else if (user.role === 'supervisor') {
         // Supervisor pode ver apenas seus pastores
@@ -86,12 +81,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           })
           .from(pastorProfiles)
           .leftJoin(users, eq(users.id, pastorProfiles.userId))
-          .where(
-            and(
-              eq(pastorProfiles.supervisorId, user.id),
-              isNull(users.deletedAt),
-            ),
-          )
+          .where(and(eq(pastorProfiles.supervisorId, user.id), isNull(users.deletedAt)))
           .orderBy(desc(users.createdAt))
       } else {
         // Outros roles não podem listar pastores
@@ -201,7 +191,13 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   // ✅ Admin, Manager e Supervisor podem criar pastores
   if (!['admin', 'manager', 'supervisor'].includes(user.role)) {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores, gerentes e supervisores podem criar pastores.' }, { status: 403 })
+    return NextResponse.json(
+      {
+        error:
+          'Acesso negado. Apenas administradores, gerentes e supervisores podem criar pastores.',
+      },
+      { status: 403 },
+    )
   }
 
   try {
@@ -215,10 +211,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (user.role === 'manager') {
       // Manager deve verificar se o supervisor pertence a ele
       if (!validatedData.supervisorId) {
-        return NextResponse.json(
-          { error: 'Supervisor é obrigatório.' },
-          { status: 400 },
-        )
+        return NextResponse.json({ error: 'Supervisor é obrigatório.' }, { status: 400 })
       }
 
       const [supervisor] = await db

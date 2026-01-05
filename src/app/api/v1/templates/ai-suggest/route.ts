@@ -13,19 +13,30 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { eventTrigger, daysOffset, variables, tone } = body as {
-      eventTrigger: 'user_registered' | 'payment_received' | 'payment_due_reminder' | 'payment_overdue'
+      eventTrigger:
+        | 'user_registered'
+        | 'payment_received'
+        | 'payment_due_reminder'
+        | 'payment_overdue'
       daysOffset?: number
       variables?: string[]
       tone?: string
     }
 
-    const [settings] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, user.companyId)).limit(1)
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, user.companyId))
+      .limit(1)
     const apiKey = settings?.openaiApiKey
     if (!apiKey) {
       return NextResponse.json({ error: 'Chave da OpenAI não configurada.' }, { status: 400 })
     }
 
-    const vars = variables && variables.length ? variables.join(', ') : '{nome_usuario}, {data_vencimento}, {link_pagamento}'
+    const vars =
+      variables && variables.length
+        ? variables.join(', ')
+        : '{nome_usuario}, {data_vencimento}, {link_pagamento}'
     const ptTone = tone || 'respeitoso, claro e objetivo'
 
     const system = `Você é um assistente que escreve mensagens curtas e eficazes em PT-BR para um sistema de gestão de igrejas. As mensagens devem aceitar variáveis delimitadas por chaves, que serão substituídas pelo sistema (ex.: {nome_usuario}). Evite links se não fornecidos nas variáveis.`
@@ -48,7 +59,7 @@ Retorne apenas o texto final.`
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',

@@ -8,7 +8,7 @@ import { EvolutionWebhookData } from '@/lib/evolution-api-types'
 export async function POST(request: NextRequest) {
   try {
     const data: EvolutionWebhookData = await request.json()
-    
+
     console.log('Evolution webhook received:', {
       event: data.event,
       instance: data.instance,
@@ -21,15 +21,15 @@ export async function POST(request: NextRequest) {
       case 'messages.upsert':
         await handleMessageReceived(data)
         break
-      
+
       case 'messages.update':
         await handleMessageUpdate(data)
         break
-      
+
       case 'connection.update':
         await handleConnectionUpdate()
         break
-      
+
       default:
         console.log('Unhandled event:', data.event)
     }
@@ -37,10 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Evolution webhook error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

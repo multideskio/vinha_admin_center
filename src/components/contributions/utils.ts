@@ -10,7 +10,7 @@ import { PaymentMethod, ContributionType } from './types'
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL'
+    currency: 'BRL',
   }).format(value)
 }
 
@@ -52,11 +52,11 @@ export const formatCVC = (value: string): string => {
  */
 export const getFullQrCodeSrc = (qrCodeBase64?: string): string | null => {
   if (!qrCodeBase64) return null
-  
+
   if (qrCodeBase64.startsWith('data:image/png;base64,')) {
     return qrCodeBase64
   }
-  
+
   return `data:image/png;base64,${qrCodeBase64}`
 }
 
@@ -79,9 +79,9 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
 export const calculateBackoffDelay = (
   attempt: number,
   baseDelay: number = 8000,
-  maxDelay: number = 15000
+  maxDelay: number = 15000,
 ): number => {
-  return Math.min(baseDelay + (attempt * 2000), maxDelay)
+  return Math.min(baseDelay + attempt * 2000, maxDelay)
 }
 
 /**
@@ -90,9 +90,9 @@ export const calculateBackoffDelay = (
 export const calculateErrorDelay = (
   attempt: number,
   baseDelay: number = 12000,
-  maxDelay: number = 20000
+  maxDelay: number = 20000,
 ): number => {
-  return Math.min(baseDelay + (attempt * 3000), maxDelay)
+  return Math.min(baseDelay + attempt * 3000, maxDelay)
 }
 
 /**
@@ -140,7 +140,7 @@ export const getPaymentMethodLabel = (method: PaymentMethod): string => {
   const labels: Record<PaymentMethod, string> = {
     pix: 'PIX',
     credit_card: 'Cartão de Crédito',
-    boleto: 'Boleto Bancário'
+    boleto: 'Boleto Bancário',
   }
   return labels[method] || method
 }
@@ -151,7 +151,7 @@ export const getPaymentMethodLabel = (method: PaymentMethod): string => {
 export const getContributionTypeLabel = (type: ContributionType): string => {
   const labels: Record<ContributionType, string> = {
     dizimo: 'Dízimo',
-    oferta: 'Oferta'
+    oferta: 'Oferta',
   }
   return labels[type] || type
 }
@@ -171,10 +171,10 @@ export const sanitizeInput = (input: string): string => {
  */
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
-  wait: number
+  wait: number,
 ): ((...args: Parameters<T>) => void) => {
   let timeout: NodeJS.Timeout
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeout)
     timeout = setTimeout(() => func(...args), wait)

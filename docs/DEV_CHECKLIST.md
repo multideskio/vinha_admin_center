@@ -17,12 +17,14 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 ## 🆕 Checklist: Criar Nova Feature
 
 ### Planejamento
+
 - [ ] Feature está documentada em issue/ticket
 - [ ] Requisitos estão claros
 - [ ] Design/UX aprovado (se aplicável)
 - [ ] Impacto em outras features avaliado
 
 ### Desenvolvimento
+
 - [ ] Criar estrutura de arquivos seguindo padrões do projeto
 - [ ] Implementar tipos TypeScript (sem `any`)
 - [ ] Adicionar validação de input (Zod para APIs)
@@ -32,6 +34,7 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 - [ ] Validar environment variables necessárias
 
 ### Código
+
 - [ ] Código segue convenções de nome do projeto
 - [ ] Componentes são reutilizáveis quando possível
 - [ ] Sem código duplicado
@@ -39,6 +42,7 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 - [ ] Comentários em código complexo
 
 ### Segurança
+
 - [ ] Input sanitizado
 - [ ] Output escaped
 - [ ] Autenticação/autorização implementada
@@ -46,12 +50,14 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 - [ ] Dados sensíveis não logados
 
 ### Performance
+
 - [ ] Queries otimizadas (usar `.limit()` quando aplicável)
 - [ ] Imagens otimizadas
 - [ ] Componentes React otimizados (memoization se necessário)
 - [ ] Lazy loading considerado
 
 ### Testes
+
 - [ ] Testar happy path
 - [ ] Testar edge cases
 - [ ] Testar error handling
@@ -59,6 +65,7 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 - [ ] Testar responsividade (mobile/tablet/desktop)
 
 ### Documentação
+
 - [ ] Adicionar JSDoc em funções complexas
 - [ ] Atualizar README se necessário
 - [ ] Adicionar em `/docs` se feature complexa
@@ -69,12 +76,14 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 ## 🐛 Checklist: Corrigir Bug
 
 ### Investigação
+
 - [ ] Bug está documentado em `KNOWN_BUGS.md`?
 - [ ] Reproduzi o bug localmente
 - [ ] Identifiquei a causa raiz
 - [ ] Entendo o impacto do bug
 
 ### Correção
+
 - [ ] Implementei fix mínimo necessário
 - [ ] Fix não introduz novos bugs
 - [ ] Fix não quebra outras funcionalidades
@@ -82,12 +91,14 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 - [ ] Adicionei logging se necessário
 
 ### Validação
+
 - [ ] Bug não ocorre mais
 - [ ] Funcionalidades relacionadas ainda funcionam
 - [ ] Testei edge cases
 - [ ] Code review feito
 
 ### Documentação
+
 - [ ] Atualizei `KNOWN_BUGS.md` (marcar como resolvido)
 - [ ] Atualizei `.cursorrules` se aplicável
 - [ ] Adicionei comentários explicando o fix
@@ -98,11 +109,13 @@ Este documento fornece checklists rápidos para diferentes tipos de tarefas de d
 ## 🔌 Checklist: Criar Nova API Route
 
 ### Setup
+
 - [ ] Arquivo em `/src/app/api/v1/[rota]/route.ts`
 - [ ] Imports necessários adicionados
 - [ ] Tipos definidos com Zod ou TypeScript
 
 ### Implementação
+
 ```typescript
 // Template
 export async function GET/POST/PUT/DELETE(request: NextRequest) {
@@ -135,7 +148,7 @@ export async function GET/POST/PUT/DELETE(request: NextRequest) {
         { status: 400 }
       )
     }
-    
+
     console.error('API Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -146,6 +159,7 @@ export async function GET/POST/PUT/DELETE(request: NextRequest) {
 ```
 
 ### Checklist
+
 - [ ] Autenticação implementada
 - [ ] Validação de input com Zod
 - [ ] Autorização (role-based) se necessário
@@ -160,16 +174,18 @@ export async function GET/POST/PUT/DELETE(request: NextRequest) {
 ## 🎨 Checklist: Criar Novo Componente React
 
 ### Estrutura
+
 - [ ] Arquivo em `/src/components/[categoria]/[Nome].tsx`
 - [ ] Props tipadas com interface
 - [ ] Componente exportado como default ou named
 
 ### Implementação
+
 ```typescript
 interface ComponentProps {
   // Props obrigatórias
   userId: string
-  
+
   // Props opcionais
   onSuccess?: () => void
   onError?: (error: Error) => void
@@ -184,10 +200,10 @@ export default function Component({
 }: ComponentProps) {
   // Hooks
   const [state, setState] = useState()
-  
+
   // Handlers
   const handleAction = () => { ... }
-  
+
   // Render
   return (
     <div className={cn("base-classes", className)}>
@@ -198,6 +214,7 @@ export default function Component({
 ```
 
 ### Checklist
+
 - [ ] Props tipadas (sem `any`)
 - [ ] Props opcionais marcadas com `?`
 - [ ] Hooks no topo do componente
@@ -215,12 +232,14 @@ export default function Component({
 ## 🗄️ Checklist: Modificar Schema do Banco
 
 ### Planejamento
+
 - [ ] Mudança está documentada
 - [ ] Impacto em dados existentes avaliado
 - [ ] Migration strategy definida
 - [ ] Backup planejado
 
 ### Desenvolvimento
+
 - [ ] Modificar `src/db/schema.ts`
 - [ ] Gerar migration: `npm run db:generate`
 - [ ] Revisar migration gerada em `/drizzle`
@@ -228,12 +247,14 @@ export default function Component({
 - [ ] Atualizar tipos TypeScript relacionados
 
 ### Validação
+
 - [ ] Migration roda sem erros
 - [ ] Dados existentes não corrompidos
 - [ ] Queries antigas ainda funcionam
 - [ ] Performance não degradada
 
 ### Documentação
+
 - [ ] Atualizar `docs/DB_DOCS.md`
 - [ ] Adicionar comentários no schema
 - [ ] Documentar em migration se mudança complexa
@@ -243,6 +264,7 @@ export default function Component({
 ## 📤 Checklist: Pull Request
 
 ### Antes de Criar PR
+
 - [ ] Código passou em `npm run typecheck`
 - [ ] Código passou em `npm run lint`
 - [ ] Código formatado com `npm run format`
@@ -252,6 +274,7 @@ export default function Component({
 - [ ] Todos os TODOs resolvidos ou documentados
 
 ### Descrição do PR
+
 - [ ] Título claro e descritivo
 - [ ] Descrição explica o que foi feito
 - [ ] Screenshots/GIFs se mudança visual
@@ -260,6 +283,7 @@ export default function Component({
 - [ ] Breaking changes documentadas
 
 ### Review
+
 - [ ] Self-review feito
 - [ ] Reviewers atribuídos
 - [ ] CI/CD passou
@@ -271,6 +295,7 @@ export default function Component({
 ## 🚀 Checklist: Deploy para Produção
 
 ### Pré-Deploy
+
 - [ ] Todos os testes passaram
 - [ ] Code review aprovado
 - [ ] Staging testado e validado
@@ -279,6 +304,7 @@ export default function Component({
 - [ ] Backup do banco feito
 
 ### Configuração
+
 - [ ] `next.config.ts` com `ignoreBuildErrors: false`
 - [ ] `next.config.ts` com `ignoreDuringBuilds: false`
 - [ ] Environment variables de produção corretas
@@ -287,6 +313,7 @@ export default function Component({
 - [ ] Domain/DNS configurado
 
 ### Validação Crítica
+
 - [ ] ⚠️ Sistema de autenticação unificado (Lucia OU JWT)
 - [ ] ⚠️ Middleware não usa `AbortSignal.timeout()`
 - [ ] ⚠️ API maintenance-check retorna `maintenanceMode`
@@ -294,6 +321,7 @@ export default function Component({
 - [ ] ⚠️ `COMPANY_INIT` configurado corretamente
 
 ### Pós-Deploy
+
 - [ ] Deploy executado com sucesso
 - [ ] Health check passou
 - [ ] Funcionalidades críticas testadas:
@@ -307,6 +335,7 @@ export default function Component({
 - [ ] Alertas configurados
 
 ### Rollback Plan
+
 - [ ] Plano de rollback documentado
 - [ ] Backup disponível
 - [ ] Comando de rollback testado
@@ -318,41 +347,48 @@ export default function Component({
 ### Como Reviewer
 
 #### Funcionalidade
+
 - [ ] Código faz o que propõe
 - [ ] Lógica está correta
 - [ ] Edge cases são tratados
 - [ ] Não introduz novos bugs
 
 #### Qualidade
+
 - [ ] Código é legível e limpo
 - [ ] Sem duplicação desnecessária
 - [ ] Funções têm tamanho razoável
 - [ ] Nomenclatura clara e consistente
 
 #### TypeScript
+
 - [ ] Tipos estão corretos
 - [ ] Sem uso de `any`
 - [ ] Interfaces bem definidas
 - [ ] Sem type assertions desnecessários
 
 #### Segurança
+
 - [ ] Input é validado
 - [ ] Autenticação/autorização correta
 - [ ] Sem dados sensíveis em logs
 - [ ] Sem vulnerabilidades óbvias
 
 #### Performance
+
 - [ ] Sem operações desnecessariamente pesadas
 - [ ] Queries otimizadas
 - [ ] Sem loops ineficientes
 - [ ] Memoization onde necessário
 
 #### Testes
+
 - [ ] Casos de teste adequados
 - [ ] Coverage aceitável
 - [ ] Testes passam
 
 #### Documentação
+
 - [ ] Código complexo comentado
 - [ ] JSDoc em APIs públicas
 - [ ] README atualizado se necessário
@@ -362,6 +398,7 @@ export default function Component({
 ## 🔍 Checklist: Debugging
 
 ### Investigação Inicial
+
 - [ ] Erro reproduzido consistentemente
 - [ ] Stack trace analisado
 - [ ] Logs revisados
@@ -369,6 +406,7 @@ export default function Component({
 - [ ] Versões de dependências verificadas
 
 ### Ferramentas
+
 - [ ] Usar `console.error` (não `console.log`)
 - [ ] Usar debugging do VS Code/Cursor
 - [ ] Usar DevTools do browser
@@ -376,6 +414,7 @@ export default function Component({
 - [ ] Usar Redux DevTools se aplicável
 
 ### Processo
+
 - [ ] Isolar o problema (dividir e conquistar)
 - [ ] Verificar mudanças recentes (git log)
 - [ ] Testar em ambiente limpo
@@ -388,6 +427,7 @@ export default function Component({
 ## 📝 Checklist: Documentação
 
 ### Para Cada Feature Nova
+
 - [ ] Adicionar em README se feature principal
 - [ ] Criar doc em `/docs` se complexa
 - [ ] Adicionar JSDoc em código
@@ -395,11 +435,13 @@ export default function Component({
 - [ ] Atualizar `.cursorrules` se novo padrão
 
 ### Para Cada Bug Corrigido
+
 - [ ] Atualizar `KNOWN_BUGS.md`
 - [ ] Adicionar comentário explicando o fix
 - [ ] Atualizar `.cursorrules` se aplicável
 
 ### Manutenção Regular
+
 - [ ] Revisar docs mensalmente
 - [ ] Remover docs obsoletos
 - [ ] Atualizar screenshots/exemplos
@@ -457,4 +499,3 @@ git push origin feature/nome-da-feature
 **Mantenha este checklist atualizado conforme o projeto evolui!**
 
 **Última atualização:** 2025-11-05
-

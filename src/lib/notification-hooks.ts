@@ -6,58 +6,60 @@ import { NotificationService } from './notifications'
 import { db } from '@/db/drizzle'
 import { otherSettings, users, transactions, notificationRules } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
-import { notificationQueue } from './queues';
+import { notificationQueue } from './queues'
 
 // Hook para quando um novo usuário é criado
 export async function onUserCreated(userId: string): Promise<void> {
-    try {
-      const [user] = await db
-        .select({
-          id: users.id,
-          email: users.email,
-          phone: users.phone,
-          companyId: users.companyId,
-        })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1)
-
-      if (!user) return
-
-      const [settings] = await db
-        .select()
-        .from(otherSettings)
-        .where(eq(otherSettings.companyId, user.companyId))
-        .limit(1)
-
-      if (!settings) return
-
-      const notificationService = new NotificationService({
-        whatsappApiUrl: settings.whatsappApiUrl || undefined,
-        whatsappApiKey: settings.whatsappApiKey || undefined,
-        whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
-        sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
-        sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
-        fromEmail: settings.smtpFrom || undefined,
-        companyId: user.companyId,
+  try {
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        phone: users.phone,
+        companyId: users.companyId,
       })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
 
-      // Enviar boas-vindas após 5 minutos (para dar tempo do usuário completar o cadastro)
-      setTimeout(async () => {
+    if (!user) return
+
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, user.companyId))
+      .limit(1)
+
+    if (!settings) return
+
+    const notificationService = new NotificationService({
+      whatsappApiUrl: settings.whatsappApiUrl || undefined,
+      whatsappApiKey: settings.whatsappApiKey || undefined,
+      whatsappApiInstance: settings.whatsappApiInstance || undefined,
+      sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+      sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+      sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
+      fromEmail: settings.smtpFrom || undefined,
+      companyId: user.companyId,
+    })
+
+    // Enviar boas-vindas após 5 minutos (para dar tempo do usuário completar o cadastro)
+    setTimeout(
+      async () => {
         await notificationService.sendWelcome(
           userId,
           'Novo Membro',
           'Nossa Igreja',
           user.phone || undefined,
-          user.email || undefined
+          user.email || undefined,
         )
-      }, 5 * 60 * 1000)
-
-    } catch (error) {
-      console.error('Error in onUserCreated hook:', error)
-    }
+      },
+      5 * 60 * 1000,
+    )
+  } catch (error) {
+    console.error('Error in onUserCreated hook:', error)
   }
+}
 
 // Hook para quando uma transação é criada
 export async function onTransactionCreated(transactionId: string): Promise<void> {
@@ -71,7 +73,11 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
     if (!transaction) return
 
     // Busca usuário doador
-    const [user] = await db.select().from(users).where(eq(users.id, transaction.contributorId)).limit(1)
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, transaction.contributorId))
+      .limit(1)
     if (!user) return
 
     // Busca settings da empresa
@@ -121,7 +127,11 @@ export async function onTransactionFailed(transactionId: string): Promise<void> 
 }
 
 // Hook para quando um usuário é excluído
-export async function onUserDeleted(userId: string, deletionReason: string, deletedByUserId: string): Promise<void> {
+export async function onUserDeleted(
+  userId: string,
+  deletionReason: string,
+  deletedByUserId: string,
+): Promise<void> {
   try {
     const [user] = await db
       .select({
@@ -174,7 +184,7 @@ export async function onUserDeleted(userId: string, deletionReason: string, dele
         sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         fromEmail: settings.smtpFrom || undefined,
       })
-      
+
       await emailService.sendEmail({
         to: deletedByUser.email,
         subject,
@@ -189,7 +199,10 @@ export async function onUserDeleted(userId: string, deletionReason: string, dele
 }
 
 // Central Notification Event Processor
-export async function processNotificationEvent(eventType: string, data: Record<string, any>): Promise<void> {
+export async function processNotificationEvent(
+  eventType: string,
+  data: Record<string, any>,
+): Promise<void> {
   // eventType: Ex: 'user_registered', 'payment_received', etc
   // data: userId, amount, transactionId, email, phone, etc
   try {
@@ -198,13 +211,22 @@ export async function processNotificationEvent(eventType: string, data: Record<s
     // Busca usuário e settings
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
     if (!user) return
-    const [settings] = await db.select().from(otherSettings).where(eq(otherSettings.companyId, user.companyId)).limit(1)
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, user.companyId))
+      .limit(1)
     if (!settings) return
     // Busca regras ativas para o evento
     const activeRules = await db
       .select()
       .from(notificationRules)
-      .where(and(eq(notificationRules.isActive, true), eq(notificationRules.eventTrigger, eventType as any)))
+      .where(
+        and(
+          eq(notificationRules.isActive, true),
+          eq(notificationRules.eventTrigger, eventType as any),
+        ),
+      )
     for (const rule of activeRules) {
       // Monta mensagem a partir do template da regra (substitui variáveis)
       const variables: Record<string, string> = {
@@ -275,7 +297,7 @@ export async function testNotifications(companyId: string): Promise<void> {
     'Teste Usuario',
     'Igreja Teste',
     '5511999999999', // Número de teste
-    'teste@exemplo.com'
+    'teste@exemplo.com',
   )
   console.log('Welcome result:', welcomeResult)
 
@@ -286,7 +308,7 @@ export async function testNotifications(companyId: string): Promise<void> {
     '100,00',
     '15/01/2024',
     '5511999999999',
-    'teste@exemplo.com'
+    'teste@exemplo.com',
   )
   console.log('Reminder result:', reminderResult)
 }

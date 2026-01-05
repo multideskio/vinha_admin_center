@@ -78,7 +78,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
 
   const getIconColor = (gradient: string, isActive: boolean) => {
     if (!isActive) return 'text-muted-foreground group-hover:text-foreground'
-    
+
     switch (gradient) {
       case 'cyan':
         return 'text-videira-cyan'
@@ -126,7 +126,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/admin/dashboard' && pathname.startsWith(item.href))
-              
+
               return (
                 <Link
                   key={item.href}
@@ -137,19 +137,23 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                     'border-l-3 border-l-transparent',
                     'hover:shadow-sm hover:scale-[1.02]',
                     getGradientClass(item.gradient),
-                    isActive ? 'font-semibold border-l-4' : 'font-medium'
+                    isActive ? 'font-semibold border-l-4' : 'font-medium',
                   )}
                 >
-                  <item.icon 
+                  <item.icon
                     className={cn(
                       'h-5 w-5 transition-all duration-200',
-                      getIconColor(item.gradient, isActive)
-                    )} 
+                      getIconColor(item.gradient, isActive),
+                    )}
                   />
-                  <span className={cn(
-                    'text-base transition-colors',
-                    isActive ? getIconColor(item.gradient, true) : 'text-muted-foreground group-hover:text-foreground'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-base transition-colors',
+                      isActive
+                        ? getIconColor(item.gradient, true)
+                        : 'text-muted-foreground group-hover:text-foreground',
+                    )}
+                  >
                     {item.label}
                   </span>
                   {isActive && (
@@ -178,14 +182,16 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                 'hover:shadow-sm hover:bg-videira-blue/10',
                 pathname === '/admin/perfil'
                   ? 'bg-videira-blue/15 border-l-4 border-l-videira-blue font-semibold text-videira-blue'
-                  : 'font-medium text-muted-foreground hover:text-foreground'
+                  : 'font-medium text-muted-foreground hover:text-foreground',
               )}
             >
-              <User 
+              <User
                 className={cn(
                   'h-5 w-5 transition-all',
-                  pathname === '/admin/perfil' ? 'text-videira-blue' : 'text-muted-foreground group-hover:text-foreground'
-                )} 
+                  pathname === '/admin/perfil'
+                    ? 'text-videira-blue'
+                    : 'text-muted-foreground group-hover:text-foreground',
+                )}
               />
               <span className="text-base">Meu Perfil</span>
             </Link>
@@ -198,14 +204,16 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                 'hover:shadow-sm hover:bg-primary/10',
                 pathname.startsWith(settingsItem.href)
                   ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
-                  : 'font-medium text-muted-foreground hover:text-foreground'
+                  : 'font-medium text-muted-foreground hover:text-foreground',
               )}
             >
-              <settingsItem.icon 
+              <settingsItem.icon
                 className={cn(
                   'h-5 w-5 transition-all',
-                  pathname.startsWith(settingsItem.href) ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                )} 
+                  pathname.startsWith(settingsItem.href)
+                    ? 'text-primary'
+                    : 'text-muted-foreground group-hover:text-foreground',
+                )}
               />
               <span className="text-base">{settingsItem.label}</span>
             </Link>

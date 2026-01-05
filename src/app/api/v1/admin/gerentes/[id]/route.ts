@@ -107,7 +107,8 @@ export async function PUT(
         profileUpdateData.neighborhood = validatedData.neighborhood
       if (validatedData.address !== undefined) profileUpdateData.address = validatedData.address
       if (validatedData.facebook !== undefined) profileUpdateData.facebook = validatedData.facebook
-      if (validatedData.instagram !== undefined) profileUpdateData.instagram = validatedData.instagram
+      if (validatedData.instagram !== undefined)
+        profileUpdateData.instagram = validatedData.instagram
       if (validatedData.website !== undefined) profileUpdateData.website = validatedData.website
 
       if (Object.keys(profileUpdateData).length > 0) {

@@ -61,7 +61,10 @@ export default function RelatorioFinanceiroPage() {
   const [summary, setSummary] = React.useState<Summary | null>(null)
   const [period, setPeriod] = React.useState({ from: '', to: '' })
   const [isLoading, setIsLoading] = React.useState(true)
-  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({
     from: undefined,
     to: undefined,
   })
@@ -111,9 +114,12 @@ export default function RelatorioFinanceiroPage() {
     fetchData()
   }, [fetchData])
 
-  const handleDateRangeChange = React.useCallback((range: { from: Date | undefined; to: Date | undefined }) => {
-    setDateRange(range)
-  }, [])
+  const handleDateRangeChange = React.useCallback(
+    (range: { from: Date | undefined; to: Date | undefined }) => {
+      setDateRange(range)
+    },
+    [],
+  )
 
   const handleExportCSV = () => {
     if (!allTransactions || allTransactions.length === 0) {
@@ -134,12 +140,18 @@ export default function RelatorioFinanceiroPage() {
         t.method,
         t.status,
       ])
-      const csv = [headers.join(','), ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(','))].join('\n')
+      const csv = [
+        headers.join(','),
+        ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(',')),
+      ].join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `relatorio-financeiro-${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute(
+        'download',
+        `relatorio-financeiro-${new Date().toISOString().slice(0, 10)}.csv`,
+      )
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -150,11 +162,18 @@ export default function RelatorioFinanceiroPage() {
         variant: 'success',
       })
     } catch (e) {
-      toast({ title: 'Erro ao exportar', description: 'Não foi possível gerar o CSV.', variant: 'destructive' })
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível gerar o CSV.',
+        variant: 'destructive',
+      })
     }
   }
 
-  const statusMap: Record<string, { text: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }> = {
+  const statusMap: Record<
+    string,
+    { text: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }
+  > = {
     approved: { text: 'Aprovada', variant: 'success' },
     pending: { text: 'Pendente', variant: 'warning' },
     refused: { text: 'Recusada', variant: 'destructive' },
@@ -189,13 +208,13 @@ export default function RelatorioFinanceiroPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/relatorios">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -216,7 +235,7 @@ export default function RelatorioFinanceiroPage() {
                 Período: {period.from} até {period.to}
               </p>
             </div>
-            <Button 
+            <Button
               onClick={handleExportCSV}
               className="bg-white text-green-600 hover:bg-white/90 shadow-lg font-semibold gap-2"
             >
@@ -291,7 +310,7 @@ export default function RelatorioFinanceiroPage() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                  summary.totalApproved
+                  summary.totalApproved,
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -308,7 +327,7 @@ export default function RelatorioFinanceiroPage() {
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                  summary.totalPending
+                  summary.totalPending,
                 )}
               </div>
             </CardContent>
@@ -322,7 +341,7 @@ export default function RelatorioFinanceiroPage() {
             <CardContent>
               <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                  summary.totalRefused
+                  summary.totalRefused,
                 )}
               </div>
             </CardContent>
@@ -336,7 +355,7 @@ export default function RelatorioFinanceiroPage() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                  summary.totalRefunded
+                  summary.totalRefunded,
                 )}
               </div>
             </CardContent>
@@ -356,7 +375,9 @@ export default function RelatorioFinanceiroPage() {
                 <div key={method} className="p-4 border rounded-lg">
                   <p className="text-sm text-muted-foreground">{methodMap[method] || method}</p>
                   <p className="text-2xl font-bold">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.total)}
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      data.total,
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">{data.count} transações</p>
                 </div>
@@ -399,12 +420,15 @@ export default function RelatorioFinanceiroPage() {
                         <TableCell className="font-mono text-xs">{transaction.date}</TableCell>
                         <TableCell className="font-medium">{transaction.contributorName}</TableCell>
                         <TableCell className="text-right font-semibold">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                            transaction.amount
-                          )}
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(transaction.amount)}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{methodMap[transaction.method] || transaction.method}</Badge>
+                          <Badge variant="outline">
+                            {methodMap[transaction.method] || transaction.method}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
@@ -472,4 +496,3 @@ export default function RelatorioFinanceiroPage() {
     </div>
   )
 }
-

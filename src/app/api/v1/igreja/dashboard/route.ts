@@ -26,20 +26,20 @@ const calculateChange = (current: number, previous: number): string => {
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   if (!['igreja', 'church_account'].includes(sessionUser.role)) {
     return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
   }
   const churchId = sessionUser.id
 
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams: _ } = new URL(request.url)
     // const startDateParam = searchParams.get('startDate')
     // const endDateParam = searchParams.get('endDate')
 

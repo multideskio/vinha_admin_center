@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema'
-import { and, eq, isNull, desc, gte, or, ilike } from 'drizzle-orm'
+import { and, eq, isNull, desc, gte } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { startOfMonth, subMonths, format } from 'date-fns'
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-    
+
     // Parâmetros de paginação
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const threeMonthsAgo = startOfMonth(subMonths(now, 3))
 
     // Buscar pastores inadimplentes
-    let pastorsData: Array<{
+    const pastorsData: Array<{
       id: string
       name: string
       type: 'pastor'
@@ -72,15 +72,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             and(
               eq(transactions.contributorId, pastor.id),
               eq(transactions.status, 'approved'),
-              gte(transactions.createdAt, threeMonthsAgo)
-            )
+              gte(transactions.createdAt, threeMonthsAgo),
+            ),
           )
           .orderBy(desc(transactions.createdAt))
           .limit(1)
 
         if (lastPayment.length === 0) {
           const daysSinceThreeMonths = Math.floor(
-            (now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24)
+            (now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24),
           )
 
           pastorsData.push({
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
           if (lastPaymentDate < threeMonthsAgo) {
             const daysSinceLastPayment = Math.floor(
-              (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24)
+              (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24),
             )
 
             pastorsData.push({
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Buscar igrejas inadimplentes
-    let churchesData: Array<{
+    const churchesData: Array<{
       id: string
       name: string
       type: 'church'
@@ -146,15 +146,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             and(
               eq(transactions.contributorId, church.id),
               eq(transactions.status, 'approved'),
-              gte(transactions.createdAt, threeMonthsAgo)
-            )
+              gte(transactions.createdAt, threeMonthsAgo),
+            ),
           )
           .orderBy(desc(transactions.createdAt))
           .limit(1)
 
         if (lastPayment.length === 0) {
           const daysSinceThreeMonths = Math.floor(
-            (now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24)
+            (now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24),
           )
 
           churchesData.push({
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           const lastPaymentDate = new Date(lastPayment[0]!.createdAt)
           if (lastPaymentDate < threeMonthsAgo) {
             const daysSinceLastPayment = Math.floor(
-              (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24)
+              (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24),
             )
 
             churchesData.push({
@@ -191,9 +191,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Ordenar
     allDefaulters.sort((a, b) => {
       if (sortBy === 'name') {
-        return sortOrder === 'asc'
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name)
+        return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
       } else {
         // sortBy === 'daysLate'
         return sortOrder === 'asc' ? a.daysLate - b.daysLate : b.daysLate - a.daysLate
@@ -219,9 +217,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   } catch (error: unknown) {
     console.error('Erro ao buscar inadimplentes:', error)
     return NextResponse.json(
-      { error: 'Erro ao buscar inadimplentes', details: error instanceof Error ? error.message : 'Erro desconhecido' },
-      { status: 500 }
+      {
+        error: 'Erro ao buscar inadimplentes',
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
+      },
+      { status: 500 },
     )
   }
 }
-

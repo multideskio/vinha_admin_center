@@ -23,8 +23,8 @@ export async function POST(_request: NextRequest) {
     const reminderRules = activeRules.filter((r) => r.eventTrigger === 'payment_due_reminder')
     const overdueRules = activeRules.filter((r) => r.eventTrigger === 'payment_overdue')
 
-    let sent = 0
-    let skipped = 0
+    const sent = 0
+    const skipped = 0
 
     // Helper para dia formatado (dedupe diária)
     const todayStr = new Date().toISOString().split('T')[0]
@@ -37,7 +37,13 @@ export async function POST(_request: NextRequest) {
       const dueUsers = await db
         .select()
         .from(users)
-        .where(and(eq(users.companyId, companyId), eq(users.titheDay, targetDate.getDate()), eq(users.status, 'active')))
+        .where(
+          and(
+            eq(users.companyId, companyId),
+            eq(users.titheDay, targetDate.getDate()),
+            eq(users.status, 'active'),
+          ),
+        )
         .limit(500)
 
       for (const u of dueUsers) {
@@ -84,7 +90,13 @@ export async function POST(_request: NextRequest) {
       const overdueUsers = await db
         .select()
         .from(users)
-        .where(and(eq(users.companyId, companyId), eq(users.titheDay, targetDate.getDate()), eq(users.status, 'active')))
+        .where(
+          and(
+            eq(users.companyId, companyId),
+            eq(users.titheDay, targetDate.getDate()),
+            eq(users.status, 'active'),
+          ),
+        )
         .limit(500)
 
       for (const u of overdueUsers) {

@@ -19,7 +19,7 @@ class ValidationError extends Error {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
     console.log('[CIELO_WEBHOOK] Received:', JSON.stringify(body, null, 2))
 
     // Registrar webhook recebido
@@ -62,17 +62,23 @@ export async function POST(request: NextRequest) {
     console.log('[CIELO_WEBHOOK] Transaction found:', {
       id: transaction.id,
       gatewayTransactionId: transaction.gatewayTransactionId,
-      currentStatus: transaction.status
+      currentStatus: transaction.status,
     })
 
-    console.log('[CIELO_WEBHOOK] Processing transaction:', transaction.id, 'ChangeType:', ChangeType)
+    console.log(
+      '[CIELO_WEBHOOK] Processing transaction:',
+      transaction.id,
+      'ChangeType:',
+      ChangeType,
+    )
 
     // Mapear status Cielo para nosso status
     let newStatus: 'approved' | 'pending' | 'refused' | 'refunded' = transaction.status
 
     switch (ChangeType) {
       case 1: // Payment status changed
-      case 3: { // Recurrence created
+      case 3: {
+        // Recurrence created
         // Consultar status atual na Cielo
         const { queryPayment } = await import('@/lib/cielo')
         const paymentData = await queryPayment(PaymentId)
@@ -80,12 +86,16 @@ export async function POST(request: NextRequest) {
 
         console.log('[CIELO_WEBHOOK] Cielo status:', cieloStatus)
 
-        // Status Cielo: 0=NotFinished, 1=Authorized, 2=PaymentConfirmed, 3=Denied, 
+        // Status Cielo: 0=NotFinished, 1=Authorized, 2=PaymentConfirmed, 3=Denied,
         // 10=Voided, 11=Refunded, 12=Pending, 13=Aborted, 20=Scheduled
-        if (cieloStatus === 2) newStatus = 'approved' // Pago
-        else if (cieloStatus === 1) newStatus = 'approved' // Autorizado (cartão)
-        else if (cieloStatus === 3 || cieloStatus === 13) newStatus = 'refused' // Negado/Abortado
-        else if (cieloStatus === 10 || cieloStatus === 11) newStatus = 'refunded' // Cancelado/Estornado
+        if (cieloStatus === 2)
+          newStatus = 'approved' // Pago
+        else if (cieloStatus === 1)
+          newStatus = 'approved' // Autorizado (cartão)
+        else if (cieloStatus === 3 || cieloStatus === 13)
+          newStatus = 'refused' // Negado/Abortado
+        else if (cieloStatus === 10 || cieloStatus === 11)
+          newStatus = 'refunded' // Cancelado/Estornado
         else newStatus = 'pending' // Outros status
         break
       }
@@ -134,8 +144,8 @@ export async function POST(request: NextRequest) {
             .where(
               and(
                 eq(userNotificationSettings.userId, transaction.contributorId),
-                eq(userNotificationSettings.notificationType, 'payment_notifications')
-              )
+                eq(userNotificationSettings.notificationType, 'payment_notifications'),
+              ),
             )
             .limit(1)
 
@@ -180,21 +190,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, status: newStatus }, { status: 200 })
   } catch (error) {
     console.error('[CIELO_WEBHOOK] Error:', error)
-    
+
     // ✅ CORRIGIDO: Diferenciar erros de validação (200) de erros de processamento (500)
     if (error instanceof ValidationError) {
       // Erros de validação: webhook válido mas sem dados para processar
       return NextResponse.json(
         { success: true, message: 'Webhook validated but skipped', reason: error.message },
-        { status: 200 }
+        { status: 200 },
       )
     }
-    
+
     // ✅ CORRIGIDO: Erros reais de processamento devem retornar 500 para Cielo retentar
     // Isso permite que a Cielo saiba que houve um problema e retente o webhook
     return NextResponse.json(
-      { success: false, error: 'Processing error', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+      {
+        success: false,
+        error: 'Processing error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
     )
   }
 }

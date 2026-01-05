@@ -33,22 +33,22 @@ export async function GET() {
       .from(userNotificationSettings)
       .where(eq(userNotificationSettings.userId, user.id))
 
-    const result = NOTIFICATION_TYPES.reduce((acc, type) => {
-      const setting = settings.find(s => s.notificationType === type)
-      acc[type] = {
-        email: setting?.email ?? true,
-        whatsapp: setting?.whatsapp ?? false,
-      }
-      return acc
-    }, {} as Record<string, unknown>)
+    const result = NOTIFICATION_TYPES.reduce(
+      (acc, type) => {
+        const setting = settings.find((s) => s.notificationType === type)
+        acc[type] = {
+          email: setting?.email ?? true,
+          whatsapp: setting?.whatsapp ?? false,
+        }
+        return acc
+      },
+      {} as Record<string, unknown>,
+    )
 
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching notification settings:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -63,13 +63,14 @@ export async function PUT(request: NextRequest) {
     const data = notificationSettingsSchema.parse(body)
 
     await db.transaction(async (tx) => {
-      await tx
-        .delete(userNotificationSettings)
-        .where(eq(userNotificationSettings.userId, user.id))
+      await tx.delete(userNotificationSettings).where(eq(userNotificationSettings.userId, user.id))
 
       const insertData = Object.entries(data).map(([type, settings]) => ({
         userId: user.id,
-        notificationType: type as 'payment_notifications' | 'due_date_reminders' | 'network_reports',
+        notificationType: type as
+          | 'payment_notifications'
+          | 'due_date_reminders'
+          | 'network_reports',
         email: settings.email,
         whatsapp: settings.whatsapp,
       }))
@@ -82,17 +83,14 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error updating notification settings:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

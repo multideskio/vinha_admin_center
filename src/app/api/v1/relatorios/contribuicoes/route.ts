@@ -6,8 +6,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { users, transactions, pastorProfiles, churchProfiles, supervisorProfiles, managerProfiles } from '@/db/schema'
-import { and, eq, gte, lt, desc, sql, count as countFn } from 'drizzle-orm'
+import {
+  users,
+  transactions,
+  pastorProfiles,
+  churchProfiles,
+  supervisorProfiles,
+  managerProfiles,
+} from '@/db/schema'
+import { and, eq, gte, lt, sql, count as countFn } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
@@ -20,7 +27,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const { searchParams } = new URL(request.url)
-    
+
     // Filtros
     const from = searchParams.get('from')
     const to = searchParams.get('to')
@@ -54,9 +61,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .limit(100)
 
     // Filtrar por tipo se especificado
-    const filteredContributors = contributorType && contributorType !== 'all'
-      ? contributorsData.filter((c) => c.contributorRole === contributorType)
-      : contributorsData
+    const filteredContributors =
+      contributorType && contributorType !== 'all'
+        ? contributorsData.filter((c) => c.contributorRole === contributorType)
+        : contributorsData
 
     // Enriquecer com nomes
     const contributors = await Promise.all(
@@ -74,7 +82,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               .from(pastorProfiles)
               .where(eq(pastorProfiles.userId, c.contributorId))
               .limit(1)
-            
+
             if (pastorData.length > 0 && pastorData[0]) {
               name = `${pastorData[0].firstName} ${pastorData[0].lastName}`
             }
@@ -87,7 +95,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               .from(churchProfiles)
               .where(eq(churchProfiles.userId, c.contributorId))
               .limit(1)
-            
+
             if (churchData.length > 0 && churchData[0]) {
               name = churchData[0].nomeFantasia
               extraInfo = churchData[0].city || ''
@@ -102,7 +110,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               .from(supervisorProfiles)
               .where(eq(supervisorProfiles.userId, c.contributorId))
               .limit(1)
-            
+
             if (supervisorData.length > 0 && supervisorData[0]) {
               name = `${supervisorData[0].firstName} ${supervisorData[0].lastName}`
             }
@@ -116,7 +124,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               .from(managerProfiles)
               .where(eq(managerProfiles.userId, c.contributorId))
               .limit(1)
-            
+
             if (managerData.length > 0 && managerData[0]) {
               name = `${managerData[0].firstName} ${managerData[0].lastName}`
             }
@@ -129,7 +137,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               .from(users)
               .where(eq(users.id, c.contributorId))
               .limit(1)
-            
+
             if (userData.length > 0 && userData[0]) {
               name = userData[0].email
             }
@@ -147,7 +155,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           contributionCount: c.count,
           lastContribution: format(new Date(c.lastContribution), 'dd/MM/yyyy'),
         }
-      })
+      }),
     )
 
     // Ranking dos top 10
@@ -203,8 +211,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         error: 'Erro ao buscar relatório de contribuições',
         details: error instanceof Error ? error.message : 'Erro desconhecido',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
-

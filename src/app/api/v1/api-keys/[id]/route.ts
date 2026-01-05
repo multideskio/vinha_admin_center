@@ -17,8 +17,11 @@ const updateKeySchema = z.object({
   status: z.enum(['active', 'inactive']),
 })
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function PUT(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -52,8 +55,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

@@ -5,8 +5,7 @@ import { db } from '@/db/drizzle'
 import { users } from '@/db/schema'
 import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
-import { createJWT, setJWTCookie, clearJWTCookie, validateRequest } from '@/lib/jwt'
-import { redirect } from 'next/navigation'
+import { createJWT, setJWTCookie, clearJWTCookie } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit, rateLimitPresets } from '@/lib/rate-limiter'
 import { headers } from 'next/headers'
@@ -25,12 +24,9 @@ export async function loginUser(
     const forwarded = headersList.get('x-forwarded-for')
     const realIP = headersList.get('x-real-ip')
     const clientIP = forwarded?.split(',')[0]?.trim() || realIP || 'unknown'
-    
-    const rateLimitResult = rateLimit(
-      `login:${values.email}:${clientIP}`,
-      rateLimitPresets.login
-    )
-    
+
+    const rateLimitResult = rateLimit(`login:${values.email}:${clientIP}`, rateLimitPresets.login)
+
     if (!rateLimitResult.allowed) {
       const resetInMinutes = Math.ceil((rateLimitResult.resetAt - Date.now()) / 60000)
       throw new Error(`Muitas tentativas de login. Tente novamente em ${resetInMinutes} minutos.`)

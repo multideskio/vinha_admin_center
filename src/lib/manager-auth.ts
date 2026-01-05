@@ -8,15 +8,15 @@ import { eq, inArray } from 'drizzle-orm'
 
 export async function validateManagerAuth() {
   const { user } = await validateRequest()
-  
+
   if (!user) {
     return { error: 'Não autorizado', status: 401 as const, user: null }
   }
-  
+
   if (user.role !== 'manager') {
     return { error: 'Acesso negado', status: 403 as const, user: null }
   }
-  
+
   return { error: null, status: 200 as const, user }
 }
 
@@ -27,7 +27,7 @@ export async function getManagerNetwork(managerId: string) {
     .from(supervisorProfiles)
     .where(eq(supervisorProfiles.managerId, managerId))
 
-  const supervisorUserIds = supervisors.map(s => s.userId)
+  const supervisorUserIds = supervisors.map((s) => s.userId)
 
   if (supervisorUserIds.length === 0) {
     return {
@@ -51,7 +51,7 @@ export async function getManagerNetwork(managerId: string) {
 
   return {
     supervisorUserIds,
-    pastorUserIds: pastors.map(p => p.userId),
-    churchUserIds: churches.map(c => c.userId),
+    pastorUserIds: pastors.map((p) => p.userId),
+    churchUserIds: churches.map((c) => c.userId),
   }
 }

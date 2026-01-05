@@ -12,8 +12,11 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 
-export async function GET(_: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function GET(
+  _: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -55,8 +58,11 @@ export async function GET(_: Request, props: { params: Promise<{ id: string }> }
   }
 }
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function PUT(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -66,35 +72,44 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
   // Apenas admin pode alterar qualquer gerente OU gerente pode alterar seus próprios dados
   if (user.role !== 'admin' && user.id !== id) {
-    return NextResponse.json({ error: 'Acesso negado. Você só pode alterar seus próprios dados.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Você só pode alterar seus próprios dados.' },
+      { status: 403 },
+    )
   }
 
   // Se não é admin, redireciona para API de perfil próprio
   if (user.role !== 'admin') {
     return NextResponse.json(
       { error: 'Use /api/v1/manager/perfil para alterar seu próprio perfil.' },
-      { status: 410 }
+      { status: 410 },
     )
   }
 
   // Admin deve usar a API correta
   return NextResponse.json(
     { error: 'Use /api/v1/admin/gerentes/[id] para alterar gerentes.' },
-    { status: 410 }
+    { status: 410 },
   )
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem excluir gerentes.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Apenas administradores podem excluir gerentes.' },
+      { status: 403 },
+    )
   }
 
   // Esta funcionalidade foi movida para /api/v1/admin/gerentes/[id]
   // Mantendo apenas para compatibilidade, mas bloqueando acesso
   return NextResponse.json(
     { error: 'Use /api/v1/admin/gerentes/[id] para excluir gerentes.' },
-    { status: 410 }
+    { status: 410 },
   )
 }

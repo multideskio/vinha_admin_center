@@ -9,7 +9,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
+import {
   LucideIcon,
   LayoutDashboard,
   User,
@@ -268,10 +268,10 @@ export function StandardizedSidebar({
           <Link href={`${basePath}/dashboard`} className="flex items-center gap-2 font-semibold">
             {companyLogo ? (
               <>
-                <img 
-                  src={companyLogo} 
-                  alt={`Logo ${companyName}`} 
-                  className="h-6 object-contain" 
+                <img
+                  src={companyLogo}
+                  alt={`Logo ${companyName}`}
+                  className="h-6 object-contain"
                   onError={handleLogoError}
                 />
                 <Logo className="h-6 w-6 text-primary hidden" />

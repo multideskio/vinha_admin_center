@@ -1,8 +1,7 @@
+'use client'
 
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   User,
@@ -11,9 +10,9 @@ import {
   ArrowRightLeft,
   Handshake,
   Grape,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import packageJson from '../../../../package.json';
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import packageJson from '../../../../package.json'
 
 const menuItems = [
   { href: '/supervisor/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'cyan' },
@@ -21,16 +20,16 @@ const menuItems = [
   { href: '/supervisor/igrejas', label: 'Igrejas', icon: Church, gradient: 'purple' },
   { href: '/supervisor/transacoes', label: 'Transações', icon: ArrowRightLeft, gradient: 'cyan' },
   { href: '/supervisor/contribuicoes', label: 'Contribuições', icon: Handshake, gradient: 'blue' },
-];
+]
 
 const settingsItem = {
   href: '/supervisor/perfil',
   label: 'Meu Perfil',
   icon: Settings,
-};
+}
 
 export function SupervisorSidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   const getGradientClass = (gradient: string) => {
     switch (gradient) {
@@ -47,7 +46,7 @@ export function SupervisorSidebar() {
 
   const getIconColor = (gradient: string, isActive: boolean) => {
     if (!isActive) return 'text-muted-foreground group-hover:text-foreground'
-    
+
     switch (gradient) {
       case 'cyan':
         return 'text-videira-cyan'
@@ -75,7 +74,9 @@ export function SupervisorSidebar() {
                 <span className="text-base font-bold text-white drop-shadow-lg">
                   Vinha Ministérios
                 </span>
-                <p className="text-xs text-white/80 font-medium">Painel Supervisor - v{packageJson.version}</p>
+                <p className="text-xs text-white/80 font-medium">
+                  Painel Supervisor - v{packageJson.version}
+                </p>
               </div>
             </Link>
           </div>
@@ -88,7 +89,7 @@ export function SupervisorSidebar() {
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/supervisor/dashboard' && pathname.startsWith(item.href))
-              
+
               return (
                 <Link
                   key={item.href}
@@ -99,19 +100,23 @@ export function SupervisorSidebar() {
                     'border-l-3 border-l-transparent',
                     'hover:shadow-sm hover:scale-[1.02]',
                     getGradientClass(item.gradient),
-                    isActive ? 'font-semibold border-l-4' : 'font-medium'
+                    isActive ? 'font-semibold border-l-4' : 'font-medium',
                   )}
                 >
-                  <item.icon 
+                  <item.icon
                     className={cn(
                       'h-5 w-5 transition-all duration-200',
-                      getIconColor(item.gradient, isActive)
-                    )} 
+                      getIconColor(item.gradient, isActive),
+                    )}
                   />
-                  <span className={cn(
-                    'text-base transition-colors',
-                    isActive ? getIconColor(item.gradient, true) : 'text-muted-foreground group-hover:text-foreground'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-base transition-colors',
+                      isActive
+                        ? getIconColor(item.gradient, true)
+                        : 'text-muted-foreground group-hover:text-foreground',
+                    )}
+                  >
                     {item.label}
                   </span>
                   {isActive && (
@@ -140,14 +145,16 @@ export function SupervisorSidebar() {
                 'hover:shadow-sm hover:bg-primary/10',
                 pathname.startsWith(settingsItem.href)
                   ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
-                  : 'font-medium text-muted-foreground hover:text-foreground'
+                  : 'font-medium text-muted-foreground hover:text-foreground',
               )}
             >
-              <settingsItem.icon 
+              <settingsItem.icon
                 className={cn(
                   'h-5 w-5 transition-all',
-                  pathname.startsWith(settingsItem.href) ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                )} 
+                  pathname.startsWith(settingsItem.href)
+                    ? 'text-primary'
+                    : 'text-muted-foreground group-hover:text-foreground',
+                )}
               />
               <span className="text-base">{settingsItem.label}</span>
             </Link>
@@ -155,5 +162,5 @@ export function SupervisorSidebar() {
         </div>
       </div>
     </div>
-  );
+  )
 }

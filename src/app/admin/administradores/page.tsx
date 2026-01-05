@@ -34,7 +34,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -107,7 +106,13 @@ export type Admin = z.infer<typeof adminSchema> & {
   avatarUrl?: string
 }
 
-const DeleteAdminDialog = ({ adminName, onConfirm }: { adminName: string; onConfirm: (reason: string) => void }) => {
+const DeleteAdminDialog = ({
+  adminName,
+  onConfirm,
+}: {
+  adminName: string
+  onConfirm: (reason: string) => void
+}) => {
   const [reason, setReason] = React.useState('')
   return (
     <AlertDialog>
@@ -123,7 +128,7 @@ const DeleteAdminDialog = ({ adminName, onConfirm }: { adminName: string; onConf
             Confirmar Exclusão do Administrador
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo 
+            Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo
             detalhado para a exclusão de {adminName}.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -144,8 +149,8 @@ const DeleteAdminDialog = ({ adminName, onConfirm }: { adminName: string; onConf
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={() => onConfirm(reason)} 
+          <AlertDialogAction
+            onClick={() => onConfirm(reason)}
             disabled={!reason.trim()}
             className="bg-destructive hover:bg-destructive/90 font-semibold"
           >
@@ -238,10 +243,7 @@ const AdminFormModal = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSave)}
-            className="space-y-4 p-4"
-          >
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4">
             <Alert className="bg-videira-blue/10 border-videira-blue/30">
               <AlertTriangle className="h-4 w-4 text-videira-blue" />
               <AlertDescription className="text-videira-blue">
@@ -316,11 +318,7 @@ const AdminFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <PhoneInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        type="mobile"
-                      />
+                      <PhoneInput value={field.value} onChange={field.onChange} type="mobile" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -373,10 +371,7 @@ const AdminFormModal = ({
               <DialogClose asChild>
                 <Button variant="outline">Cancelar</Button>
               </DialogClose>
-              <Button 
-                type="submit"
-                className="bg-videira-blue hover:bg-videira-blue/90 text-white"
-              >
+              <Button type="submit" className="bg-videira-blue hover:bg-videira-blue/90 text-white">
                 Cadastrar Administrador
               </Button>
             </DialogFooter>
@@ -439,9 +434,10 @@ export default function AdministradoresPage() {
     }
   }
 
-  const filteredAdmins = admins.filter((admin) =>
-    `${admin.firstName} ${admin.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admin.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredAdmins = admins.filter(
+    (admin) =>
+      `${admin.firstName} ${admin.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      admin.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage)
@@ -503,7 +499,8 @@ export default function AdministradoresPage() {
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={admin.avatarUrl || 'https://placehold.co/32x32.png'} />
                           <AvatarFallback>
-                            {admin.firstName?.[0]}{admin.lastName?.[0]}
+                            {admin.firstName?.[0]}
+                            {admin.lastName?.[0]}
                           </AvatarFallback>
                         </Avatar>
                         {`${admin.firstName} ${admin.lastName}`}
@@ -513,11 +510,12 @@ export default function AdministradoresPage() {
                       {admin.email}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      <Badge 
+                      <Badge
                         variant="outline"
                         className={cn(
-                          "font-semibold",
-                          admin.role === 'superadmin' && "border-videira-purple text-videira-purple"
+                          'font-semibold',
+                          admin.role === 'superadmin' &&
+                            'border-videira-purple text-videira-purple',
                         )}
                       >
                         {admin.role === 'admin' ? 'Administrador' : 'Super Admin'}
@@ -535,7 +533,7 @@ export default function AdministradoresPage() {
                           recipientEmail={admin.email}
                           recipientPhone={admin.phone || ''}
                         >
-                          <Button 
+                          <Button
                             size="sm"
                             className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                           >
@@ -549,7 +547,7 @@ export default function AdministradoresPage() {
                           recipientPhone={admin.phone || ''}
                           defaultTab="whatsapp"
                         >
-                          <Button 
+                          <Button
                             size="sm"
                             className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                           >
@@ -562,7 +560,7 @@ export default function AdministradoresPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/administradores/${admin.id}`}>
-                          <Button 
+                          <Button
                             size="sm"
                             className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                           >
@@ -621,13 +619,13 @@ export default function AdministradoresPage() {
           ))
         ) : paginatedAdmins.length > 0 ? (
           paginatedAdmins.map((admin, index) => (
-            <Card 
+            <Card
               key={admin.id}
               className={cn(
-                "shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4",
-                index % 3 === 0 && "border-t-videira-cyan",
-                index % 3 === 1 && "border-t-videira-blue",
-                index % 3 === 2 && "border-t-videira-purple"
+                'shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4',
+                index % 3 === 0 && 'border-t-videira-cyan',
+                index % 3 === 1 && 'border-t-videira-blue',
+                index % 3 === 2 && 'border-t-videira-purple',
               )}
             >
               <CardContent className="pt-6">
@@ -635,7 +633,8 @@ export default function AdministradoresPage() {
                   <Avatar className="w-24 h-24 ring-2 ring-offset-2 ring-offset-background ring-muted">
                     <AvatarImage src={admin.avatarUrl || 'https://placehold.co/96x96.png'} />
                     <AvatarFallback className="text-lg">
-                      {admin.firstName?.[0]}{admin.lastName?.[0]}
+                      {admin.firstName?.[0]}
+                      {admin.lastName?.[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2 min-w-[200px]">
@@ -649,8 +648,15 @@ export default function AdministradoresPage() {
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p className="flex items-center gap-2">
-                        <Shield size={14} className={admin.role === 'superadmin' ? 'text-videira-purple' : ''} />
-                        <span className={admin.role === 'superadmin' ? 'text-videira-purple font-semibold' : ''}>
+                        <Shield
+                          size={14}
+                          className={admin.role === 'superadmin' ? 'text-videira-purple' : ''}
+                        />
+                        <span
+                          className={
+                            admin.role === 'superadmin' ? 'text-videira-purple font-semibold' : ''
+                          }
+                        >
                           {admin.role === 'admin' ? 'Administrador' : 'Super Administrador'}
                         </span>
                       </p>
@@ -681,7 +687,7 @@ export default function AdministradoresPage() {
                       recipientEmail={admin.email}
                       recipientPhone={admin.phone || ''}
                     >
-                      <Button 
+                      <Button
                         size="sm"
                         className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                       >
@@ -694,7 +700,7 @@ export default function AdministradoresPage() {
                       recipientPhone={admin.phone || ''}
                       defaultTab="whatsapp"
                     >
-                      <Button 
+                      <Button
                         size="sm"
                         className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                       >
@@ -703,7 +709,7 @@ export default function AdministradoresPage() {
                     </SendMessageDialog>
                   </div>
                   <Link href={`/admin/administradores/${admin.id}`}>
-                    <Button 
+                    <Button
                       size="sm"
                       className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                     >
@@ -718,7 +724,9 @@ export default function AdministradoresPage() {
         ) : (
           <div className="col-span-full flex flex-col items-center gap-3 py-16">
             <ShieldCheck className="h-16 w-16 text-muted-foreground" />
-            <p className="text-lg font-medium text-muted-foreground">Nenhum administrador encontrado</p>
+            <p className="text-lg font-medium text-muted-foreground">
+              Nenhum administrador encontrado
+            </p>
           </div>
         )}
       </div>
@@ -729,7 +737,9 @@ export default function AdministradoresPage() {
   const PaginationControls = () => (
     <div className="flex items-center justify-between mt-6">
       <div className="text-sm text-muted-foreground">
-        Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredAdmins.length)} de {filteredAdmins.length} resultados
+        Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
+        {Math.min(currentPage * itemsPerPage, filteredAdmins.length)} de {filteredAdmins.length}{' '}
+        resultados
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -785,7 +795,7 @@ export default function AdministradoresPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -797,7 +807,8 @@ export default function AdministradoresPage() {
                 Gerencie os administradores do sistema
               </p>
               <p className="text-sm text-white/70 mt-1">
-                {admins.length} {admins.length === 1 ? 'administrador cadastrado' : 'administradores cadastrados'}
+                {admins.length}{' '}
+                {admins.length === 1 ? 'administrador cadastrado' : 'administradores cadastrados'}
               </p>
             </div>
             <AdminFormModal onSave={fetchAdmins}>
@@ -838,7 +849,7 @@ export default function AdministradoresPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-blue">
-              {admins.filter(a => a.status === 'active').length}
+              {admins.filter((a) => a.status === 'active').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">No sistema</p>
           </CardContent>
@@ -855,7 +866,7 @@ export default function AdministradoresPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-purple">
-              {admins.filter(a => a.role === 'superadmin').length}
+              {admins.filter((a) => a.role === 'superadmin').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">Com permissão total</p>
           </CardContent>
@@ -905,8 +916,8 @@ export default function AdministradoresPage() {
                     size="icon"
                     onClick={() => setViewMode('table')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'table' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'table' && 'bg-videira-blue text-white',
                     )}
                   >
                     <List className="h-5 w-5" />
@@ -921,8 +932,8 @@ export default function AdministradoresPage() {
                     size="icon"
                     onClick={() => setViewMode('card')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'card' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'card' && 'bg-videira-blue text-white',
                     )}
                   >
                     <Grid3x3 className="h-5 w-5" />

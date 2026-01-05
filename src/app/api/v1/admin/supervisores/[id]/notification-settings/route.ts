@@ -12,10 +12,7 @@ const notificationSettingsSchema = z.object({
   network_reports: z.object({ email: z.boolean(), whatsapp: z.boolean() }),
 })
 
-export async function GET(
-  request: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -27,14 +24,17 @@ export async function GET(
       .from(userNotificationSettings)
       .where(eq(userNotificationSettings.userId, id))
 
-    const result = NOTIFICATION_TYPES.reduce((acc, type) => {
-      const setting = settings.find((s) => s.notificationType === type)
-      acc[type] = {
-        email: setting?.email ?? true,
-        whatsapp: setting?.whatsapp ?? false,
-      }
-      return acc
-    }, {} as Record<string, unknown>)
+    const result = NOTIFICATION_TYPES.reduce(
+      (acc, type) => {
+        const setting = settings.find((s) => s.notificationType === type)
+        acc[type] = {
+          email: setting?.email ?? true,
+          whatsapp: setting?.whatsapp ?? false,
+        }
+        return acc
+      },
+      {} as Record<string, unknown>,
+    )
 
     return NextResponse.json(result)
   } catch (error) {
@@ -43,10 +43,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -60,7 +57,10 @@ export async function PUT(
       await tx.delete(userNotificationSettings).where(eq(userNotificationSettings.userId, id))
       const insertData = Object.entries(data).map(([type, settings]) => ({
         userId: id,
-        notificationType: type as 'payment_notifications' | 'due_date_reminders' | 'network_reports',
+        notificationType: type as
+          | 'payment_notifications'
+          | 'due_date_reminders'
+          | 'network_reports',
         email: (settings as any).email,
         whatsapp: (settings as any).whatsapp,
       }))
@@ -71,7 +71,10 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating notification settings (admin):', error)
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request data', details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.errors },
+        { status: 400 },
+      )
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

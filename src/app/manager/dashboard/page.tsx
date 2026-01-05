@@ -194,7 +194,7 @@ export default function GerenteDashboardPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -220,11 +220,15 @@ export default function GerenteDashboardPage() {
               Perfil Incompleto
             </CardTitle>
             <CardDescription className="text-amber-800 dark:text-amber-200">
-              Complete seu perfil para habilitar todas as funcionalidades, incluindo pagamentos via boleto.
+              Complete seu perfil para habilitar todas as funcionalidades, incluindo pagamentos via
+              boleto.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg">
+            <Button
+              asChild
+              className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg"
+            >
               <a href="/manager/perfil">Completar Perfil</a>
             </Button>
           </CardContent>
@@ -234,12 +238,36 @@ export default function GerenteDashboardPage() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpiDisplayData.map((kpi, index) => {
           const colorClasses = [
-            { card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30', iconColor: 'h-4 w-4 text-videira-cyan' },
-            { card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30', iconColor: 'h-4 w-4 text-videira-blue' },
-            { card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent', icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30', iconColor: 'h-4 w-4 text-videira-purple' },
-            { card: 'shadow-lg border-l-4 border-l-green-500 hover:shadow-xl transition-all bg-gradient-to-br from-green-500/5 to-transparent', icon: 'p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30', iconColor: 'h-4 w-4 text-green-500' },
-            { card: 'shadow-lg border-l-4 border-l-blue-500 hover:shadow-xl transition-all bg-gradient-to-br from-blue-500/5 to-transparent', icon: 'p-2 rounded-lg bg-blue-500/15 ring-2 ring-blue-500/30', iconColor: 'h-4 w-4 text-blue-500' },
-            { card: 'shadow-lg border-l-4 border-l-purple-500 hover:shadow-xl transition-all bg-gradient-to-br from-purple-500/5 to-transparent', icon: 'p-2 rounded-lg bg-purple-500/15 ring-2 ring-purple-500/30', iconColor: 'h-4 w-4 text-purple-500' },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-cyan hover:shadow-xl transition-all bg-gradient-to-br from-videira-cyan/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-cyan/15 ring-2 ring-videira-cyan/30',
+              iconColor: 'h-4 w-4 text-videira-cyan',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-blue hover:shadow-xl transition-all bg-gradient-to-br from-videira-blue/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30',
+              iconColor: 'h-4 w-4 text-videira-blue',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-videira-purple hover:shadow-xl transition-all bg-gradient-to-br from-videira-purple/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-videira-purple/15 ring-2 ring-videira-purple/30',
+              iconColor: 'h-4 w-4 text-videira-purple',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-green-500 hover:shadow-xl transition-all bg-gradient-to-br from-green-500/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-green-500/15 ring-2 ring-green-500/30',
+              iconColor: 'h-4 w-4 text-green-500',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-blue-500 hover:shadow-xl transition-all bg-gradient-to-br from-blue-500/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-blue-500/15 ring-2 ring-blue-500/30',
+              iconColor: 'h-4 w-4 text-blue-500',
+            },
+            {
+              card: 'shadow-lg border-l-4 border-l-purple-500 hover:shadow-xl transition-all bg-gradient-to-br from-purple-500/5 to-transparent',
+              icon: 'p-2 rounded-lg bg-purple-500/15 ring-2 ring-purple-500/30',
+              iconColor: 'h-4 w-4 text-purple-500',
+            },
           ] as const
           const classes = colorClasses[index % colorClasses.length]!
           return (
@@ -271,10 +299,10 @@ export default function GerenteDashboardPage() {
               </CardTitle>
               <CardDescription>As transações mais recentes da sua rede</CardDescription>
             </div>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8 border-2 border-videira-cyan/30 hover:bg-videira-cyan/10" 
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-2 border-videira-cyan/30 hover:bg-videira-cyan/10"
               onClick={fetchData}
             >
               <RefreshCw className="h-4 w-4 text-videira-cyan" />
@@ -326,7 +354,10 @@ export default function GerenteDashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {data.recentRegistrations.map((user) => (
-                <div key={user.id} className="flex items-center p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                <div
+                  key={user.id}
+                  className="flex items-center p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                >
                   <Avatar className="h-10 w-10 ring-2 ring-videira-blue/30">
                     <AvatarImage
                       src={`https://placehold.co/40x40.png`}
@@ -341,9 +372,7 @@ export default function GerenteDashboardPage() {
                     <p className="text-sm font-semibold leading-none">{user.name}</p>
                     <p className="text-xs text-muted-foreground">{user.type}</p>
                   </div>
-                  <div className="ml-auto text-xs text-muted-foreground">
-                    {user.date}
-                  </div>
+                  <div className="ml-auto text-xs text-muted-foreground">{user.date}</div>
                 </div>
               ))}
             </div>
@@ -448,7 +477,13 @@ export default function GerenteDashboardPage() {
             <ChartContainer config={{}} className="h-[300px] w-full">
               <BarChart data={data.newMembers} margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  className="text-xs"
+                />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
                 <Tooltip content={<ChartTooltipContent indicator="dot" />} />
                 <Bar dataKey="count" fill="hsl(187 100% 43%)" radius={[4, 4, 0, 0]} />

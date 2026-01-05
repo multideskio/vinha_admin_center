@@ -7,13 +7,13 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { 
-  users, 
-  adminProfiles, 
-  managerProfiles, 
-  supervisorProfiles, 
-  pastorProfiles, 
-  churchProfiles 
+import {
+  users,
+  adminProfiles,
+  managerProfiles,
+  supervisorProfiles,
+  pastorProfiles,
+  churchProfiles,
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getCompanySettings } from '@/lib/company'

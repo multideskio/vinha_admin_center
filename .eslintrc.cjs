@@ -23,4 +23,4 @@ module.exports = {
     'unused-imports/no-unused-imports': 'error',
     'react/no-unescaped-entities': 'error',
   },
-};
+}

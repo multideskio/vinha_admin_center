@@ -13,6 +13,7 @@ CRON_SECRET=seu-token-secreto-aqui
 ```
 
 **Gere um token seguro:**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
@@ -31,7 +32,7 @@ Escolha um dos serviços gratuitos:
    - **URL**: `https://seu-dominio.com/api/v1/cron/notifications`
    - **Schedule**: `*/15 * * * *` (a cada 15 minutos)
    - **Request method**: GET
-   - **Headers**: 
+   - **Headers**:
      - `Authorization: Bearer seu-token-secreto-aqui`
 5. Salve e ative
 
@@ -50,10 +51,12 @@ Crie `vercel.json` na raiz do projeto:
 
 ```json
 {
-  "crons": [{
-    "path": "/api/v1/cron/notifications",
-    "schedule": "*/15 * * * *"
-  }]
+  "crons": [
+    {
+      "path": "/api/v1/cron/notifications",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }
 ```
 
@@ -69,6 +72,7 @@ curl -H "Authorization: Bearer seu-token-secreto-aqui" \
 ```
 
 Resposta esperada:
+
 ```json
 {
   "success": true,
@@ -84,19 +88,23 @@ Resposta esperada:
 ## Tipos de Notificações Processadas
 
 ### 1. Novo Usuário Cadastrado (`user_registered`)
+
 - Envia boas-vindas para usuários criados nas últimas 24h
 - Marca usuário como `welcomeSent: true`
 
 ### 2. Pagamento Recebido (`payment_received`)
+
 - Notifica transações completadas na última hora
 - Confirma recebimento do pagamento
 
 ### 3. Lembrete de Vencimento (`payment_due_reminder`)
+
 - Envia X dias ANTES do vencimento
 - Usa campo `titheDay` do usuário
 - Exemplo: `daysOffset: -5` = 5 dias antes
 
 ### 4. Aviso de Atraso (`payment_overdue`)
+
 - Envia X dias APÓS o vencimento
 - Exemplo: `daysOffset: 3` = 3 dias depois
 
@@ -114,10 +122,11 @@ O endpoint retorna estatísticas de execução:
 
 ```json
 {
-  "processed": 5,  // Regras processadas
-  "sent": 4,       // Enviadas com sucesso
-  "failed": 1,     // Falharam
-  "errors": [      // Detalhes dos erros
+  "processed": 5, // Regras processadas
+  "sent": 4, // Enviadas com sucesso
+  "failed": 1, // Falharam
+  "errors": [
+    // Detalhes dos erros
     "Lembrete 5 dias: WhatsApp not configured"
   ]
 }
@@ -141,15 +150,18 @@ O endpoint retorna estatísticas de execução:
 ## Troubleshooting
 
 ### Erro 401 Unauthorized
+
 - Verifique se o header `Authorization` está correto
 - Confirme que o CRON_SECRET no .env está correto
 
 ### Notificações não enviadas
+
 - Verifique se as regras estão ativas em `/admin/configuracoes/mensagens`
 - Confirme configurações de WhatsApp/Email
 - Verifique logs do servidor
 
 ### Timeout
+
 - Reduza o limite de usuários processados por execução
 - Aumente frequência do cron (processar menos por vez)
 
@@ -171,17 +183,20 @@ Após configurar o cron:
 ## Status de Produção
 
 ### ✅ Pronto para MVP/Testes
+
 - Interface de gerenciamento funcional
 - Envio de WhatsApp e Email operacional
 - Controle de duplicação implementado
 - Documentação completa
 
 ### ⚠️ Requer Atenção para Produção
+
 - **Monitoramento**: Sem alertas se cron falhar
 - **Escalabilidade**: Limitado a ~100 usuários por execução
 - **Testes**: Sem cobertura automatizada
 
 ### 🚧 Melhorias Futuras
+
 - Migrar para fila (BullMQ + Redis)
 - Dashboard de métricas
 - Editor visual de templates

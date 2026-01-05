@@ -1,6 +1,7 @@
 # ✅ Checklist de Produção - Vinha Admin Center
 
 ## 🎯 Status Geral: PRONTO PARA PRODUÇÃO
+
 ## 🔄 Última Verificação: Janeiro 2025 - ✅ APROVADO
 
 ---
@@ -8,6 +9,7 @@
 ## 1. 🛡️ Segurança
 
 ### Vulnerabilidades
+
 - [x] ✅ Todas as 28 vulnerabilidades XSS corrigidas
 - [x] ✅ Sanitização implementada em todas as saídas
 - [x] ✅ Error handling adequado em todas as operações
@@ -18,6 +20,7 @@
 - [x] ✅ Verificação final completa (Janeiro 2025) - 0 issues críticos
 
 ### Configurações de Segurança
+
 - [ ] ⚠️ HTTPS configurado
 - [ ] ⚠️ Certificado SSL válido
 - [ ] ⚠️ Headers de segurança configurados
@@ -41,6 +44,7 @@
 ## 3. 📊 Performance
 
 ### Otimizações Implementadas
+
 - [x] ✅ React.useCallback para funções
 - [x] ✅ React.useMemo para dados computados
 - [x] ✅ Lazy loading de componentes
@@ -49,6 +53,7 @@
 - [x] ✅ Imagens otimizadas (Next.js Image)
 
 ### Métricas Alvo
+
 - [ ] ⚠️ Lighthouse Score > 90
 - [ ] ⚠️ First Contentful Paint < 1.5s
 - [ ] ⚠️ Time to Interactive < 3s
@@ -70,17 +75,20 @@
 ## 5. 🧪 Testes
 
 ### Testes Unitários
+
 - [ ] ⚠️ Componentes críticos testados
 - [ ] ⚠️ Funções utilitárias testadas
 - [ ] ⚠️ Hooks customizados testados
 - [ ] ⚠️ Coverage > 70%
 
 ### Testes de Integração
+
 - [ ] ⚠️ Fluxos de autenticação testados
 - [ ] ⚠️ Fluxos de pagamento testados
 - [ ] ⚠️ CRUD operations testadas
 
 ### Testes E2E
+
 - [ ] ⚠️ Fluxos críticos testados
 - [ ] ⚠️ Testes em múltiplos browsers
 - [ ] ⚠️ Testes mobile
@@ -101,6 +109,7 @@
 ## 7. 🔐 Variáveis de Ambiente
 
 ### Obrigatórias
+
 ```env
 # Database
 DATABASE_URL=
@@ -145,6 +154,7 @@ EVOLUTION_API_KEY=
 ## 9. 🚀 Deployment
 
 ### Pré-Deploy
+
 - [ ] ⚠️ Build de produção testado
 - [ ] ⚠️ Variáveis de ambiente configuradas
 - [ ] ⚠️ Migrações de banco testadas
@@ -152,12 +162,14 @@ EVOLUTION_API_KEY=
 - [ ] ⚠️ DNS configurado
 
 ### Deploy
+
 - [ ] ⚠️ Deploy em staging realizado
 - [ ] ⚠️ Testes em staging aprovados
 - [ ] ⚠️ Backup pré-deploy realizado
 - [ ] ⚠️ Rollback plan definido
 
 ### Pós-Deploy
+
 - [ ] ⚠️ Health checks passando
 - [ ] ⚠️ Logs sendo coletados
 - [ ] ⚠️ Métricas sendo monitoradas
@@ -226,6 +238,7 @@ EVOLUTION_API_KEY=
 ## 🎯 Prioridades para Deploy
 
 ### 🔴 CRÍTICO (Obrigatório antes do deploy)
+
 1. Configurar HTTPS e SSL
 2. Configurar variáveis de ambiente
 3. Configurar backup de banco de dados
@@ -233,6 +246,7 @@ EVOLUTION_API_KEY=
 5. Configurar rate limiting
 
 ### 🟡 IMPORTANTE (Recomendado antes do deploy)
+
 1. Implementar monitoramento de erros (Sentry)
 2. Configurar alertas de sistema
 3. Criar runbook de operações
@@ -240,6 +254,7 @@ EVOLUTION_API_KEY=
 5. Configurar health checks
 
 ### 🟢 DESEJÁVEL (Pode ser feito pós-deploy)
+
 1. Implementar testes automatizados
 2. Configurar CI/CD completo
 3. Implementar feature flags
@@ -260,16 +275,19 @@ EVOLUTION_API_KEY=
 ## 📅 Timeline Sugerido
 
 ### Semana 1
+
 - [ ] Configurar infraestrutura
 - [ ] Configurar variáveis de ambiente
 - [ ] Deploy em staging
 
 ### Semana 2
+
 - [ ] Testes em staging
 - [ ] Correções de bugs
 - [ ] Preparação para produção
 
 ### Semana 3
+
 - [ ] Deploy em produção
 - [ ] Monitoramento intensivo
 - [ ] Ajustes pós-deploy

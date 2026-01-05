@@ -58,9 +58,8 @@ export default function CieloGatewayPage() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
 
-  const webhookUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/api/v1/webhooks/cielo`
-    : ''
+  const webhookUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/cielo` : ''
 
   const handleCopyWebhook = () => {
     navigator.clipboard.writeText(webhookUrl)
@@ -167,13 +166,13 @@ export default function CieloGatewayPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/gateways">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -205,221 +204,217 @@ export default function CieloGatewayPage() {
             Configure as credenciais da API e métodos de pagamento aceitos
           </CardDescription>
         </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Ativar Gateway</FormLabel>
-                    <FormDescription>
-                      Ative ou desative o processamento de pagamentos pela Cielo.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="environment"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ambiente</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o ambiente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="production">Produção</SelectItem>
-                      <SelectItem value="development">Desenvolvimento</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>Selecione o ambiente que deseja configurar.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Credenciais de Produção</h3>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
                 control={form.control}
-                name="prodClientId"
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Ativar Gateway</FormLabel>
+                      <FormDescription>
+                        Ative ou desative o processamento de pagamentos pela Cielo.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="environment"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>MerchantId</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Seu MerchantId de produção"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
+                    <FormLabel>Ambiente</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o ambiente" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="production">Produção</SelectItem>
+                        <SelectItem value="development">Desenvolvimento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>Selecione o ambiente que deseja configurar.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Credenciais de Produção</h3>
+                <FormField
+                  control={form.control}
+                  name="prodClientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>MerchantId</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Seu MerchantId de produção"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="prodClientSecret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>MerchantKey</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Sua MerchantKey de produção"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Credenciais de Desenvolvimento</h3>
+                <FormField
+                  control={form.control}
+                  name="devClientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>MerchantId</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Seu MerchantId de desenvolvimento"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="devClientSecret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>MerchantKey</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Sua MerchantKey de desenvolvimento"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="rounded-lg border p-4 bg-muted/50">
+                <h3 className="text-sm font-medium mb-2">URL do Webhook</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Configure esta URL no painel da Cielo para receber notificações automáticas de
+                  pagamento.
+                </p>
+                <div className="flex gap-2">
+                  <Input value={webhookUrl} readOnly className="font-mono text-xs" />
+                  <Button type="button" variant="outline" size="icon" onClick={handleCopyWebhook}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
               <FormField
                 control={form.control}
-                name="prodClientSecret"
-                render={({ field }) => (
+                name="acceptedPaymentMethods"
+                render={() => (
                   <FormItem>
-                    <FormLabel>MerchantKey</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Sua MerchantKey de produção"
-                        {...field}
-                        value={field.value ?? ''}
+                    <div className="mb-4">
+                      <FormLabel className="text-base">Configuração do Checkout</FormLabel>
+                      <FormDescription>
+                        Selecione os meios de pagamento a serem ativados.
+                      </FormDescription>
+                    </div>
+                    {paymentMethods.map((item) => (
+                      <FormField
+                        key={item.id}
+                        control={form.control}
+                        name="acceptedPaymentMethods"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={item.id}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(item.id)}
+                                  onCheckedChange={(checked) => {
+                                    const currentValue = field.value || []
+                                    return checked
+                                      ? field.onChange([...currentValue, item.id])
+                                      : field.onChange(
+                                          currentValue?.filter((value) => value !== item.id),
+                                        )
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">{item.label}</FormLabel>
+                            </FormItem>
+                          )
+                        }}
                       />
-                    </FormControl>
+                    ))}
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
 
-            <Separator />
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Credenciais de Desenvolvimento</h3>
-              <FormField
-                control={form.control}
-                name="devClientId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>MerchantId</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Seu MerchantId de desenvolvimento"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="devClientSecret"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>MerchantKey</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Sua MerchantKey de desenvolvimento"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="rounded-lg border p-4 bg-muted/50">
-              <h3 className="text-sm font-medium mb-2">URL do Webhook</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Configure esta URL no painel da Cielo para receber notificações automáticas de pagamento.
-              </p>
-              <div className="flex gap-2">
-                <Input value={webhookUrl} readOnly className="font-mono text-xs" />
+              <div className="flex justify-end">
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleCopyWebhook}
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg"
                 >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Salvar Configurações
+                    </>
+                  )}
                 </Button>
               </div>
-            </div>
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="acceptedPaymentMethods"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className="text-base">Configuração do Checkout</FormLabel>
-                    <FormDescription>
-                      Selecione os meios de pagamento a serem ativados.
-                    </FormDescription>
-                  </div>
-                  {paymentMethods.map((item) => (
-                    <FormField
-                      key={item.id}
-                      control={form.control}
-                      name="acceptedPaymentMethods"
-                      render={({ field }) => {
-                        return (
-                          <FormItem
-                            key={item.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(item.id)}
-                                onCheckedChange={(checked) => {
-                                  const currentValue = field.value || []
-                                  return checked
-                                    ? field.onChange([...currentValue, item.id])
-                                    : field.onChange(
-                                        currentValue?.filter((value) => value !== item.id),
-                                      )
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">{item.label}</FormLabel>
-                          </FormItem>
-                        )
-                      }}
-                    />
-                  ))}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end">
-              <Button 
-                type="submit" 
-                disabled={isSaving}
-                className="bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Salvar Configurações
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

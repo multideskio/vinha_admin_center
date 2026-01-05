@@ -18,7 +18,6 @@ import {
   ArrowRightLeft,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -144,7 +143,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
         })
         if (startDate) params.append('startDate', startDate)
         if (endDate) params.append('endDate', endDate)
-        
+
         const response = await fetch(`/api/v1/manager/transacoes?${params}`)
         if (!response.ok) throw new Error('Falha ao carregar transações.')
         const data = await response.json()
@@ -189,15 +188,36 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
         <div className="flex gap-4 mb-4">
           <div className="flex-1">
             <Label>Data Início</Label>
-            <Input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPage(1) }} />
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value)
+                setPage(1)
+              }}
+            />
           </div>
           <div className="flex-1">
             <Label>Data Fim</Label>
-            <Input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPage(1) }} />
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value)
+                setPage(1)
+              }}
+            />
           </div>
           <div className="flex-1">
             <Label>Ordenar</Label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={sortOrder} onChange={(e) => { setSortOrder(e.target.value as 'asc' | 'desc'); setPage(1) }}>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={sortOrder}
+              onChange={(e) => {
+                setSortOrder(e.target.value as 'asc' | 'desc')
+                setPage(1)
+              }}
+            >
               <option value="desc">Mais recentes</option>
               <option value="asc">Mais antigas</option>
             </select>
@@ -217,66 +237,67 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-4 w-16 ml-auto" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 ml-auto" />
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : transactions.length > 0 ? (
+                transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                        {statusMap[transaction.status]?.text || transaction.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{transaction.date}</TableCell>
+                    <TableCell className="text-right">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(transaction.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/manager/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">
+                    Nenhuma transação encontrada.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                      {statusMap[transaction.status]?.text || transaction.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{transaction.date}</TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      transaction.amount,
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/manager/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
-                  Nenhuma transação encontrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+              )}
+            </TableBody>
           </Table>
         </div>
         {totalPages > 1 && (
@@ -399,7 +420,9 @@ const SettingsTab = ({ userId }: { userId: string }) => {
           </div>
           <div className="flex-1">
             <CardTitle className="text-xl">Configurações de Notificação</CardTitle>
-            <CardDescription className="mt-1">Gerencie suas preferências de notificações</CardDescription>
+            <CardDescription className="mt-1">
+              Gerencie suas preferências de notificações
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -477,7 +500,11 @@ const SettingsTab = ({ userId }: { userId: string }) => {
           </div>
         </div>
         <div className="flex justify-end">
-          <Button onClick={handleSaveSettings} disabled={isSaving} className="bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg">
+          <Button
+            onClick={handleSaveSettings}
+            disabled={isSaving}
+            className="bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg"
+          >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar Configurações
           </Button>
@@ -570,7 +597,7 @@ export default function GerenteProfilePage() {
 
         if (!response.ok) throw new Error('Falha no upload')
         const result = await response.json()
-        
+
         const updateResponse = await fetch('/api/v1/manager/perfil', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -580,7 +607,7 @@ export default function GerenteProfilePage() {
         if (!updateResponse.ok) throw new Error('Falha ao atualizar avatar')
 
         setPreviewImage(result.url)
-        setManager(prev => prev ? { ...prev, avatarUrl: result.url } : null)
+        setManager((prev) => (prev ? { ...prev, avatarUrl: result.url } : null))
         toast({ title: 'Sucesso', description: 'Avatar atualizado!', variant: 'success' })
       } catch (error) {
         toast({ title: 'Erro', description: 'Falha ao fazer upload.', variant: 'destructive' })
@@ -640,7 +667,7 @@ export default function GerenteProfilePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center justify-between">
             <div>
@@ -652,7 +679,7 @@ export default function GerenteProfilePage() {
                 Gerencie suas informações pessoais
               </p>
             </div>
-            <Badge 
+            <Badge
               variant="success"
               className="text-sm px-6 py-2 font-bold shadow-xl border-2 bg-green-500 text-white border-green-400 hover:bg-green-600"
             >
@@ -666,314 +693,327 @@ export default function GerenteProfilePage() {
         {/* Left Column: Profile Card */}
         <div className="lg:col-span-1">
           <Card className="shadow-lg border-t-4 border-t-videira-cyan">
-          <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
-              <ClickableAvatar
-                src={previewImage || manager.avatarUrl || 'https://placehold.co/96x96.png'}
-                alt={manager.firstName ?? ''}
-                fallback={`${manager.firstName?.[0] || ''}${manager.lastName?.[0] || ''}`}
-                className="h-24 w-24 ring-4 ring-videira-cyan/30"
-              />
-              <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-videira-cyan border-2 border-white hover:bg-videira-cyan/90 shadow-lg">
-                  <Camera className="h-4 w-4 text-white" />
-                </div>
-                <span className="sr-only">Trocar foto</span>
-              </Label>
-              <Input
-                id="photo-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handlePhotoChange}
-              />
-            </div>
-            <h2 className="mt-4 text-xl font-semibold">
-              {manager.firstName} {manager.lastName}
-            </h2>
-            <p className="text-muted-foreground">Gerente</p>
-          </CardContent>
-          <Separator />
-          <CardContent className="pt-6">
-            <h3 className="mb-4 font-semibold flex items-center gap-2">
-              <Globe className="h-5 w-5 text-videira-cyan" />
-              Redes sociais
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Facebook className="h-5 w-5 text-blue-600" />
+            <CardContent className="flex flex-col items-center pt-6 text-center">
+              <div className="relative">
+                <ClickableAvatar
+                  src={previewImage || manager.avatarUrl || 'https://placehold.co/96x96.png'}
+                  alt={manager.firstName ?? ''}
+                  fallback={`${manager.firstName?.[0] || ''}${manager.lastName?.[0] || ''}`}
+                  className="h-24 w-24 ring-4 ring-videira-cyan/30"
+                />
+                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-videira-cyan border-2 border-white hover:bg-videira-cyan/90 shadow-lg">
+                    <Camera className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="sr-only">Trocar foto</span>
+                </Label>
                 <Input
-                  defaultValue={manager.facebook ?? ''}
-                  placeholder="https://facebook.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
-                  className="border-2 focus:border-videira-cyan"
+                  id="photo-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5 text-pink-600" />
-                <Input
-                  defaultValue={manager.instagram ?? ''}
-                  placeholder="https://instagram.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
-                  className="border-2 focus:border-videira-cyan"
-                />
-              </div>
-              <div className="flex items-center gap-3">
+              <h2 className="mt-4 text-xl font-semibold">
+                {manager.firstName} {manager.lastName}
+              </h2>
+              <p className="text-muted-foreground">Gerente</p>
+            </CardContent>
+            <Separator />
+            <CardContent className="pt-6">
+              <h3 className="mb-4 font-semibold flex items-center gap-2">
                 <Globe className="h-5 w-5 text-videira-cyan" />
-                <Input 
-                  defaultValue={manager.website ?? ''} 
-                  placeholder="https://website.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
-                  className="border-2 focus:border-videira-cyan"
-                />
+                Redes sociais
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Facebook className="h-5 w-5 text-blue-600" />
+                  <Input
+                    defaultValue={manager.facebook ?? ''}
+                    placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                    className="border-2 focus:border-videira-cyan"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Instagram className="h-5 w-5 text-pink-600" />
+                  <Input
+                    defaultValue={manager.instagram ?? ''}
+                    placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                    className="border-2 focus:border-videira-cyan"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-videira-cyan" />
+                  <Input
+                    defaultValue={manager.website ?? ''}
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                    className="border-2 focus:border-videira-cyan"
+                  />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Right Column: Tabs and Form */}
-      <div className="lg:col-span-2">
-        <Tabs defaultValue="profile">
-          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-white data-[state=active]:text-videira-cyan data-[state=active]:font-semibold">
-              Dados do perfil
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="data-[state=active]:bg-white data-[state=active]:text-videira-cyan data-[state=active]:font-semibold">
-              Transações
-            </TabsTrigger>
-            <TabsTrigger value="configuracoes" className="data-[state=active]:bg-white data-[state=active]:text-videira-cyan data-[state=active]:font-semibold">
-              Configurações
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
-            <Card className="shadow-lg border-t-4 border-t-videira-cyan">
-              <CardContent className="pt-6">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Right Column: Tabs and Form */}
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="profile">
+            <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+              <TabsTrigger
+                value="profile"
+                className="data-[state=active]:bg-white data-[state=active]:text-videira-cyan data-[state=active]:font-semibold"
+              >
+                Dados do perfil
+              </TabsTrigger>
+              <TabsTrigger
+                value="transactions"
+                className="data-[state=active]:bg-white data-[state=active]:text-videira-cyan data-[state=active]:font-semibold"
+              >
+                Transações
+              </TabsTrigger>
+              <TabsTrigger
+                value="configuracoes"
+                className="data-[state=active]:bg-white data-[state=active]:text-videira-cyan data-[state=active]:font-semibold"
+              >
+                Configurações
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+              <Card className="shadow-lg border-t-4 border-t-videira-cyan">
+                <CardContent className="pt-6">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Sobre-nome</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="cpf"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CPF</FormLabel>
+                              <FormControl>
+                                <Input {...field} disabled value={field.value ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Celular/WhatsApp</FormLabel>
+                              <FormControl>
+                                <PhoneInput
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  type="mobile"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="landline"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Telefone Fixo</FormLabel>
+                              <FormControl>
+                                <PhoneInput
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  type="landline"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" {...field} value={field.value ?? ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="cep"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CEP</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="state"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Estado/UF</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cidade</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="neighborhood"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bairro</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Endereço</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="titheDay"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Dia do dízimo</FormLabel>
+                              <FormControl>
+                                <Input type="number" {...field} value={field.value ?? ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Alert
+                        variant="destructive"
+                        className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
+                      >
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <AlertDescription>
+                          <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá
+                          acessar usando a senha anterior.
+                        </AlertDescription>
+                      </Alert>
+
                       <FormField
                         control={form.control}
-                        name="firstName"
+                        name="newPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nome</FormLabel>
+                            <Label>Atualize a senha do gerente</Label>
                             <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
+                              <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  type="password"
+                                  placeholder="Nova Senha"
+                                  className="pl-9"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sobre-nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="cpf"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CPF</FormLabel>
-                            <FormControl>
-                              <Input {...field} disabled value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Celular/WhatsApp</FormLabel>
-                            <FormControl>
-                              <PhoneInput
-                                value={field.value || ''}
-                                onChange={field.onChange}
-                                type="mobile"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="landline"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Telefone Fixo</FormLabel>
-                            <FormControl>
-                              <PhoneInput
-                                value={field.value || ''}
-                                onChange={field.onChange}
-                                type="landline"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="cep"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CEP</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Estado/UF</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cidade</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="neighborhood"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Bairro</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Endereço</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="titheDay"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Dia do dízimo</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <Alert
-                      variant="destructive"
-                      className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
-                    >
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                      <AlertDescription>
-                        <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá
-                        acessar usando a senha anterior.
-                      </AlertDescription>
-                    </Alert>
-
-                    <FormField
-                      control={form.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Label>Atualize a senha do gerente</Label>
-                          <FormControl>
-                            <div className="relative mt-1">
-                              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                type="password"
-                                placeholder="Nova Senha"
-                                className="pl-9"
-                                {...field}
-                                value={field.value ?? ''}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex justify-end">
-                      <Button type="submit" disabled={isSaving} className="bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg">
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Alterar cadastro
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="transactions">
-            {manager.userId && <TransactionsTab userId={manager.userId} />}
-          </TabsContent>
-          <TabsContent value="configuracoes">
-            {manager.userId && <SettingsTab userId={manager.userId} />}
-          </TabsContent>
-        </Tabs>
-      </div>
+                      <div className="flex justify-end">
+                        <Button
+                          type="submit"
+                          disabled={isSaving}
+                          className="bg-videira-cyan hover:bg-videira-cyan/90 text-white font-semibold shadow-lg"
+                        >
+                          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Alterar cadastro
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="transactions">
+              {manager.userId && <TransactionsTab userId={manager.userId} />}
+            </TabsContent>
+            <TabsContent value="configuracoes">
+              {manager.userId && <SettingsTab userId={manager.userId} />}
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   )

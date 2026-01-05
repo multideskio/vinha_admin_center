@@ -16,7 +16,8 @@
 ---
 
 ### 🔒 **REPOSITÓRIO PRIVADO - MULTIDESK.IO**
-*Acesso restrito apenas à equipe autorizada*
+
+_Acesso restrito apenas à equipe autorizada_
 
 </div>
 
@@ -25,8 +26,9 @@
 > **Sistema 100% estável com todos os bugs críticos resolvidos**
 
 ### ✨ **Destaques desta versão:**
+
 - 🐛 **7 bugs críticos corrigidos** (87.5% taxa de correção)
-- 🔒 **4 vulnerabilidades eliminadas** 
+- 🔒 **4 vulnerabilidades eliminadas**
 - ⚡ **98% menos queries** no dashboard
 - 🎨 **Design System Videira** implementado
 - ✅ **100% pronto para produção**
@@ -44,6 +46,7 @@ O **Vinha Admin Center** é uma plataforma administrativa completa desenvolvida 
 <td width="50%">
 
 #### 👥 **Gestão Multi-Nível**
+
 - **Admin** - Controle total do sistema
 - **Manager** - Supervisão de rede regional
 - **Supervisor** - Gestão regional de igrejas
@@ -51,6 +54,7 @@ O **Vinha Admin Center** é uma plataforma administrativa completa desenvolvida 
 - **Igreja** - Administração da igreja
 
 #### 💳 **Pagamentos Integrados**
+
 - **PIX** - Pagamento instantâneo
 - **Cartão de Crédito** - Parcelamento até 12x
 - **Boleto** - Pagamento tradicional
@@ -60,12 +64,14 @@ O **Vinha Admin Center** é uma plataforma administrativa completa desenvolvida 
 <td width="50%">
 
 #### 📊 **Dashboards Inteligentes**
+
 - **KPIs em tempo real**
 - **Gráficos interativos**
 - **Relatórios personalizáveis**
 - **Exportação PDF/Excel**
 
 #### 🔔 **Comunicação Automática**
+
 - **Email** via AWS SES
 - **WhatsApp** via Evolution API v2
 - **Templates personalizáveis**
@@ -80,6 +86,7 @@ O **Vinha Admin Center** é uma plataforma administrativa completa desenvolvida 
 ## 🚀 **Início Rápido**
 
 ### **Pré-requisitos**
+
 ```bash
 Node.js 18+
 PostgreSQL 14+
@@ -113,13 +120,13 @@ npm run dev
 
 ### **👤 Usuários de Teste**
 
-| Perfil | Email | Senha |
-|--------|-------|-------|
-| **Admin** | `admin@vinha.com` | `admin123` |
-| **Manager** | `manager@vinha.com` | `manager123` |
+| Perfil         | Email                  | Senha           |
+| -------------- | ---------------------- | --------------- |
+| **Admin**      | `admin@vinha.com`      | `admin123`      |
+| **Manager**    | `manager@vinha.com`    | `manager123`    |
 | **Supervisor** | `supervisor@vinha.com` | `supervisor123` |
-| **Pastor** | `pastor@vinha.com` | `pastor123` |
-| **Igreja** | `igreja@vinha.com` | `igreja123` |
+| **Pastor**     | `pastor@vinha.com`     | `pastor123`     |
+| **Igreja**     | `igreja@vinha.com`     | `igreja123`     |
 
 ---
 
@@ -128,7 +135,8 @@ npm run dev
 <div align="center">
 
 ### 🎨 **Design System Videira**
-*Interface moderna com paleta de cores exclusiva*
+
+_Interface moderna com paleta de cores exclusiva_
 
 <table>
 <tr>
@@ -169,7 +177,7 @@ graph TB
     D --> G[📧 AWS SES]
     D --> H[💳 Cielo API]
     D --> I[📱 WhatsApp API]
-    
+
     style A fill:#e1f5fe
     style B fill:#f3e5f5
     style C fill:#fff3e0
@@ -188,17 +196,20 @@ graph TB
 <div align="center">
 
 ### **Frontend**
+
 ![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black?style=for-the-badge&logo=next.js)
 ![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.4.1-38B2AC?style=for-the-badge&logo=tailwind-css)
 
 ### **Backend & Database**
+
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?style=for-the-badge&logo=postgresql)
 ![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=for-the-badge)
 ![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=json-web-tokens)
 
 ### **Integrações**
+
 ![AWS](https://img.shields.io/badge/AWS-S3%20%7C%20SES-FF9900?style=for-the-badge&logo=amazon-aws)
 ![Cielo](https://img.shields.io/badge/Cielo-API-0066CC?style=for-the-badge)
 ![WhatsApp](https://img.shields.io/badge/WhatsApp-Evolution%20API-25D366?style=for-the-badge&logo=whatsapp)
@@ -237,6 +248,7 @@ graph TB
 <td width="50%">
 
 ### **🚀 Desenvolvimento**
+
 ```bash
 npm run dev          # Servidor dev (porta 9002)
 npm run build        # Build produção
@@ -245,6 +257,7 @@ npm run typecheck    # Verificação TypeScript
 ```
 
 ### **🗄️ Banco de Dados**
+
 ```bash
 npm run db:generate  # Gerar migrações
 npm run db:push      # Aplicar migrações
@@ -256,6 +269,7 @@ npm run db:studio    # Interface visual
 <td width="50%">
 
 ### **✨ Qualidade**
+
 ```bash
 npm run lint         # ESLint
 npm run format       # Prettier
@@ -263,6 +277,7 @@ npm run quality:check # Verificação completa
 ```
 
 ### **🧪 Testes**
+
 ```bash
 npm run test         # Executar testes
 npm run notifications:test # Testar notificações
@@ -294,15 +309,18 @@ npm run sns:test     # Testar SNS
 <summary><strong>📋 v0.3.0 - 7 bugs corrigidos (87.5% taxa)</strong></summary>
 
 #### **Bugs Críticos (2/2 = 100%)**
+
 - ✅ Hardcoded User ID em notificações
 - ✅ Webhook Cielo retorna 200 mesmo com erros
 
 #### **Bugs Médios (3/4 = 75%)**
+
 - ✅ Validação de autenticação em cron (timing attacks)
 - ✅ N+1 queries no dashboard (200+ → 3 queries)
 - ✅ Validações de segurança em upload
 
 #### **Bugs Baixos (2/2 = 100%)**
+
 - ✅ Host header injection em reset password
 - ✅ Layouts com try-catch desnecessário (4 arquivos)
 
@@ -321,6 +339,7 @@ npm run sns:test     # Testar SNS
 </details>
 
 ### 🔒 **Recursos de Segurança**
+
 - 🔐 **Autenticação JWT** com cookies seguros
 - 👥 **Controle de acesso** baseado em roles
 - 🧹 **Sanitização** de dados e proteção XSS
@@ -336,8 +355,9 @@ npm run sns:test     # Testar SNS
 <td width="25%" align="center">
 
 ### ✅ **v0.3.0**
+
 **Production Ready**
-<br/>*Lançada*
+<br/>_Lançada_
 
 🐛 7 bugs corrigidos<br/>
 🔒 4 vulnerabilidades eliminadas<br/>
@@ -348,8 +368,9 @@ npm run sns:test     # Testar SNS
 <td width="25%" align="center">
 
 ### 🚧 **v0.3.1**
+
 **Testes & Monitoramento**
-<br/>*Q1 2026*
+<br/>_Q1 2026_
 
 🧪 Testes automatizados<br/>
 📊 Monitoramento Sentry<br/>
@@ -360,8 +381,9 @@ npm run sns:test     # Testar SNS
 <td width="25%" align="center">
 
 ### 🔮 **v0.4.0**
+
 **Expansão**
-<br/>*Q2 2026*
+<br/>_Q2 2026_
 
 📅 Sistema de eventos<br/>
 👥 Gestão de membros<br/>
@@ -372,8 +394,9 @@ npm run sns:test     # Testar SNS
 <td width="25%" align="center">
 
 ### 🔮 **v0.5.0**
+
 **Mobile & Integrações**
-<br/>*Q3-Q4 2026*
+<br/>_Q3-Q4 2026_
 
 📱 App React Native<br/>
 🔗 Integrações externas<br/>
@@ -399,11 +422,13 @@ npm run sns:test     # Testar SNS
 <td width="50%">
 
 ### **🔴 Críticos**
+
 - 📋 [**Checklist de Desenvolvimento**](docs/DEV_CHECKLIST.md)
 - 🚀 [**Checklist de Produção**](docs/PRODUCTION_CHECKLIST.md)
 - 🐛 [**Template de Bug Report**](docs/BUG_REPORT_TEMPLATE.md)
 
 ### **📘 Técnicos**
+
 - 🗄️ [**Banco de Dados**](docs/DB_DOCS.md)
 - 📧 [**Sistema de Email**](docs/EMAIL_SYSTEM.md)
 - 💳 [**API Cielo**](docs/CIELO_API_GUIDE.md)
@@ -413,11 +438,13 @@ npm run sns:test     # Testar SNS
 <td width="50%">
 
 ### **🚀 Deploy**
+
 - 🐳 [**Deploy Docker**](docs/DOCKER_DEPLOY.md)
 - 🔔 [**Monitoramento SNS**](docs/SNS_MONITORING_SETUP.md)
 - 📱 [**WhatsApp Setup**](docs/SNS_WEBHOOK_SETUP.md)
 
 ### **📝 Planejamento**
+
 - 📜 [**Changelog**](docs/CHANGELOG.md)
 - 🗺️ [**Roadmap**](docs/ROADMAP.md)
 - 🎨 [**Tema Videira**](docs/VIDEIRA_THEME_EXAMPLES.md)
@@ -446,6 +473,7 @@ Este projeto é **privado** e **proprietário**. Contribuições são restritas 
 4. **🔄 Crie PRs:** Use o [template de PR](.github/PULL_REQUEST_TEMPLATE.md)
 
 ### **🛡️ Política de Segurança**
+
 Vulnerabilidades devem ser reportadas para: [security@multidesk.io](mailto:security@multidesk.io)
 
 Consulte: [SECURITY.md](.github/SECURITY.md)
@@ -487,7 +515,7 @@ Consulte: [SECURITY.md](.github/SECURITY.md)
 
 **© 2024-2026 Multidesk.io - Todos os direitos reservados**
 
-Este projeto é **proprietário** e **confidencial**. 
+Este projeto é **proprietário** e **confidencial**.
 Distribuição, modificação ou uso não autorizado é **estritamente proibido**.
 
 [![License](https://img.shields.io/badge/license-proprietary-red.svg?style=for-the-badge)](LICENSE)
@@ -502,7 +530,7 @@ Distribuição, modificação ou uso não autorizado é **estritamente proibido*
 
 **Sistema completo, estável e profissional para gestão de igrejas**
 
-*Desenvolvido com ❤️ pela equipe **Multidesk.io***
+\*Desenvolvido com ❤️ pela equipe **Multidesk.io\***
 
 ---
 

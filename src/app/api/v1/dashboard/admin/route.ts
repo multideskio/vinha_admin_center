@@ -51,7 +51,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const now = new Date()
     const startDate = from ? new Date(from) : startOfMonth(now)
     const endDate = to ? new Date(to) : now
-    
+
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -83,7 +83,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         and(
           eq(transactions.status, 'approved'),
           gte(transactions.createdAt, startDate),
-          lt(transactions.createdAt, endDate)
+          lt(transactions.createdAt, endDate),
         ),
       )
     const revenuePreviousMonthResult = await db
@@ -140,8 +140,8 @@ export async function GET(request: Request): Promise<NextResponse> {
         and(
           eq(transactions.status, 'approved'),
           gte(transactions.createdAt, startDate),
-          lt(transactions.createdAt, endDate)
-        )
+          lt(transactions.createdAt, endDate),
+        ),
       )
       .groupBy(transactions.paymentMethod)
 
@@ -161,8 +161,8 @@ export async function GET(request: Request): Promise<NextResponse> {
         and(
           eq(transactions.status, 'approved'),
           gte(transactions.createdAt, startDate),
-          lt(transactions.createdAt, endDate)
-        )
+          lt(transactions.createdAt, endDate),
+        ),
       )
       .groupBy(regions.id, regions.name, regions.color)
 
@@ -181,19 +181,26 @@ export async function GET(request: Request): Promise<NextResponse> {
         and(
           eq(transactions.status, 'approved'),
           gte(transactions.createdAt, startDate),
-          lt(transactions.createdAt, endDate)
-        )
+          lt(transactions.createdAt, endDate),
+        ),
       )
       .groupBy(regions.id, regions.name, regions.color)
 
-    const revenueByRegionMap = new Map<string, { name: string; color: string | null; revenue: number }>()
+    const revenueByRegionMap = new Map<
+      string,
+      { name: string; color: string | null; revenue: number }
+    >()
     for (const row of [...revenueByRegionPastors, ...revenueByRegionChurches]) {
       const key = row.name
       const existing = revenueByRegionMap.get(key)
       if (existing) {
         existing.revenue += Number(row.revenue || 0)
       } else {
-        revenueByRegionMap.set(key, { name: row.name, color: row.color, revenue: Number(row.revenue || 0) })
+        revenueByRegionMap.set(key, {
+          name: row.name,
+          color: row.color,
+          revenue: Number(row.revenue || 0),
+        })
       }
     }
     const revenueByRegionData = Array.from(revenueByRegionMap.values())
@@ -221,12 +228,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
-      .where(
-        and(
-          gte(transactions.createdAt, startDate),
-          lt(transactions.createdAt, endDate)
-        )
-      )
+      .where(and(gte(transactions.createdAt, startDate), lt(transactions.createdAt, endDate)))
       .orderBy(desc(transactions.createdAt))
       .limit(10)
 
@@ -299,29 +301,32 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // ✅ CORRIGIDO: Buscar todos os últimos pagamentos de uma vez (otimização N+1)
     const allContributorIds = [
-      ...pastorsWithTitheDay.map(p => p.id),
-      ...churchesWithTitheDay.map(c => c.id)
+      ...pastorsWithTitheDay.map((p) => p.id),
+      ...churchesWithTitheDay.map((c) => c.id),
     ]
 
     // ✅ CORRIGIDO: Evitar SQL error quando não há contributors (empty IN clause)
-    const lastPaymentsData = allContributorIds.length > 0 ? await db
-      .select({
-        contributorId: transactions.contributorId,
-        lastPayment: sql<Date>`MAX(${transactions.createdAt})`.mapWith((val) => new Date(val)),
-      })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.status, 'approved'),
-          sql`${transactions.contributorId} IN ${allContributorIds}`
-        )
-      )
-      .groupBy(transactions.contributorId) : []
+    const lastPaymentsData =
+      allContributorIds.length > 0
+        ? await db
+            .select({
+              contributorId: transactions.contributorId,
+              lastPayment: sql<Date>`MAX(${transactions.createdAt})`.mapWith(
+                (val) => new Date(val),
+              ),
+            })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.status, 'approved'),
+                sql`${transactions.contributorId} IN ${allContributorIds}`,
+              ),
+            )
+            .groupBy(transactions.contributorId)
+        : []
 
     // Criar Map para acesso O(1)
-    const lastPaymentMap = new Map(
-      lastPaymentsData.map(p => [p.contributorId, p.lastPayment])
-    )
+    const lastPaymentMap = new Map(lastPaymentsData.map((p) => [p.contributorId, p.lastPayment]))
 
     const defaulters = []
 
@@ -331,10 +336,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
       // Se não tem pagamento OU o último foi antes de 3 meses atrás
       if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
-        const daysSince = lastPaymentDate 
+        const daysSince = lastPaymentDate
           ? Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
           : Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
-        
+
         defaulters.push({
           id: pastor.id,
           name: `${pastor.firstName} ${pastor.lastName}`,
@@ -352,10 +357,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
       // Se não tem pagamento OU o último foi antes de 3 meses atrás
       if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
-        const daysSince = lastPaymentDate 
+        const daysSince = lastPaymentDate
           ? Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
           : Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
-        
+
         defaulters.push({
           id: church.id,
           name: church.nomeFantasia,
@@ -410,7 +415,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     const result = {
       kpis,
       revenueByMethod: formattedRevenueByMethod,
-      revenueByRegion: revenueByRegionData.map((r) => ({ ...r, revenue: Number(r.revenue), fill: r.color ?? '#000000' })),
+      revenueByRegion: revenueByRegionData.map((r) => ({
+        ...r,
+        revenue: Number(r.revenue),
+        fill: r.color ?? '#000000',
+      })),
       churchesByRegion: churchesByRegionData.map((r) => ({ ...r, fill: r.color ?? '#000000' })),
       recentTransactions,
       recentRegistrations,

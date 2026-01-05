@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, churchProfiles, managerProfiles, supervisorProfiles, pastorProfiles } from '@/db/schema'
+import {
+  transactions,
+  users,
+  churchProfiles,
+  managerProfiles,
+  supervisorProfiles,
+  pastorProfiles,
+} from '@/db/schema'
 import { eq, gte, lt, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
@@ -57,7 +64,10 @@ export async function GET(request: NextRequest) {
             if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
           } else if (t.contributorRole === 'supervisor') {
             const [profile] = await db
-              .select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+              .select({
+                firstName: supervisorProfiles.firstName,
+                lastName: supervisorProfiles.lastName,
+              })
               .from(supervisorProfiles)
               .where(eq(supervisorProfiles.userId, t.contributorId))
               .limit(1)
@@ -82,7 +92,7 @@ export async function GET(request: NextRequest) {
         }
 
         return { ...t, contributorName }
-      })
+      }),
     )
 
     const statusMap: Record<string, string> = {
@@ -100,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     const csv = [
       'ID,Data,Contribuinte,Email,Valor,Método,Status,Motivo Reembolso',
-      ...enrichedData.map(t => {
+      ...enrichedData.map((t) => {
         const date = new Date(t.createdAt).toLocaleDateString('pt-BR')
         const amount = parseFloat(t.amount).toFixed(2)
         const status = statusMap[t.status] || t.status

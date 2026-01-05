@@ -22,7 +22,6 @@ import {
   Loader2,
   Mail,
   Smartphone,
-  MoreHorizontal,
   UserCog,
   ArrowLeft,
   CreditCard,
@@ -76,13 +75,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
+
 import Link from 'next/link'
 import {
   pastorProfileSchema,
@@ -105,9 +99,11 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 
-const pastorUpdateSchema = pastorProfileSchema.extend({
-  newPassword: z.string().optional().or(z.literal('')),
-}).partial()
+const pastorUpdateSchema = pastorProfileSchema
+  .extend({
+    newPassword: z.string().optional().or(z.literal('')),
+  })
+  .partial()
 
 type PastorFormData = z.infer<typeof pastorUpdateSchema>
 
@@ -143,7 +139,7 @@ const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => voi
           Confirmar Exclusão do Cadastro
         </AlertDialogTitle>
         <AlertDialogDescription>
-          Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo 
+          Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo
           detalhado para a exclusão deste pastor.
         </AlertDialogDescription>
       </AlertDialogHeader>
@@ -164,8 +160,8 @@ const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => voi
       </div>
       <AlertDialogFooter>
         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-        <AlertDialogAction 
-          onClick={() => onConfirm(reason)} 
+        <AlertDialogAction
+          onClick={() => onConfirm(reason)}
           disabled={!reason.trim()}
           className="bg-destructive hover:bg-destructive/90 font-semibold"
         >
@@ -235,74 +231,86 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                 <TableHead className="text-right font-semibold">Ações</TableHead>
               </TableRow>
             </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-4 w-16 ml-auto" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 ml-auto" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : transactions.length > 0 ? (
-              transactions.map((transaction) => {
-                const statusInfo = statusMap[transaction.status] || { text: transaction.status, variant: 'default' as const }
-                const StatusIcon = transaction.status === 'approved' ? CheckCircle2 : transaction.status === 'pending' ? Clock : XCircle
-                
-                return (
-                  <TableRow key={transaction.id} className="hover:bg-muted/50">
-                    <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
                     <TableCell>
-                      <Badge variant={statusInfo.variant} className="flex items-center gap-1 w-fit">
-                        <StatusIcon className="h-3 w-3" />
-                        {statusInfo.text}
-                      </Badge>
+                      <Skeleton className="h-4 w-24" />
                     </TableCell>
-                    <TableCell>{transaction.date}</TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        transaction.amount,
-                      )}
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/admin/transacoes/${transaction.id}`}>
-                        <Button 
-                          size="sm"
-                          className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-                        >
-                          Ver Detalhes
-                        </Button>
-                      </Link>
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 ml-auto" />
                     </TableCell>
                   </TableRow>
-                )
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-32">
-                  <div className="flex flex-col items-center gap-3 py-8">
-                    <CreditCard className="h-12 w-12 text-muted-foreground" />
-                    <p className="text-lg font-medium text-muted-foreground">
-                      Nenhuma transação encontrada
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                ))
+              ) : transactions.length > 0 ? (
+                transactions.map((transaction) => {
+                  const statusInfo = statusMap[transaction.status] || {
+                    text: transaction.status,
+                    variant: 'default' as const,
+                  }
+                  const StatusIcon =
+                    transaction.status === 'approved'
+                      ? CheckCircle2
+                      : transaction.status === 'pending'
+                        ? Clock
+                        : XCircle
+
+                  return (
+                    <TableRow key={transaction.id} className="hover:bg-muted/50">
+                      <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={statusInfo.variant}
+                          className="flex items-center gap-1 w-fit"
+                        >
+                          <StatusIcon className="h-3 w-3" />
+                          {statusInfo.text}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{transaction.date}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(transaction.amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/admin/transacoes/${transaction.id}`}>
+                          <Button
+                            size="sm"
+                            className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                          >
+                            Ver Detalhes
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-32">
+                    <div className="flex flex-col items-center gap-3 py-8">
+                      <CreditCard className="h-12 w-12 text-muted-foreground" />
+                      <p className="text-lg font-medium text-muted-foreground">
+                        Nenhuma transação encontrada
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>
@@ -405,22 +413,20 @@ const SettingsTab = ({ userId }: { userId: string }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         {NOTIFICATION_TYPES.map((type, index) => (
-          <div 
-            key={type} 
+          <div
+            key={type}
             className={cn(
-              "flex items-center justify-between rounded-lg border-2 p-4 transition-all hover:shadow-md",
-              index === 0 && "border-videira-cyan/30 hover:border-videira-cyan",
-              index === 1 && "border-videira-blue/30 hover:border-videira-blue",
-              index === 2 && "border-videira-purple/30 hover:border-videira-purple"
+              'flex items-center justify-between rounded-lg border-2 p-4 transition-all hover:shadow-md',
+              index === 0 && 'border-videira-cyan/30 hover:border-videira-cyan',
+              index === 1 && 'border-videira-blue/30 hover:border-videira-blue',
+              index === 2 && 'border-videira-purple/30 hover:border-videira-purple',
             )}
           >
             <div>
               <p className="font-semibold">
                 {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
               </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Escolha os canais de comunicação
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Escolha os canais de comunicação</p>
             </div>
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-center gap-2">
@@ -443,7 +449,7 @@ const SettingsTab = ({ userId }: { userId: string }) => {
           </div>
         ))}
         <div className="flex justify-end pt-4">
-          <Button 
+          <Button
             onClick={handleSaveSettings}
             className="bg-videira-purple hover:bg-videira-purple/90 text-white font-semibold shadow-lg"
           >
@@ -582,7 +588,7 @@ export default function PastorProfilePage(): JSX.Element {
     }
   }
 
-    const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       try {
@@ -601,7 +607,7 @@ export default function PastorProfilePage(): JSX.Element {
         }
 
         const result = await response.json()
-        
+
         // Atualizar avatar no banco
         const updateResponse = await fetch(`/api/v1/pastores/${id}`, {
           method: 'PUT',
@@ -614,11 +620,11 @@ export default function PastorProfilePage(): JSX.Element {
         }
 
         setPreviewImage(result.url)
-        setPastor(prev => prev ? { ...prev, avatarUrl: result.url } : null)
-        
+        setPastor((prev) => (prev ? { ...prev, avatarUrl: result.url } : null))
+
         // Recarregar dados do servidor para garantir sincronização
         await fetchData()
-        
+
         toast({
           title: 'Sucesso',
           description: 'Avatar atualizado com sucesso!',
@@ -643,7 +649,7 @@ export default function PastorProfilePage(): JSX.Element {
             <Skeleton className="h-20 w-full" />
           </CardContent>
         </Card>
-        
+
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <Card className="shadow-lg border-t-4 border-t-videira-cyan">
@@ -686,7 +692,9 @@ export default function PastorProfilePage(): JSX.Element {
             <div className="flex flex-col items-center gap-4 py-12">
               <XCircle className="h-16 w-16 text-destructive" />
               <h2 className="text-2xl font-bold">Pastor não encontrado</h2>
-              <p className="text-muted-foreground">O pastor solicitado não existe ou foi removido.</p>
+              <p className="text-muted-foreground">
+                O pastor solicitado não existe ou foi removido.
+              </p>
               <Link href="/admin/pastores">
                 <Button className="mt-4">
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -709,14 +717,14 @@ export default function PastorProfilePage(): JSX.Element {
           <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-          
+
           <div className="relative z-10 p-8">
             <div className="flex items-center justify-between">
               <div>
                 <Link href="/admin/pastores">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="text-white/90 hover:text-white hover:bg-white/20 mb-3 -ml-2"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -732,13 +740,13 @@ export default function PastorProfilePage(): JSX.Element {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge 
+                <Badge
                   variant={pastor.status === 'active' ? 'success' : 'destructive'}
                   className={cn(
-                    "text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all",
-                    pastor.status === 'active' 
-                      ? "bg-green-500 text-white border-green-400 hover:bg-green-600" 
-                      : "bg-red-500 text-white border-red-400 hover:bg-red-600"
+                    'text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all',
+                    pastor.status === 'active'
+                      ? 'bg-green-500 text-white border-green-400 hover:bg-green-600'
+                      : 'bg-red-500 text-white border-red-400 hover:bg-red-600',
                   )}
                 >
                   {pastor.status === 'active' ? '✓ Ativo' : '✗ Inativo'}
@@ -752,44 +760,47 @@ export default function PastorProfilePage(): JSX.Element {
           <div className="lg:col-span-1">
             <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
               <CardContent className="flex flex-col items-center pt-6 text-center">
-              <div className="relative">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={previewImage || pastor.avatarUrl || 'https://placehold.co/96x96.png'}
-                    alt={pastor.firstName ?? ''}
-                    data-ai-hint="male pastor"
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage
+                      src={previewImage || pastor.avatarUrl || 'https://placehold.co/96x96.png'}
+                      alt={pastor.firstName ?? ''}
+                      data-ai-hint="male pastor"
+                    />
+                    <AvatarFallback>
+                      {pastor.firstName?.[0]}
+                      {pastor.lastName?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Label
+                    htmlFor="photo-upload"
+                    className="absolute bottom-0 right-0 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <span className="sr-only">Trocar foto</span>
+                  </Label>
+                  <Input
+                    id="photo-upload"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
                   />
-                  <AvatarFallback>
-                    {pastor.firstName?.[0]}
-                    {pastor.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <span className="sr-only">Trocar foto</span>
-                </Label>
-                <Input
-                  id="photo-upload"
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                />
-              </div>
+                </div>
                 <h2 className="mt-4 text-xl font-semibold">
                   {pastor.firstName} {pastor.lastName}
                 </h2>
                 <p className="text-sm text-muted-foreground font-medium">Pastor</p>
-                
+
                 <div className="flex gap-2 mt-4">
                   <SendMessageDialog
                     recipientName={`${pastor.firstName} ${pastor.lastName}`}
                     recipientEmail={pastor.email || ''}
                     recipientPhone={pastor.phone || ''}
                   >
-                    <Button 
+                    <Button
                       size="sm"
                       className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                     >
@@ -799,7 +810,9 @@ export default function PastorProfilePage(): JSX.Element {
                   </SendMessageDialog>
                   <Button
                     size="sm"
-                    onClick={() => window.open(`https://wa.me/55${pastor.phone?.replace(/\D/g, '')}`, '_blank')}
+                    onClick={() =>
+                      window.open(`https://wa.me/55${pastor.phone?.replace(/\D/g, '')}`, '_blank')
+                    }
                     className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                   >
                     <Smartphone className="h-4 w-4 mr-1" />
@@ -851,28 +864,28 @@ export default function PastorProfilePage(): JSX.Element {
           <div className="lg:col-span-2">
             <Tabs defaultValue="profile" className="space-y-6">
               <TabsList className="grid w-full grid-cols-4 gap-2 bg-muted/50 p-1 rounded-lg">
-                <TabsTrigger 
+                <TabsTrigger
                   value="profile"
                   className="data-[state=active]:bg-videira-blue data-[state=active]:text-white font-semibold"
                 >
                   <UserCog className="h-4 w-4 mr-2" />
                   Perfil
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="transactions"
                   className="data-[state=active]:bg-videira-cyan data-[state=active]:text-white font-semibold"
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
                   Transações
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="configuracoes"
                   className="data-[state=active]:bg-videira-purple data-[state=active]:text-white font-semibold"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Configurações
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="delete"
                   className="data-[state=active]:bg-destructive data-[state=active]:text-white font-semibold"
                 >
@@ -880,376 +893,373 @@ export default function PastorProfilePage(): JSX.Element {
                   Excluir
                 </TabsTrigger>
               </TabsList>
-            <TabsContent value="profile">
-              <Card className="shadow-lg border-t-4 border-t-videira-blue">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
-                      <UserCog className="h-5 w-5 text-videira-blue" />
-                    </div>
-                    Dados do Perfil
-                  </CardTitle>
-                  <CardDescription>Atualize as informações pessoais do pastor</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="supervisorId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Selecione um supervisor</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione um supervisor" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {supervisors.map((supervisor) => (
-                                  <SelectItem key={supervisor.id} value={supervisor.id}>
-                                    {supervisor.firstName} {supervisor.lastName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField
-                          control={form.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nome</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Sobre-nome</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="cpf"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>CPF</FormLabel>
-                              <FormControl>
-                                <Input {...field} disabled value={pastor?.cpf ?? ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+              <TabsContent value="profile">
+                <Card className="shadow-lg border-t-4 border-t-videira-blue">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-videira-blue/15 ring-2 ring-videira-blue/30">
+                        <UserCog className="h-5 w-5 text-videira-blue" />
                       </div>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      Dados do Perfil
+                    </CardTitle>
+                    <CardDescription>Atualize as informações pessoais do pastor</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <FormField
                           control={form.control}
-                          name="birthDate"
+                          name="supervisorId"
                           render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel>Data de nascimento</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant={'outline'}
-                                      className={cn(
-                                        'w-full pl-3 text-left font-normal',
-                                        !field.value && 'text-muted-foreground',
-                                      )}
-                                    >
-                                      {field.value ? (
-                                        format(new Date(field.value), 'dd/MM/yyyy', {
-                                          locale: ptBR,
-                                        })
-                                      ) : (
-                                        <span>dd/mm/aaaa</span>
-                                      )}
-                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={field.value ? new Date(field.value) : undefined}
-                                    onSelect={field.onChange}
-                                    disabled={(date) =>
-                                      date > new Date() || date < new Date('1900-01-01')
-                                    }
-                                    initialFocus
-                                    locale={ptBR}
+                            <FormItem>
+                              <FormLabel>Selecione um supervisor</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um supervisor" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {supervisors.map((supervisor) => (
+                                    <SelectItem key={supervisor.id} value={supervisor.id}>
+                                      {supervisor.firstName} {supervisor.lastName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <FormField
+                            control={form.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nome</FormLabel>
+                                <FormControl>
+                                  <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Sobre-nome</FormLabel>
+                                <FormControl>
+                                  <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="cpf"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CPF</FormLabel>
+                                <FormControl>
+                                  <Input {...field} disabled value={pastor?.cpf ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <FormField
+                            control={form.control}
+                            name="birthDate"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>Data de nascimento</FormLabel>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant={'outline'}
+                                        className={cn(
+                                          'w-full pl-3 text-left font-normal',
+                                          !field.value && 'text-muted-foreground',
+                                        )}
+                                      >
+                                        {field.value ? (
+                                          format(new Date(field.value), 'dd/MM/yyyy', {
+                                            locale: ptBR,
+                                          })
+                                        ) : (
+                                          <span>dd/mm/aaaa</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={field.value ? new Date(field.value) : undefined}
+                                      onSelect={field.onChange}
+                                      disabled={(date) =>
+                                        date > new Date() || date < new Date('1900-01-01')
+                                      }
+                                      initialFocus
+                                      locale={ptBR}
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Celular</FormLabel>
+                                <FormControl>
+                                  <PhoneInput
+                                    type="mobile"
+                                    value={field.value ?? ''}
+                                    onChange={field.onChange}
+                                    placeholder="(00) 00000-0000"
                                   />
-                                </PopoverContent>
-                              </Popover>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="landline"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Telefone 2</FormLabel>
+                                <FormControl>
+                                  <PhoneInput
+                                    type="landline"
+                                    value={field.value ?? ''}
+                                    onChange={field.onChange}
+                                    placeholder="(00) 0000-0000"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem className="sm:col-span-1">
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <Input type="email" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="cep"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CEP</FormLabel>
+                                <FormControl>
+                                  <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Estado/UF</FormLabel>
+                                <FormControl>
+                                  <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <FormField
+                            control={form.control}
+                            name="neighborhood"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Bairro</FormLabel>
+                                <FormControl>
+                                  <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Rua</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Complemento..."
+                                    {...field}
+                                    value={field.value ?? ''}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="number"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Número</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Número da casa..."
+                                    {...field}
+                                    value={field.value ?? ''}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <FormField
+                            control={form.control}
+                            name="complement"
+                            render={({ field }) => (
+                              <FormItem className="sm:col-span-2">
+                                <FormLabel>Complemento</FormLabel>
+                                <FormControl>
+                                  <Input {...field} value={field.value ?? ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="titheDay"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Dia do dízimo</FormLabel>
+                                <FormControl>
+                                  <Input type="number" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <Alert className="bg-warning/10 border-warning/30">
+                          <AlertTriangle className="h-4 w-4 text-warning" />
+                          <AlertDescription className="text-warning">
+                            <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá
+                            acessar usando a senha anterior.
+                          </AlertDescription>
+                        </Alert>
+
+                        <FormField
+                          control={form.control}
+                          name="newPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label>Atualize a senha do pastor</Label>
+                              <FormControl>
+                                <div className="relative mt-1">
+                                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                  <Input
+                                    type="password"
+                                    placeholder="Nova senha"
+                                    className="pl-9"
+                                    value={field.value ?? ''}
+                                    onChange={field.onChange}
+                                  />
+                                </div>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Celular</FormLabel>
-                              <FormControl>
-                                <PhoneInput
-                                  type="mobile"
-                                  value={field.value ?? ''}
-                                  onChange={field.onChange}
-                                  placeholder="(00) 00000-0000"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="landline"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Telefone 2</FormLabel>
-                              <FormControl>
-                                <PhoneInput
-                                  type="landline"
-                                  value={field.value ?? ''}
-                                  onChange={field.onChange}
-                                  placeholder="(00) 0000-0000"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
 
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem className="sm:col-span-1">
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input type="email" {...field} value={field.value ?? ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="cep"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>CEP</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="state"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Estado/UF</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
+                        <div className="flex justify-end">
+                          <Button
+                            type="submit"
+                            disabled={isSaving}
+                            className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
+                          >
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Salvando...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="mr-2 h-4 w-4" />
+                                Salvar Alterações
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="transactions">
+                <TransactionsTab userId={id as string} />
+              </TabsContent>
+              <TabsContent value="configuracoes">
+                <SettingsTab userId={id as string} />
+              </TabsContent>
+              <TabsContent value="delete">
+                <Card className="shadow-lg border-t-4 border-t-destructive">
+                  <CardHeader>
+                    <CardTitle className="text-destructive flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
+                        <Trash2 className="h-5 w-5 text-destructive" />
                       </div>
-
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField
-                          control={form.control}
-                          name="neighborhood"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Bairro</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="address"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Rua</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Complemento..."
-                                  {...field}
-                                  value={field.value ?? ''}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="number"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Número</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Número da casa..."
-                                  {...field}
-                                  value={field.value ?? ''}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormField
-                          control={form.control}
-                          name="complement"
-                          render={({ field }) => (
-                            <FormItem className="sm:col-span-2">
-                              <FormLabel>Complemento</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value ?? ''} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="titheDay"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Dia do dízimo</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} value={field.value ?? ''} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Alert className="bg-warning/10 border-warning/30">
-                        <AlertTriangle className="h-4 w-4 text-warning" />
-                        <AlertDescription className="text-warning">
-                          <strong>Importante</strong> - Ao atualizar a senha, o usuário não poderá
-                          acessar usando a senha anterior.
-                        </AlertDescription>
-                      </Alert>
-
-                      <FormField
-                        control={form.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <Label>Atualize a senha do pastor</Label>
-                            <FormControl>
-                              <div className="relative mt-1">
-                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                  type="password"
-                                  placeholder="Nova senha"
-                                  className="pl-9"
-                                  value={field.value ?? ''}
-                                  onChange={field.onChange}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="flex justify-end">
-                        <Button 
-                          type="submit" 
-                          disabled={isSaving}
-                          className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
-                        >
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Salvando...
-                            </>
-                          ) : (
-                            <>
-                              <Save className="mr-2 h-4 w-4" />
-                              Salvar Alterações
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="transactions">
-              <TransactionsTab userId={id as string} />
-            </TabsContent>
-            <TabsContent value="configuracoes">
-              <SettingsTab userId={id as string} />
-            </TabsContent>
-            <TabsContent value="delete">
-              <Card className="shadow-lg border-t-4 border-t-destructive">
-                <CardHeader>
-                  <CardTitle className="text-destructive flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
-                      <Trash2 className="h-5 w-5 text-destructive" />
-                    </div>
-                    Excluir Cadastro
-                  </CardTitle>
-                  <CardDescription>
-                    Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente
-                    este cadastro. Um motivo será solicitado para fins de auditoria.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Alert className="mb-6 bg-destructive/10 border-destructive/30">
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
-                    <AlertDescription className="text-destructive">
-                      <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados associados
-                      a este pastor serão marcados como excluídos.
-                    </AlertDescription>
-                  </Alert>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      className="font-semibold shadow-lg"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir Permanentemente
-                    </Button>
-                  </AlertDialogTrigger>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      Excluir Cadastro
+                    </CardTitle>
+                    <CardDescription>
+                      Esta ação é irreversível. Tenha certeza de que deseja excluir permanentemente
+                      este cadastro. Um motivo será solicitado para fins de auditoria.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Alert className="mb-6 bg-destructive/10 border-destructive/30">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <AlertDescription className="text-destructive">
+                        <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados
+                        associados a este pastor serão marcados como excluídos.
+                      </AlertDescription>
+                    </Alert>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="font-semibold shadow-lg">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir Permanentemente
+                      </Button>
+                    </AlertDialogTrigger>
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </Tabs>
           </div>
         </div>

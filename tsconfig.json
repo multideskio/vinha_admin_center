@@ -10,10 +10,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "target": "es2022",
-    "lib": [
-      "es2022",
-      "dom"
-    ],
+    "lib": ["es2022", "dom"],
     "jsx": "preserve",
     "allowJs": false,
     "esModuleInterop": true,
@@ -25,20 +22,12 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "incremental": true,
     "noEmit": true,
     "isolatedModules": true
   },
-  "include": [
-    "next-env.d.ts",
-    "src",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

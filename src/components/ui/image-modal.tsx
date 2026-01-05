@@ -24,9 +24,7 @@ export function ImageModal({ src, alt, children, className }: ImageModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div className={`cursor-pointer ${className}`}>
-          {children}
-        </div>
+        <div className={`cursor-pointer ${className}`}>{children}</div>
       </DialogTrigger>
       <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none shadow-none">
         <VisuallyHidden>

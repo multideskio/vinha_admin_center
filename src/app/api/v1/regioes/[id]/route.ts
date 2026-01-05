@@ -16,11 +16,17 @@ const regionSchema = z.object({
     }),
 })
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function PUT(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem alterar regiões.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Apenas administradores podem alterar regiões.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
@@ -33,16 +39,10 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const existingRegion = await db
       .select()
       .from(regions)
-      .where(and(
-        eq(regions.name, validatedData.name),
-        isNull(regions.deletedAt)
-      ))
+      .where(and(eq(regions.name, validatedData.name), isNull(regions.deletedAt)))
 
     if (existingRegion.length > 0 && existingRegion[0]?.id !== id) {
-      return NextResponse.json(
-        { error: 'Já existe uma região com este nome.' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Já existe uma região com este nome.' }, { status: 409 })
     }
 
     const updatedRegion = await db
@@ -75,11 +75,17 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
-  const params = await props.params;
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const params = await props.params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem excluir regiões.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Apenas administradores podem excluir regiões.' },
+      { status: 403 },
+    )
   }
 
   const { id } = params
@@ -90,18 +96,15 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       .select({ count: sql<number>`count(*)` })
       .from(supervisorProfiles)
       .leftJoin(users, eq(supervisorProfiles.userId, users.id))
-      .where(and(
-        eq(supervisorProfiles.regionId, id),
-        isNull(users.deletedAt)
-      ))
+      .where(and(eq(supervisorProfiles.regionId, id), isNull(users.deletedAt)))
 
     if (supervisorsCount[0]?.count && supervisorsCount[0].count > 0) {
       return NextResponse.json(
-        { 
+        {
           error: `Não é possível excluir esta região. Existem ${supervisorsCount[0].count} supervisor(es) vinculado(s) a ela.`,
-          details: `Remova ou transfira os supervisores antes de excluir a região.`
+          details: `Remova ou transfira os supervisores antes de excluir a região.`,
         },
-        { status: 409 }
+        { status: 409 },
       )
     }
 

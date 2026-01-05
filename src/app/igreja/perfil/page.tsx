@@ -15,10 +15,7 @@ import {
   Smartphone,
   User,
   Info,
-  ArrowRightLeft,
-  Building2,
 } from 'lucide-react'
-import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -156,7 +153,9 @@ const SettingsTab = ({ userId }: { userId: string }) => {
             <CardTitle className="text-base">
               {notificationSettingsConfig[type as keyof typeof notificationSettingsConfig]}
             </CardTitle>
-            <CardDescription className="text-sm">Configure como deseja receber notificações.</CardDescription>
+            <CardDescription className="text-sm">
+              Configure como deseja receber notificações.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
@@ -282,7 +281,10 @@ export default function ChurchProfilePage() {
     }
   }
 
-  const handleSocialLinkBlur = async (field: 'facebook' | 'instagram' | 'website', value: string) => {
+  const handleSocialLinkBlur = async (
+    field: 'facebook' | 'instagram' | 'website',
+    value: string,
+  ) => {
     try {
       const response = await fetch('/api/v1/igreja/perfil', {
         method: 'PUT',
@@ -352,7 +354,7 @@ export default function ChurchProfilePage() {
         <div className="absolute inset-0 videira-gradient opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
             Meu Perfil
@@ -373,7 +375,10 @@ export default function ChurchProfilePage() {
                   src={data.avatarUrl}
                   alt={data.nomeFantasia}
                   fallback={data.nomeFantasia.substring(0, 2).toUpperCase()}
-                  className={cn("h-24 w-24 ring-4 ring-videira-cyan/30", isUploading && "opacity-50")}
+                  className={cn(
+                    'h-24 w-24 ring-4 ring-videira-cyan/30',
+                    isUploading && 'opacity-50',
+                  )}
                   enableModal={!!data.avatarUrl}
                 />
                 {isUploading && (
@@ -399,9 +404,7 @@ export default function ChurchProfilePage() {
                   disabled={isUploading}
                 />
               </div>
-              <h2 className="mt-4 text-xl font-semibold">
-                {data.nomeFantasia}
-              </h2>
+              <h2 className="mt-4 text-xl font-semibold">{data.nomeFantasia}</h2>
               <p className="text-muted-foreground">{data.razaoSocial}</p>
             </CardContent>
             <Separator />
@@ -431,8 +434,8 @@ export default function ChurchProfilePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Globe className="h-5 w-5 text-videira-cyan" />
-                  <Input 
-                    defaultValue={data.website ?? ''} 
+                  <Input
+                    defaultValue={data.website ?? ''}
                     placeholder="https://website.com/..."
                     onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
                     className="border-2 focus:border-videira-cyan"
@@ -446,367 +449,379 @@ export default function ChurchProfilePage() {
         {/* Right Column: Tabs and Form */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 p-1 bg-gradient-to-r from-videira-cyan/10 to-videira-blue/10">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-videira-cyan data-[state=active]:text-white">
-            <User className="h-4 w-4 mr-2" />
-            Perfil
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-videira-blue data-[state=active]:text-white">
-            <Mail className="h-4 w-4 mr-2" />
-            Configurações
-          </TabsTrigger>
-        </TabsList>
+            <TabsList className="grid w-full grid-cols-2 p-1 bg-gradient-to-r from-videira-cyan/10 to-videira-blue/10">
+              <TabsTrigger
+                value="profile"
+                className="data-[state=active]:bg-videira-cyan data-[state=active]:text-white"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Perfil
+              </TabsTrigger>
+              <TabsTrigger
+                value="settings"
+                className="data-[state=active]:bg-videira-blue data-[state=active]:text-white"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Configurações
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="profile" className="space-y-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <Card className="shadow-lg border-l-4 border-l-videira-blue">
+            <TabsContent value="profile" className="space-y-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <Card className="shadow-lg border-l-4 border-l-videira-blue">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Info className="h-5 w-5 text-videira-blue" />
+                        Dados da Igreja
+                      </CardTitle>
+                      <CardDescription>Informações cadastrais da igreja</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="nomeFantasia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome Fantasia *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="razaoSocial"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Razão Social *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="cnpj"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CNPJ *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>E-mail *</FormLabel>
+                              <FormControl>
+                                <Input type="email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Telefone *</FormLabel>
+                              <FormControl>
+                                <PhoneInput
+                                  {...field}
+                                  country="br"
+                                  preferredCountries={['br']}
+                                  inputClass={cn(
+                                    'w-full px-3 py-2 rounded-md border border-input bg-background',
+                                    'focus:outline-none focus:ring-2 focus:ring-ring',
+                                  )}
+                                  containerClass="w-full"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="foundationDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Data de Fundação</FormLabel>
+                              <FormControl>
+                                <Input type="date" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="cep"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CEP *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="state"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Estado *</FormLabel>
+                              <FormControl>
+                                <Input maxLength={2} {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cidade *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="neighborhood"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bairro *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Logradouro *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="number"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Número</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="complement"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Complemento</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="treasurerFirstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome do Tesoureiro *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="treasurerLastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Sobrenome do Tesoureiro *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="treasurerCpf"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CPF do Tesoureiro *</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="facebook"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Facebook</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="url"
+                                  placeholder="https://facebook.com/..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="instagram"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Instagram</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="url"
+                                  placeholder="https://instagram.com/..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="website"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Website</FormLabel>
+                              <FormControl>
+                                <Input type="url" placeholder="https://..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="titheDay"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Dia do Dízimo (1-31)</FormLabel>
+                            <FormControl>
+                              <Input type="number" min={1} max={31} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              <Lock className="inline h-4 w-4 mr-2" />
+                              Nova Senha (deixe em branco para não alterar)
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-videira-cyan to-videira-blue hover:from-videira-cyan/90 hover:to-videira-blue/90 text-white font-semibold shadow-lg"
+                  >
+                    Salvar Alterações
+                  </Button>
+                </form>
+              </Form>
+            </TabsContent>
+
+            <TabsContent value="settings" className="space-y-6">
+              <Card className="shadow-lg border-l-4 border-l-green-500">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Info className="h-5 w-5 text-videira-blue" />
-                    Dados da Igreja
+                    <Mail className="h-5 w-5 text-green-500" />
+                    Notificações
                   </CardTitle>
-                  <CardDescription>Informações cadastrais da igreja</CardDescription>
+                  <CardDescription>Gerencie como deseja receber notificações</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="nomeFantasia"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome Fantasia *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="razaoSocial"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Razão Social *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="cnpj"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CNPJ *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>E-mail *</FormLabel>
-                          <FormControl>
-                            <Input type="email" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telefone *</FormLabel>
-                          <FormControl>
-                            <PhoneInput
-                              {...field}
-                              country="br"
-                              preferredCountries={['br']}
-                              inputClass={cn(
-                                'w-full px-3 py-2 rounded-md border border-input bg-background',
-                                'focus:outline-none focus:ring-2 focus:ring-ring',
-                              )}
-                              containerClass="w-full"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="foundationDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data de Fundação</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="cep"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CEP *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Estado *</FormLabel>
-                          <FormControl>
-                            <Input maxLength={2} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cidade *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="neighborhood"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bairro *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Logradouro *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="number"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Número</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="complement"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Complemento</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="treasurerFirstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Tesoureiro *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="treasurerLastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Sobrenome do Tesoureiro *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="treasurerCpf"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CPF do Tesoureiro *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="facebook"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Facebook</FormLabel>
-                          <FormControl>
-                            <Input type="url" placeholder="https://facebook.com/..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="instagram"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Instagram</FormLabel>
-                          <FormControl>
-                            <Input type="url" placeholder="https://instagram.com/..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="website"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Website</FormLabel>
-                          <FormControl>
-                            <Input type="url" placeholder="https://..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="titheDay"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Dia do Dízimo (1-31)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min={1} max={31} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          <Lock className="inline h-4 w-4 mr-2" />
-                          Nova Senha (deixe em branco para não alterar)
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
+                <CardContent>{data.userId && <SettingsTab userId={data.userId} />}</CardContent>
               </Card>
-
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full bg-gradient-to-r from-videira-cyan to-videira-blue hover:from-videira-cyan/90 hover:to-videira-blue/90 text-white font-semibold shadow-lg"
-              >
-                Salvar Alterações
-              </Button>
-            </form>
-          </Form>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <Card className="shadow-lg border-l-4 border-l-green-500">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-green-500" />
-                Notificações
-              </CardTitle>
-              <CardDescription>Gerencie como deseja receber notificações</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {data.userId && <SettingsTab userId={data.userId} />}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </TabsContent>
           </Tabs>
         </div>
       </div>

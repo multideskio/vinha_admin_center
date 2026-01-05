@@ -19,25 +19,17 @@ interface ClickableImageProps {
   height?: number
 }
 
-export function ClickableImage({ 
-  src, 
-  alt, 
+export function ClickableImage({
+  src,
+  alt,
   className,
   enableModal = true,
   children,
   width = 500,
-  height = 300
+  height = 300,
 }: ClickableImageProps) {
   if (!enableModal) {
-    return (
-      <Image
-        src={src}
-        alt={alt}
-        width={width}
-        height={height}
-        className={className}
-      />
-    )
+    return <Image src={src} alt={alt} width={width} height={height} className={className} />
   }
 
   if (children) {

@@ -24,14 +24,14 @@ export default function PixPayment({
   onExpired,
   onBack,
   onManualCheck,
-  isChecking = false
+  isChecking = false,
 }: PixPaymentProps) {
   const { toast } = useToast()
   const qrCodeSrc = getFullQrCodeSrc(paymentDetails.QrCodeBase64Image)
 
   const handleCopy = async (code: string | undefined, type: string) => {
     if (!code) return
-    
+
     const success = await copyToClipboard(code)
     if (success) {
       toast({
@@ -42,7 +42,7 @@ export default function PixPayment({
       toast({
         title: 'Erro',
         description: 'Não foi possível copiar o código.',
-        variant: 'destructive'
+        variant: 'destructive',
       })
     }
   }
@@ -60,7 +60,8 @@ export default function PixPayment({
           </h3>
         </div>
         <p className="text-sm text-muted-foreground font-medium">
-          Use uma das opções abaixo para finalizar seu pagamento de <span className="font-bold text-videira-cyan">{formatCurrency(amount)}</span>
+          Use uma das opções abaixo para finalizar seu pagamento de{' '}
+          <span className="font-bold text-videira-cyan">{formatCurrency(amount)}</span>
         </p>
       </div>
 
@@ -71,25 +72,23 @@ export default function PixPayment({
           <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950" />
           <div className="relative flex flex-col items-center justify-center p-6">
             <div className="bg-white p-4 rounded-2xl shadow-xl mb-4 ring-2 ring-green-200">
-            {qrCodeSrc ? (
-              <Image
-                src={qrCodeSrc}
-                width={200}
-                height={200}
-                alt="QR Code Pix"
-                className="rounded-lg"
-              />
-            ) : (
-              <Skeleton className="h-[200px] w-[200px] rounded-2xl" />
-            )}
+              {qrCodeSrc ? (
+                <Image
+                  src={qrCodeSrc}
+                  width={200}
+                  height={200}
+                  alt="QR Code Pix"
+                  className="rounded-lg"
+                />
+              ) : (
+                <Skeleton className="h-[200px] w-[200px] rounded-2xl" />
+              )}
             </div>
             <div className="text-center space-y-1">
               <p className="text-sm font-bold text-green-700 dark:text-green-300">
                 📱 Escaneie com o app do seu banco
               </p>
-              <p className="text-xs text-muted-foreground">
-                Ou copie o código Pix Copia e Cola
-              </p>
+              <p className="text-xs text-muted-foreground">Ou copie o código Pix Copia e Cola</p>
             </div>
           </div>
         </div>
@@ -114,11 +113,11 @@ export default function PixPayment({
                 className="px-4 border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white font-bold transition-all"
               >
                 <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                   />
                 </svg>
                 Copiar
@@ -140,25 +139,37 @@ export default function PixPayment({
             <div className="relative p-4">
               <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Como pagar:
               </h4>
               <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-2 font-medium">
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1</div>
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    1
+                  </div>
                   <span>Abra o app do seu banco</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">2</div>
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    2
+                  </div>
                   <span>Escolha "Pagar com PIX"</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">3</div>
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    3
+                  </div>
                   <span>Escaneie o QR Code ou cole a chave</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">✓</div>
+                  <div className="w-6 h-6 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">
+                    ✓
+                  </div>
                   <span>Confirme o pagamento</span>
                 </li>
               </ul>
@@ -175,7 +186,12 @@ export default function PixPayment({
           className="flex items-center gap-2 border-2 hover:border-videira-cyan"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           Voltar
         </Button>

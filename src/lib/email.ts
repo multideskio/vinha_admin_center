@@ -26,15 +26,24 @@ export async function sendEmail({
       and(
         eq(emailBlacklist.companyId, COMPANY_ID),
         eq(emailBlacklist.email, to),
-        eq(emailBlacklist.isActive, true)
-      )
+        eq(emailBlacklist.isActive, true),
+      ),
     )
     .limit(1)
 
   if (blacklisted) {
     const error = `Email bloqueado: ${blacklisted.reason}`
     if (userId) {
-      await logEmail(userId, to, subject, html, false, error, blacklisted.errorCode || 'BLACKLISTED', notificationType)
+      await logEmail(
+        userId,
+        to,
+        subject,
+        html,
+        false,
+        error,
+        blacklisted.errorCode || 'BLACKLISTED',
+        notificationType,
+      )
     }
     throw new Error(error)
   }
@@ -86,12 +95,12 @@ export async function sendEmail({
   } catch (error: any) {
     const errorCode = error.name || error.Code || 'UNKNOWN'
     const errorMessage = error.message || String(error)
-    
+
     // Adicionar à blacklist se for erro permanente
     if (shouldBlacklist(errorCode)) {
       await addToBlacklist(to, errorCode, errorMessage)
     }
-    
+
     if (userId) {
       await logEmail(userId, to, subject, html, false, errorMessage, errorCode, notificationType)
     }
@@ -106,7 +115,11 @@ function shouldBlacklist(errorCode: string): boolean {
     'InvalidParameterValue',
     'AccountSendingPausedException',
   ]
-  return permanentErrors.includes(errorCode) || errorCode.includes('Bounce') || errorCode.includes('Complaint')
+  return (
+    permanentErrors.includes(errorCode) ||
+    errorCode.includes('Bounce') ||
+    errorCode.includes('Complaint')
+  )
 }
 
 async function addToBlacklist(email: string, errorCode: string, errorMessage: string) {
@@ -114,12 +127,7 @@ async function addToBlacklist(email: string, errorCode: string, errorMessage: st
     const [existing] = await db
       .select()
       .from(emailBlacklist)
-      .where(
-        and(
-          eq(emailBlacklist.companyId, COMPANY_ID),
-          eq(emailBlacklist.email, email)
-        )
-      )
+      .where(and(eq(emailBlacklist.companyId, COMPANY_ID), eq(emailBlacklist.email, email)))
       .limit(1)
 
     if (existing) {
@@ -137,7 +145,11 @@ async function addToBlacklist(email: string, errorCode: string, errorMessage: st
       await db.insert(emailBlacklist).values({
         companyId: COMPANY_ID,
         email,
-        reason: errorCode.includes('Bounce') ? 'bounce' : errorCode.includes('Complaint') ? 'complaint' : 'error',
+        reason: errorCode.includes('Bounce')
+          ? 'bounce'
+          : errorCode.includes('Complaint')
+            ? 'complaint'
+            : 'error',
         errorCode,
         errorMessage,
       })
@@ -155,7 +167,7 @@ async function logEmail(
   success: boolean,
   errorMessage?: string,
   errorCode?: string,
-  notificationType?: string
+  notificationType?: string,
 ) {
   try {
     await db.insert(notificationLogs).values({

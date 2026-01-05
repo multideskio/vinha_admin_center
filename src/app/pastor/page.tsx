@@ -1,7 +1,6 @@
-
-import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation'
 
 export default function PastorPage() {
-  redirect('/pastor/dashboard');
-  return null;
+  redirect('/pastor/dashboard')
+  return null
 }

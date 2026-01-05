@@ -2,10 +2,9 @@
 
 import * as React from 'react'
 import { useParams } from 'next/navigation'
-import { 
-  ChevronLeft, 
-  Copy, 
-  MoreVertical, 
+import {
+  ChevronLeft,
+  Copy,
   MessageSquareWarning,
   DollarSign,
   User,
@@ -22,13 +21,8 @@ import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
+
 import {
   Dialog,
   DialogContent,
@@ -68,59 +62,62 @@ type Transaction = {
   refundRequestReason: string | null
 }
 
-const statusConfig: Record<string, { 
-  text: string
-  icon: React.ElementType
-  color: string
-  bgColor: string
-  borderColor: string
-}> = {
-  approved: { 
-    text: 'Aprovada', 
+const statusConfig: Record<
+  string,
+  {
+    text: string
+    icon: React.ElementType
+    color: string
+    bgColor: string
+    borderColor: string
+  }
+> = {
+  approved: {
+    text: 'Aprovada',
     icon: CheckCircle2,
     color: 'text-green-700 dark:text-green-400',
     bgColor: 'bg-green-500/15',
-    borderColor: 'border-green-500/30'
+    borderColor: 'border-green-500/30',
   },
-  pending: { 
-    text: 'Pendente', 
+  pending: {
+    text: 'Pendente',
     icon: Clock,
     color: 'text-yellow-700 dark:text-yellow-400',
     bgColor: 'bg-yellow-500/15',
-    borderColor: 'border-yellow-500/30'
+    borderColor: 'border-yellow-500/30',
   },
-  refused: { 
-    text: 'Recusada', 
+  refused: {
+    text: 'Recusada',
     icon: XCircle,
     color: 'text-red-700 dark:text-red-400',
     bgColor: 'bg-red-500/15',
-    borderColor: 'border-red-500/30'
+    borderColor: 'border-red-500/30',
   },
-  refunded: { 
-    text: 'Reembolsada', 
+  refunded: {
+    text: 'Reembolsada',
     icon: RefreshCw,
     color: 'text-blue-700 dark:text-blue-400',
     bgColor: 'bg-blue-500/15',
-    borderColor: 'border-blue-500/30'
+    borderColor: 'border-blue-500/30',
   },
 }
 
 const methodConfig: Record<string, { color: string }> = {
-  'PIX': { color: 'bg-videira-cyan/15 text-videira-cyan border-videira-cyan/30' },
+  PIX: { color: 'bg-videira-cyan/15 text-videira-cyan border-videira-cyan/30' },
   'Cartão de Crédito': { color: 'bg-videira-blue/15 text-videira-blue border-videira-blue/30' },
-  'Boleto': { color: 'bg-videira-purple/15 text-videira-purple border-videira-purple/30' },
+  Boleto: { color: 'bg-videira-purple/15 text-videira-purple border-videira-purple/30' },
 }
 
-const RefundModal = ({ 
-  amount, 
-  status, 
-  transactionId, 
-  onSuccess 
-}: { 
+const RefundModal = ({
+  amount,
+  status,
+  transactionId,
+  onSuccess,
+}: {
   amount: number
   status: string
   transactionId: string
-  onSuccess: () => void 
+  onSuccess: () => void
 }) => {
   const [refundAmount, setRefundAmount] = React.useState(amount.toFixed(2))
   const [reason, setReason] = React.useState('')
@@ -175,7 +172,7 @@ const RefundModal = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
+        <Button
           size="sm"
           disabled={status !== 'approved'}
           className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
@@ -202,7 +199,10 @@ const RefundModal = ({
               className="font-mono text-lg"
             />
             <p className="text-xs text-muted-foreground">
-              Valor máximo: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount)}
+              Valor máximo:{' '}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                amount,
+              )}
             </p>
           </div>
           <div className="grid gap-2">
@@ -220,8 +220,8 @@ const RefundModal = ({
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleRefund} 
+          <Button
+            onClick={handleRefund}
             disabled={isLoading}
             className="bg-destructive hover:bg-destructive/90 text-white"
           >
@@ -292,7 +292,7 @@ export default function TransacaoDetalhePage() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Grid Skeleton */}
         <div className="grid gap-6 md:grid-cols-[1fr_350px]">
           <div className="space-y-6">
@@ -368,13 +368,13 @@ export default function TransacaoDetalhePage() {
         <div className="absolute inset-0 videira-gradient opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link href="/admin/transacoes">
-                <Button 
-                  size="icon" 
+                <Button
+                  size="icon"
                   className="h-10 w-10 bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-lg"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -405,13 +405,15 @@ export default function TransacaoDetalhePage() {
                 <p className="text-white/70 text-sm mt-1">{transaction.date}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <Badge className={cn(
-                "text-base px-4 py-2 shadow-lg border-2 bg-white dark:bg-background font-bold",
-                statusInfo?.color ?? '',
-                statusInfo?.borderColor ?? ''
-              )}>
+              <Badge
+                className={cn(
+                  'text-base px-4 py-2 shadow-lg border-2 bg-white dark:bg-background font-bold',
+                  statusInfo?.color ?? '',
+                  statusInfo?.borderColor ?? '',
+                )}
+              >
                 <StatusIcon className="h-4 w-4 mr-2" />
                 {statusInfo?.text ?? transaction.status}
               </Badge>
@@ -460,7 +462,12 @@ export default function TransacaoDetalhePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Método de Pagamento</p>
-                  <Badge className={cn("text-sm border", methodConfig[transaction.payment.method]?.color)}>
+                  <Badge
+                    className={cn(
+                      'text-sm border',
+                      methodConfig[transaction.payment.method]?.color,
+                    )}
+                  >
                     {transaction.payment.method}
                   </Badge>
                 </div>
@@ -472,9 +479,11 @@ export default function TransacaoDetalhePage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="pt-2 border-t">
-                <p className="text-sm font-medium text-muted-foreground mb-2">ID da Transação Gateway</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">
+                  ID da Transação Gateway
+                </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs font-mono">
                     {transaction.payment.details}
@@ -530,14 +539,14 @@ export default function TransacaoDetalhePage() {
               <CardDescription>Operações que podem ser realizadas nesta transação</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
-              <RefundModal 
-                amount={transaction.amount} 
-                status={transaction.status} 
+              <RefundModal
+                amount={transaction.amount}
+                status={transaction.status}
                 transactionId={transaction.id}
                 onSuccess={fetchTransaction}
               />
-              
-              <Button 
+
+              <Button
                 size="sm"
                 disabled={transaction.status !== 'approved'}
                 onClick={async () => {
@@ -564,7 +573,7 @@ export default function TransacaoDetalhePage() {
                 Reenviar Comprovante
               </Button>
 
-              <Button 
+              <Button
                 size="sm"
                 onClick={async () => {
                   try {
@@ -592,11 +601,16 @@ export default function TransacaoDetalhePage() {
                 Sincronizar com Cielo
               </Button>
 
-              <Button 
+              <Button
                 size="sm"
                 onClick={async () => {
-                  if (!confirm('Tem certeza que deseja marcar esta transação como fraude? Esta ação é irreversível.')) return
-                  
+                  if (
+                    !confirm(
+                      'Tem certeza que deseja marcar esta transação como fraude? Esta ação é irreversível.',
+                    )
+                  )
+                    return
+
                   try {
                     const response = await fetch(`/api/v1/transacoes/${params.id}/fraud`, {
                       method: 'POST',
@@ -611,7 +625,8 @@ export default function TransacaoDetalhePage() {
                   } catch (error) {
                     toast({
                       title: 'Erro',
-                      description: error instanceof Error ? error.message : 'Erro ao marcar como fraude',
+                      description:
+                        error instanceof Error ? error.message : 'Erro ao marcar como fraude',
                       variant: 'destructive',
                     })
                   }
@@ -641,10 +656,15 @@ export default function TransacaoDetalhePage() {
                 <p className="font-bold text-lg">{transaction.contributor.name}</p>
                 <p className="text-sm text-muted-foreground flex items-start gap-2">
                   <span className="text-xs bg-muted px-2 py-1 rounded">
-                    {transaction.contributor.role === 'pastor' ? 'Pastor' :
-                     transaction.contributor.role === 'church_account' ? 'Igreja' :
-                     transaction.contributor.role === 'supervisor' ? 'Supervisor' :
-                     transaction.contributor.role === 'manager' ? 'Gerente' : 'Admin'}
+                    {transaction.contributor.role === 'pastor'
+                      ? 'Pastor'
+                      : transaction.contributor.role === 'church_account'
+                        ? 'Igreja'
+                        : transaction.contributor.role === 'supervisor'
+                          ? 'Supervisor'
+                          : transaction.contributor.role === 'manager'
+                            ? 'Gerente'
+                            : 'Admin'}
                   </span>
                 </p>
                 <p className="text-sm text-muted-foreground">{transaction.contributor.email}</p>
@@ -652,16 +672,21 @@ export default function TransacaoDetalhePage() {
                   <p className="text-sm text-muted-foreground">{transaction.contributor.phone}</p>
                 )}
               </div>
-              
+
               <Link
                 href={`/admin/${
-                  transaction.contributor.role === 'manager' ? 'gerentes' :
-                  transaction.contributor.role === 'supervisor' ? 'supervisores' :
-                  transaction.contributor.role === 'pastor' ? 'pastores' :
-                  transaction.contributor.role === 'church_account' ? 'igrejas' : '#'
+                  transaction.contributor.role === 'manager'
+                    ? 'gerentes'
+                    : transaction.contributor.role === 'supervisor'
+                      ? 'supervisores'
+                      : transaction.contributor.role === 'pastor'
+                        ? 'pastores'
+                        : transaction.contributor.role === 'church_account'
+                          ? 'igrejas'
+                          : '#'
                 }/${transaction.contributor.id}`}
               >
-                <Button 
+                <Button
                   size="sm"
                   className="w-full bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                 >

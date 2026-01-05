@@ -7,7 +7,7 @@ services:
   app:
     build: .
     ports:
-      - "9002:9002"
+      - '9002:9002'
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
@@ -19,7 +19,7 @@ services:
       - redis
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9002/api/v1/maintenance-check"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9002/api/v1/maintenance-check']
       interval: 30s
       timeout: 5s
       retries: 5
@@ -33,10 +33,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vinha"]
+      test: ['CMD-SHELL', 'pg_isready -U vinha']
       interval: 30s
       timeout: 5s
       retries: 5
@@ -46,9 +46,9 @@ services:
     container_name: redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 30s
       timeout: 5s
       retries: 5

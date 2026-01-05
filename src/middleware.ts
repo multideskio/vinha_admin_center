@@ -40,14 +40,11 @@ export async function middleware(request: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 1000)
 
   try {
-    const maintenanceCheck = await fetch(
-      new URL('/api/v1/maintenance-check', request.url),
-      { 
-        headers: { 'x-middleware-check': 'true' },
-        signal: controller.signal
-      }
-    )
-    
+    const maintenanceCheck = await fetch(new URL('/api/v1/maintenance-check', request.url), {
+      headers: { 'x-middleware-check': 'true' },
+      signal: controller.signal,
+    })
+
     clearTimeout(timeoutId)
 
     if (maintenanceCheck.ok) {

@@ -16,13 +16,13 @@ import { getErrorMessage } from '@/lib/error-types'
 
 export async function GET(): Promise<NextResponse> {
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   if (sessionUser.role !== 'pastor') {
     return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
   }

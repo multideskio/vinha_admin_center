@@ -23,11 +23,5 @@ export default function ContribuirPage() {
     // Lógica específica de erro para igreja
   }
 
-  return (
-    <ContributionForm
-      userRole="igreja"
-      onSuccess={handleSuccess}
-      onError={handleError}
-    />
-  )
+  return <ContributionForm userRole="igreja" onSuccess={handleSuccess} onError={handleError} />
 }

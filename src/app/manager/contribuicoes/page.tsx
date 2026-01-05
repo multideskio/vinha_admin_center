@@ -20,11 +20,5 @@ export default function ContribuicoesPage() {
     // Lógica específica de erro para manager
   }
 
-  return (
-    <ContributionForm
-      userRole="manager"
-      onSuccess={handleSuccess}
-      onError={handleError}
-    />
-  )
+  return <ContributionForm userRole="manager" onSuccess={handleSuccess} onError={handleError} />
 }

@@ -1,20 +1,15 @@
 'use client'
 
 import * as React from 'react'
-import { MoreHorizontal, PlusCircle, Map, Palette, Edit, Trash2, RefreshCw } from 'lucide-react'
+import { PlusCircle, Map, Palette, Edit, Trash2, RefreshCw } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
+
 import {
   Table,
   TableBody,
@@ -55,7 +50,6 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 const SUGGESTED_COLORS = [
@@ -125,22 +119,25 @@ const RegionFormModal = ({
   }, [isOpen, region, form])
 
   // Validação em tempo real do nome
-  const validateName = React.useCallback((name: string) => {
-    if (!name.trim()) {
-      setNameError('')
-      return
-    }
-    
-    const isDuplicate = existingRegions.some(
-      r => r.name.toLowerCase() === name.toLowerCase() && r.id !== region?.id
-    )
-    
-    if (isDuplicate) {
-      setNameError('Já existe uma região com este nome.')
-    } else {
-      setNameError('')
-    }
-  }, [existingRegions, region?.id])
+  const validateName = React.useCallback(
+    (name: string) => {
+      if (!name.trim()) {
+        setNameError('')
+        return
+      }
+
+      const isDuplicate = existingRegions.some(
+        (r) => r.name.toLowerCase() === name.toLowerCase() && r.id !== region?.id,
+      )
+
+      if (isDuplicate) {
+        setNameError('Já existe uma região com este nome.')
+      } else {
+        setNameError('')
+      }
+    },
+    [existingRegions, region?.id],
+  )
 
   const handleSave = async (data: z.infer<typeof regionSchema>) => {
     if (nameError) {
@@ -188,8 +185,8 @@ const RegionFormModal = ({
   }
 
   const usedColors = existingRegions
-    .filter(r => r.id !== region?.id)
-    .map(r => r.color.toLowerCase())
+    .filter((r) => r.id !== region?.id)
+    .map((r) => r.color.toLowerCase())
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -213,8 +210,8 @@ const RegionFormModal = ({
                 <FormItem>
                   <FormLabel>Nome da Região</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
+                    <Input
+                      {...field}
                       placeholder="Ex: Nordeste, Sul, Centro-Oeste"
                       onChange={(e) => {
                         field.onChange(e)
@@ -223,14 +220,12 @@ const RegionFormModal = ({
                       className={nameError ? 'border-destructive' : ''}
                     />
                   </FormControl>
-                  {nameError && (
-                    <p className="text-sm text-destructive">{nameError}</p>
-                  )}
+                  {nameError && <p className="text-sm text-destructive">{nameError}</p>}
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="color"
@@ -244,8 +239,9 @@ const RegionFormModal = ({
                       <div className="grid grid-cols-5 gap-2">
                         {SUGGESTED_COLORS.map((suggestedColor) => {
                           const isUsed = usedColors.includes(suggestedColor.color.toLowerCase())
-                          const isSelected = field.value.toLowerCase() === suggestedColor.color.toLowerCase()
-                          
+                          const isSelected =
+                            field.value.toLowerCase() === suggestedColor.color.toLowerCase()
+
                           return (
                             <button
                               key={suggestedColor.color}
@@ -253,10 +249,10 @@ const RegionFormModal = ({
                               onClick={() => !isUsed && field.onChange(suggestedColor.color)}
                               disabled={isUsed}
                               className={cn(
-                                "relative h-12 w-12 rounded-lg border-2 transition-all",
-                                isSelected && "ring-2 ring-videira-blue ring-offset-2",
-                                isUsed && "opacity-50 cursor-not-allowed",
-                                !isUsed && "hover:scale-110 cursor-pointer"
+                                'relative h-12 w-12 rounded-lg border-2 transition-all',
+                                isSelected && 'ring-2 ring-videira-blue ring-offset-2',
+                                isUsed && 'opacity-50 cursor-not-allowed',
+                                !isUsed && 'hover:scale-110 cursor-pointer',
                               )}
                               style={{ backgroundColor: suggestedColor.color }}
                               title={`${suggestedColor.name} ${isUsed ? '(Em uso)' : ''}`}
@@ -276,13 +272,15 @@ const RegionFormModal = ({
 
                     {/* Seletor de Cor Personalizada */}
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Ou escolha uma cor personalizada:</p>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Ou escolha uma cor personalizada:
+                      </p>
                       <div className="flex gap-3">
                         <FormControl>
                           <Input type="color" {...field} className="h-12 w-20 cursor-pointer" />
                         </FormControl>
-                        <Input 
-                          value={field.value} 
+                        <Input
+                          value={field.value}
                           onChange={field.onChange}
                           placeholder="#RRGGBB"
                           className="flex-1 font-mono"
@@ -311,15 +309,15 @@ const RegionFormModal = ({
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter className="gap-2">
               <DialogClose asChild>
                 <Button variant="outline" type="button">
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={form.formState.isSubmitting || !!nameError}
                 className="bg-videira-blue hover:bg-videira-blue/90 text-white"
               >
@@ -368,13 +366,13 @@ export default function RegioesPage() {
       const response = await fetch(`/api/v1/regioes/${id}`, {
         method: 'DELETE',
       })
-      
+
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Falha ao excluir a região')
       }
-      
+
       toast({
         title: 'Sucesso!',
         description: 'Região excluída com sucesso.',
@@ -399,7 +397,7 @@ export default function RegioesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -411,11 +409,12 @@ export default function RegioesPage() {
                 Gerencie as regiões e suas respectivas cores para organização
               </p>
               <p className="text-sm text-white/70 mt-1">
-                {regions.length} {regions.length === 1 ? 'região cadastrada' : 'regiões cadastradas'}
+                {regions.length}{' '}
+                {regions.length === 1 ? 'região cadastrada' : 'regiões cadastradas'}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
+              <Button
                 size="icon"
                 onClick={fetchRegions}
                 className="h-10 w-10 bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-lg"
@@ -461,7 +460,7 @@ export default function RegioesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-blue">
-              {new Set(regions.map(r => r.color)).size}
+              {new Set(regions.map((r) => r.color)).size}
             </div>
             <p className="text-sm text-muted-foreground mt-1">Paleta de cores</p>
           </CardContent>
@@ -509,106 +508,109 @@ export default function RegioesPage() {
                 <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
                   <TableHead className="w-[80px] font-semibold">Cor</TableHead>
                   <TableHead className="font-semibold">Nome da Região</TableHead>
-                  <TableHead className="text-right font-semibold">
-                    Ações
-                  </TableHead>
+                  <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading
-                  ? Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Skeleton className="h-10 w-10 rounded-full" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-48" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-8 w-8 ml-auto" />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  : regions.length > 0 ? (
-                      regions.map((region) => (
-                        <TableRow key={region.id} className="hover:bg-muted/50">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="h-10 w-10 rounded-full border-2 border-white shadow-md ring-2 ring-offset-2 ring-offset-background"
-                                style={{ 
-                                  backgroundColor: region.color,
-                                  boxShadow: `0 0 20px ${region.color}40`
-                                }}
-                              />
-                              <code className="text-xs font-mono text-muted-foreground">
-                                {region.color}
-                              </code>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-semibold text-lg">{region.name}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <RegionFormModal region={region} existingRegions={regions} onSave={fetchRegions}>
-                                <Button 
-                                  size="sm"
-                                  className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-48" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8 ml-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : regions.length > 0 ? (
+                  regions.map((region) => (
+                    <TableRow key={region.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="h-10 w-10 rounded-full border-2 border-white shadow-md ring-2 ring-offset-2 ring-offset-background"
+                            style={{
+                              backgroundColor: region.color,
+                              boxShadow: `0 0 20px ${region.color}40`,
+                            }}
+                          />
+                          <code className="text-xs font-mono text-muted-foreground">
+                            {region.color}
+                          </code>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-semibold text-lg">{region.name}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <RegionFormModal
+                            region={region}
+                            existingRegions={regions}
+                            onSave={fetchRegions}
+                          >
+                            <Button
+                              size="sm"
+                              className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                          </RegionFormModal>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Excluir
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Essa ação não pode ser desfeita. Isso excluirá permanentemente a
+                                  região <strong>{region.name}</strong>.
+                                  {/* Verificar se há supervisores vinculados será feito pela API */}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => region.id && handleDelete(region.id, region.name)}
+                                  className="bg-destructive hover:bg-destructive/90"
                                 >
-                                  <Edit className="h-4 w-4 mr-1" />
-                                  Editar
-                                </Button>
-                              </RegionFormModal>
-                              
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button 
-                                    size="sm"
-                                    className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Excluir
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Essa ação não pode ser desfeita. Isso excluirá permanentemente a região <strong>{region.name}</strong>.
-                                      {/* Verificar se há supervisores vinculados será feito pela API */}
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => region.id && handleDelete(region.id, region.name)}
-                                      className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                      Sim, excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center h-32">
-                          <div className="flex flex-col items-center gap-3 py-8">
-                            <Map className="h-12 w-12 text-muted-foreground" />
-                            <div>
-                              <p className="text-lg font-medium text-muted-foreground">
-                                Nenhuma região cadastrada
-                              </p>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Clique em "Nova Região" para começar
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
+                                  Sim, excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center h-32">
+                      <div className="flex flex-col items-center gap-3 py-8">
+                        <Map className="h-12 w-12 text-muted-foreground" />
+                        <div>
+                          <p className="text-lg font-medium text-muted-foreground">
+                            Nenhuma região cadastrada
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Clique em "Nova Região" para começar
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -633,9 +635,9 @@ export default function RegioesPage() {
                 <div key={region.id} className="flex flex-col items-center gap-2">
                   <div
                     className="h-16 w-16 rounded-xl border-2 border-white shadow-lg ring-2 ring-offset-2 ring-offset-background transition-transform hover:scale-110"
-                    style={{ 
+                    style={{
                       backgroundColor: region.color,
-                      boxShadow: `0 0 30px ${region.color}60`
+                      boxShadow: `0 0 30px ${region.color}60`,
                     }}
                   />
                   <div className="text-center">

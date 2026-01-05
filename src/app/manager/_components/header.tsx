@@ -74,35 +74,46 @@ type HeaderProps = {
   companyName?: string
 }
 
-export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, companyLogo, companyName }: HeaderProps) {
+export function ManagerHeader({
+  userName,
+  userEmail,
+  userFallback,
+  avatarUrl,
+  companyLogo,
+  companyName,
+}: HeaderProps) {
   const handleLogoutSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      console.log('User logout initiated:', userEmail);
-      const result = await handleLogout();
+      console.log('User logout initiated:', userEmail)
+      const result = await handleLogout()
       if (result.success) {
-        console.log('User logout successful');
-        window.location.href = '/auth/login';
+        console.log('User logout successful')
+        window.location.href = '/auth/login'
       } else {
-        throw new Error('Falha ao fazer logout');
+        throw new Error('Falha ao fazer logout')
       }
     } catch (error) {
-      console.error('Logout error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout';
-      alert(errorMessage);
+      console.error('Logout error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout'
+      alert(errorMessage)
     }
-  };
+  }
 
   const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('Failed to load company logo:', companyLogo);
-    e.currentTarget.style.display = 'none';
-  };
+    console.error('Failed to load company logo:', companyLogo)
+    e.currentTarget.style.display = 'none'
+  }
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10">
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10"
+          >
             <PanelLeft className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
@@ -115,7 +126,12 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
               <Link href="/manager/dashboard" className="flex items-center gap-3 group">
                 <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-lg">
                   {companyLogo ? (
-                    <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
+                    <img
+                      src={companyLogo}
+                      alt="Logo"
+                      className="h-6 w-6 object-contain"
+                      onError={handleLogoError}
+                    />
                   ) : (
                     <Logo className="h-6 w-6 text-white" />
                   )}
@@ -189,8 +205,12 @@ export function ManagerHeader({ userName, userEmail, userFallback, avatarUrl, co
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-semibold leading-none">Bem-vindo, {sanitizeText(userName)}!</p>
-              <p className="text-xs leading-none text-muted-foreground">{sanitizeText(userEmail)}</p>
+              <p className="text-sm font-semibold leading-none">
+                Bem-vindo, {sanitizeText(userName)}!
+              </p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {sanitizeText(userEmail)}
+              </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

@@ -5,10 +5,7 @@ import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { cancelPayment } from '@/lib/cielo'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -36,7 +33,7 @@ export async function POST(
     if (transaction.status !== 'approved') {
       return NextResponse.json(
         { error: 'Apenas transações aprovadas podem ser reembolsadas' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -44,7 +41,7 @@ export async function POST(
     if (amount > transactionAmount) {
       return NextResponse.json(
         { error: 'Valor do reembolso não pode ser maior que o valor da transação' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -56,7 +53,7 @@ export async function POST(
         console.error('Erro ao cancelar na Cielo:', cieloError)
         return NextResponse.json(
           { error: cieloError instanceof Error ? cieloError.message : 'Erro ao cancelar na Cielo' },
-          { status: 500 }
+          { status: 500 },
         )
       }
     }
@@ -78,7 +75,7 @@ export async function POST(
     console.error('Error processing refund:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Erro ao processar reembolso' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

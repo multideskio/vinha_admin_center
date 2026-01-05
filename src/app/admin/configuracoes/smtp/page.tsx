@@ -20,12 +20,38 @@ import {
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Loader2, Mail, ChevronLeft, Save, Send, CheckCircle, AlertTriangle, Ban, History, Trash2, Settings, ChevronRight, Eye } from 'lucide-react'
+import {
+  Loader2,
+  Mail,
+  ChevronLeft,
+  Save,
+  Send,
+  AlertTriangle,
+  Ban,
+  History,
+  Trash2,
+  Settings,
+  ChevronRight,
+  Eye,
+} from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 const smtpSettingsSchema = z.object({
   host: z.string().min(1, 'Servidor SMTP é obrigatório.'),
@@ -106,7 +132,9 @@ export default function SmtpSettingsPage() {
   const fetchBlacklist = async (page = 1) => {
     setLoadingBlacklist(true)
     try {
-      const response = await fetch(`/api/v1/email-blacklist?active=true&page=${page}&limit=${blacklistPerPage}`)
+      const response = await fetch(
+        `/api/v1/email-blacklist?active=true&page=${page}&limit=${blacklistPerPage}`,
+      )
       if (response.ok) {
         const data = await response.json()
         setBlacklist(data.blacklist || [])
@@ -122,7 +150,9 @@ export default function SmtpSettingsPage() {
   const fetchEmailLogs = async (page = 1) => {
     setLoadingLogs(true)
     try {
-      const response = await fetch(`/api/v1/notification-logs?channel=email&page=${page}&limit=${logsPerPage}`)
+      const response = await fetch(
+        `/api/v1/notification-logs?channel=email&page=${page}&limit=${logsPerPage}`,
+      )
       if (response.ok) {
         const data = await response.json()
         setEmailLogs(data.logs || [])
@@ -235,13 +265,13 @@ export default function SmtpSettingsPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/configuracoes">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -288,9 +318,7 @@ export default function SmtpSettingsPage() {
                 </div>
                 Histórico de Disparos
               </CardTitle>
-              <CardDescription>
-                Últimos 50 emails enviados pelo sistema
-              </CardDescription>
+              <CardDescription>Últimos 50 emails enviados pelo sistema</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingLogs ? (
@@ -347,13 +375,14 @@ export default function SmtpSettingsPage() {
                   </Table>
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-sm text-muted-foreground">
-                      Mostrando {(logsPage - 1) * logsPerPage + 1} a {Math.min(logsPage * logsPerPage, totalLogs)} de {totalLogs}
+                      Mostrando {(logsPage - 1) * logsPerPage + 1} a{' '}
+                      {Math.min(logsPage * logsPerPage, totalLogs)} de {totalLogs}
                     </p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setLogsPage(p => Math.max(1, p - 1))}
+                        onClick={() => setLogsPage((p) => Math.max(1, p - 1))}
                         disabled={logsPage === 1}
                       >
                         <ChevronLeft className="h-4 w-4" />
@@ -361,7 +390,7 @@ export default function SmtpSettingsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setLogsPage(p => p + 1)}
+                        onClick={() => setLogsPage((p) => p + 1)}
                         disabled={logsPage * logsPerPage >= totalLogs}
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -416,7 +445,12 @@ export default function SmtpSettingsPage() {
                         <FormItem>
                           <FormLabel>Porta</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="587" {...field} value={field.value ?? ''} />
+                            <Input
+                              type="number"
+                              placeholder="587"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -429,7 +463,11 @@ export default function SmtpSettingsPage() {
                         <FormItem>
                           <FormLabel>Usuário SMTP</FormLabel>
                           <FormControl>
-                            <Input placeholder="Seu usuário SMTP" {...field} value={field.value ?? ''} />
+                            <Input
+                              placeholder="Seu usuário SMTP"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -473,8 +511,8 @@ export default function SmtpSettingsPage() {
                     )}
                   />
                   <div className="flex justify-end pt-4">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       disabled={isSaving}
                       className="bg-videira-blue hover:bg-videira-blue/90 text-white font-semibold shadow-lg"
                     >
@@ -510,10 +548,11 @@ export default function SmtpSettingsPage() {
                   <Alert className="bg-videira-blue/10 border-videira-blue/30">
                     <AlertTriangle className="h-4 w-4 text-videira-blue" />
                     <AlertDescription className="text-videira-blue">
-                      <strong>Amazon SES:</strong> Certifique-se de que o e-mail de destino está verificado no SES se estiver em modo Sandbox.
+                      <strong>Amazon SES:</strong> Certifique-se de que o e-mail de destino está
+                      verificado no SES se estiver em modo Sandbox.
                     </AlertDescription>
                   </Alert>
-                  
+
                   <div className="space-y-2">
                     <Label className="font-semibold">E-mail de Destino</Label>
                     <Input
@@ -593,7 +632,11 @@ export default function SmtpSettingsPage() {
                           <TableCell className="font-mono text-sm">{item.email}</TableCell>
                           <TableCell>
                             <Badge variant={item.reason === 'bounce' ? 'destructive' : 'secondary'}>
-                              {item.reason === 'bounce' ? 'Bounce' : item.reason === 'complaint' ? 'Spam' : item.reason}
+                              {item.reason === 'bounce'
+                                ? 'Bounce'
+                                : item.reason === 'complaint'
+                                  ? 'Spam'
+                                  : item.reason}
                             </Badge>
                           </TableCell>
                           <TableCell>{item.attemptCount}x</TableCell>
@@ -616,13 +659,15 @@ export default function SmtpSettingsPage() {
                   </Table>
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-sm text-muted-foreground">
-                      Mostrando {(blacklistPage - 1) * blacklistPerPage + 1} a {Math.min(blacklistPage * blacklistPerPage, totalBlacklist)} de {totalBlacklist}
+                      Mostrando {(blacklistPage - 1) * blacklistPerPage + 1} a{' '}
+                      {Math.min(blacklistPage * blacklistPerPage, totalBlacklist)} de{' '}
+                      {totalBlacklist}
                     </p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setBlacklistPage(p => Math.max(1, p - 1))}
+                        onClick={() => setBlacklistPage((p) => Math.max(1, p - 1))}
                         disabled={blacklistPage === 1}
                       >
                         <ChevronLeft className="h-4 w-4" />
@@ -630,7 +675,7 @@ export default function SmtpSettingsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setBlacklistPage(p => p + 1)}
+                        onClick={() => setBlacklistPage((p) => p + 1)}
                         disabled={blacklistPage * blacklistPerPage >= totalBlacklist}
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -675,7 +720,9 @@ export default function SmtpSettingsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Data</p>
-                  <p className="text-sm">{new Date(selectedEmail.sentAt).toLocaleString('pt-BR')}</p>
+                  <p className="text-sm">
+                    {new Date(selectedEmail.sentAt).toLocaleString('pt-BR')}
+                  </p>
                 </div>
                 {selectedEmail.errorMessage && (
                   <div className="col-span-2">
@@ -686,10 +733,14 @@ export default function SmtpSettingsPage() {
               </div>
               <Separator />
               <div>
-                <p className="text-sm font-semibold text-muted-foreground mb-2">Conteúdo do Email</p>
-                <div 
+                <p className="text-sm font-semibold text-muted-foreground mb-2">
+                  Conteúdo do Email
+                </p>
+                <div
                   className="border rounded-lg p-4 bg-white dark:bg-gray-950 overflow-auto"
-                  dangerouslySetInnerHTML={{ __html: selectedEmail.messageContent || '<p>Sem conteúdo</p>' }}
+                  dangerouslySetInnerHTML={{
+                    __html: selectedEmail.messageContent || '<p>Sem conteúdo</p>',
+                  }}
                 />
               </div>
             </div>

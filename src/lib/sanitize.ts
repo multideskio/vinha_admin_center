@@ -7,7 +7,7 @@
  */
 export function sanitizeHtml(str: string | null | undefined): string {
   if (!str) return ''
-  
+
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -41,11 +41,11 @@ export function sanitizeEmail(email: string | null | undefined): string {
 export function sanitizeUrl(url: string | null | undefined): string {
   if (!url) return ''
   const sanitized = url.trim()
-  
+
   // Block dangerous protocols
   if (/^(javascript|data|vbscript):/i.test(sanitized)) {
     return ''
   }
-  
+
   return sanitized
 }

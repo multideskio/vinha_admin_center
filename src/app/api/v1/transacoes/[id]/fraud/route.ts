@@ -4,10 +4,7 @@ import { transactions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -43,7 +40,7 @@ export async function POST(
     console.error('Error marking as fraud:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Erro ao marcar como fraude' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

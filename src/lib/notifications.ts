@@ -37,7 +37,11 @@ export class WhatsAppService {
   constructor(private config: NotificationConfig) {}
 
   async sendMessage({ number, text }: WhatsAppMessage): Promise<boolean> {
-    if (!this.config.whatsappApiUrl || !this.config.whatsappApiKey || !this.config.whatsappApiInstance) {
+    if (
+      !this.config.whatsappApiUrl ||
+      !this.config.whatsappApiKey ||
+      !this.config.whatsappApiInstance
+    ) {
       console.warn('WhatsApp configuration missing')
       return false
     }
@@ -55,11 +59,11 @@ export class WhatsAppService {
         {
           method: 'POST',
           headers: {
-            'apikey': this.config.whatsappApiKey,
+            apikey: this.config.whatsappApiKey,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
-        }
+        },
       )
 
       if (!response.ok) {
@@ -92,7 +96,10 @@ export class EmailService {
     }
   }
 
-  async sendEmail({ to, subject, html, text }: EmailMessage, companyId?: string): Promise<{ success: boolean; error?: string; errorCode?: string }> {
+  async sendEmail(
+    { to, subject, html, text }: EmailMessage,
+    companyId?: string,
+  ): Promise<{ success: boolean; error?: string; errorCode?: string }> {
     if (!this.sesClient || !this.config.fromEmail) {
       return { success: false, error: 'Email configuration missing' }
     }
@@ -106,13 +113,17 @@ export class EmailService {
           and(
             eq(emailBlacklist.companyId, companyId),
             eq(emailBlacklist.email, to),
-            eq(emailBlacklist.isActive, true)
-          )
+            eq(emailBlacklist.isActive, true),
+          ),
         )
         .limit(1)
 
       if (blacklisted) {
-        return { success: false, error: `Email bloqueado: ${blacklisted.reason}`, errorCode: 'BLACKLISTED' }
+        return {
+          success: false,
+          error: `Email bloqueado: ${blacklisted.reason}`,
+          errorCode: 'BLACKLISTED',
+        }
       }
     }
 
@@ -134,12 +145,12 @@ export class EmailService {
     } catch (error: any) {
       const errorCode = error.name || error.Code || 'UNKNOWN'
       const errorMessage = error.message || String(error)
-      
+
       // Adicionar à blacklist se for erro permanente
       if (companyId && this.shouldBlacklist(errorCode)) {
         await this.addToBlacklist(companyId, to, errorCode, errorMessage)
       }
-      
+
       return { success: false, error: errorMessage, errorCode }
     }
   }
@@ -151,20 +162,24 @@ export class EmailService {
       'InvalidParameterValue',
       'AccountSendingPausedException',
     ]
-    return permanentErrors.includes(errorCode) || errorCode.includes('Bounce') || errorCode.includes('Complaint')
+    return (
+      permanentErrors.includes(errorCode) ||
+      errorCode.includes('Bounce') ||
+      errorCode.includes('Complaint')
+    )
   }
 
-  private async addToBlacklist(companyId: string, email: string, errorCode: string, errorMessage: string) {
+  private async addToBlacklist(
+    companyId: string,
+    email: string,
+    errorCode: string,
+    errorMessage: string,
+  ) {
     try {
       const [existing] = await db
         .select()
         .from(emailBlacklist)
-        .where(
-          and(
-            eq(emailBlacklist.companyId, companyId),
-            eq(emailBlacklist.email, email)
-          )
-        )
+        .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
         .limit(1)
 
       if (existing) {
@@ -182,7 +197,11 @@ export class EmailService {
         await db.insert(emailBlacklist).values({
           companyId,
           email,
-          reason: errorCode.includes('Bounce') ? 'bounce' : errorCode.includes('Complaint') ? 'complaint' : 'error',
+          reason: errorCode.includes('Bounce')
+            ? 'bounce'
+            : errorCode.includes('Complaint')
+              ? 'complaint'
+              : 'error',
           errorCode,
           errorMessage,
         })
@@ -198,7 +217,7 @@ export const templates = {
   welcome: {
     whatsapp: (name: string, churchName: string) =>
       `🙏 Olá ${name}!\n\nSeja bem-vindo(a) à ${churchName}!\n\nEstamos felizes em tê-lo(a) conosco. Em breve você receberá mais informações sobre como contribuir e participar de nossas atividades.\n\nQue Deus abençoe! 🙌`,
-    
+
     email: {
       subject: (churchName: string) => `Bem-vindo(a) à ${churchName}!`,
       html: (name: string, churchName: string) => `
@@ -222,7 +241,7 @@ export const templates = {
   paymentReminder: {
     whatsapp: (name: string, amount: string, dueDate: string) =>
       `💰 Olá ${name}!\n\nLembramos que seu dízimo de R$ ${amount} vence em ${dueDate}.\n\nVocê pode realizar o pagamento através do nosso sistema online.\n\nObrigado pela sua fidelidade! 🙏`,
-    
+
     email: {
       subject: 'Lembrete de Dízimo',
       html: (name: string, amount: string, dueDate: string, paymentLink?: string) => `
@@ -230,13 +249,17 @@ export const templates = {
           <h2 style="color: #4a5568;">💰 Lembrete de Dízimo</h2>
           <p>Olá ${name},</p>
           <p>Lembramos que seu dízimo de <strong>R$ ${amount}</strong> vence em <strong>${dueDate}</strong>.</p>
-          ${paymentLink ? `
+          ${
+            paymentLink
+              ? `
             <div style="text-align: center; margin: 20px 0;">
               <a href="${paymentLink}" style="background: #4299e1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
                 Pagar Agora
               </a>
             </div>
-          ` : ''}
+          `
+              : ''
+          }
           <p>Obrigado pela sua fidelidade e contribuição! 🙏</p>
           <hr style="margin: 20px 0;">
           <small style="color: #718096;">Esta é uma mensagem automática do sistema</small>
@@ -262,7 +285,15 @@ export class NotificationService {
     return await this.whatsapp.sendMessage({ number: phone, text: message })
   }
 
-  async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
+  async sendEmail({
+    to,
+    subject,
+    html,
+  }: {
+    to: string
+    subject: string
+    html: string
+  }): Promise<boolean> {
     const result = await this.email.sendEmail({ to, subject, html }, this.companyId)
     return result.success
   }
@@ -272,7 +303,7 @@ export class NotificationService {
     name: string,
     churchName: string,
     phone?: string,
-    email?: string
+    email?: string,
   ): Promise<{ whatsapp: boolean; email: boolean }> {
     const results = { whatsapp: false, email: false }
     const variables: TemplateVariables = {
@@ -291,8 +322,8 @@ export class NotificationService {
         and(
           eq(messageTemplates.companyId, this.companyId),
           eq(messageTemplates.templateType, 'welcome'),
-          eq(messageTemplates.isActive, true)
-        )
+          eq(messageTemplates.isActive, true),
+        ),
       )
       .limit(1)
 
@@ -302,22 +333,34 @@ export class NotificationService {
         number: phone,
         text: message,
       })
-      
+
       await this.logNotification(userId, 'welcome', 'whatsapp', results.whatsapp, message)
     }
 
     if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
       const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
-      
-      const emailResult = await this.email.sendEmail({
-        to: email,
-        subject,
-        html,
-      }, this.companyId)
+
+      const emailResult = await this.email.sendEmail(
+        {
+          to: email,
+          subject,
+          html,
+        },
+        this.companyId,
+      )
       results.email = emailResult.success
-      
-      await this.logNotification(userId, 'welcome', 'email', results.email, html, undefined, email, subject)
+
+      await this.logNotification(
+        userId,
+        'welcome',
+        'email',
+        results.email,
+        html,
+        undefined,
+        email,
+        subject,
+      )
     }
 
     return results
@@ -330,7 +373,7 @@ export class NotificationService {
     dueDate: string,
     phone?: string,
     email?: string,
-    paymentLink?: string
+    paymentLink?: string,
   ): Promise<{ whatsapp: boolean; email: boolean }> {
     const results = { whatsapp: false, email: false }
     const variables: TemplateVariables = {
@@ -353,8 +396,8 @@ export class NotificationService {
         and(
           eq(messageTemplates.companyId, this.companyId),
           eq(messageTemplates.templateType, 'payment_reminder'),
-          eq(messageTemplates.isActive, true)
-        )
+          eq(messageTemplates.isActive, true),
+        ),
       )
       .limit(1)
 
@@ -364,22 +407,34 @@ export class NotificationService {
         number: phone,
         text: message,
       })
-      
+
       await this.logNotification(userId, 'payment_reminder', 'whatsapp', results.whatsapp, message)
     }
 
     if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
       const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
-      
-      const emailResult = await this.email.sendEmail({
-        to: email,
-        subject,
-        html,
-      }, this.companyId)
+
+      const emailResult = await this.email.sendEmail(
+        {
+          to: email,
+          subject,
+          html,
+        },
+        this.companyId,
+      )
       results.email = emailResult.success
-      
-      await this.logNotification(userId, 'payment_reminder', 'email', results.email, html, undefined, email, subject)
+
+      await this.logNotification(
+        userId,
+        'payment_reminder',
+        'email',
+        results.email,
+        html,
+        undefined,
+        email,
+        subject,
+      )
     }
 
     return results
@@ -392,7 +447,7 @@ export class NotificationService {
     dueDate: string,
     phone?: string,
     email?: string,
-    paymentLink?: string
+    paymentLink?: string,
   ): Promise<{ whatsapp: boolean; email: boolean }> {
     const results = { whatsapp: false, email: false }
     const variables: TemplateVariables = {
@@ -415,8 +470,8 @@ export class NotificationService {
         and(
           eq(messageTemplates.companyId, this.companyId),
           eq(messageTemplates.templateType, 'payment_overdue'),
-          eq(messageTemplates.isActive, true)
-        )
+          eq(messageTemplates.isActive, true),
+        ),
       )
       .limit(1)
 
@@ -434,7 +489,16 @@ export class NotificationService {
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
       const emailResult = await this.email.sendEmail({ to: email, subject, html }, this.companyId)
       results.email = emailResult.success
-      await this.logNotification(userId, 'payment_overdue', 'email', results.email, html, undefined, email, subject)
+      await this.logNotification(
+        userId,
+        'payment_overdue',
+        'email',
+        results.email,
+        html,
+        undefined,
+        email,
+        subject,
+      )
     }
 
     return results
@@ -466,8 +530,8 @@ export class NotificationService {
         and(
           eq(messageTemplates.companyId, this.companyId),
           eq(messageTemplates.templateType, 'payment_received'),
-          eq(messageTemplates.isActive, true)
-        )
+          eq(messageTemplates.isActive, true),
+        ),
       )
       .limit(1)
 
@@ -482,7 +546,16 @@ export class NotificationService {
       const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
       const emailResult = await this.email.sendEmail({ to: email, subject, html }, this.companyId)
       results.email = emailResult.success
-      await this.logNotification(userId, 'payment_received', 'email', results.email, html, undefined, email, subject)
+      await this.logNotification(
+        userId,
+        'payment_received',
+        'email',
+        results.email,
+        html,
+        undefined,
+        email,
+        subject,
+      )
     }
 
     return results
@@ -496,7 +569,7 @@ export class NotificationService {
     content: string,
     error?: string,
     recipient?: string,
-    subject?: string
+    subject?: string,
   ): Promise<void> {
     try {
       await db.insert(notificationLogs).values({

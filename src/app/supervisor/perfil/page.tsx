@@ -43,7 +43,14 @@ import { supervisorProfileSchema } from '@/lib/types'
 import type { NotificationType, UserNotificationSettings } from '@/lib/types'
 import { NOTIFICATION_TYPES } from '@/lib/types'
 import { Switch } from '@/components/ui/switch'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
@@ -100,20 +107,16 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   }, [userId, toast])
 
   const syncTransaction = async (transactionId: string) => {
-    setSyncingTransactions(prev => new Set(prev).add(transactionId))
-    
+    setSyncingTransactions((prev) => new Set(prev).add(transactionId))
+
     try {
       const response = await fetch(`/api/v1/transacoes/${transactionId}`)
       const data = await response.json()
-      
+
       if (data.transaction?.Payment?.Status === 2) {
         // Atualiza a transação local
-        setTransactions(prev => 
-          prev.map(t => 
-            t.id === transactionId 
-              ? { ...t, status: 'approved' }
-              : t
-          )
+        setTransactions((prev) =>
+          prev.map((t) => (t.id === transactionId ? { ...t, status: 'approved' } : t)),
         )
         toast({
           title: 'Sincronizado!',
@@ -135,7 +138,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
         variant: 'destructive',
       })
     } finally {
-      setSyncingTransactions(prev => {
+      setSyncingTransactions((prev) => {
         const newSet = new Set(prev)
         newSet.delete(transactionId)
         return newSet
@@ -177,98 +180,106 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
       </CardHeader>
       <CardContent>
         <div className="rounded-md border-2">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
-              <TableHead className="font-semibold">ID da Transação</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold">Data</TableHead>
-              <TableHead className="text-right font-semibold">Valor</TableHead>
-              <TableHead className="text-right min-w-[140px] font-semibold">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-4 w-16 ml-auto" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 ml-auto" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                      {statusMap[transaction.status]?.text || transaction.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{transaction.date || new Date(transaction.createdAt).toLocaleDateString('pt-BR')}</TableCell>
-                  <TableCell className="text-right">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      transaction.amount,
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center gap-2 justify-end">
-                      {transaction.status === 'pending' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => syncTransaction(transaction.id)}
-                          disabled={syncingTransactions.has(transaction.id)}
-                          className="h-8 px-2"
-                        >
-                          {syncingTransactions.has(transaction.id) ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-3 w-3" />
-                          )}
-                          <span className="ml-1 text-xs">
-                            {syncingTransactions.has(transaction.id) ? 'Sincronizando...' : 'Sincronizar'}
-                          </span>
-                        </Button>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/supervisor/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
-                  Nenhuma transação encontrada para este usuário.
-                </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
+                <TableHead className="font-semibold">ID da Transação</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Data</TableHead>
+                <TableHead className="text-right font-semibold">Valor</TableHead>
+                <TableHead className="text-right min-w-[140px] font-semibold">Ações</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : transactions.length > 0 ? (
+                transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-mono text-xs">{transaction.id}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                        {statusMap[transaction.status]?.text || transaction.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {transaction.date ||
+                        new Date(transaction.createdAt).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(transaction.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center gap-2 justify-end">
+                        {transaction.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => syncTransaction(transaction.id)}
+                            disabled={syncingTransactions.has(transaction.id)}
+                            className="h-8 px-2"
+                          >
+                            {syncingTransactions.has(transaction.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-3 w-3" />
+                            )}
+                            <span className="ml-1 text-xs">
+                              {syncingTransactions.has(transaction.id)
+                                ? 'Sincronizando...'
+                                : 'Sincronizar'}
+                            </span>
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/supervisor/transacoes/${transaction.id}`}>
+                                Ver Detalhes
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">
+                    Nenhuma transação encontrada para este usuário.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>
@@ -514,7 +525,7 @@ export default function SupervisorProfilePage() {
       }
 
       const uploadResult = await uploadResponse.json()
-      
+
       if (!uploadResult.success || !uploadResult.url) {
         throw new Error('Falha no upload da imagem.')
       }
@@ -536,7 +547,7 @@ export default function SupervisorProfilePage() {
         description: 'Avatar atualizado com sucesso.',
         variant: 'success',
       })
-      
+
       // Atualizar estado local
       console.log('Atualizando avatar URL:', uploadResult.url)
       setSupervisor((prev) => (prev ? { ...prev, avatarUrl: uploadResult.url } : null))
@@ -578,7 +589,7 @@ export default function SupervisorProfilePage() {
         description: `Link do ${fieldName} atualizado.`,
         variant: 'success',
       })
-      
+
       // Atualizar estado local
       setSupervisor((prev) => (prev ? { ...prev, [fieldName]: value || null } : null))
     } catch (error: unknown) {
@@ -609,7 +620,7 @@ export default function SupervisorProfilePage() {
         description: 'Perfil atualizado com sucesso.',
         variant: 'success',
       })
-      
+
       // Recarregar dados atualizados
       fetchProfile()
     } catch (error: unknown) {
@@ -650,7 +661,7 @@ export default function SupervisorProfilePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
             Meu Perfil
@@ -665,406 +676,407 @@ export default function SupervisorProfilePage() {
         {/* Left Column: Profile Card */}
         <div className="lg:col-span-1">
           <Card className="shadow-lg border-t-4 border-t-videira-cyan">
-          <CardContent className="flex flex-col items-center pt-6 text-center">
-            <div className="relative">
-              <ClickableAvatar
-                key={supervisor.avatarUrl || 'no-avatar'}
-                src={supervisor.avatarUrl || undefined}
-                alt={`${supervisor.firstName} ${supervisor.lastName}`}
-                fallback={`${supervisor.firstName?.[0] || ''}${supervisor.lastName?.[0] || ''}`}
-                className="h-24 w-24"
-                enableModal={!!supervisor.avatarUrl}
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-                onClick={handleAvatarClick}
-                disabled={isUploadingAvatar}
-              >
-                {isUploadingAvatar ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
-                <span className="sr-only">Trocar foto</span>
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </div>
-            <h2 className="mt-4 text-xl font-semibold">
-              {supervisor.firstName} {supervisor.lastName}
-            </h2>
-            <p className="text-muted-foreground">Supervisor</p>
-          </CardContent>
-          <Separator />
-          <CardContent className="pt-6">
-            <h3 className="mb-4 font-semibold">Redes sociais</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Facebook className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={supervisor.facebook || ''}
-                  placeholder="https://facebook.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+            <CardContent className="flex flex-col items-center pt-6 text-center">
+              <div className="relative">
+                <ClickableAvatar
+                  key={supervisor.avatarUrl || 'no-avatar'}
+                  src={supervisor.avatarUrl || undefined}
+                  alt={`${supervisor.firstName} ${supervisor.lastName}`}
+                  fallback={`${supervisor.firstName?.[0] || ''}${supervisor.lastName?.[0] || ''}`}
+                  className="h-24 w-24"
+                  enableModal={!!supervisor.avatarUrl}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                >
+                  {isUploadingAvatar ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">Trocar foto</span>
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <Instagram className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={supervisor.instagram || ''}
-                  placeholder="https://instagram.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
-                />
+              <h2 className="mt-4 text-xl font-semibold">
+                {supervisor.firstName} {supervisor.lastName}
+              </h2>
+              <p className="text-muted-foreground">Supervisor</p>
+            </CardContent>
+            <Separator />
+            <CardContent className="pt-6">
+              <h3 className="mb-4 font-semibold">Redes sociais</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Facebook className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={supervisor.facebook || ''}
+                    placeholder="https://facebook.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('facebook', e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Instagram className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={supervisor.instagram || ''}
+                    placeholder="https://instagram.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('instagram', e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    defaultValue={supervisor.website || ''}
+                    placeholder="https://website.com/..."
+                    onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  defaultValue={supervisor.website || ''}
-                  placeholder="https://website.com/..."
-                  onBlur={(e) => handleSocialLinkBlur('website', e.target.value)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Right Column: Tabs and Form */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="profile">
             <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-videira-cyan/10 to-videira-blue/10">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Dados do perfil
-            </TabsTrigger>
-            <TabsTrigger value="transacoes" className="flex items-center gap-2">
-              <ArrowRightLeft className="h-4 w-4" />
-              Transações
-            </TabsTrigger>
-            <TabsTrigger value="configuracoes" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Configurações
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
-            <Card className="shadow-lg border-t-4 border-t-videira-blue">
-              <CardContent className="pt-6">
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sobrenome</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="cpf"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CPF</FormLabel>
-                            <FormControl>
-                              <Input {...field} disabled />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Celular *</FormLabel>
-                            <FormControl>
-                              <PhoneInput
-                                country={'br'}
-                                value={field.value}
-                                onChange={field.onChange}
-                                inputClass="!w-full"
-                                containerClass="phone-input-wrapper"
-                                inputStyle={{
-                                  width: '100%',
-                                  height: '40px',
-                                  fontSize: '14px',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  color: 'hsl(var(--foreground))',
-                                }}
-                                buttonStyle={{
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRight: 'none',
-                                  backgroundColor: 'hsl(var(--background))',
-                                  borderRadius: 'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                                }}
-                                dropdownStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: 'calc(var(--radius) - 2px)',
-                                  color: 'hsl(var(--foreground))',
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="landline"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Telefone 2</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value || ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Dados do perfil
+              </TabsTrigger>
+              <TabsTrigger value="transacoes" className="flex items-center gap-2">
+                <ArrowRightLeft className="h-4 w-4" />
+                Transações
+              </TabsTrigger>
+              <TabsTrigger value="configuracoes" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Configurações
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+              <Card className="shadow-lg border-t-4 border-t-videira-blue">
+                <CardContent className="pt-6">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Sobrenome</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="cpf"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CPF</FormLabel>
+                              <FormControl>
+                                <Input {...field} disabled />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Celular *</FormLabel>
+                              <FormControl>
+                                <PhoneInput
+                                  country={'br'}
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  inputClass="!w-full"
+                                  containerClass="phone-input-wrapper"
+                                  inputStyle={{
+                                    width: '100%',
+                                    height: '40px',
+                                    fontSize: '14px',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'calc(var(--radius) - 2px)',
+                                    backgroundColor: 'hsl(var(--background))',
+                                    color: 'hsl(var(--foreground))',
+                                  }}
+                                  buttonStyle={{
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRight: 'none',
+                                    backgroundColor: 'hsl(var(--background))',
+                                    borderRadius:
+                                      'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
+                                  }}
+                                  dropdownStyle={{
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'calc(var(--radius) - 2px)',
+                                    color: 'hsl(var(--foreground))',
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="landline"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Telefone 2</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="cep"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CEP</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value || ''}
+                                  onChange={(e) => field.onChange(formatCEP(e.target.value))}
+                                  onBlur={handleCepBlur}
+                                  disabled={isFetchingCep}
+                                  placeholder="00000-000"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="state"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Estado/UF</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value || ''}
+                                  disabled={isFetchingCep}
+                                  placeholder="UF"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cidade</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value || ''}
+                                  disabled={isFetchingCep}
+                                  placeholder="Nome da cidade"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="neighborhood"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bairro</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value || ''}
+                                  disabled={isFetchingCep}
+                                  placeholder="Nome do bairro"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Endereço</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Nome da rua"
+                                  {...field}
+                                  value={field.value || ''}
+                                  disabled={isFetchingCep}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="number"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Número</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Número da casa..."
+                                  {...field}
+                                  value={field.value || ''}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="complement"
+                          render={({ field }) => (
+                            <FormItem className="sm:col-span-2">
+                              <FormLabel>Complemento</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value || ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="titheDay"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Dia do dízimo</FormLabel>
+                              <FormControl>
+                                <Input type="number" {...field} value={field.value || ''} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Alert
+                        variant="destructive"
+                        className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
+                      >
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <AlertDescription>
+                          <strong>Importante</strong> - Ao atualizar a senha, você não poderá
+                          acessar usando a senha anterior.
+                        </AlertDescription>
+                      </Alert>
+
+                      <Alert
+                        variant="default"
+                        className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
+                      >
+                        <Info className="h-4 w-4 text-blue-500" />
+                        <AlertDescription className="text-blue-700 dark:text-blue-300">
+                          <strong>Informação</strong> - Escolha uma senha adequada para você.
+                        </AlertDescription>
+                      </Alert>
+
                       <FormField
                         control={form.control}
-                        name="cep"
+                        name="newPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>CEP</FormLabel>
+                            <Label>Atualize sua senha</Label>
                             <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value || ''}
-                                onChange={(e) => field.onChange(formatCEP(e.target.value))}
-                                onBlur={handleCepBlur}
-                                disabled={isFetchingCep}
-                                placeholder="00000-000"
-                              />
+                              <div className="relative mt-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  type="password"
+                                  placeholder="Nova Senha"
+                                  className="pl-9"
+                                  {...field}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Estado/UF</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value || ''}
-                                disabled={isFetchingCep}
-                                placeholder="UF"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cidade</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value || ''}
-                                disabled={isFetchingCep}
-                                placeholder="Nome da cidade"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="neighborhood"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Bairro</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value || ''}
-                                disabled={isFetchingCep}
-                                placeholder="Nome do bairro"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Endereço</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Nome da rua"
-                                {...field}
-                                value={field.value || ''}
-                                disabled={isFetchingCep}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="number"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Número</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Número da casa..."
-                                {...field}
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="complement"
-                        render={({ field }) => (
-                          <FormItem className="sm:col-span-2">
-                            <FormLabel>Complemento</FormLabel>
-                            <FormControl>
-                              <Input {...field} value={field.value || ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="titheDay"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Dia do dízimo</FormLabel>
-                            <FormControl>
-                              <Input type="number" {...field} value={field.value || ''} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <Alert
-                      variant="destructive"
-                      className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300"
-                    >
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                      <AlertDescription>
-                        <strong>Importante</strong> - Ao atualizar a senha, você não poderá acessar
-                        usando a senha anterior.
-                      </AlertDescription>
-                    </Alert>
-
-                    <Alert
-                      variant="default"
-                      className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800"
-                    >
-                      <Info className="h-4 w-4 text-blue-500" />
-                      <AlertDescription className="text-blue-700 dark:text-blue-300">
-                        <strong>Informação</strong> - Escolha uma senha adequada para você.
-                      </AlertDescription>
-                    </Alert>
-
-                    <FormField
-                      control={form.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Label>Atualize sua senha</Label>
-                          <FormControl>
-                            <div className="relative mt-1">
-                              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                type="password"
-                                placeholder="Nova Senha"
-                                className="pl-9"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex justify-end">
-                      <Button type="submit">Alterar cadastro</Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="transacoes">
-            {supervisor.id && <TransactionsTab userId={supervisor.id} />}
-          </TabsContent>
-          <TabsContent value="configuracoes">
-            {supervisor.id && <SettingsTab userId={supervisor.id} />}
-          </TabsContent>
-        </Tabs>
+                      <div className="flex justify-end">
+                        <Button type="submit">Alterar cadastro</Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="transacoes">
+              {supervisor.id && <TransactionsTab userId={supervisor.id} />}
+            </TabsContent>
+            <TabsContent value="configuracoes">
+              {supervisor.id && <SettingsTab userId={supervisor.id} />}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

@@ -27,7 +27,7 @@ async function verifyChurch(churchId: string, managerId: string): Promise<boolea
 }
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -70,7 +70,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 }
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -148,7 +148,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 }
 
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+  const params = await props.params
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })

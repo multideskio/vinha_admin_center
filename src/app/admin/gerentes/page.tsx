@@ -33,7 +33,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -84,16 +83,22 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
-const DeleteManagerDialog = ({ managerId, onConfirm }: { managerId: string; onConfirm: (id: string, reason: string) => void }) => {
+const DeleteManagerDialog = ({
+  managerId,
+  onConfirm,
+}: {
+  managerId: string
+  onConfirm: (id: string, reason: string) => void
+}) => {
   const [reason, setReason] = React.useState('')
   const [isOpen, setIsOpen] = React.useState(false)
-  
+
   const handleConfirm = () => {
     onConfirm(managerId, reason)
     setIsOpen(false)
     setReason('')
   }
-  
+
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
@@ -103,7 +108,8 @@ const DeleteManagerDialog = ({ managerId, onConfirm }: { managerId: string; onCo
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir Gerente</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste gerente para fins de auditoria.
+            Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste gerente
+            para fins de auditoria.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-2">
@@ -117,8 +123,8 @@ const DeleteManagerDialog = ({ managerId, onConfirm }: { managerId: string; onCo
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleConfirm} 
+          <AlertDialogAction
+            onClick={handleConfirm}
             disabled={!reason.trim()}
             className="bg-destructive hover:bg-destructive/90"
           >
@@ -269,10 +275,7 @@ const GerenteFormModal = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSave)}
-            className="space-y-4 p-4"
-          >
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 p-4">
             <Alert className="bg-videira-blue/10 border-videira-blue/30">
               <AlertTriangle className="h-4 w-4 text-videira-blue" />
               <AlertDescription className="text-videira-blue">
@@ -421,11 +424,7 @@ const GerenteFormModal = ({
                   <FormItem>
                     <FormLabel>Celular *</FormLabel>
                     <FormControl>
-                      <PhoneInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        type="mobile"
-                      />
+                      <PhoneInput value={field.value} onChange={field.onChange} type="mobile" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -438,11 +437,7 @@ const GerenteFormModal = ({
                   <FormItem>
                     <FormLabel>Telefone Fixo</FormLabel>
                     <FormControl>
-                      <PhoneInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        type="landline"
-                      />
+                      <PhoneInput value={field.value} onChange={field.onChange} type="landline" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -466,8 +461,8 @@ const GerenteFormModal = ({
               <DialogClose asChild>
                 <Button variant="outline">Cancelar</Button>
               </DialogClose>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isFetchingCep}
                 className="bg-videira-blue hover:bg-videira-blue/90 text-white"
               >
@@ -515,10 +510,10 @@ export default function GerentesPage() {
 
   const handleDelete = async (managerId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/v1/admin/gerentes/${managerId}`, { 
+      const response = await fetch(`/api/v1/admin/gerentes/${managerId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deletionReason: reason })
+        body: JSON.stringify({ deletionReason: reason }),
       })
       if (!response.ok) throw new Error('Failed to delete manager')
       toast({ title: 'Sucesso!', description: 'Gerente excluído com sucesso.', variant: 'success' })
@@ -529,9 +524,10 @@ export default function GerentesPage() {
     }
   }
 
-  const filteredManagers = managers.filter((manager) =>
-    `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    manager.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredManagers = managers.filter(
+    (manager) =>
+      `${manager.firstName} ${manager.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      manager.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const totalPages = Math.ceil(filteredManagers.length / itemsPerPage)
@@ -614,7 +610,7 @@ export default function GerentesPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/gerentes/${manager.id}`}>
-                          <Button 
+                          <Button
                             size="sm"
                             className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                           >
@@ -670,13 +666,13 @@ export default function GerentesPage() {
           ))
         ) : paginatedManagers.length > 0 ? (
           paginatedManagers.map((manager, index) => (
-            <Card 
-              key={manager.id} 
+            <Card
+              key={manager.id}
               className={cn(
-                "shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4",
-                index % 3 === 0 && "border-t-videira-cyan",
-                index % 3 === 1 && "border-t-videira-blue",
-                index % 3 === 2 && "border-t-videira-purple"
+                'shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-t-4',
+                index % 3 === 0 && 'border-t-videira-cyan',
+                index % 3 === 1 && 'border-t-videira-blue',
+                index % 3 === 2 && 'border-t-videira-purple',
               )}
             >
               <CardContent className="pt-6">
@@ -719,7 +715,7 @@ export default function GerentesPage() {
                 </div>
                 <div className="flex justify-end mt-4 gap-2">
                   <Link href={`/admin/gerentes/${manager.id}`}>
-                    <Button 
+                    <Button
                       size="sm"
                       className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                     >
@@ -745,7 +741,9 @@ export default function GerentesPage() {
   const PaginationControls = () => (
     <div className="flex items-center justify-between mt-6">
       <div className="text-sm text-muted-foreground">
-        Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredManagers.length)} de {filteredManagers.length} resultados
+        Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
+        {Math.min(currentPage * itemsPerPage, filteredManagers.length)} de {filteredManagers.length}{' '}
+        resultados
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -801,7 +799,7 @@ export default function GerentesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -813,7 +811,8 @@ export default function GerentesPage() {
                 Gerencie os gerentes da organização
               </p>
               <p className="text-sm text-white/70 mt-1">
-                {managers.length} {managers.length === 1 ? 'gerente cadastrado' : 'gerentes cadastrados'}
+                {managers.length}{' '}
+                {managers.length === 1 ? 'gerente cadastrado' : 'gerentes cadastrados'}
               </p>
             </div>
             <GerenteFormModal onSave={fetchManagers}>
@@ -854,7 +853,7 @@ export default function GerentesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-blue">
-              {managers.filter(m => m.status === 'active').length}
+              {managers.filter((m) => m.status === 'active').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">No sistema</p>
           </CardContent>
@@ -871,7 +870,7 @@ export default function GerentesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-videira-purple">
-              {managers.filter(m => m.status === 'inactive').length}
+              {managers.filter((m) => m.status === 'inactive').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">Desativados</p>
           </CardContent>
@@ -921,8 +920,8 @@ export default function GerentesPage() {
                     size="icon"
                     onClick={() => setViewMode('table')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'table' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'table' && 'bg-videira-blue text-white',
                     )}
                   >
                     <List className="h-5 w-5" />
@@ -937,8 +936,8 @@ export default function GerentesPage() {
                     size="icon"
                     onClick={() => setViewMode('card')}
                     className={cn(
-                      "h-10 w-10 transition-all",
-                      viewMode === 'card' && "bg-videira-blue text-white"
+                      'h-10 w-10 transition-all',
+                      viewMode === 'card' && 'bg-videira-blue text-white',
                     )}
                   >
                     <Grid3x3 className="h-5 w-5" />

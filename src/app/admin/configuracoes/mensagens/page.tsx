@@ -1,7 +1,18 @@
 'use client'
 
 import * as React from 'react'
-import { PlusCircle, Trash2, Pencil, Info, Loader2, Mail, Smartphone, Wand2, MessageSquare, ChevronLeft, Save, Send, Plus } from 'lucide-react'
+import {
+  Trash2,
+  Pencil,
+  Info,
+  Loader2,
+  Mail,
+  Smartphone,
+  Wand2,
+  MessageSquare,
+  ChevronLeft,
+  Plus,
+} from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -76,12 +87,7 @@ const eventTriggerOptions = {
   payment_overdue: 'Aviso de Atraso',
 }
 
-const availableTags = [
-  '{nome_usuario}',
-  '{data_vencimento}',
-  '{link_pagamento}',
-  '{nome_igreja}',
-]
+const availableTags = ['{nome_usuario}', '{data_vencimento}', '{link_pagamento}', '{nome_igreja}']
 
 const NotificationFormModal = ({
   rule,
@@ -170,13 +176,19 @@ const NotificationFormModal = ({
         tone: 'respeitoso e objetivo',
       }
       const res = await fetch('/api/v1/templates/ai-suggest', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Falha ao gerar sugestão')
       form.setValue('messageTemplate', data.suggestion || '')
     } catch (e: unknown) {
-      toast({ title: 'Erro', description: e instanceof Error ? e.message : 'Erro desconhecido', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: e instanceof Error ? e.message : 'Erro desconhecido',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -376,7 +388,11 @@ export default function MessagesSettingsPage() {
     try {
       const response = await fetch('/api/v1/notification-rules/bootstrap', { method: 'POST' })
       if (!response.ok) throw new Error('Falha ao gerar mensagens automáticas.')
-      toast({ title: 'Sucesso!', description: 'Mensagens e regras padrão geradas.', variant: 'success' })
+      toast({
+        title: 'Sucesso!',
+        description: 'Mensagens e regras padrão geradas.',
+        variant: 'success',
+      })
       fetchRules()
     } catch (error: unknown) {
       toast({
@@ -448,13 +464,13 @@ export default function MessagesSettingsPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-        
+
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Link href="/admin/configuracoes">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-white/90 hover:text-white hover:bg-white/20"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
@@ -476,7 +492,7 @@ export default function MessagesSettingsPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
+              <Button
                 onClick={handleBootstrap}
                 className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/50 font-semibold shadow-lg backdrop-blur-sm"
               >
@@ -513,9 +529,7 @@ export default function MessagesSettingsPage() {
             </div>
             Regras Ativas
           </CardTitle>
-          <CardDescription>
-            Gerencie as regras de notificação automática por evento
-          </CardDescription>
+          <CardDescription>Gerencie as regras de notificação automática por evento</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border-2">
@@ -529,94 +543,94 @@ export default function MessagesSettingsPage() {
                   <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-5 w-32" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-48" />
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Skeleton className="h-5 w-20" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-6 w-16 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-8 w-24" />
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-5 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-48" />
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Skeleton className="h-5 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-24" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : rules.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      Nenhuma automação de mensagem criada.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : rules.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    Nenhuma automação de mensagem criada.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rules.map((rule) => (
-                  <TableRow key={rule.id}>
-                    <TableCell className="font-medium">{rule.name}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>
-                          {
-                            eventTriggerOptions[
-                              rule.eventTrigger as keyof typeof eventTriggerOptions
-                            ]
-                          }
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {rule.eventTrigger === 'payment_due_reminder'
-                            ? `${Math.abs(rule.daysOffset)} dias antes`
-                            : rule.eventTrigger === 'payment_overdue'
-                              ? `${rule.daysOffset} dias após`
-                              : `Imediato`}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <div className="flex items-center gap-2">
-                        {rule.sendViaEmail && <Mail className="h-4 w-4 text-muted-foreground" />}
-                        {rule.sendViaWhatsapp && (
-                          <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={rule.isActive ? 'success' : 'secondary'}>
-                        {rule.isActive ? 'Ativa' : 'Inativa'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={rule.isActive}
-                          onCheckedChange={() => handleToggleActive(rule)}
-                        />
-                        <NotificationFormModal rule={rule} onSave={fetchRules}>
-                          <Button variant="ghost" size="icon">
-                            <Pencil className="h-4 w-4" />
+                ) : (
+                  rules.map((rule) => (
+                    <TableRow key={rule.id}>
+                      <TableCell className="font-medium">{rule.name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>
+                            {
+                              eventTriggerOptions[
+                                rule.eventTrigger as keyof typeof eventTriggerOptions
+                              ]
+                            }
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {rule.eventTrigger === 'payment_due_reminder'
+                              ? `${Math.abs(rule.daysOffset)} dias antes`
+                              : rule.eventTrigger === 'payment_overdue'
+                                ? `${rule.daysOffset} dias após`
+                                : `Imediato`}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <div className="flex items-center gap-2">
+                          {rule.sendViaEmail && <Mail className="h-4 w-4 text-muted-foreground" />}
+                          {rule.sendViaWhatsapp && (
+                            <Smartphone className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={rule.isActive ? 'success' : 'secondary'}>
+                          {rule.isActive ? 'Ativa' : 'Inativa'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={rule.isActive}
+                            onCheckedChange={() => handleToggleActive(rule)}
+                          />
+                          <NotificationFormModal rule={rule} onSave={fetchRules}>
+                            <Button variant="ghost" size="icon">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </NotificationFormModal>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(rule.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </NotificationFormModal>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(rule.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

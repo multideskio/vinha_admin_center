@@ -15,13 +15,13 @@ import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 export async function GET(): Promise<NextResponse> {
   const { user: sessionUser } = await validateRequest()
-  
+
   if (!sessionUser) {
     const authResponse = await authenticateApiKey()
     if (authResponse) return authResponse
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  
+
   if (!['igreja', 'church_account'].includes(sessionUser.role)) {
     return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
   }

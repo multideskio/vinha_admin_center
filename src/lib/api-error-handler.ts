@@ -7,7 +7,7 @@ export class ApiError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public details?: unknown
+    public details?: unknown,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -20,27 +20,21 @@ export function handleApiError(error: unknown) {
   if (error instanceof ApiError) {
     return NextResponse.json(
       { error: error.message, details: error.details },
-      { status: error.statusCode }
+      { status: error.statusCode },
     )
   }
 
   if (error instanceof Error) {
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: error.message },
-      { status: 500 }
+      { status: 500 },
     )
   }
 
-  return NextResponse.json(
-    { error: 'Erro desconhecido' },
-    { status: 500 }
-  )
+  return NextResponse.json({ error: 'Erro desconhecido' }, { status: 500 })
 }
 
-export function validateRequired<T>(
-  value: T | null | undefined,
-  fieldName: string
-): T {
+export function validateRequired<T>(value: T | null | undefined, fieldName: string): T {
   if (value === null || value === undefined) {
     throw new ApiError(400, `Campo obrigatório: ${fieldName}`)
   }

@@ -32,16 +32,16 @@ export function useS3Config(): UseS3ConfigReturn {
       if (response.ok) {
         const data = await response.json()
         const s3Config = data.config
-        
+
         setConfig(s3Config)
-        
+
         // Verificar se todas as configurações essenciais estão presentes
         const isComplete = !!(
           s3Config?.endpoint &&
           s3Config?.accessKeyId &&
           s3Config?.secretAccessKey
         )
-        
+
         setIsConfigured(isComplete)
       } else {
         setIsConfigured(false)

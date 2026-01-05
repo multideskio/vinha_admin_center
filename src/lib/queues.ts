@@ -11,24 +11,24 @@ function createRedis() {
     retryStrategy: (times: number) => Math.min(5000, times * 200),
     tls: isTLS ? { rejectUnauthorized: false } : undefined,
   } as any)
-  
+
   // ✅ CORRIGIDO: Logging de erros Redis (Bug #1)
   client.on('error', (error) => {
     console.error('Redis connection error:', error)
   })
-  
+
   client.on('connect', () => {
     console.log('Redis connected successfully')
   })
-  
+
   client.on('ready', () => {
     console.log('Redis ready to accept commands')
   })
-  
+
   client.on('reconnecting', () => {
     console.warn('Redis reconnecting...')
   })
-  
+
   return client
 }
 

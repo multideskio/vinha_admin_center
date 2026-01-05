@@ -4,28 +4,19 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
-import {
-  UsePaymentSyncOptions,
-  UsePaymentSyncReturn
-} from '../types'
+import { UsePaymentSyncOptions, UsePaymentSyncReturn } from '../types'
 import {
   PIX_MAX_ATTEMPTS,
   PIX_INITIAL_DELAY,
   PIX_MIN_DELAY,
   PIX_MAX_DELAY,
   PIX_ERROR_DELAY,
-  PIX_ERROR_MAX_DELAY
+  PIX_ERROR_MAX_DELAY,
 } from '../types'
 import { calculateBackoffDelay, calculateErrorDelay, devLog } from '../utils'
 
 export default function usePaymentSync(options: UsePaymentSyncOptions): UsePaymentSyncReturn {
-  const {
-    transactionId,
-    paymentMethod,
-    pixStatus,
-    onSuccess,
-    onError
-  } = options
+  const { transactionId, paymentMethod, pixStatus, onSuccess, onError } = options
 
   const { toast } = useToast()
   const [isChecking, setIsChecking] = useState(false)
@@ -41,10 +32,10 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
 
     try {
       devLog(`Checking payment status for transaction: ${transactionId}`)
-      
+
       const res = await fetch(`/api/v1/transacoes/${transactionId}`)
       const data = await res.json()
-      
+
       devLog('Payment status response:', data)
 
       if (data.transaction?.Payment?.Status === 2) {
@@ -73,7 +64,7 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
     if (paymentMethod === 'pix' && pixStatus === 'pending' && transactionId) {
       attemptsRef.current = 0
       devLog('Starting automatic payment sync')
-      
+
       const scheduleNextCheck = () => {
         if (attemptsRef.current >= PIX_MAX_ATTEMPTS) {
           devLog('Max attempts reached, stopping automatic sync')
@@ -100,23 +91,23 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
 
         timerRef.current = setTimeout(async () => {
           attemptsRef.current++
-          
+
           try {
             const isConfirmed = await checkPaymentStatus()
-            
+
             if (!isConfirmed && pixStatus === 'pending') {
               // Agenda próxima verificação
               scheduleNextCheck()
             }
           } catch (error) {
             devLog('Error in automatic sync:', error)
-            
+
             // Em caso de erro, usa delay maior
             const errorDelay = calculateErrorDelay(attempt, PIX_ERROR_DELAY, PIX_ERROR_MAX_DELAY)
-            
+
             if (attemptsRef.current < PIX_MAX_ATTEMPTS && pixStatus === 'pending') {
               devLog(`Scheduling retry after error in ${errorDelay}ms`)
-              
+
               timerRef.current = setTimeout(() => {
                 scheduleNextCheck()
               }, errorDelay)
@@ -153,19 +144,19 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
 
     try {
       // Faz múltiplas tentativas com intervalo menor para verificação manual
-      let attempts = 0
+      const attempts = 0
       const maxAttempts = 3
-      
+
       while (attempts < maxAttempts) {
         devLog(`Manual check attempt ${attempts + 1}/${maxAttempts}`)
-        
+
         const res = await fetch(`/api/v1/transacoes/${transactionId}`)
         const data = await res.json()
-        
+
         if (data.transaction?.Payment?.Status === 2) {
           devLog('Manual check: Payment confirmed!')
           onSuccess()
-          
+
           toast({
             title: 'Sucesso!',
             description: 'Pagamento via Pix confirmado com sucesso.',
@@ -173,32 +164,33 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
           })
           return
         }
-        
+
         attempts++
         if (attempts < maxAttempts) {
           // Aguarda 2 segundos entre tentativas
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          await new Promise((resolve) => setTimeout(resolve, 2000))
         }
       }
-      
+
       // Se chegou aqui, não conseguiu confirmar
       devLog('Manual check: Payment still pending')
       toast({
         title: 'Ainda Pendente',
-        description: 'Pagamento ainda não foi confirmado pela Cielo. Aguarde alguns instantes e tente novamente.',
+        description:
+          'Pagamento ainda não foi confirmado pela Cielo. Aguarde alguns instantes e tente novamente.',
         variant: 'default',
       })
-      
     } catch (error) {
       devLog('Manual check failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      
+
       toast({
         title: 'Erro na Verificação',
-        description: 'Problema temporário na consulta à Cielo. Tente novamente em alguns instantes.',
+        description:
+          'Problema temporário na consulta à Cielo. Tente novamente em alguns instantes.',
         variant: 'destructive',
       })
-      
+
       onError(errorMessage)
     } finally {
       setIsChecking(false)
@@ -216,6 +208,6 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
 
   return {
     isChecking,
-    checkPaymentManually
+    checkPaymentManually,
   }
 }

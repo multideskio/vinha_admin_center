@@ -1,8 +1,7 @@
+'use client'
 
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   UserCog,
@@ -12,9 +11,9 @@ import {
   ArrowRightLeft,
   Handshake,
   Grape,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import packageJson from '../../../../package.json';
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import packageJson from '../../../../package.json'
 
 const menuItems = [
   { href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'cyan' },
@@ -23,13 +22,13 @@ const menuItems = [
   { href: '/manager/igrejas', label: 'Igrejas', icon: Church, gradient: 'cyan' },
   { href: '/manager/transacoes', label: 'Transações', icon: ArrowRightLeft, gradient: 'blue' },
   { href: '/manager/contribuicoes', label: 'Contribuições', icon: Handshake, gradient: 'purple' },
-];
+]
 
 const settingsItem = {
   href: '/manager/perfil',
   label: 'Meu Perfil',
   icon: Settings,
-};
+}
 
 type SidebarProps = {
   companyLogo?: string
@@ -37,12 +36,12 @@ type SidebarProps = {
 }
 
 export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('Failed to load company logo:', companyLogo);
-    e.currentTarget.style.display = 'none';
-  };
+    console.error('Failed to load company logo:', companyLogo)
+    e.currentTarget.style.display = 'none'
+  }
 
   const getGradientClass = (gradient: string) => {
     switch (gradient) {
@@ -59,7 +58,7 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
 
   const getIconColor = (gradient: string, isActive: boolean) => {
     if (!isActive) return 'text-muted-foreground group-hover:text-foreground'
-    
+
     switch (gradient) {
       case 'cyan':
         return 'text-videira-cyan'
@@ -82,7 +81,12 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
             <Link href="/manager/dashboard" className="flex items-center gap-3 group">
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 group-hover:ring-white/50 transition-all shadow-lg">
                 {companyLogo ? (
-                  <img src={companyLogo} alt="Logo" className="h-6 w-6 object-contain" onError={handleLogoError} />
+                  <img
+                    src={companyLogo}
+                    alt="Logo"
+                    className="h-6 w-6 object-contain"
+                    onError={handleLogoError}
+                  />
                 ) : (
                   <Grape className="h-6 w-6 text-white" />
                 )}
@@ -91,7 +95,9 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
                 <span className="text-base font-bold text-white drop-shadow-lg">
                   {companyName || 'Vinha Ministérios'}
                 </span>
-                <p className="text-xs text-white/80 font-medium">Painel Gerente - v{packageJson.version}</p>
+                <p className="text-xs text-white/80 font-medium">
+                  Painel Gerente - v{packageJson.version}
+                </p>
               </div>
             </Link>
           </div>
@@ -104,7 +110,7 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/manager/dashboard' && pathname.startsWith(item.href))
-              
+
               return (
                 <Link
                   key={item.href}
@@ -115,19 +121,23 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
                     'border-l-3 border-l-transparent',
                     'hover:shadow-sm hover:scale-[1.02]',
                     getGradientClass(item.gradient),
-                    isActive ? 'font-semibold border-l-4' : 'font-medium'
+                    isActive ? 'font-semibold border-l-4' : 'font-medium',
                   )}
                 >
-                  <item.icon 
+                  <item.icon
                     className={cn(
                       'h-5 w-5 transition-all duration-200',
-                      getIconColor(item.gradient, isActive)
-                    )} 
+                      getIconColor(item.gradient, isActive),
+                    )}
                   />
-                  <span className={cn(
-                    'text-base transition-colors',
-                    isActive ? getIconColor(item.gradient, true) : 'text-muted-foreground group-hover:text-foreground'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-base transition-colors',
+                      isActive
+                        ? getIconColor(item.gradient, true)
+                        : 'text-muted-foreground group-hover:text-foreground',
+                    )}
+                  >
                     {item.label}
                   </span>
                   {isActive && (
@@ -156,14 +166,16 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
                 'hover:shadow-sm hover:bg-primary/10',
                 pathname.startsWith(settingsItem.href)
                   ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
-                  : 'font-medium text-muted-foreground hover:text-foreground'
+                  : 'font-medium text-muted-foreground hover:text-foreground',
               )}
             >
-              <settingsItem.icon 
+              <settingsItem.icon
                 className={cn(
                   'h-5 w-5 transition-all',
-                  pathname.startsWith(settingsItem.href) ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                )} 
+                  pathname.startsWith(settingsItem.href)
+                    ? 'text-primary'
+                    : 'text-muted-foreground group-hover:text-foreground',
+                )}
               />
               <span className="text-base">{settingsItem.label}</span>
             </Link>
@@ -171,5 +183,5 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

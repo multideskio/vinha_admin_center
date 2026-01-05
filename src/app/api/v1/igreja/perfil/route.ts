@@ -28,18 +28,18 @@ export async function GET(): Promise<NextResponse> {
       foundationDate = `${day}/${month}/${year}`
     }
 
-    return NextResponse.json({ 
-      ...sessionUser, 
+    return NextResponse.json({
+      ...sessionUser,
       ...profile,
       foundationDate,
       userId: sessionUser.id,
-      avatarUrl: sessionUser.avatarUrl
+      avatarUrl: sessionUser.avatarUrl,
     })
   } catch (error) {
     console.error('Erro ao buscar perfil da igreja:', error)
     return NextResponse.json(
       { error: 'Erro ao buscar perfil', details: getErrorMessage(error) },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -52,7 +52,18 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
   try {
     const body = await request.json()
-    const { newPassword, email, phone, titheDay, avatarUrl, facebook, instagram, website, foundationDate, ...profileData } = body
+    const {
+      newPassword,
+      email,
+      phone,
+      titheDay,
+      avatarUrl,
+      facebook,
+      instagram,
+      website,
+      foundationDate,
+      ...profileData
+    } = body
 
     // Atualizar tabela users
     const userUpdate: any = {}
@@ -63,21 +74,21 @@ export async function PUT(request: Request): Promise<NextResponse> {
     if (newPassword) {
       userUpdate.password = await bcrypt.hash(newPassword, 10)
     }
-    
+
     if (Object.keys(userUpdate).length > 0) {
       await db.update(users).set(userUpdate).where(eq(users.id, sessionUser.id))
     }
 
     // Atualizar tabela church_profiles
     const profileUpdate: any = {}
-    
-    Object.keys(profileData).forEach(key => {
+
+    Object.keys(profileData).forEach((key) => {
       const value = profileData[key]
       if (value !== undefined && value !== null && value !== '') {
         profileUpdate[key] = value
       }
     })
-    
+
     // Converter data de dd/mm/yyyy para yyyy-mm-dd
     if (foundationDate && foundationDate.length === 10) {
       const [day, month, year] = foundationDate.split('/')
@@ -85,11 +96,11 @@ export async function PUT(request: Request): Promise<NextResponse> {
         profileUpdate.foundationDate = `${year}-${month}-${day}`
       }
     }
-    
+
     if (facebook) profileUpdate.facebook = facebook
     if (instagram) profileUpdate.instagram = instagram
     if (website) profileUpdate.website = website
-    
+
     if (Object.keys(profileUpdate).length > 0) {
       await db
         .update(churchProfiles)
@@ -102,7 +113,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
     console.error('Erro ao atualizar perfil da igreja:', error)
     return NextResponse.json(
       { error: 'Erro ao atualizar perfil', details: getErrorMessage(error) },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

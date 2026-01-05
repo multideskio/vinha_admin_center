@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (!instanceName || !serverUrl || !apiKey) {
       return NextResponse.json(
         { error: 'instanceName, serverUrl and apiKey are required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -30,47 +30,45 @@ export async function GET(request: NextRequest) {
     const url = `${serverUrl}/instance/fetchInstances`
     const options = {
       method: 'GET',
-      headers: { apikey: apiKey }
+      headers: { apikey: apiKey },
     }
 
     const response = await fetch(url, options)
-    
+
     if (!response.ok) {
       return NextResponse.json(
         { error: 'Failed to fetch instances from Evolution API' },
-        { status: response.status }
+        { status: response.status },
       )
     }
 
     const data = await response.json()
     const instances = Array.isArray(data) ? data : []
-    
+
     // Verificar se a instância existe
-    const instanceExists = instances.some((instance: {
-      name?: string
-      instanceName?: string
-      instance?: {
-        instanceName?: string
+    const instanceExists = instances.some(
+      (instance: {
         name?: string
-      }
-    }) => 
-      instance.name === instanceName || 
-      instance.instanceName === instanceName || 
-      instance.instance?.instanceName === instanceName ||
-      instance.instance?.name === instanceName
+        instanceName?: string
+        instance?: {
+          instanceName?: string
+          name?: string
+        }
+      }) =>
+        instance.name === instanceName ||
+        instance.instanceName === instanceName ||
+        instance.instance?.instanceName === instanceName ||
+        instance.instance?.name === instanceName,
     )
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       exists: instanceExists,
       instances: instances.length,
-      instanceName 
+      instanceName,
     })
   } catch (error) {
     console.error('Error checking instance:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -84,34 +82,35 @@ export async function POST(request: NextRequest) {
     const checkUrl = `${serverUrl}/instance/fetchInstances`
     const checkOptions = {
       method: 'GET',
-      headers: { apikey: apiKey }
+      headers: { apikey: apiKey },
     }
 
     const checkResponse = await fetch(checkUrl, checkOptions)
-    
+
     if (checkResponse.ok) {
       const data = await checkResponse.json()
       const instances = Array.isArray(data) ? data : []
-      
-      const instanceExists = instances.some((instance: {
-        name?: string
-        instanceName?: string
-        instance?: {
-          instanceName?: string
+
+      const instanceExists = instances.some(
+        (instance: {
           name?: string
-        }
-      }) => 
-        instance.name === instanceName || 
-        instance.instanceName === instanceName || 
-        instance.instance?.instanceName === instanceName ||
-        instance.instance?.name === instanceName
+          instanceName?: string
+          instance?: {
+            instanceName?: string
+            name?: string
+          }
+        }) =>
+          instance.name === instanceName ||
+          instance.instanceName === instanceName ||
+          instance.instance?.instanceName === instanceName ||
+          instance.instance?.name === instanceName,
       )
 
       if (instanceExists) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           message: 'Instance already exists',
           instanceName,
-          created: false
+          created: false,
         })
       }
     }
@@ -120,47 +119,47 @@ export async function POST(request: NextRequest) {
     const createUrl = `${serverUrl}/instance/create`
     const createOptions = {
       method: 'POST',
-      headers: { 
+      headers: {
         apikey: apiKey,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         instanceName,
-        integration: 'WHATSAPP-BAILEYS'
-      })
+        integration: 'WHATSAPP-BAILEYS',
+      }),
     }
 
     const createResponse = await fetch(createUrl, createOptions)
-    
+
     if (!createResponse.ok) {
       const errorText = await createResponse.text()
       return NextResponse.json(
         { error: 'Failed to create instance', details: errorText },
-        { status: createResponse.status }
+        { status: createResponse.status },
       )
     }
 
     const createData = await createResponse.json()
 
-    return NextResponse.json({ 
-      message: 'Instance created successfully',
-      instanceName,
-      created: true,
-      data: createData
-    }, { status: 201 })
+    return NextResponse.json(
+      {
+        message: 'Instance created successfully',
+        instanceName,
+        created: true,
+        data: createData,
+      },
+      { status: 201 },
+    )
   } catch (error) {
     console.error('Error creating instance:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

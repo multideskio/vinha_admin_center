@@ -63,7 +63,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 export async function POST(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Acesso negado. Apenas administradores podem criar regiões.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Acesso negado. Apenas administradores podem criar regiões.' },
+      { status: 403 },
+    )
   }
 
   try {
@@ -74,17 +77,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     const existingRegion = await db
       .select()
       .from(regions)
-      .where(and(
-        eq(regions.companyId, VALIDATED_COMPANY_ID),
-        eq(regions.name, validatedData.name),
-        isNull(regions.deletedAt)
-      ))
+      .where(
+        and(
+          eq(regions.companyId, VALIDATED_COMPANY_ID),
+          eq(regions.name, validatedData.name),
+          isNull(regions.deletedAt),
+        ),
+      )
 
     if (existingRegion.length > 0) {
-      return NextResponse.json(
-        { error: 'Já existe uma região com este nome.' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Já existe uma região com este nome.' }, { status: 409 })
     }
 
     const [newRegion] = await db

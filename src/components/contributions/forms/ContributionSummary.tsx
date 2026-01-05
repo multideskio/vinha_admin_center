@@ -13,7 +13,7 @@ export default function ContributionSummary({
   data,
   onEdit,
   onSubmit,
-  isLoading = false
+  isLoading = false,
 }: ContributionSummaryProps) {
   return (
     <div className="space-y-6">
@@ -22,9 +22,7 @@ export default function ContributionSummary({
         <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
           <div className="text-center sm:text-left">
             <p className="text-xs text-muted-foreground">Valor da contribuição:</p>
-            <p className="text-xl font-bold text-foreground">
-              {formatCurrency(data.amount)}
-            </p>
+            <p className="text-xl font-bold text-foreground">{formatCurrency(data.amount)}</p>
             <p className="text-xs text-muted-foreground capitalize">
               {getContributionTypeLabel(data.contributionType)}
             </p>
@@ -34,18 +32,11 @@ export default function ContributionSummary({
               </p>
             )}
           </div>
-          
+
           <div className="text-center sm:text-right">
             <p className="text-xs text-muted-foreground">Método de pagamento:</p>
-            <p className="text-sm font-medium">
-              {getPaymentMethodLabel(data.paymentMethod)}
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onEdit}
-              className="text-xs mt-1 h-6 px-2"
-            >
+            <p className="text-sm font-medium">{getPaymentMethodLabel(data.paymentMethod)}</p>
+            <Button variant="ghost" size="sm" onClick={onEdit} className="text-xs mt-1 h-6 px-2">
               Alterar
             </Button>
           </div>
@@ -70,10 +61,10 @@ export default function ContributionSummary({
         ) : (
           <>
             <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-              <path 
-                fillRule="evenodd" 
-                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" 
-                clipRule="evenodd" 
+              <path
+                fillRule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z"
+                clipRule="evenodd"
               />
             </svg>
             Prosseguir com Segurança
