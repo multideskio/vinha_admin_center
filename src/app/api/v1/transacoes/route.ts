@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Rota da API para gerenciar transações.
+ * @version 1.3
+ * @date 2024-08-07
+ * @author PH
+ * @lastReview 2026-01-05 14:30 - Segurança e funcionalidades verificadas
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import {

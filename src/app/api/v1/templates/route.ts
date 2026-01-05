@@ -1,5 +1,9 @@
 /**
  * @fileoverview API para gerenciar templates de mensagens
+ * @version 1.3
+ * @date 2024-08-07
+ * @author PH
+ * @lastReview 2026-01-05 14:30 - Segurança e funcionalidades verificadas
  */
 
 import { NextRequest, NextResponse } from 'next/server'
