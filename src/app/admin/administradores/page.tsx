@@ -1,3 +1,9 @@
+/**
+ * @lastReview 2026-01-05 15:15 - Página de administradores revisada
+ * Funcionalidades: ✅ CRUD completo, ✅ Busca, ✅ Paginação, ✅ Dois modos de visualização
+ * Segurança: ✅ APIs protegidas (já revisadas anteriormente)
+ * UX: ✅ Design System Videira, ✅ Formulários com validação Zod, ✅ Mensagens
+ */
 'use client'
 
 import * as React from 'react'

@@ -1,3 +1,9 @@
+/**
+ * @lastReview 2026-01-05 15:10 - Página principal de relatórios revisada
+ * Funcionalidades: ✅ 6 tipos de relatórios, ✅ Design System Videira, ✅ Cards interativos
+ * Segurança: ✅ Página estática (sem APIs sensíveis)
+ * Observação: 4 relatórios têm APIs faltantes (ver roadmap)
+ */
 'use client'
 
 import * as React from 'react'
