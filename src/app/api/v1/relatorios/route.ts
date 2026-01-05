@@ -1,5 +1,8 @@
 /**
+ * @lastReview 2026-01-05 14:45 - API de relatórios geral revisada
  * @fileoverview API para geração de relatórios
+ * Segurança: ✅ Validação admin obrigatória
+ * Funcionalidades: ✅ 5 tipos de relatórios, ✅ Filtros avançados, ✅ Dados estruturados
  */
 
 import { NextResponse } from 'next/server'

@@ -1,3 +1,8 @@
+/**
+ * @lastReview 2026-01-05 14:45 - Sistema de relatórios geral revisado
+ * Funcionalidades: ✅ Filtros avançados, ✅ Preview, ✅ Export PDF/Excel
+ * Segurança: ✅ API protegida com validação admin
+ */
 'use client'
 
 import * as React from 'react'
