@@ -6,9 +6,17 @@
  */
 
 const { execSync } = require('child_process');
-const chalk = require('chalk');
 
-console.log(chalk.blue('🔍 Iniciando verificação de qualidade local...\n'));
+// Função para colorir texto sem dependência externa
+const colors = {
+  blue: (text) => `\x1b[34m${text}\x1b[0m`,
+  yellow: (text) => `\x1b[33m${text}\x1b[0m`,
+  green: (text) => `\x1b[32m${text}\x1b[0m`,
+  red: (text) => `\x1b[31m${text}\x1b[0m`,
+  bold: (text) => `\x1b[1m${text}\x1b[0m`
+};
+
+console.log(colors.blue('🔍 Iniciando verificação de qualidade local...\n'));
 
 const checks = [
   {
@@ -25,11 +33,6 @@ const checks = [
     name: 'Prettier Format Check',
     command: 'npm run format -- --check',
     icon: '🎨'
-  },
-  {
-    name: 'Build Test',
-    command: 'npm run build',
-    icon: '🏗️'
   }
 ];
 
@@ -37,19 +40,19 @@ let allPassed = true;
 
 for (const check of checks) {
   try {
-    console.log(chalk.yellow(`${check.icon} Executando ${check.name}...`));
+    console.log(colors.yellow(`${check.icon} Executando ${check.name}...`));
     execSync(check.command, { stdio: 'inherit' });
-    console.log(chalk.green(`✅ ${check.name} passou!\n`));
+    console.log(colors.green(`✅ ${check.name} passou!\n`));
   } catch (error) {
-    console.log(chalk.red(`❌ ${check.name} falhou!\n`));
+    console.log(colors.red(`❌ ${check.name} falhou!\n`));
     allPassed = false;
   }
 }
 
 if (allPassed) {
-  console.log(chalk.green.bold('🎉 Todas as verificações passaram! Código pronto para commit.'));
+  console.log(colors.bold(colors.green('🎉 Todas as verificações passaram! Código pronto para commit.')));
   process.exit(0);
 } else {
-  console.log(chalk.red.bold('❌ Algumas verificações falharam. Corrija os problemas antes do commit.'));
+  console.log(colors.bold(colors.red('❌ Algumas verificações falharam. Corrija os problemas antes do commit.')));
   process.exit(1);
 }

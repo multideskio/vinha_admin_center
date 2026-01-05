@@ -7,8 +7,8 @@
  */
 
 import { db } from '@/db/drizzle'
-import { companies, users, regions, profiles } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { companies, users, regions, managerProfiles, supervisorProfiles, pastorProfiles, churchProfiles } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
@@ -147,14 +147,12 @@ class CompleteMigration {
           updatedAt: new Date()
         }).returning({ id: users.id })
         
-        // Criar perfil
-        await db.insert(profiles).values({
+        // Criar perfil de gerente
+        await db.insert(managerProfiles).values({
           userId: newManager.id,
           firstName: gerente.nome,
           lastName: gerente.sobrenome,
           cpf: gerente.cpf !== '1' ? gerente.cpf : null,
-          createdAt: new Date(),
-          updatedAt: new Date()
         })
         
         this.managerMap.set(fullName, newManager.id)
@@ -185,14 +183,14 @@ class CompleteMigration {
           updatedAt: new Date()
         }).returning({ id: users.id })
         
-        // Criar perfil
-        await db.insert(profiles).values({
+        // Criar perfil de supervisor
+        await db.insert(supervisorProfiles).values({
           userId: newSupervisor.id,
           firstName: supervisor.nome,
           lastName: supervisor.sobrenome,
           cpf: supervisor.cpf !== '1' ? supervisor.cpf : null,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          managerId: this.managerMap.get(supervisor.gerente) || null,
+          regionId: this.regionMap.get(supervisor.regiao) || null,
         })
         
         this.supervisorMap.set(fullName, newSupervisor.id)
@@ -240,13 +238,23 @@ class CompleteMigration {
           const firstName = nameParts[0] || ''
           const lastName = nameParts.slice(1).join(' ') || ''
           
-          await db.insert(profiles).values({
-            userId: newUser.id,
-            firstName: firstName,
-            lastName: lastName,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          })
+          if (role === 'pastor') {
+            await db.insert(pastorProfiles).values({
+              userId: newUser.id,
+              firstName: firstName,
+              lastName: lastName,
+              supervisorId: this.supervisorMap.get(usuario.supervisor) || null,
+              cpf: `temp-${usuario.id}`, // CPF temporário para evitar conflitos
+            })
+          } else {
+            await db.insert(churchProfiles).values({
+              userId: newUser.id,
+              supervisorId: this.supervisorMap.get(usuario.supervisor) || null,
+              cnpj: `temp-${usuario.id}`, // CNPJ temporário para evitar conflitos
+              razaoSocial: usuario.nome,
+              nomeFantasia: usuario.nome,
+            })
+          }
         }
         
         if (role === 'pastor') {
@@ -281,15 +289,40 @@ class CompleteMigration {
     console.log(`   - Regiões: ${regionCount.length}`)
     console.log(`   - Usuários: ${userCount.length}`)
     
-    // Verificar integridade dos dados
-    const usersWithoutProfiles = await db
-      .select({ id: users.id, email: users.email })
+    // Verificar integridade dos dados - contar usuários sem perfil
+    const managersWithoutProfile = await db
+      .select({ id: users.id })
       .from(users)
-      .leftJoin(profiles, eq(users.id, profiles.userId))
-      .where(eq(profiles.userId, null))
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+      .where(and(eq(users.role, 'manager'), eq(managerProfiles.userId, null)))
     
-    if (usersWithoutProfiles.length > 0) {
-      console.log(`⚠️  ${usersWithoutProfiles.length} usuários sem perfil`)
+    const supervisorsWithoutProfile = await db
+      .select({ id: users.id })
+      .from(users)
+      .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
+      .where(and(eq(users.role, 'supervisor'), eq(supervisorProfiles.userId, null)))
+    
+    const pastorsWithoutProfile = await db
+      .select({ id: users.id })
+      .from(users)
+      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .where(and(eq(users.role, 'pastor'), eq(pastorProfiles.userId, null)))
+    
+    const churchesWithoutProfile = await db
+      .select({ id: users.id })
+      .from(users)
+      .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+      .where(and(eq(users.role, 'church_account'), eq(churchProfiles.userId, null)))
+    
+    const totalWithoutProfile = managersWithoutProfile.length + supervisorsWithoutProfile.length + 
+                               pastorsWithoutProfile.length + churchesWithoutProfile.length
+    
+    if (totalWithoutProfile > 0) {
+      console.log(`⚠️  ${totalWithoutProfile} usuários sem perfil:`)
+      console.log(`   - ${managersWithoutProfile.length} gerentes`)
+      console.log(`   - ${supervisorsWithoutProfile.length} supervisores`)
+      console.log(`   - ${pastorsWithoutProfile.length} pastores`)
+      console.log(`   - ${churchesWithoutProfile.length} igrejas`)
     }
     
     console.log('✅ Validação concluída')
