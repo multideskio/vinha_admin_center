@@ -224,7 +224,14 @@ export async function processNotificationEvent(
       .where(
         and(
           eq(notificationRules.isActive, true),
-          eq(notificationRules.eventTrigger, eventType as 'user_registered' | 'payment_received' | 'payment_due_reminder' | 'payment_overdue'),
+          eq(
+            notificationRules.eventTrigger,
+            eventType as
+              | 'user_registered'
+              | 'payment_received'
+              | 'payment_due_reminder'
+              | 'payment_overdue',
+          ),
         ),
       )
     for (const rule of activeRules) {

@@ -73,7 +73,10 @@ async function testBlacklist() {
     })
     console.log('❌ ERRO: Email foi enviado (não deveria)')
   } catch (error: unknown) {
-    console.log('✅ Email bloqueado corretamente:', error instanceof Error ? error.message : String(error))
+    console.log(
+      '✅ Email bloqueado corretamente:',
+      error instanceof Error ? error.message : String(error),
+    )
   }
 
   // Limpar teste

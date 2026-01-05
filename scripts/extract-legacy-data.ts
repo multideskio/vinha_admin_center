@@ -181,7 +181,13 @@ class LegacyDataExtractor {
 
         const managers = await this.page.evaluate(() => {
           const rows = document.querySelectorAll('tbody tr')
-          const gerentes: Array<{ id: string; nome: string; sobrenome: string; cpf: string; email: string }> = []
+          const gerentes: Array<{
+            id: string
+            nome: string
+            sobrenome: string
+            cpf: string
+            email: string
+          }> = []
 
           rows.forEach((row) => {
             const cells = row.querySelectorAll('td')
@@ -342,7 +348,14 @@ class LegacyDataExtractor {
 
         const supervisors = await this.page.evaluate(() => {
           const rows = document.querySelectorAll('tbody tr')
-          const supervisores: Array<{ id: string; nome: string; sobrenome: string; cpf: string; email: string; regiao: string }> = []
+          const supervisores: Array<{
+            id: string
+            nome: string
+            sobrenome: string
+            cpf: string
+            email: string
+            regiao: string
+          }> = []
 
           rows.forEach((row) => {
             const cells = row.querySelectorAll('td')
@@ -498,7 +511,14 @@ class LegacyDataExtractor {
 
         const users = await this.page.evaluate(() => {
           const rows = document.querySelectorAll('tbody tr')
-          const usuarios: Array<{ id: string; nome: string; regiao: string; gerente: string; supervisor: string; tipo: string }> = []
+          const usuarios: Array<{
+            id: string
+            nome: string
+            regiao: string
+            gerente: string
+            supervisor: string
+            tipo: string
+          }> = []
 
           rows.forEach((row) => {
             const cells = row.querySelectorAll('td')

@@ -99,7 +99,13 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
         <div className="flex h-16 items-center border-b border-border/40 px-6 videira-gradient">
           <Link href="/admin/dashboard" className="flex items-center gap-3 font-bold group">
             {companyLogo ? (
-              <Image src={companyLogo} alt={companyName || 'Logo'} width={32} height={32} className="h-8 object-contain" />
+              <Image
+                src={companyLogo}
+                alt={companyName || 'Logo'}
+                width={32}
+                height={32}
+                className="h-8 object-contain"
+              />
             ) : (
               <div className="relative">
                 <Logo className="h-8 w-8 text-white drop-shadow-lg" />

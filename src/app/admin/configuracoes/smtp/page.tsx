@@ -665,7 +665,9 @@ export default function SmtpSettingsPage() {
                           </TableCell>
                           <TableCell>{item.attemptCount ?? 0}x</TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {item.lastAttemptAt ? new Date(item.lastAttemptAt).toLocaleString('pt-BR') : 'N/A'}
+                            {item.lastAttemptAt
+                              ? new Date(item.lastAttemptAt).toLocaleString('pt-BR')
+                              : 'N/A'}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button
@@ -745,7 +747,9 @@ export default function SmtpSettingsPage() {
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Data</p>
                   <p className="text-sm">
-                    {selectedEmail.sentAt ? new Date(selectedEmail.sentAt).toLocaleString('pt-BR') : 'N/A'}
+                    {selectedEmail.sentAt
+                      ? new Date(selectedEmail.sentAt).toLocaleString('pt-BR')
+                      : 'N/A'}
                   </p>
                 </div>
                 {selectedEmail.errorMessage && (

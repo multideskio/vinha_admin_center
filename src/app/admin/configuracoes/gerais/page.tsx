@@ -214,7 +214,13 @@ export default function GeneralSettingsPage() {
                 <Label>Logo da Aplicação</Label>
                 {logoPreview && (
                   <div className="mb-4">
-                    <Image src={logoPreview} alt="Logo preview" width={80} height={80} className="h-20 object-contain" />
+                    <Image
+                      src={logoPreview}
+                      alt="Logo preview"
+                      width={80}
+                      height={80}
+                      className="h-20 object-contain"
+                    />
                   </div>
                 )}
                 <div className="flex items-center justify-center w-full">

@@ -241,7 +241,11 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
-                      }).format(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount)}
+                      }).format(
+                        typeof transaction.amount === 'string'
+                          ? parseFloat(transaction.amount)
+                          : transaction.amount,
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center gap-2 justify-end">

@@ -251,7 +251,10 @@ export default function InadimplentesPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo</label>
-              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as 'all' | 'pastor' | 'church')}>
+              <Select
+                value={typeFilter}
+                onValueChange={(v) => setTypeFilter(v as 'all' | 'pastor' | 'church')}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

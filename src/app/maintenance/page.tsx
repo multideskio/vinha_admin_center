@@ -9,7 +9,13 @@ export default async function MaintenancePage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center space-y-6 p-8">
         {company?.logoUrl ? (
-          <Image src={company.logoUrl} alt="Logo" width={80} height={80} className="h-20 mx-auto mb-8" />
+          <Image
+            src={company.logoUrl}
+            alt="Logo"
+            width={80}
+            height={80}
+            className="h-20 mx-auto mb-8"
+          />
         ) : (
           <Settings className="h-20 w-20 mx-auto text-muted-foreground mb-8" />
         )}

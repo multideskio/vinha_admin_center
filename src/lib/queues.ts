@@ -9,8 +9,8 @@ function createRedis() {
     enableReadyCheck: false,
     connectTimeout: 5000,
     retryStrategy: (times: number) => Math.min(5000, times * 200),
-      tls: isTLS ? { rejectUnauthorized: false } : undefined,
-    } as Record<string, unknown>)
+    tls: isTLS ? { rejectUnauthorized: false } : undefined,
+  } as Record<string, unknown>)
 
   // ✅ CORRIGIDO: Logging de erros Redis (Bug #1)
   client.on('error', (error) => {
