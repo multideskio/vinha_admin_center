@@ -536,9 +536,10 @@ export default function PastoresPage(): JSX.Element {
     }
   }, [toast, dateRange])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, []) // Removido fetchData da dependência
 
   const handleDelete = async (pastorId: string) => {
     try {

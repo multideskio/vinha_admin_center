@@ -121,9 +121,10 @@ export default function TransacoesPage() {
     }
   }, [toast, dateRange])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchTransactions()
-  }, [fetchTransactions])
+  }, []) // Removido fetchTransactions da dependência
 
   const handleDateRangeChange = React.useCallback(
     (range: { from: Date | undefined; to: Date | undefined }) => {
@@ -280,7 +281,10 @@ export default function TransacoesPage() {
                 <span className="sr-only sm:not-sr-only">Exportar CSV</span>
               </Button>
             </div>
-            <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+            <DateRangePicker 
+              value={{ from: dateRange.from, to: dateRange.to }}
+              onDateRangeChange={handleDateRangeChange} 
+            />
           </div>
 
           {/* Tabela */}

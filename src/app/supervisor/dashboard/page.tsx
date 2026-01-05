@@ -121,9 +121,10 @@ export default function SupervisorDashboardPage(): JSX.Element {
     }
   }, [dateRange, fetchData])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, []) // Removido fetchData da dependência
 
   const kpiDisplayData = data
     ? [

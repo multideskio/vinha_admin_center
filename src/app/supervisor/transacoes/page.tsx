@@ -92,9 +92,10 @@ export default function TransacoesPage() {
     }
   }, [toast, dateRange])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchTransactions()
-  }, [fetchTransactions])
+  }, []) // Removido fetchTransactions da dependência
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter((prev) =>

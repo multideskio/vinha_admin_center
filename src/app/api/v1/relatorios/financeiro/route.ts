@@ -41,7 +41,9 @@ export async function GET(request: Request) {
     }
 
     if (status && status !== 'all') {
-      conditions.push(eq(transactions.status, status as 'approved' | 'pending' | 'refused' | 'refunded'))
+      conditions.push(
+        eq(transactions.status, status as 'approved' | 'pending' | 'refused' | 'refunded'),
+      )
     }
 
     // Buscar todas as transações
@@ -66,11 +68,12 @@ export async function GET(request: Request) {
       .orderBy(desc(transactions.createdAt))
 
     // Formatar transações
-    const formattedTransactions = allTransactions.map(t => ({
+    const formattedTransactions = allTransactions.map((t) => ({
       id: t.id,
-      contributorName: t.contributorRole === 'pastor' 
-        ? `${t.firstName || ''} ${t.lastName || ''}`.trim()
-        : t.nomeFantasia || 'N/A',
+      contributorName:
+        t.contributorRole === 'pastor'
+          ? `${t.firstName || ''} ${t.lastName || ''}`.trim()
+          : t.nomeFantasia || 'N/A',
       contributorRole: t.contributorRole,
       amount: Number(t.amount),
       method: t.method,
@@ -89,10 +92,13 @@ export async function GET(request: Request) {
       .where(and(...conditions))
       .groupBy(transactions.status)
 
-    const statusTotals = statusSummary.reduce((acc, s) => {
-      acc[s.status] = Number(s.total)
-      return acc
-    }, {} as Record<string, number>)
+    const statusTotals = statusSummary.reduce(
+      (acc, s) => {
+        acc[s.status] = Number(s.total)
+        return acc
+      },
+      {} as Record<string, number>,
+    )
 
     // Resumo por método de pagamento
     const methodSummary = await db
@@ -105,13 +111,16 @@ export async function GET(request: Request) {
       .where(and(...conditions))
       .groupBy(transactions.paymentMethod)
 
-    const byMethod = methodSummary.reduce((acc, m) => {
-      acc[m.method] = {
-        count: Number(m.count),
-        total: Number(m.total),
-      }
-      return acc
-    }, {} as Record<string, { count: number; total: number }>)
+    const byMethod = methodSummary.reduce(
+      (acc, m) => {
+        acc[m.method] = {
+          count: Number(m.count),
+          total: Number(m.total),
+        }
+        return acc
+      },
+      {} as Record<string, { count: number; total: number }>,
+    )
 
     return NextResponse.json({
       transactions: formattedTransactions,
@@ -130,9 +139,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Erro ao gerar relatório financeiro:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

@@ -115,9 +115,17 @@ export default function RelatorioContribuicoesPage() {
     }
   }, [dateRange, typeFilter, toast])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, []) // Removido fetchData da dependência
+
+  // Só recarregar quando o filtro de tipo mudar (não quando dateRange mudar)
+  React.useEffect(() => {
+    if (typeFilter !== 'all') {
+      fetchData()
+    }
+  }, [typeFilter])
 
   const handleDateRangeChange = React.useCallback(
     (range: { from: Date | undefined; to: Date | undefined }) => {
@@ -268,7 +276,10 @@ export default function RelatorioContribuicoesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2 lg:col-span-2">
               <label className="text-sm font-medium">Período</label>
-              <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+              <DateRangePicker 
+                value={{ from: dateRange.from, to: dateRange.to }}
+                onDateRangeChange={handleDateRangeChange} 
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de Contribuinte</label>

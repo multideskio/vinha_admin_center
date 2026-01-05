@@ -116,9 +116,17 @@ export default function RelatorioFinanceiroPage() {
     }
   }, [dateRange, methodFilter, statusFilter, toast])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, []) // Removido fetchData da dependência
+
+  // Só recarregar quando os filtros mudarem (não quando dateRange mudar)
+  React.useEffect(() => {
+    if (methodFilter !== 'all' || statusFilter !== 'all') {
+      fetchData()
+    }
+  }, [methodFilter, statusFilter])
 
   const handleDateRangeChange = React.useCallback(
     (range: { from: Date | undefined; to: Date | undefined }) => {
@@ -264,7 +272,10 @@ export default function RelatorioFinanceiroPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2 lg:col-span-2">
               <label className="text-sm font-medium">Período</label>
-              <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+              <DateRangePicker 
+                value={{ from: dateRange.from, to: dateRange.to }}
+                onDateRangeChange={handleDateRangeChange} 
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Método de Pagamento</label>

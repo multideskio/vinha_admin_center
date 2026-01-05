@@ -37,11 +37,13 @@ export async function GET(request: Request) {
       })
       .from(users)
       .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-      .where(and(
-        eq(users.companyId, user.companyId),
-        eq(users.role, 'supervisor'),
-        isNull(users.deletedAt)
-      ))
+      .where(
+        and(
+          eq(users.companyId, user.companyId),
+          eq(users.role, 'supervisor'),
+          isNull(users.deletedAt),
+        ),
+      )
 
     // Condições para igrejas
     const churchConditions = [
@@ -84,22 +86,26 @@ export async function GET(request: Request) {
       .leftJoin(transactions, eq(users.id, transactions.contributorId))
       .where(and(...churchConditions))
       .groupBy(
-        users.id, 
-        churchProfiles.nomeFantasia, 
+        users.id,
+        churchProfiles.nomeFantasia,
         churchProfiles.cnpj,
         churchProfiles.city,
         churchProfiles.state,
         churchProfiles.supervisorId,
         supervisorProfiles.firstName,
         supervisorProfiles.lastName,
-        users.createdAt
+        users.createdAt,
       )
-      .orderBy(desc(sql`COALESCE(SUM(CASE WHEN ${transactions.status} = 'approved' AND ${transactions.createdAt} BETWEEN ${startDate} AND ${endDate} THEN ${transactions.amount} ELSE 0 END), 0)`))
+      .orderBy(
+        desc(
+          sql`COALESCE(SUM(CASE WHEN ${transactions.status} = 'approved' AND ${transactions.createdAt} BETWEEN ${startDate} AND ${endDate} THEN ${transactions.amount} ELSE 0 END), 0)`,
+        ),
+      )
 
     const churches = await churchesQuery
 
     // Formatar dados das igrejas
-    const formattedChurches = churches.map(c => ({
+    const formattedChurches = churches.map((c) => ({
       id: c.id,
       nomeFantasia: c.nomeFantasia || 'N/A',
       cnpj: c.cnpj || 'N/A',
@@ -108,28 +114,36 @@ export async function GET(request: Request) {
       supervisorName: c.supervisorName || 'Sem Supervisor',
       totalRevenue: Number(c.totalRevenue) || 0,
       transactionCount: Number(c.transactionCount) || 0,
-      lastTransaction: c.lastTransactionDate ? {
-        date: new Date(c.lastTransactionDate).toLocaleDateString('pt-BR'),
-        amount: Number(c.lastTransactionAmount) || 0,
-      } : null,
+      lastTransaction: c.lastTransactionDate
+        ? {
+            date: new Date(c.lastTransactionDate).toLocaleDateString('pt-BR'),
+            amount: Number(c.lastTransactionAmount) || 0,
+          }
+        : null,
       createdAt: new Date(c.createdAt).toLocaleDateString('pt-BR'),
     }))
 
     // Agrupar por supervisor
-    const bySupervisor = formattedChurches.reduce((acc, church) => {
-      const supervisorName = church.supervisorName
-      if (!acc[supervisorName]) {
-        acc[supervisorName] = {
-          count: 0,
-          totalRevenue: 0,
-          churches: [],
+    const bySupervisor = formattedChurches.reduce(
+      (acc, church) => {
+        const supervisorName = church.supervisorName
+        if (!acc[supervisorName]) {
+          acc[supervisorName] = {
+            count: 0,
+            totalRevenue: 0,
+            churches: [],
+          }
         }
-      }
-      acc[supervisorName].count++
-      acc[supervisorName].totalRevenue += church.totalRevenue
-      acc[supervisorName].churches.push(church)
-      return acc
-    }, {} as Record<string, { count: number; totalRevenue: number; churches: typeof formattedChurches }>)
+        acc[supervisorName].count++
+        acc[supervisorName].totalRevenue += church.totalRevenue
+        acc[supervisorName].churches.push(church)
+        return acc
+      },
+      {} as Record<
+        string,
+        { count: number; totalRevenue: number; churches: typeof formattedChurches }
+      >,
+    )
 
     // Calcular totais gerais
     const totalChurches = formattedChurches.length
@@ -139,7 +153,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       churches: formattedChurches,
       bySupervisor,
-      supervisors: allSupervisors.map(s => ({
+      supervisors: allSupervisors.map((s) => ({
         id: s.id,
         name: `${s.firstName} ${s.lastName}`,
       })),
@@ -155,9 +169,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Erro ao gerar relatório de igrejas:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

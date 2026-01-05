@@ -7,7 +7,13 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { users, pastorProfiles, churchProfiles, managerProfiles, supervisorProfiles } from '@/db/schema'
+import {
+  users,
+  pastorProfiles,
+  churchProfiles,
+  managerProfiles,
+  supervisorProfiles,
+} from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
@@ -23,10 +29,7 @@ export async function GET(request: Request) {
     const role = searchParams.get('role')
 
     // Condições base
-    const conditions = [
-      eq(users.companyId, user.companyId),
-      isNull(users.deletedAt),
-    ]
+    const conditions = [eq(users.companyId, user.companyId), isNull(users.deletedAt)]
 
     // Filtro por role se especificado
     if (role && role !== 'all') {
@@ -59,7 +62,7 @@ export async function GET(request: Request) {
       .orderBy(desc(users.createdAt))
 
     // Formatar dados dos membros
-    const formattedMembers = allMembers.map(m => {
+    const formattedMembers = allMembers.map((m) => {
       let name = 'N/A'
       let extraInfo = ''
 
@@ -98,24 +101,25 @@ export async function GET(request: Request) {
     })
 
     // Calcular distribuição por role
-    const byRole = allMembers.reduce((acc, member) => {
-      const existing = acc.find(item => item.role === member.role)
-      if (existing) {
-        existing.count++
-      } else {
-        acc.push({ role: member.role, count: 1 })
-      }
-      return acc
-    }, [] as { role: string; count: number }[])
+    const byRole = allMembers.reduce(
+      (acc, member) => {
+        const existing = acc.find((item) => item.role === member.role)
+        if (existing) {
+          existing.count++
+        } else {
+          acc.push({ role: member.role, count: 1 })
+        }
+        return acc
+      },
+      [] as { role: string; count: number }[],
+    )
 
     // Calcular novos membros este mês
     const thisMonth = new Date()
     thisMonth.setDate(1)
     thisMonth.setHours(0, 0, 0, 0)
 
-    const newThisMonth = allMembers.filter(m => 
-      new Date(m.createdAt) >= thisMonth
-    ).length
+    const newThisMonth = allMembers.filter((m) => new Date(m.createdAt) >= thisMonth).length
 
     // Dados de crescimento dos últimos 6 meses
     const growthData = []
@@ -124,18 +128,28 @@ export async function GET(request: Request) {
       monthDate.setMonth(monthDate.getMonth() - i)
       monthDate.setDate(1)
       monthDate.setHours(0, 0, 0, 0)
-      
+
       const nextMonth = new Date(monthDate)
       nextMonth.setMonth(nextMonth.getMonth() + 1)
 
-      const monthMembers = allMembers.filter(m => {
+      const monthMembers = allMembers.filter((m) => {
         const createdAt = new Date(m.createdAt)
         return createdAt >= monthDate && createdAt < nextMonth
       }).length
 
       const monthNames = [
-        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        'Jan',
+        'Fev',
+        'Mar',
+        'Abr',
+        'Mai',
+        'Jun',
+        'Jul',
+        'Ago',
+        'Set',
+        'Out',
+        'Nov',
+        'Dez',
       ]
 
       growthData.push({
@@ -155,9 +169,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Erro ao gerar relatório de membresia:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

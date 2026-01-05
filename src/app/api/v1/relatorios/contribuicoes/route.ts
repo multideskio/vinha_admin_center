@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         eq(users.role, contributorType as 'pastor' | 'church_account'),
         isNull(users.deletedAt),
       ]
-      
+
       const contributorIds = await db
         .select({ id: users.id })
         .from(users)
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
 
       if (contributorIds.length > 0) {
         baseConditions.push(
-          sql`${transactions.contributorId} IN ${sql.raw(`(${contributorIds.map(c => `'${c.id}'`).join(',')})`)}`,
+          sql`${transactions.contributorId} IN ${sql.raw(`(${contributorIds.map((c) => `'${c.id}'`).join(',')})`)}`,
         )
       }
     }
@@ -70,42 +70,51 @@ export async function GET(request: Request) {
       .from(users)
       .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
       .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-      .leftJoin(transactions, and(
-        eq(users.id, transactions.contributorId),
-        eq(transactions.status, 'approved'),
-        between(transactions.createdAt, startDate, endDate),
-      ))
-      .where(and(
-        eq(users.companyId, user.companyId),
-        isNull(users.deletedAt),
-        contributorType && contributorType !== 'all' 
-          ? eq(users.role, contributorType as 'pastor' | 'church_account')
-          : sql`${users.role} IN ('pastor', 'church_account')`,
-      ))
-      .groupBy(users.id, pastorProfiles.firstName, pastorProfiles.lastName, churchProfiles.nomeFantasia)
+      .leftJoin(
+        transactions,
+        and(
+          eq(users.id, transactions.contributorId),
+          eq(transactions.status, 'approved'),
+          between(transactions.createdAt, startDate, endDate),
+        ),
+      )
+      .where(
+        and(
+          eq(users.companyId, user.companyId),
+          isNull(users.deletedAt),
+          contributorType && contributorType !== 'all'
+            ? eq(users.role, contributorType as 'pastor' | 'church_account')
+            : sql`${users.role} IN ('pastor', 'church_account')`,
+        ),
+      )
+      .groupBy(
+        users.id,
+        pastorProfiles.firstName,
+        pastorProfiles.lastName,
+        churchProfiles.nomeFantasia,
+      )
       .orderBy(desc(sql`COALESCE(SUM(${transactions.amount}), 0)`))
 
     const contributors = await contributorsQuery
 
     // Formatar dados dos contribuintes
-    const formattedContributors = contributors.map(c => ({
+    const formattedContributors = contributors.map((c) => ({
       id: c.id,
-      name: c.role === 'pastor' 
-        ? `${c.firstName || ''} ${c.lastName || ''}`.trim()
-        : c.nomeFantasia || 'N/A',
+      name:
+        c.role === 'pastor'
+          ? `${c.firstName || ''} ${c.lastName || ''}`.trim()
+          : c.nomeFantasia || 'N/A',
       type: c.role,
       extraInfo: c.role === 'pastor' ? 'Pastor' : 'Igreja',
       totalAmount: Number(c.totalAmount) || 0,
       contributionCount: Number(c.contributionCount) || 0,
-      lastContribution: c.lastContribution 
+      lastContribution: c.lastContribution
         ? new Date(c.lastContribution).toLocaleDateString('pt-BR')
         : 'Nunca',
     }))
 
     // Top 10 contribuintes
-    const topContributors = formattedContributors
-      .filter(c => c.totalAmount > 0)
-      .slice(0, 10)
+    const topContributors = formattedContributors.filter((c) => c.totalAmount > 0).slice(0, 10)
 
     // Resumo por método de pagamento
     const methodSummary = await db
@@ -132,8 +141,11 @@ export async function GET(request: Request) {
 
     // Calcular totais gerais
     const totalAmount = formattedContributors.reduce((sum, c) => sum + c.totalAmount, 0)
-    const totalContributions = formattedContributors.reduce((sum, c) => sum + c.contributionCount, 0)
-    const totalContributors = formattedContributors.filter(c => c.totalAmount > 0).length
+    const totalContributions = formattedContributors.reduce(
+      (sum, c) => sum + c.contributionCount,
+      0,
+    )
+    const totalContributors = formattedContributors.filter((c) => c.totalAmount > 0).length
     const averagePerContributor = totalContributors > 0 ? totalAmount / totalContributors : 0
 
     return NextResponse.json({
@@ -144,12 +156,12 @@ export async function GET(request: Request) {
         totalContributions,
         totalContributors,
         averagePerContributor,
-        byMethod: methodSummary.map(m => ({
+        byMethod: methodSummary.map((m) => ({
           method: m.method,
           count: Number(m.count),
           total: Number(m.total),
         })),
-        byContributorType: typeSummary.map(t => ({
+        byContributorType: typeSummary.map((t) => ({
           type: t.type,
           count: Number(t.count),
           total: Number(t.total),
@@ -162,9 +174,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Erro ao gerar relatório de contribuições:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

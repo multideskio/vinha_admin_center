@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { format, subDays } from 'date-fns'
+import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { DateRange } from 'react-day-picker'
@@ -24,26 +24,44 @@ export function DateRangePicker({
   onDateRangeChange,
 }: DateRangePickerProps): React.JSX.Element {
   const [open, setOpen] = React.useState(false)
-  const [date, setDate] = React.useState<DateRange | undefined>(
-    value || {
-      from: subDays(new Date(), 7),
-      to: new Date(),
-    },
-  )
+  const [internalDate, setInternalDate] = React.useState<DateRange | undefined>(value)
 
+  // Sincronizar com prop value apenas quando ela mudar externamente
   React.useEffect(() => {
-    if (value) {
-      setDate(value)
+    if (value !== internalDate) {
+      setInternalDate(value)
     }
   }, [value])
 
-  const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate)
-    onChange?.(newDate)
+  const handleDateSelect = (newDate: DateRange | undefined) => {
+    setInternalDate(newDate)
+    
+    // Não chamar callbacks até que o usuário clique em "Aplicar"
+    // Isso evita chamadas automáticas à API durante a seleção
+  }
+
+  const handleApply = () => {
+    // Só chamar os callbacks quando o usuário confirmar
+    onChange?.(internalDate)
     onDateRangeChange?.({
-      from: newDate?.from,
-      to: newDate?.to,
+      from: internalDate?.from,
+      to: internalDate?.to,
     })
+    setOpen(false)
+  }
+
+  const handleClear = () => {
+    const clearedDate = undefined
+    setInternalDate(clearedDate)
+    onChange?.(clearedDate)
+    onDateRangeChange?.({ from: undefined, to: undefined })
+    setOpen(false)
+  }
+
+  const handleCancel = () => {
+    // Reverter para o valor original se o usuário cancelar
+    setInternalDate(value)
+    setOpen(false)
   }
 
   return (
@@ -55,18 +73,18 @@ export function DateRangePicker({
             variant={'outline'}
             className={cn(
               'w-[300px] justify-start text-left font-normal',
-              !date && 'text-muted-foreground',
+              !value?.from && 'text-muted-foreground',
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
+            {value?.from ? (
+              value.to ? (
                 <>
-                  {format(date.from, 'dd/MM/yyyy', { locale: ptBR })} -{' '}
-                  {format(date.to, 'dd/MM/yyyy', { locale: ptBR })}
+                  {format(value.from, 'dd/MM/yyyy', { locale: ptBR })} -{' '}
+                  {format(value.to, 'dd/MM/yyyy', { locale: ptBR })}
                 </>
               ) : (
-                format(date.from, 'dd/MM/yyyy', { locale: ptBR })
+                format(value.from, 'dd/MM/yyyy', { locale: ptBR })
               )
             ) : (
               <span>Selecione um período</span>
@@ -77,28 +95,37 @@ export function DateRangePicker({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={handleDateChange}
+            defaultMonth={internalDate?.from || new Date()}
+            selected={internalDate}
+            onSelect={handleDateSelect}
             numberOfMonths={2}
             disabled={{ after: new Date() }}
             locale={ptBR}
           />
-          <div className="flex items-center justify-end gap-2 p-3 border-t">
+          <div className="flex items-center justify-between gap-2 p-3 border-t">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setDate(undefined)
-                onChange?.(undefined)
-                onDateRangeChange?.({ from: undefined, to: undefined })
-              }}
+              onClick={handleClear}
             >
               Limpar
             </Button>
-            <Button size="sm" onClick={() => setOpen(false)} disabled={!date?.from || !date?.to}>
-              Aplicar
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleApply}
+                disabled={!internalDate?.from}
+              >
+                Aplicar
+              </Button>
+            </div>
           </div>
         </PopoverContent>
       </Popover>

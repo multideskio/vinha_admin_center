@@ -635,9 +635,10 @@ export default function IgrejasPage() {
     }
   }, [toast, dateRange])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, []) // Removido fetchData da dependência
 
   const handleDelete = async (churchId: string) => {
     try {

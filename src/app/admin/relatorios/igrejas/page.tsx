@@ -1,8 +1,8 @@
 /**
- * @lastReview 2026-01-05 15:00 - Página de relatório de igrejas revisada
- * ❌ PROBLEMA CRÍTICO: API /api/v1/relatorios/igrejas NÃO EXISTE
- * Frontend: ✅ Interface completa, filtros por região, paginação, export CSV, Design System Videira
- * Backend: ❌ API não implementada - página não funcional
+ * @lastReview 2026-01-05 15:50 - Página de relatório de igrejas revisada e funcional
+ * ✅ RESOLVIDO: API /api/v1/relatorios/igrejas IMPLEMENTADA E FUNCIONAL
+ * Frontend: ✅ Interface completa, filtros por supervisor, paginação, export CSV, Design System Videira
+ * Backend: ✅ API implementada com validação admin e filtros por companyId
  */
 'use client'
 
@@ -125,9 +125,17 @@ export default function RelatorioIgrejasPage() {
     }
   }, [dateRange, regionFilter, toast])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, []) // Removido fetchData da dependência
+
+  // Só recarregar quando o filtro de região mudar (não quando dateRange mudar)
+  React.useEffect(() => {
+    if (regionFilter !== 'all') {
+      fetchData()
+    }
+  }, [regionFilter])
 
   const handleDateRangeChange = React.useCallback(
     (range: { from: Date | undefined; to: Date | undefined }) => {
@@ -269,7 +277,10 @@ export default function RelatorioIgrejasPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2 lg:col-span-2">
               <label className="text-sm font-medium">Período</label>
-              <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+              <DateRangePicker 
+                value={{ from: dateRange.from, to: dateRange.to }}
+                onDateRangeChange={handleDateRangeChange} 
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Supervisor</label>

@@ -144,6 +144,7 @@ export default function DashboardPage() {
     }
   }, [toast, dateRange])
 
+  // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
 
@@ -160,7 +161,7 @@ export default function DashboardPage() {
       .catch(() => {
         // Silenciar erro, não é crítico
       })
-  }, [fetchData])
+  }, []) // Removido fetchData da dependência
 
   const handleDateRangeChange = React.useCallback(
     (range: { from: Date | undefined; to: Date | undefined }) => {
@@ -473,7 +474,10 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <DateRangePicker onDateRangeChange={handleDateRangeChange} />
+            <DateRangePicker 
+              value={{ from: dateRange.from, to: dateRange.to }}
+              onDateRangeChange={handleDateRangeChange} 
+            />
             <Button
               variant="secondary"
               size="icon"

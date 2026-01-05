@@ -53,6 +53,13 @@ export default function TransacoesPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string[]>([])
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({
+    from: undefined,
+    to: undefined,
+  })
   const [currentPage, setCurrentPage] = React.useState(1)
   const itemsPerPage = 10
   const { toast } = useToast()
@@ -87,6 +94,13 @@ export default function TransacoesPage() {
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status],
     )
   }
+
+  const handleDateRangeChange = React.useCallback(
+    (range: { from: Date | undefined; to: Date | undefined }) => {
+      setDateRange(range)
+    },
+    [],
+  )
 
   const filteredTransactions = transactions
     .filter((transaction) =>
@@ -190,7 +204,10 @@ export default function TransacoesPage() {
                   <span className="sr-only sm:not-sr-only">Exportar</span>
                 </Button>
               </div>
-              <DateRangePicker />
+              <DateRangePicker 
+                value={{ from: dateRange.from, to: dateRange.to }}
+                onDateRangeChange={handleDateRangeChange} 
+              />
             </div>
             <div className="rounded-md border-2">
               <Table>

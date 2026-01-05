@@ -70,7 +70,21 @@ export default function GerenteDashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [profileIncomplete, setProfileIncomplete] = React.useState(false)
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({
+    from: undefined,
+    to: undefined,
+  })
   const { toast } = useToast()
+
+  const handleDateRangeChange = React.useCallback(
+    (range: { from: Date | undefined; to: Date | undefined }) => {
+      setDateRange(range)
+    },
+    [],
+  )
 
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
@@ -205,7 +219,10 @@ export default function GerenteDashboardPage() {
                 Visão geral da sua rede de supervisores e igrejas
               </p>
             </div>
-            <DateRangePicker />
+            <DateRangePicker 
+              value={{ from: dateRange.from, to: dateRange.to }}
+              onDateRangeChange={handleDateRangeChange} 
+            />
           </div>
         </div>
       </div>
