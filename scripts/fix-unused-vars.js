@@ -1,97 +1,92 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
 // Função para corrigir variáveis não utilizadas de forma segura
 function fixUnusedVars(filePath) {
-  let content = fs.readFileSync(filePath, 'utf8');
-  let changed = false;
+  let content = fs.readFileSync(filePath, 'utf8')
+  let changed = false
 
   // Correções específicas por arquivo
   const fixes = {
     'src/app/api/v1/relatorios/route.ts': [
-      { from: /export async function GET\(request: Request\)/g, to: 'export async function GET(_request: Request)' },
-      { from: /\(filters: any\) =>/g, to: '(_filters: any) =>' }
+      {
+        from: /export async function GET\(request: Request\)/g,
+        to: 'export async function GET(_request: Request)',
+      },
+      { from: /\(filters: any\) =>/g, to: '(_filters: any) =>' },
     ],
     'src/app/api/v1/supervisor/igrejas/[id]/transactions/route.ts': [
-      { from: /const supervisorId = /g, to: 'const _supervisorId = ' }
+      { from: /const supervisorId = /g, to: 'const _supervisorId = ' },
     ],
     'src/app/api/v1/supervisor/pastores/[id]/transactions/route.ts': [
-      { from: /const supervisorId = /g, to: 'const _supervisorId = ' }
+      { from: /const supervisorId = /g, to: 'const _supervisorId = ' },
     ],
-    'src/app/igreja/_components/header.tsx': [
-      { from: /const Logo = /g, to: 'const _Logo = ' }
-    ],
+    'src/app/igreja/_components/header.tsx': [{ from: /const Logo = /g, to: 'const _Logo = ' }],
     'src/app/igreja/contribuir/page.tsx': [
-      { from: /const { toast } = /g, to: 'const { toast: _toast } = ' }
+      { from: /const { toast } = /g, to: 'const { toast: _toast } = ' },
     ],
     'src/app/igreja/dashboard/page.tsx': [
-      { from: /const \[isRefreshing, /g, to: 'const [_isRefreshing, ' }
+      { from: /const \[isRefreshing, /g, to: 'const [_isRefreshing, ' },
     ],
-    'src/app/igreja/layout.tsx': [
-      { from: /const \[company, /g, to: 'const [_company, ' }
-    ],
-    'src/app/manager/igrejas/page.tsx': [
-      { from: /\(item, index\) =>/g, to: '(item, _index) =>' }
-    ],
-    'src/app/manager/pastores/page.tsx': [
-      { from: /\(item, index\) =>/g, to: '(item, _index) =>' }
-    ],
+    'src/app/igreja/layout.tsx': [{ from: /const \[company, /g, to: 'const [_company, ' }],
+    'src/app/manager/igrejas/page.tsx': [{ from: /\(item, index\) =>/g, to: '(item, _index) =>' }],
+    'src/app/manager/pastores/page.tsx': [{ from: /\(item, index\) =>/g, to: '(item, _index) =>' }],
     'src/app/manager/supervisores/page.tsx': [
-      { from: /\(item, index\) =>/g, to: '(item, _index) =>' }
+      { from: /\(item, index\) =>/g, to: '(item, _index) =>' },
     ],
-    'src/app/pastor/_components/header.tsx': [
-      { from: /const Logo = /g, to: 'const _Logo = ' }
-    ],
+    'src/app/pastor/_components/header.tsx': [{ from: /const Logo = /g, to: 'const _Logo = ' }],
     'src/app/pastor/contribuir/page.tsx': [
-      { from: /const { toast } = /g, to: 'const { toast: _toast } = ' }
+      { from: /const { toast } = /g, to: 'const { toast: _toast } = ' },
     ],
-    'src/app/pastor/layout.tsx': [
-      { from: /const \[company, /g, to: 'const [_company, ' }
-    ],
+    'src/app/pastor/layout.tsx': [{ from: /const \[company, /g, to: 'const [_company, ' }],
     'src/app/supervisor/contribuicoes/page.tsx': [
-      { from: /const { toast } = /g, to: 'const { toast: _toast } = ' }
+      { from: /const { toast } = /g, to: 'const { toast: _toast } = ' },
     ],
-    'src/app/supervisor/layout.tsx': [
-      { from: /const \[company, /g, to: 'const [_company, ' }
-    ],
+    'src/app/supervisor/layout.tsx': [{ from: /const \[company, /g, to: 'const [_company, ' }],
     'src/app/supervisor/pastores/[id]/page.tsx': [
       { from: /const DeleteProfileDialog = /g, to: 'const _DeleteProfileDialog = ' },
-      { from: /const \[supervisors, setSupervisors\] = /g, to: 'const [_supervisors, _setSupervisors] = ' }
+      {
+        from: /const \[supervisors, setSupervisors\] = /g,
+        to: 'const [_supervisors, _setSupervisors] = ',
+      },
     ],
     'src/app/supervisor/perfil/page.tsx': [
       { from: /const fetchSettings = /g, to: 'const _fetchSettings = ' },
-      { from: /const formatCPF = /g, to: 'const _formatCPF = ' }
+      { from: /const formatCPF = /g, to: 'const _formatCPF = ' },
     ],
     'src/components/contributions/ContributionForm.tsx': [
       { from: /const { userRole } = /g, to: 'const { userRole: _userRole } = ' },
       { from: /const \[cardState, /g, to: 'const [_cardState, ' },
-      { from: /const \[, updateCardState\] = /g, to: 'const [, _updateCardState] = ' }
+      { from: /const \[, updateCardState\] = /g, to: 'const [, _updateCardState] = ' },
     ],
     'src/components/contributions/forms/ContributionDataForm.tsx': [
-      { from: /const \[, , isLoading\] = /g, to: 'const [, , _isLoading] = ' }
+      { from: /const \[, , isLoading\] = /g, to: 'const [, , _isLoading] = ' },
     ],
     'src/components/contributions/payments/PixPayment.tsx': [
       { from: /const { transactionId, /g, to: 'const { transactionId: _transactionId, ' },
-      { from: /onSuccess, onExpired } = /g, to: 'onSuccess: _onSuccess, onExpired: _onExpired } = ' }
+      {
+        from: /onSuccess, onExpired } = /g,
+        to: 'onSuccess: _onSuccess, onExpired: _onExpired } = ',
+      },
     ],
     'src/components/ui/phone-input.tsx': [
-      { from: /const \[, , , \] = /g, to: 'const [, , , _] = ' }
-    ]
-  };
-
-  if (fixes[filePath]) {
-    fixes[filePath].forEach(fix => {
-      const newContent = content.replace(fix.from, fix.to);
-      if (newContent !== content) {
-        content = newContent;
-        changed = true;
-      }
-    });
+      { from: /const \[, , , \] = /g, to: 'const [, , , _] = ' },
+    ],
   }
 
-  return { content, changed };
+  if (fixes[filePath]) {
+    fixes[filePath].forEach((fix) => {
+      const newContent = content.replace(fix.from, fix.to)
+      if (newContent !== content) {
+        content = newContent
+        changed = true
+      }
+    })
+  }
+
+  return { content, changed }
 }
 
 // Lista de arquivos para corrigir
@@ -116,29 +111,29 @@ const filesToFix = [
   'src/components/contributions/ContributionForm.tsx',
   'src/components/contributions/forms/ContributionDataForm.tsx',
   'src/components/contributions/payments/PixPayment.tsx',
-  'src/components/ui/phone-input.tsx'
-];
+  'src/components/ui/phone-input.tsx',
+]
 
-console.log('🔧 Corrigindo variáveis não utilizadas...\n');
+console.log('🔧 Corrigindo variáveis não utilizadas...\n')
 
-let fixedFiles = 0;
+let fixedFiles = 0
 
-filesToFix.forEach(filePath => {
+filesToFix.forEach((filePath) => {
   if (fs.existsSync(filePath)) {
     try {
-      const { content, changed } = fixUnusedVars(filePath);
-      
+      const { content, changed } = fixUnusedVars(filePath)
+
       if (changed) {
-        fs.writeFileSync(filePath, content);
-        console.log(`✅ Corrigido: ${filePath}`);
-        fixedFiles++;
+        fs.writeFileSync(filePath, content)
+        console.log(`✅ Corrigido: ${filePath}`)
+        fixedFiles++
       }
     } catch (error) {
-      console.log(`❌ Erro ao corrigir ${filePath}:`, error.message);
+      console.log(`❌ Erro ao corrigir ${filePath}:`, error.message)
     }
   } else {
-    console.log(`⚠️  Arquivo não encontrado: ${filePath}`);
+    console.log(`⚠️  Arquivo não encontrado: ${filePath}`)
   }
-});
+})
 
-console.log(`\n🎉 Correção concluída! ${fixedFiles} arquivos corrigidos.`);
+console.log(`\n🎉 Correção concluída! ${fixedFiles} arquivos corrigidos.`)

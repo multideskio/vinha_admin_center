@@ -286,7 +286,9 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   )
 }
 
-const SettingsTab = ({ userId: _userId }: { userId: string }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+const SettingsTab = ({ userId }: { userId: string }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _userId = userId // Temporarily unused but kept for future implementation
   const [settings, setSettings] = React.useState<UserNotificationSettings>(
     {} as UserNotificationSettings,
   )
@@ -444,7 +446,6 @@ export default function SupervisorProfilePage() {
   React.useEffect(() => {
     fetchProfile()
   }, [fetchProfile])
-
 
   const formatCEP = (value: string) => {
     return value

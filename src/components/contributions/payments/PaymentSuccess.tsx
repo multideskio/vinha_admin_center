@@ -108,7 +108,8 @@ export default function PaymentSuccess({
           <div className="absolute inset-0 bg-gradient-to-br from-videira-purple/5 to-videira-blue/5" />
           <div className="relative p-6">
             <p className="text-base text-foreground italic font-medium leading-relaxed">
-              &ldquo;Cada um dê conforme determinou em seu coração, não com pesar ou por obrigação, pois Deus ama quem dá com alegria.&rdquo;
+              &ldquo;Cada um dê conforme determinou em seu coração, não com pesar ou por obrigação,
+              pois Deus ama quem dá com alegria.&rdquo;
             </p>
             <p className="text-sm text-videira-purple font-bold mt-3">— 2 Coríntios 9:7</p>
           </div>

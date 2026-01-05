@@ -5,7 +5,8 @@ import { eq, desc, and } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 
-export async function GET(_request: Request,
+export async function GET(
+  _request: Request,
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const params = await props.params

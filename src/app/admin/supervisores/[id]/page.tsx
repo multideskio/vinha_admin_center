@@ -87,8 +87,6 @@ import { Badge } from '@/components/ui/badge'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 
-
-
 const supervisorUpdateSchema = supervisorProfileSchema
   .extend({
     newPassword: z.string().optional().or(z.literal('')),

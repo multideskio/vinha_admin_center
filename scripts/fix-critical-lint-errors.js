@@ -1,34 +1,39 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const fs = require('fs')
+const path = require('path')
+const { execSync } = require('child_process')
 
 // Função para corrigir aspas não escapadas
 function fixUnescapedQuotes(content) {
   // Corrige aspas duplas em JSX
-  return content.replace(/([^\\])"([^"]*)"([^>]*>)/g, '$1&quot;$2&quot;$3');
+  return content.replace(/([^\\])"([^"]*)"([^>]*>)/g, '$1&quot;$2&quot;$3')
 }
 
 // Função para corrigir variáveis não utilizadas
 function fixUnusedVars(content) {
   // Adiciona underscore para parâmetros não utilizados
-  content = content.replace(/\(([^)]*?)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, (match, before, varName) => {
-    if (varName === 'request' || varName === 'params' || varName === 'filters') {
-      return `(${before}_${varName}:`;
-    }
-    return match;
-  });
-  
+  content = content.replace(
+    /\(([^)]*?)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g,
+    (match, before, varName) => {
+      if (varName === 'request' || varName === 'params' || varName === 'filters') {
+        return `(${before}_${varName}:`
+      }
+      return match
+    },
+  )
+
   // Corrige variáveis definidas mas não utilizadas
   content = content.replace(/const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g, (match, varName) => {
-    if (['toast', 'Logo', 'company', 'isRefreshing', 'formatCPF', 'fetchSettings'].includes(varName)) {
-      return `const _${varName} =`;
+    if (
+      ['toast', 'Logo', 'company', 'isRefreshing', 'formatCPF', 'fetchSettings'].includes(varName)
+    ) {
+      return `const _${varName} =`
     }
-    return match;
-  });
-  
-  return content;
+    return match
+  })
+
+  return content
 }
 
 // Lista de arquivos com erros críticos
@@ -60,52 +65,52 @@ const criticalFiles = [
   'src/components/contributions/payments/PaymentSuccess.tsx',
   'src/components/contributions/payments/PixPayment.tsx',
   'src/components/ui/phone-input.tsx',
-  'scripts/process-partial-data.ts'
-];
+  'scripts/process-partial-data.ts',
+]
 
-console.log('🔧 Corrigindo erros críticos de lint...\n');
+console.log('🔧 Corrigindo erros críticos de lint...\n')
 
-let fixedFiles = 0;
+let fixedFiles = 0
 
-criticalFiles.forEach(filePath => {
+criticalFiles.forEach((filePath) => {
   if (fs.existsSync(filePath)) {
     try {
-      let content = fs.readFileSync(filePath, 'utf8');
-      const originalContent = content;
-      
+      let content = fs.readFileSync(filePath, 'utf8')
+      const originalContent = content
+
       // Aplicar correções
-      content = fixUnescapedQuotes(content);
-      content = fixUnusedVars(content);
-      
+      content = fixUnescapedQuotes(content)
+      content = fixUnusedVars(content)
+
       // Correções específicas por arquivo
       if (filePath.includes('phone-input.tsx')) {
-        content = content.replace(/const\s+_\s*=/g, 'const _unused =');
+        content = content.replace(/const\s+_\s*=/g, 'const _unused =')
       }
-      
+
       if (filePath.includes('process-partial-data.ts')) {
-        content = content.replace(/const\s+sourceFile\s*=/g, 'const _sourceFile =');
+        content = content.replace(/const\s+sourceFile\s*=/g, 'const _sourceFile =')
       }
-      
+
       // Salvar apenas se houve mudanças
       if (content !== originalContent) {
-        fs.writeFileSync(filePath, content);
-        console.log(`✅ Corrigido: ${filePath}`);
-        fixedFiles++;
+        fs.writeFileSync(filePath, content)
+        console.log(`✅ Corrigido: ${filePath}`)
+        fixedFiles++
       }
     } catch (error) {
-      console.log(`❌ Erro ao corrigir ${filePath}:`, error.message);
+      console.log(`❌ Erro ao corrigir ${filePath}:`, error.message)
     }
   } else {
-    console.log(`⚠️  Arquivo não encontrado: ${filePath}`);
+    console.log(`⚠️  Arquivo não encontrado: ${filePath}`)
   }
-});
+})
 
-console.log(`\n🎉 Correção concluída! ${fixedFiles} arquivos corrigidos.`);
+console.log(`\n🎉 Correção concluída! ${fixedFiles} arquivos corrigidos.`)
 
 // Executar lint novamente para verificar melhorias
 try {
-  console.log('\n📊 Executando lint para verificar melhorias...');
-  execSync('npm run lint', { stdio: 'inherit' });
+  console.log('\n📊 Executando lint para verificar melhorias...')
+  execSync('npm run lint', { stdio: 'inherit' })
 } catch (error) {
-  console.log('⚠️  Ainda existem problemas de lint para resolver manualmente.');
+  console.log('⚠️  Ainda existem problemas de lint para resolver manualmente.')
 }

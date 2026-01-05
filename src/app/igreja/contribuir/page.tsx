@@ -9,7 +9,6 @@ import React from 'react'
 import { ContributionForm } from '@/components/contributions'
 
 export default function ContribuirPage() {
-
   const handleSuccess = (transaction: any) => {
     console.log('Igreja contribution successful:', transaction)
     // Lógica específica da igreja
