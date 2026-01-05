@@ -22,40 +22,47 @@ export function DynamicSEO({
   // Função para atualizar SEO
   const updateSEO = useCallback(
     (companyName?: string | null, logoUrl?: string | null) => {
-      // Atualizar title dinamicamente
-      if (companyName) {
-        document.title = companyName
-      } else {
-        document.title = fallbackTitle
-      }
+      // Verificar se estamos no browser
+      if (typeof document === 'undefined') return
 
-      // Atualizar meta description
-      let metaDescription = document.querySelector('meta[name="description"]') as HTMLMetaElement
-      if (!metaDescription) {
-        metaDescription = document.createElement('meta')
-        metaDescription.name = 'description'
-        document.head.appendChild(metaDescription)
-      }
+      try {
+        // Atualizar title dinamicamente
+        if (companyName) {
+          document.title = companyName
+        } else {
+          document.title = fallbackTitle
+        }
 
-      const description = companyName
-        ? `Sistema de administração para ${companyName}`
-        : fallbackDescription
-      metaDescription.content = description
+        // Atualizar meta description
+        let metaDescription = document.querySelector('meta[name="description"]') as HTMLMetaElement
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta')
+          metaDescription.name = 'description'
+          document.head.appendChild(metaDescription)
+        }
 
-      // Atualizar Open Graph tags
-      updateMetaTag('property', 'og:title', companyName || fallbackTitle)
-      updateMetaTag('property', 'og:description', description)
-      updateMetaTag('property', 'og:site_name', companyName || fallbackTitle)
+        const description = companyName
+          ? `Sistema de administração para ${companyName}`
+          : fallbackDescription
+        metaDescription.content = description
 
-      // Atualizar Twitter Card tags
-      updateMetaTag('name', 'twitter:title', companyName || fallbackTitle)
-      updateMetaTag('name', 'twitter:description', description)
+        // Atualizar Open Graph tags
+        updateMetaTag('property', 'og:title', companyName || fallbackTitle)
+        updateMetaTag('property', 'og:description', description)
+        updateMetaTag('property', 'og:site_name', companyName || fallbackTitle)
 
-      // Atualizar favicon e ícones
-      if (logoUrl) {
-        updateFavicon(logoUrl)
-        updateMetaTag('property', 'og:image', logoUrl)
-        updateMetaTag('name', 'twitter:image', logoUrl)
+        // Atualizar Twitter Card tags
+        updateMetaTag('name', 'twitter:title', companyName || fallbackTitle)
+        updateMetaTag('name', 'twitter:description', description)
+
+        // Atualizar favicon e ícones
+        if (logoUrl) {
+          updateFavicon(logoUrl)
+          updateMetaTag('property', 'og:image', logoUrl)
+          updateMetaTag('name', 'twitter:image', logoUrl)
+        }
+      } catch (error) {
+        console.warn('Erro ao atualizar SEO:', error)
       }
     },
     [fallbackTitle, fallbackDescription],
@@ -89,22 +96,45 @@ export function DynamicSEO({
  * Atualiza ou cria uma meta tag
  */
 function updateMetaTag(attribute: 'name' | 'property', value: string, content: string) {
-  let metaTag = document.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement
-  if (!metaTag) {
-    metaTag = document.createElement('meta')
-    metaTag.setAttribute(attribute, value)
-    document.head.appendChild(metaTag)
+  // Verificar se estamos no browser
+  if (typeof document === 'undefined') return
+
+  try {
+    let metaTag = document.querySelector(`meta[${attribute}="${value}"]`) as HTMLMetaElement
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(attribute, value)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  } catch (error) {
+    console.warn(`Erro ao atualizar meta tag ${attribute}="${value}":`, error)
   }
-  metaTag.content = content
 }
 
 /**
  * Atualiza o favicon e ícones relacionados
  */
 function updateFavicon(logoUrl: string) {
-  // Remover favicons existentes
+  // Verificar se estamos no browser
+  if (typeof document === 'undefined') return
+
+  // Remover favicons existentes com verificação de segurança
   const existingIcons = document.querySelectorAll('link[rel*="icon"]')
-  existingIcons.forEach((icon) => icon.remove())
+  existingIcons.forEach((icon) => {
+    try {
+      if (icon.parentNode) {
+        icon.parentNode.removeChild(icon)
+      }
+    } catch (error) {
+      // Fallback para browsers que suportam remove()
+      try {
+        icon.remove()
+      } catch (removeError) {
+        console.warn('Erro ao remover ícone existente:', removeError)
+      }
+    }
+  })
 
   // Adicionar novo favicon
   const favicon = document.createElement('link')
