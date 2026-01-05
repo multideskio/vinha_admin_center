@@ -34,22 +34,28 @@ export function DynamicSEO({
         }
 
         // Atualizar meta description de forma segura
-        updateMetaTagSafe('name', 'description', companyName 
-          ? `Sistema de administração para ${companyName}` 
-          : fallbackDescription)
+        updateMetaTagSafe(
+          'name',
+          'description',
+          companyName ? `Sistema de administração para ${companyName}` : fallbackDescription,
+        )
 
         // Atualizar Open Graph tags
         updateMetaTagSafe('property', 'og:title', companyName || fallbackTitle)
-        updateMetaTagSafe('property', 'og:description', companyName 
-          ? `Sistema de administração para ${companyName}` 
-          : fallbackDescription)
+        updateMetaTagSafe(
+          'property',
+          'og:description',
+          companyName ? `Sistema de administração para ${companyName}` : fallbackDescription,
+        )
         updateMetaTagSafe('property', 'og:site_name', companyName || fallbackTitle)
 
         // Atualizar Twitter Card tags
         updateMetaTagSafe('name', 'twitter:title', companyName || fallbackTitle)
-        updateMetaTagSafe('name', 'twitter:description', companyName 
-          ? `Sistema de administração para ${companyName}` 
-          : fallbackDescription)
+        updateMetaTagSafe(
+          'name',
+          'twitter:description',
+          companyName ? `Sistema de administração para ${companyName}` : fallbackDescription,
+        )
 
         // Atualizar favicon de forma mais segura
         if (logoUrl) {
@@ -79,12 +85,12 @@ export function DynamicSEO({
       try {
         const customEvent = event as CustomEvent<{ name: string; logoUrl: string }>
         const { name, logoUrl } = customEvent.detail
-        
+
         // Aguardar um pouco antes de atualizar
         setTimeout(() => {
           updateSEO(name, logoUrl)
         }, 200)
-        
+
         // Também recarregar as configurações do hook
         await refetch()
       } catch (error) {
@@ -117,7 +123,9 @@ function updateMetaTagSafe(attribute: 'name' | 'property', value: string, conten
   try {
     // Aguardar o DOM estar pronto
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => updateMetaTagSafe(attribute, value, content))
+      document.addEventListener('DOMContentLoaded', () =>
+        updateMetaTagSafe(attribute, value, content),
+      )
       return
     }
 
