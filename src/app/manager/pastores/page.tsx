@@ -678,7 +678,7 @@ export default function PastoresPage() {
             </Card>
           ))
         ) : paginatedPastors.length > 0 ? (
-          paginatedPastors.map((pastor, index) => (
+          paginatedPastors.map((pastor) => (
             <Card
               key={pastor.id}
               className="shadow-lg border-t-4 border-t-videira-purple hover:shadow-xl transition-all"

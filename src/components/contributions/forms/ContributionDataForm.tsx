@@ -44,7 +44,7 @@ type ContributionFormData = z.infer<typeof contributionDataSchema>
 export default function ContributionDataForm({
   onSubmit,
   onChange,
-  isLoading = false,
+  isLoading: _isLoading = false, // eslint-disable-line @typescript-eslint/no-unused-vars
   defaultValues,
 }: ContributionDataFormProps) {
   const form = useForm<ContributionFormData>({

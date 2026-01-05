@@ -28,7 +28,7 @@ export default function ContributionSummary({
             </p>
             {data.description && (
               <p className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
-                "{data.description}"
+                &ldquo;{data.description}&rdquo;
               </p>
             )}
           </div>

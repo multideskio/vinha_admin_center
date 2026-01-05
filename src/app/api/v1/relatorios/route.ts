@@ -27,10 +27,10 @@ export async function POST(request: Request) {
         data = await generateFinancialReport(user.companyId, filters)
         break
       case 'mem-01':
-        data = await generateMembershipReport(user.companyId, filters)
+        data = await generateMembershipReport(user.companyId)
         break
       case 'ch-01':
-        data = await generateChurchesReport(user.companyId, filters)
+        data = await generateChurchesReport(user.companyId)
         break
       case 'con-01':
         data = await generateContributionsReport(user.companyId, filters)
@@ -117,7 +117,7 @@ async function generateFinancialReport(companyId: string, filters: Filters) {
   }
 }
 
-async function generateMembershipReport(companyId: string, filters: Filters) {
+async function generateMembershipReport(companyId: string) {
   const allUsers = await db
     .select({
       id: users.id,
@@ -151,7 +151,7 @@ async function generateMembershipReport(companyId: string, filters: Filters) {
   }
 }
 
-async function generateChurchesReport(companyId: string, filters: Filters) {
+async function generateChurchesReport(companyId: string) {
   const whereClause = and(
     eq(users.companyId, companyId),
     eq(users.role, 'church_account'),

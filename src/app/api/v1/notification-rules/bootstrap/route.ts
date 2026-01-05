@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { notificationRules, messageTemplates } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
-export async function POST(_request: NextRequest) {
+export async function POST() {
   try {
     const { user } = await validateRequest()
     if (!user || user.role !== 'admin') {

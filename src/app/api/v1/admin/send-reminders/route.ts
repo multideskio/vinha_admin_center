@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, notificationRules, notificationLogs } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { NotificationService } from '@/lib/notifications'
 
-export async function POST(_request: NextRequest) {
+export async function POST() {
   try {
     const { user } = await validateRequest()
     if (!user || user.role !== 'admin') {
@@ -23,8 +23,8 @@ export async function POST(_request: NextRequest) {
     const reminderRules = activeRules.filter((r) => r.eventTrigger === 'payment_due_reminder')
     const overdueRules = activeRules.filter((r) => r.eventTrigger === 'payment_overdue')
 
-    const sent = 0
-    const skipped = 0
+    let sent = 0
+    let skipped = 0
 
     // Helper para dia formatado (dedupe diária)
     const todayStr = new Date().toISOString().split('T')[0]

@@ -29,7 +29,7 @@ import { ContributionFormProps, ContributionData } from './types'
 import { PIX_COUNTDOWN_SECONDS } from './types'
 
 export default function ContributionForm({
-  userRole,
+  userRole: _userRole, // eslint-disable-line @typescript-eslint/no-unused-vars
   onSuccess,
   onError,
   className,
@@ -59,9 +59,9 @@ export default function ContributionForm({
   const {
     formData,
     paymentState,
-    cardState,
+    cardState: _cardState, // eslint-disable-line @typescript-eslint/no-unused-vars
     updateFormData,
-    updateCardState,
+    updateCardState: _updateCardState, // eslint-disable-line @typescript-eslint/no-unused-vars
     setCurrentStep,
     setPixStatus,
     handleFormSubmit,

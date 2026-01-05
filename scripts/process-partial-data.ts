@@ -50,7 +50,7 @@ async function processPartialData() {
   ]
 
   let data: PartialData | null = null
-  let sourceFile = ''
+  // const sourceFile = '' // Unused variable removed
 
   for (const file of possibleFiles) {
     const filePath = join(process.cwd(), 'scripts', file)
@@ -58,7 +58,7 @@ async function processPartialData() {
       try {
         const rawData = readFileSync(filePath, 'utf-8')
         data = JSON.parse(rawData)
-        sourceFile = file
+        // sourceFile = file
         console.log(`✅ Dados carregados de: ${file}`)
         break
       } catch (error) {

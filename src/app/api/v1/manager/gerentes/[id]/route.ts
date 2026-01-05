@@ -58,8 +58,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
+export async function PUT(_request: Request,
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const params = await props.params
@@ -93,11 +92,11 @@ export async function PUT(
   )
 }
 
-export async function DELETE(
-  request: Request,
+export async function DELETE(_request: Request,
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const params = await props.params
+  const { params } = props
+  await params
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json(

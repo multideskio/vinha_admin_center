@@ -290,7 +290,7 @@ export default function DashboardPage() {
     }
     const out: Array<{ month: string; prev: number; current: number }> = []
     const nm = data!.newMembers
-    for (const i = 1; i < nm.length; i++) {
+    for (let i = 1; i < nm.length; i++) {
       out.push({ month: nm[i]!.month, prev: nm[i - 1]!.count, current: nm[i]!.count })
     }
     return out

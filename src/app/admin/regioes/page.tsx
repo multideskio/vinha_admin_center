@@ -361,7 +361,7 @@ export default function RegioesPage() {
     fetchRegions()
   }, [fetchRegions])
 
-  const handleDelete = async (id: string, regionName: string) => {
+  const handleDelete = async (id: string) => {
     try {
       const response = await fetch(`/api/v1/regioes/${id}`, {
         method: 'DELETE',
@@ -582,7 +582,7 @@ export default function RegioesPage() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => region.id && handleDelete(region.id, region.name)}
+                                  onClick={() => region.id && handleDelete(region.id)}
                                   className="bg-destructive hover:bg-destructive/90"
                                 >
                                   Sim, excluir
@@ -604,7 +604,7 @@ export default function RegioesPage() {
                             Nenhuma região cadastrada
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Clique em "Nova Região" para começar
+                            Clique em &quot;Nova Região&quot; para começar
                           </p>
                         </div>
                       </div>

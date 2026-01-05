@@ -40,7 +40,7 @@ export default async function SupervisorLayout({
     redirect('/auth/login')
   }
 
-  const [userData, company] = await Promise.all([
+  const [userData] = await Promise.all([
     db
       .select({
         avatarUrl: users.avatarUrl,

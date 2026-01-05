@@ -678,7 +678,7 @@ export default function SupervisoresPage() {
             </Card>
           ))
         ) : paginatedSupervisors.length > 0 ? (
-          paginatedSupervisors.map((supervisor, index) => (
+          paginatedSupervisors.map((supervisor) => (
             <Card
               key={supervisor.id}
               className="shadow-lg border-t-4 border-t-videira-blue hover:shadow-xl transition-all"

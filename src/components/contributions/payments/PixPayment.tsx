@@ -17,11 +17,11 @@ import PaymentStatusCard from '../ui/PaymentStatusCard'
 
 export default function PixPayment({
   amount,
-  transactionId,
+  transactionId: _transactionId, // eslint-disable-line @typescript-eslint/no-unused-vars
   paymentDetails,
   countdown,
-  onSuccess,
-  onExpired,
+  onSuccess: _onSuccess, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onExpired: _onExpired, // eslint-disable-line @typescript-eslint/no-unused-vars
   onBack,
   onManualCheck,
   isChecking = false,
@@ -158,7 +158,7 @@ export default function PixPayment({
                   <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
                     2
                   </div>
-                  <span>Escolha "Pagar com PIX"</span>
+                  <span>Escolha &ldquo;Pagar com PIX&rdquo;</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">

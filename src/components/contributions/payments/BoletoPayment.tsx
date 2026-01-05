@@ -132,7 +132,7 @@ export default function BoletoPayment({ amount, paymentDetails, onBack }: Boleto
                   <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
                     2
                   </div>
-                  <span>Escolha "Pagar boleto"</span>
+                  <span>Escolha &ldquo;Pagar boleto&rdquo;</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">

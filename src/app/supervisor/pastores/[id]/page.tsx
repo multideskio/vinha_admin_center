@@ -80,16 +80,6 @@ import {
   type NotificationType,
   NOTIFICATION_TYPES,
 } from '@/lib/types'
-import {
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 
 const pastorUpdateSchema = pastorProfileSchema
@@ -380,39 +370,8 @@ const SettingsTab = ({ pastorId }: { pastorId: string }) => {
   )
 }
 
-const DeleteProfileDialog = ({ onConfirm }: { onConfirm: (reason: string) => void }) => {
-  const [reason, setReason] = React.useState('')
-  return (
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Excluir Cadastro</AlertDialogTitle>
-        <AlertDialogDescription>
-          Esta ação é irreversível. Por favor, forneça um motivo para a exclusão deste perfil para
-          fins de auditoria.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <div className="space-y-2">
-        <Label htmlFor="deletion-reason">Motivo da Exclusão</Label>
-        <Textarea
-          id="deletion-reason"
-          placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, etc."
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-        />
-      </div>
-      <AlertDialogFooter>
-        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-        <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>
-          Excluir permanentemente
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  )
-}
-
 export default function PastorProfilePage() {
   const [pastor, setPastor] = React.useState<PastorProfile | null>(null)
-  const [supervisors, setSupervisors] = React.useState<any[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)

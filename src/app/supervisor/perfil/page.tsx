@@ -286,30 +286,12 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
   )
 }
 
-const SettingsTab = ({ userId }: { userId: string }) => {
+const SettingsTab = ({ userId: _userId }: { userId: string }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   const [settings, setSettings] = React.useState<UserNotificationSettings>(
     {} as UserNotificationSettings,
   )
   const [isLoading, setIsLoading] = React.useState(true)
   const { toast } = useToast()
-
-  const fetchSettings = React.useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/v1/users/${userId}/notification-settings`)
-      if (!response.ok) throw new Error('Falha ao carregar configurações.')
-      const data = await response.json()
-      setSettings(data)
-    } catch (error: unknown) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [userId, toast])
 
   React.useEffect(() => {
     const loadSettings = async () => {
@@ -463,14 +445,6 @@ export default function SupervisorProfilePage() {
     fetchProfile()
   }, [fetchProfile])
 
-  const formatCPF = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .slice(0, 14)
-  }
 
   const formatCEP = (value: string) => {
     return value

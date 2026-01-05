@@ -24,7 +24,7 @@ const calculateChange = (current: number, previous: number): string => {
   return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`
 }
 
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET() {
   const { user: sessionUser } = await validateRequest()
 
   if (!sessionUser) {
@@ -39,7 +39,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const churchId = sessionUser.id
 
   try {
-    const { searchParams: _ } = new URL(request.url)
+    // const { searchParams } = new URL(request.url)
     // const startDateParam = searchParams.get('startDate')
     // const endDateParam = searchParams.get('endDate')
 

@@ -7,10 +7,8 @@
 
 import React from 'react'
 import { ContributionForm } from '@/components/contributions'
-import { useToast } from '@/hooks/use-toast'
 
 export default function ContribuirPage() {
-  const { toast } = useToast()
 
   const handleSuccess = (transaction: any) => {
     console.log('Igreja contribution successful:', transaction)

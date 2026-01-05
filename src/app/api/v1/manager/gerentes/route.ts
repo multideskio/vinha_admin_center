@@ -18,7 +18,7 @@ if (!COMPANY_ID) {
 }
 const VALIDATED_COMPANY_ID = COMPANY_ID as string
 
-export async function GET(_request: Request): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
   if (!user) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -69,7 +69,7 @@ export async function GET(_request: Request): Promise<NextResponse> {
   }
 }
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(): Promise<NextResponse> {
   const { user } = await validateRequest()
   if (!user || user.role !== 'admin') {
     return NextResponse.json(

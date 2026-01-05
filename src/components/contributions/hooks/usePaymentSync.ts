@@ -144,7 +144,7 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
 
     try {
       // Faz múltiplas tentativas com intervalo menor para verificação manual
-      const attempts = 0
+      let attempts = 0
       const maxAttempts = 3
 
       while (attempts < maxAttempts) {

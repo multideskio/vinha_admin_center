@@ -745,7 +745,7 @@ export default function IgrejasPage() {
             </Card>
           ))
         ) : paginatedChurches.length > 0 ? (
-          paginatedChurches.map((church, index) => {
+          paginatedChurches.map((church) => {
             return (
               <Card
                 key={church.id}

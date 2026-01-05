@@ -92,7 +92,7 @@ export default function ChurchDashboardPage() {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
   const { toast } = useToast()
 
-  const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [, setIsRefreshing] = React.useState(false)
 
   const fetchData = React.useCallback(
     async (startDate?: string, endDate?: string, refresh = false) => {

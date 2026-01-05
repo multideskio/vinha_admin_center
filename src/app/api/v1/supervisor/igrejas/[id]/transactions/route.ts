@@ -5,8 +5,7 @@ import { eq, desc, and } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 
-export async function GET(
-  request: Request,
+export async function GET(_request: Request,
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const params = await props.params
@@ -32,7 +31,6 @@ export async function GET(
   }
 
   const { id } = params
-  const supervisorId = sessionUser.id
 
   try {
     // Buscar transações relacionadas à igreja

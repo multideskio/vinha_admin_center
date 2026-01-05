@@ -17,7 +17,7 @@ export interface PhoneInputProps {
 const CustomPhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
   (
     { className, value = '', onChange, placeholder, disabled = false, type = 'mobile', ...props },
-    _,
+    _ref, // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     const handleChange = (phone: string) => {
       onChange?.(phone)
