@@ -159,6 +159,11 @@ export default function GeneralSettingsPage() {
 
       // Recarregar dados para sincronizar
       await fetchSettings()
+
+      // Forçar atualização do SEO dinâmico
+      window.dispatchEvent(new CustomEvent('company-settings-updated', {
+        detail: { name: data.name, logoUrl: data.logoUrl }
+      }))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
