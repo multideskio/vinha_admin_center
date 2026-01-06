@@ -145,7 +145,9 @@ export function PastorHeader({ userName, userEmail, userFallback, avatarUrl }: H
           <DropdownMenuContent align="end" className="w-48 sm:w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none break-words">Bem vindo {userName}!</p>
+                <p className="text-sm font-medium leading-none break-words">
+                  Bem vindo {userName}!
+                </p>
                 <p className="text-xs leading-none text-muted-foreground break-all">{userEmail}</p>
               </div>
             </DropdownMenuLabel>

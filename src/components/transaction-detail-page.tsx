@@ -57,7 +57,8 @@ export function TransactionDetailPage({
         const errorData = await response.json().catch(() => ({}))
         if (response.status === 404 || response.status === 403) {
           throw new Error(
-            errorData.error || 'Transação não encontrada ou você não tem permissão para visualizá-la.',
+            errorData.error ||
+              'Transação não encontrada ou você não tem permissão para visualizá-la.',
           )
         }
         throw new Error(errorData.error || 'Falha ao carregar detalhes da transação')
@@ -235,4 +236,3 @@ export function TransactionDetailPage({
     <TransactionDetailLayout transaction={transaction} backUrl={backUrl} backLabel={backLabel} />
   )
 }
-

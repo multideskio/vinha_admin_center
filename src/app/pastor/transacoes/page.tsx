@@ -179,7 +179,9 @@ export default function TransacoesPage() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs sm:text-sm">Busque por ID da transação, valor ou status</p>
+                    <p className="text-xs sm:text-sm">
+                      Busque por ID da transação, valor ou status
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -197,7 +199,9 @@ export default function TransacoesPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel className="text-xs sm:text-sm">Filtrar por Status</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs sm:text-sm">
+                    Filtrar por Status
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuCheckboxItem
                     checked={statusFilters.includes('approved')}
@@ -294,7 +298,10 @@ export default function TransacoesPage() {
                   ))
                 ) : filteredTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 sm:h-32 text-center text-sm sm:text-base">
+                    <TableCell
+                      colSpan={6}
+                      className="h-24 sm:h-32 text-center text-sm sm:text-base"
+                    >
                       Nenhuma transação encontrada.
                     </TableCell>
                   </TableRow>
@@ -323,7 +330,9 @@ export default function TransacoesPage() {
                                   {transaction.description}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="text-xs">{transaction.description}</TooltipContent>
+                              <TooltipContent className="text-xs">
+                                {transaction.description}
+                              </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         ) : (
@@ -363,7 +372,9 @@ export default function TransacoesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40 sm:w-48">
-                            <DropdownMenuLabel className="text-xs sm:text-sm">Ações</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-xs sm:text-sm">
+                              Ações
+                            </DropdownMenuLabel>
                             <DropdownMenuItem asChild className="text-xs sm:text-sm">
                               <Link href={`/pastor/transacoes/${transaction.id}`}>
                                 Ver Detalhes
