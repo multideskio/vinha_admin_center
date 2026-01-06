@@ -40,12 +40,14 @@ docker-compose up --build -d
 ## Serviços Incluídos
 
 ### Aplicação Principal (app)
+
 - **Porta**: 9002
 - **Hot Reload**: Habilitado via volumes
 - **Ambiente**: development
 - **Comando**: `npm run dev`
 
 ### PostgreSQL (db)
+
 - **Porta**: 5432
 - **Usuário**: vinha
 - **Senha**: vinha123
@@ -53,11 +55,13 @@ docker-compose up --build -d
 - **Volume**: Dados persistidos
 
 ### Redis (redis)
+
 - **Porta**: 6379
 - **Volume**: Dados persistidos
 - **Configuração**: Append-only habilitado
 
 ### Adminer (adminer) - Apenas em dev
+
 - **Porta**: 8080
 - **Acesso**: http://localhost:8080
 - **Servidor**: db
@@ -65,6 +69,7 @@ docker-compose up --build -d
 - **Senha**: vinha123
 
 ### Redis Commander (redis-commander) - Apenas em dev
+
 - **Porta**: 8081
 - **Acesso**: http://localhost:8081
 
@@ -166,11 +171,13 @@ docker system prune -a
 ### Problema: Aplicação não inicia
 
 1. Verifique se as portas estão livres:
+
    ```bash
    netstat -tulpn | grep :9002
    ```
 
 2. Verifique os logs:
+
    ```bash
    docker-compose logs app
    ```
@@ -183,11 +190,13 @@ docker system prune -a
 ### Problema: Banco não conecta
 
 1. Verifique se o PostgreSQL está rodando:
+
    ```bash
    docker-compose ps db
    ```
 
 2. Teste a conexão:
+
    ```bash
    docker-compose exec db pg_isready -U vinha
    ```
@@ -200,6 +209,7 @@ docker system prune -a
 ### Problema: Hot reload não funciona
 
 1. Verifique se os volumes estão montados:
+
    ```bash
    docker-compose exec app ls -la /app/src
    ```
