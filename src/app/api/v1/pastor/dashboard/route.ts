@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, pastorProfiles } from '@/db/schema'
+import { transactions, pastorProfiles, users } from '@/db/schema'
 import { count, sum, eq, and, gte, lt, lte, sql } from 'drizzle-orm'
 import { subMonths, startOfMonth, endOfDay, startOfDay } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
@@ -90,10 +90,24 @@ export async function GET(request: Request): Promise<NextResponse> {
       timestamp: new Date().toISOString(),
     })
 
-    const [profileData] = await db
-      .select()
+    // Buscar dados do perfil do pastor com JOIN na tabela users para pegar titheDay
+    const [profileResult] = await db
+      .select({
+        profile: pastorProfiles,
+        user: {
+          titheDay: users.titheDay,
+          phone: users.phone,
+          email: users.email,
+          avatarUrl: users.avatarUrl,
+        },
+      })
       .from(pastorProfiles)
+      .leftJoin(users, eq(pastorProfiles.userId, users.id))
       .where(eq(pastorProfiles.userId, pastorId))
+      .limit(1)
+
+    const profileData = profileResult?.profile
+    const userData = profileResult?.user
 
     // KPI Calculations
     // Total Contribuído: sempre todas as transações aprovadas (sem filtro de período)
@@ -252,8 +266,18 @@ export async function GET(request: Request): Promise<NextResponse> {
         item.method === 'pix' ? '#10b981' : item.method === 'credit_card' ? '#3b82f6' : '#f59e0b',
     }))
 
+    // Montar objeto de perfil completo incluindo titheDay e outros campos de users
+    const completeProfile = {
+      ...sessionUser,
+      ...profileData,
+      titheDay: userData?.titheDay ?? sessionUser.titheDay ?? null,
+      phone: userData?.phone ?? sessionUser.phone,
+      email: userData?.email ?? sessionUser.email,
+      avatarUrl: userData?.avatarUrl ?? sessionUser.avatarUrl,
+    }
+
     return NextResponse.json({
-      profile: { ...sessionUser, ...profileData },
+      profile: completeProfile,
       kpis,
       monthlyContributions: formattedMonthlyContributions,
       paymentMethods: formattedPaymentMethods,

@@ -65,7 +65,7 @@ type PastorProfileData = {
   address: string
   complement: string
   number: string
-  titheDay: number
+  titheDay: number | null | undefined
 }
 
 type DashboardData = {
@@ -145,42 +145,70 @@ export default function PastorDashboardPage() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
+      <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <Skeleton className="h-8 sm:h-10 w-full sm:w-64" />
+          <Skeleton className="h-9 sm:h-10 w-full sm:w-48" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+        {/* KPIs Skeleton */}
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-4" />
+            <Card key={i} className="shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                <Skeleton className="h-4 w-24 sm:w-32" />
+                <Skeleton className="h-4 w-4 sm:h-5 sm:w-5 rounded-full" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-24 mb-2" />
-                <Skeleton className="h-3 w-40" />
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <Skeleton className="h-7 sm:h-8 w-20 sm:w-24 mb-2" />
+                <Skeleton className="h-3 sm:h-4 w-32 sm:w-40" />
               </CardContent>
             </Card>
           ))}
         </div>
-        <div className="grid gap-8 lg:grid-cols-2">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-80 w-full" />
+
+        {/* Charts Skeleton */}
+        <div className="grid gap-4 sm:gap-6 lg:gap-8 grid-cols-1 lg:grid-cols-2">
+          <Card className="shadow-lg">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <Skeleton className="h-5 sm:h-6 w-40 sm:w-48" />
+              <Skeleton className="h-4 w-32 sm:w-40 mt-2" />
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+              <Skeleton className="h-[250px] sm:h-[300px] w-full rounded-lg" />
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-80 w-full" />
-            </CardContent>
-          </Card>
-          <Card className="lg:col-span-2">
-            <CardContent className="pt-6">
-              <Skeleton className="h-64 w-full" />
+          <Card className="shadow-lg">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <Skeleton className="h-5 sm:h-6 w-40 sm:w-48" />
+              <Skeleton className="h-4 w-32 sm:w-40 mt-2" />
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+              <Skeleton className="h-[250px] sm:h-[300px] w-full rounded-lg" />
             </CardContent>
           </Card>
         </div>
+
+        {/* Profile Card Skeleton */}
+        <Card className="shadow-lg lg:col-span-2">
+          <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+            <Skeleton className="h-5 sm:h-6 w-32 sm:w-40" />
+          </CardHeader>
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton className="h-4 w-4 sm:h-5 sm:w-5 rounded-full mt-1" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24 sm:w-32" />
+                    <Skeleton className="h-3 w-32 sm:w-40" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -375,7 +403,11 @@ export default function PastorDashboardPage() {
             <InfoItem icon={Mail} label="E-mail" value={profile.email} />
             <InfoItem icon={Phone} label="Celular" value={profile.phone} />
             <InfoItem icon={Phone} label="Telefone Fixo" value={profile.landline} />
-            <InfoItem icon={Clock} label="Dia para dízimo" value={String(profile.titheDay)} />
+            <InfoItem
+              icon={Clock}
+              label="Dia para dízimo"
+              value={profile.titheDay ? String(profile.titheDay) : 'Não informado'}
+            />
             <div className="sm:col-span-2">
               <InfoItem
                 icon={Home}

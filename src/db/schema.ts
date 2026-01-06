@@ -242,6 +242,7 @@ export const transactions = pgTable('transactions', {
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   status: transactionStatusEnum('status').notNull(),
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
+  description: text('description'),
   gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
   refundRequestReason: text('refund_request_reason'),
   installments: integer('installments').default(1).notNull(),

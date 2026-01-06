@@ -1,17 +1,18 @@
 /**
  * @fileoverview Rota da API para buscar detalhes de uma transação específica (visão do pastor).
- * @version 1.2
+ * @version 1.3
  * @date 2024-08-07
  * @author PH
  */
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions as transactionsTable, gatewayConfigurations } from '@/db/schema'
+import { transactions as transactionsTable, gatewayConfigurations, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { ApiError } from '@/lib/errors'
+import { rateLimit } from '@/lib/rate-limit'
 
 async function getCieloCredentials(): Promise<{
   merchantId: string | null
@@ -54,43 +55,119 @@ export async function GET(
   request: Request,
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const params = await props.params
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  if (sessionUser.role !== 'pastor') {
-    return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
-  }
-
-  const { id: transactionId } = params
-
-  if (!transactionId) {
-    return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
-  }
+  let sessionUser: any = null
 
   try {
+    // Rate limiting: 60 requests per minute
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('pastor-transacoes-detail', ip, 60, 60)
+    if (!rateLimitResult.allowed) {
+      console.error('[PASTOR_TRANSACOES_DETAIL_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    const params = await props.params
+    const { user: authUser } = await validateRequest()
+    sessionUser = authUser
+
+    if (!sessionUser) {
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+      console.error('[PASTOR_TRANSACOES_DETAIL_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    if (sessionUser.role !== 'pastor') {
+      console.error('[PASTOR_TRANSACOES_DETAIL_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
+    }
+
+    const { id: transactionId } = params
+
+    if (!transactionId) {
+      console.error('[PASTOR_TRANSACOES_DETAIL_MISSING_ID]', {
+        pastorId: sessionUser.id,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
+    }
+
+    console.log('[PASTOR_TRANSACOES_DETAIL_REQUEST]', {
+      pastorId: sessionUser.id,
+      transactionId,
+      timestamp: new Date().toISOString(),
+    })
+
+    // Verificar propriedade da transação ANTES de buscar dados
     const isAuthorized = await verifyTransactionOwnership(transactionId, sessionUser.id)
     if (!isAuthorized) {
+      console.error('[PASTOR_TRANSACOES_DETAIL_UNAUTHORIZED]', {
+        pastorId: sessionUser.id,
+        transactionId,
+        timestamp: new Date().toISOString(),
+      })
       throw new ApiError(
         404,
         'Transação não encontrada ou você não tem permissão para visualizá-la.',
       )
     }
 
-    const [transaction] = await db
-      .select()
+    // Buscar transação com JOIN para pegar email do contribuinte
+    const [transactionData] = await db
+      .select({
+        transaction: transactionsTable,
+        contributorEmail: users.email,
+      })
       .from(transactionsTable)
+      .leftJoin(users, eq(transactionsTable.contributorId, users.id))
       .where(eq(transactionsTable.id, transactionId))
-    if (!transaction || !transaction.gatewayTransactionId) {
-      throw new ApiError(
-        404,
-        'Transação não encontrada no banco de dados local ou não possui ID de gateway.',
-      )
+      .limit(1)
+
+    if (!transactionData || !transactionData.transaction) {
+      console.error('[PASTOR_TRANSACOES_DETAIL_NOT_FOUND]', {
+        pastorId: sessionUser.id,
+        transactionId,
+        timestamp: new Date().toISOString(),
+      })
+      throw new ApiError(404, 'Transação não encontrada no banco de dados local.')
+    }
+
+    const transaction = transactionData.transaction
+
+    if (!transaction.gatewayTransactionId) {
+      // Se não tem gatewayTransactionId, retornar dados básicos do banco
+      console.log('[PASTOR_TRANSACOES_DETAIL_NO_GATEWAY_ID]', {
+        pastorId: sessionUser.id,
+        transactionId,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({
+        success: true,
+        pending: true,
+        message: 'Transação ainda não processada pela Cielo.',
+        transaction: {
+          id: transaction.id,
+          amount: Number(transaction.amount),
+          status: transaction.status,
+          paymentMethod: transaction.paymentMethod,
+          description: transaction.description,
+        },
+        contributorEmail: transactionData.contributorEmail,
+      })
     }
 
     const credentials = await getCieloCredentials()
@@ -108,19 +185,41 @@ export async function GET(
     )
 
     if (!response.ok) {
-      const errorBody = await response.json()
-      console.error('Erro ao consultar transação na Cielo:', errorBody)
+      const errorBody = await response.json().catch(() => ({}))
+      console.error('[PASTOR_TRANSACOES_DETAIL_CIELO_ERROR]', {
+        pastorId: sessionUser.id,
+        transactionId,
+        cieloError: errorBody,
+        timestamp: new Date().toISOString(),
+      })
       throw new Error('Falha ao consultar o status da transação na Cielo.')
     }
 
     const cieloData = await response.json()
 
-    return NextResponse.json({ success: true, transaction: cieloData })
+    console.log('[PASTOR_TRANSACOES_DETAIL_SUCCESS]', {
+      pastorId: sessionUser.id,
+      transactionId,
+      timestamp: new Date().toISOString(),
+    })
+
+    // Retornar dados da Cielo junto com email do contribuinte e dados locais
+    return NextResponse.json({
+      success: true,
+      transaction: cieloData,
+      contributorEmail: transactionData.contributorEmail,
+      originChurchId: transaction.originChurchId,
+      description: transaction.description,
+    })
   } catch (error: unknown) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
-    console.error('Erro ao consultar transação:', error)
+    console.error('[PASTOR_TRANSACOES_DETAIL_ERROR]', {
+      pastorId: sessionUser?.id,
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      timestamp: new Date().toISOString(),
+    })
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
       { error: 'Erro interno do servidor.', details: errorMessage },

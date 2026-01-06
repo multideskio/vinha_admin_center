@@ -3,6 +3,7 @@ import { db } from '@/db/drizzle'
 import { users, pastorProfiles } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
+import { authenticateApiKey } from '@/lib/api-auth'
 import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
 import * as bcrypt from 'bcrypt'
@@ -29,13 +30,23 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { user: authUser } = await validateRequest()
     sessionUser = authUser
 
-    if (!sessionUser || sessionUser.role !== 'pastor') {
+    if (!sessionUser) {
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
       console.error('[PASTOR_PERFIL_GET_AUTH_ERROR]', {
         ip,
-        role: sessionUser?.role,
         timestamp: new Date().toISOString(),
       })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    if (sessionUser.role !== 'pastor') {
+      console.error('[PASTOR_PERFIL_GET_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
     }
 
     console.log('[PASTOR_PERFIL_GET_REQUEST]', {
@@ -136,13 +147,23 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const { user: authUser } = await validateRequest()
     sessionUser = authUser
 
-    if (!sessionUser || sessionUser.role !== 'pastor') {
+    if (!sessionUser) {
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
       console.error('[PASTOR_PERFIL_PUT_AUTH_ERROR]', {
         ip,
-        role: sessionUser?.role,
         timestamp: new Date().toISOString(),
       })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    if (sessionUser.role !== 'pastor') {
+      console.error('[PASTOR_PERFIL_PUT_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
     }
 
     console.log('[PASTOR_PERFIL_PUT_REQUEST]', {

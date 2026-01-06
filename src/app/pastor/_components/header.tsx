@@ -50,7 +50,7 @@ type HeaderProps = {
 
 export function PastorHeader({ userName, userEmail, userFallback, avatarUrl }: HeaderProps) {
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
+    <header className="flex h-14 items-center gap-2 sm:gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3 sm:px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
       <Sheet>
         <SheetTrigger asChild>
           <Button
@@ -108,66 +108,74 @@ export function PastorHeader({ userName, userEmail, userFallback, avatarUrl }: H
           </nav>
         </SheetContent>
       </Sheet>
-      <div className="flex-1">
+      <div className="flex-1 max-w-md">
         <form>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Procurar..."
-              className="w-full appearance-none bg-background pl-8 shadow-none md:w-auto"
+              className="w-full appearance-none bg-background pl-8 shadow-none text-sm sm:text-base"
             />
           </div>
         </form>
       </div>
-      <ThemeToggle />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-videira-blue/10">
-            <Avatar className="h-9 w-9 ring-2 ring-videira-blue/30 hover:ring-videira-blue/50 transition-all">
-              <AvatarImage
-                src={avatarUrl || 'https://placehold.co/36x36.png'}
-                alt={`@${userName}`}
-                data-ai-hint="user avatar"
-              />
-              <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold">
-                {userFallback}
-              </AvatarFallback>
-            </Avatar>
-            <span className="sr-only">Toggle user menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">Bem vindo {userName}!</p>
-              <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LifeBuoy className="mr-2 h-4 w-4" />
-            <span>Ajuda</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={async () => {
-              const result = await logoutUser()
-              if (result.success) {
-                window.location.href = '/auth/login'
-              }
-            }}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Sair</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+        <ThemeToggle />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full hover:bg-videira-blue/10 h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-videira-blue/30 hover:ring-videira-blue/50 transition-all">
+                <AvatarImage
+                  src={avatarUrl || 'https://placehold.co/36x36.png'}
+                  alt={`@${userName}`}
+                  data-ai-hint="user avatar"
+                />
+                <AvatarFallback className="bg-videira-blue/10 text-videira-blue font-bold text-xs sm:text-sm">
+                  {userFallback}
+                </AvatarFallback>
+              </Avatar>
+              <span className="sr-only">Toggle user menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 sm:w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none break-words">Bem vindo {userName}!</p>
+                <p className="text-xs leading-none text-muted-foreground break-all">{userEmail}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/pastor/perfil" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Ajuda</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={async () => {
+                const result = await logoutUser()
+                if (result.success) {
+                  window.location.href = '/auth/login'
+                }
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Sair</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   )
 }

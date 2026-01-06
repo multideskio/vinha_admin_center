@@ -204,30 +204,32 @@ export function TransactionDetailLayout({
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
 
-        <div className="relative z-10 p-8">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="relative z-10 p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <Link href={backUrl}>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-white/90 hover:text-white hover:bg-white/20 mb-3 -ml-2"
+                  className="text-white/90 hover:text-white hover:bg-white/20 mb-3 -ml-2 text-xs sm:text-sm"
                 >
-                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  <ChevronLeft className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   {backLabel}
                 </Button>
               </Link>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
-                <ArrowRightLeft className="h-8 w-8" />
-                Detalhes da Transação
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-2 sm:gap-3 break-words">
+                <ArrowRightLeft className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0" />
+                <span>Detalhes da Transação</span>
               </h1>
-              <p className="text-base text-white/90 mt-2 font-medium">ID: {transaction.id}</p>
+              <p className="text-sm sm:text-base text-white/90 mt-2 font-medium break-words">
+                ID: {transaction.id}
+              </p>
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-2 sm:gap-3 w-full sm:w-auto">
               <Badge
                 variant={statusMap[transaction.status]?.variant || 'outline'}
                 className={cn(
-                  'text-sm px-6 py-2 font-bold shadow-xl border-2 transition-all',
+                  'text-xs sm:text-sm px-4 sm:px-6 py-1.5 sm:py-2 font-bold shadow-xl border-2 transition-all w-full sm:w-auto text-center',
                   transaction.status === 'approved' &&
                     'bg-green-500 text-white border-green-400 hover:bg-green-600',
                   transaction.status === 'pending' &&
@@ -244,51 +246,58 @@ export function TransactionDetailLayout({
                 onClick={downloadReceipt}
                 disabled={transaction.status === 'pending'}
                 className={cn(
-                  'shadow-lg font-semibold',
+                  'shadow-lg font-semibold text-xs sm:text-sm w-full sm:w-auto',
                   transaction.status === 'pending'
                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed hover:bg-gray-400'
                     : 'bg-white text-videira-blue hover:bg-white/90',
                 )}
               >
-                <Download className="h-4 w-4 mr-2" />
-                {transaction.status === 'pending' ? 'Recibo Indisponível' : 'Baixar Recibo'}
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">
+                  {transaction.status === 'pending' ? 'Recibo Indisponível' : 'Baixar Recibo'}
+                </span>
+                <span className="sm:hidden">
+                  {transaction.status === 'pending' ? 'Indisponível' : 'Recibo'}
+                </span>
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
-        <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
+        <div className="grid auto-rows-max items-start gap-4 sm:gap-6 lg:col-span-2 lg:gap-8">
           <Card className="shadow-lg border-t-4 border-t-videira-cyan">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <ArrowRightLeft className="h-5 w-5 text-videira-cyan" />
-                  Informações da Transação
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <ArrowRightLeft className="h-4 w-4 sm:h-5 sm:w-5 text-videira-cyan flex-shrink-0" />
+                  <span className="break-words">Informações da Transação</span>
                 </CardTitle>
                 <Button
                   aria-label="Copiar ID da Transação"
                   size="sm"
                   variant="outline"
                   onClick={() => copyToClipboard(transaction.id)}
-                  className="border-2 hover:border-videira-cyan"
+                  className="border-2 hover:border-videira-cyan text-xs sm:text-sm w-full sm:w-auto"
                 >
-                  <Copy className="h-3.5 w-3.5 mr-2" />
+                  <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Copiar ID
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               <div className="grid gap-3">
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">ID da Transação</span>
-                  <span className="text-sm font-mono">{transaction.id}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 py-2">
+                  <span className="text-xs sm:text-sm text-muted-foreground">ID da Transação</span>
+                  <span className="text-xs sm:text-sm font-mono break-all sm:break-normal">
+                    {transaction.id}
+                  </span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">Valor</span>
-                  <span className="text-lg font-bold text-green-600">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 py-2">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Valor</span>
+                  <span className="text-base sm:text-lg font-bold text-green-600">
                     {new Intl.NumberFormat('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
@@ -296,9 +305,9 @@ export function TransactionDetailLayout({
                   </span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">Data</span>
-                  <span className="text-sm font-medium">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 py-2">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Data</span>
+                  <span className="text-xs sm:text-sm font-medium break-words">
                     {new Date(transaction.date).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'long',
@@ -309,9 +318,12 @@ export function TransactionDetailLayout({
                   </span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <Badge variant={statusMap[transaction.status]?.variant || 'outline'}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 py-2">
+                  <span className="text-xs sm:text-sm text-muted-foreground">Status</span>
+                  <Badge
+                    variant={statusMap[transaction.status]?.variant || 'outline'}
+                    className="text-[10px] sm:text-xs w-fit"
+                  >
                     {statusMap[transaction.status]?.text || transaction.status}
                   </Badge>
                 </div>
@@ -334,25 +346,27 @@ export function TransactionDetailLayout({
           )}
 
           <Card className="shadow-lg border-t-4 border-t-videira-blue">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5 text-videira-blue" />
-                Detalhes do Pagamento
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Download className="h-4 w-4 sm:h-5 sm:w-5 text-videira-blue flex-shrink-0" />
+                <span className="break-words">Detalhes do Pagamento</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-3">
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-muted-foreground">Método</span>
-                <span className="text-sm font-medium">
+            <CardContent className="grid gap-3 px-4 sm:px-6 pb-4 sm:pb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 py-2">
+                <span className="text-xs sm:text-sm text-muted-foreground">Método</span>
+                <span className="text-xs sm:text-sm font-medium break-words">
                   {methodMap[transaction.payment.method] || transaction.payment.method}
                 </span>
               </div>
               {transaction.payment.details && (
                 <>
                   <Separator />
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-sm text-muted-foreground">Detalhes</span>
-                    <span className="text-sm font-medium">{transaction.payment.details}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 py-2">
+                    <span className="text-xs sm:text-sm text-muted-foreground">Detalhes</span>
+                    <span className="text-xs sm:text-sm font-medium break-words text-right sm:text-left">
+                      {transaction.payment.details}
+                    </span>
                   </div>
                 </>
               )}
@@ -360,23 +374,25 @@ export function TransactionDetailLayout({
           </Card>
         </div>
 
-        <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
+        <div className="grid auto-rows-max items-start gap-4 sm:gap-6 lg:gap-8">
           <Card className="shadow-lg border-t-4 border-t-videira-purple">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-videira-purple" />
-                Contribuinte
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-videira-purple flex-shrink-0" />
+                <span className="break-words">Contribuinte</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-2">
+            <CardContent className="grid gap-2 px-4 sm:px-6 pb-4 sm:pb-6">
               <div className="grid gap-1">
-                <p className="text-sm text-muted-foreground">Nome</p>
-                <p className="font-semibold">{transaction.contributor.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Nome</p>
+                <p className="text-sm sm:text-base font-semibold break-words">
+                  {transaction.contributor.name}
+                </p>
               </div>
               <Separator className="my-2" />
               <div className="grid gap-1">
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="text-sm">{transaction.contributor.email}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Email</p>
+                <p className="text-xs sm:text-sm break-words">{transaction.contributor.email}</p>
               </div>
             </CardContent>
           </Card>

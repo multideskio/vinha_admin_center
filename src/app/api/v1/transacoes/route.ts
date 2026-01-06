@@ -305,6 +305,7 @@ export async function POST(request: NextRequest) {
         amount: data.amount.toString(),
         status,
         paymentMethod: data.paymentMethod,
+        description: data.description || null,
         installments: data.installments || 1,
         gatewayTransactionId: (paymentResult?.PaymentId as string) || null,
       })
