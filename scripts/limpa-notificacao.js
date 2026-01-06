@@ -12,7 +12,7 @@ async function main() {
   let client
   try {
     console.log('🧹 Iniciando limpeza dos logs de notificação...')
-    
+
     // Conectar ao banco
     const connectionString = process.env.DATABASE_URL
     if (!connectionString) {
@@ -28,10 +28,9 @@ async function main() {
     console.log(`📅 Limpando logs do dia: ${todayStr}`)
 
     // Deletar todos os logs de notificação de hoje
-    const result1 = await client.query(
-      `DELETE FROM notification_logs WHERE DATE(sent_at) = $1`,
-      [todayStr]
-    )
+    const result1 = await client.query(`DELETE FROM notification_logs WHERE DATE(sent_at) = $1`, [
+      todayStr,
+    ])
 
     console.log(`✅ ${result1.rowCount} logs de notificação removidos com sucesso!`)
     console.log('🚀 Agora você pode testar o envio de lembretes novamente.')
@@ -39,7 +38,6 @@ async function main() {
     client.release()
     await pool.end()
     process.exit(0)
-
   } catch (error) {
     console.error('❌ Erro ao limpar logs:', error.message)
     if (client) client.release()

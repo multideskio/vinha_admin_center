@@ -6,9 +6,10 @@ require('dotenv').config()
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL })
   const client = await pool.connect()
-  
+
   console.log('🔧 Verificando configurações SMTP...')
-  const settings = await client.query(`
+  const settings = await client.query(
+    `
     SELECT 
       smtp_host,
       smtp_port,
@@ -19,8 +20,10 @@ async function main() {
       whatsapp_api_instance
     FROM other_settings 
     WHERE company_id = $1
-  `, [process.env.COMPANY_INIT])
-  
+  `,
+    [process.env.COMPANY_INIT],
+  )
+
   if (settings.rows.length === 0) {
     console.log('❌ Nenhuma configuração encontrada')
   } else {
@@ -33,7 +36,7 @@ async function main() {
     console.log('WhatsApp Key:', config.whatsapp_api_key ? '***configurado***' : 'N/A')
     console.log('WhatsApp Instance:', config.whatsapp_api_instance || 'N/A')
   }
-  
+
   client.release()
   await pool.end()
 }

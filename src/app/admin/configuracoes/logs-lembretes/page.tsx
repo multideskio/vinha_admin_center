@@ -78,10 +78,10 @@ const channelMap = {
 }
 
 const typeMap: Record<string, string> = {
-  'rem_': 'Lembrete de Vencimento',
-  'ovr_': 'Aviso de Atraso',
-  'payment_received': 'Pagamento Confirmado',
-  'welcome': 'Boas-vindas',
+  rem_: 'Lembrete de Vencimento',
+  ovr_: 'Aviso de Atraso',
+  payment_received: 'Pagamento Confirmado',
+  welcome: 'Boas-vindas',
 }
 
 function getNotificationType(notificationType: string): string {
@@ -128,7 +128,7 @@ export default function LogsLembretesPage() {
       const params = new URLSearchParams()
       params.append('page', currentPage.toString())
       params.append('limit', itemsPerPage.toString())
-      
+
       if (searchTerm) params.append('search', searchTerm)
       if (channelFilter !== 'all') params.append('channel', channelFilter)
       if (statusFilter !== 'all') params.append('status', statusFilter)
@@ -356,7 +356,10 @@ export default function LogsLembretesPage() {
               />
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={channelFilter} onValueChange={(value) => handleFilterChange('channel', value)}>
+              <Select
+                value={channelFilter}
+                onValueChange={(value) => handleFilterChange('channel', value)}
+              >
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Canal" />
                 </SelectTrigger>
@@ -366,7 +369,10 @@ export default function LogsLembretesPage() {
                   <SelectItem value="whatsapp">WhatsApp</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={(value) => handleFilterChange('status', value)}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => handleFilterChange('status', value)}
+              >
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -377,7 +383,10 @@ export default function LogsLembretesPage() {
                   <SelectItem value="pending">Pendente</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={typeFilter} onValueChange={(value) => handleFilterChange('type', value)}>
+              <Select
+                value={typeFilter}
+                onValueChange={(value) => handleFilterChange('type', value)}
+              >
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -401,9 +410,7 @@ export default function LogsLembretesPage() {
             <History className="h-5 w-5 text-videira-cyan" />
             Histórico de Notificações
           </CardTitle>
-          <CardDescription>
-            Registros detalhados de todas as notificações enviadas
-          </CardDescription>
+          <CardDescription>Registros detalhados de todas as notificações enviadas</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-hidden">
@@ -415,8 +422,12 @@ export default function LogsLembretesPage() {
                     <TableHead className="font-semibold min-w-[120px]">Tipo</TableHead>
                     <TableHead className="font-semibold text-center min-w-[80px]">Canal</TableHead>
                     <TableHead className="font-semibold text-center min-w-[80px]">Status</TableHead>
-                    <TableHead className="hidden lg:table-cell font-semibold min-w-[120px]">Destinatário</TableHead>
-                    <TableHead className="hidden xl:table-cell font-semibold min-w-[120px]">Data</TableHead>
+                    <TableHead className="hidden lg:table-cell font-semibold min-w-[120px]">
+                      Destinatário
+                    </TableHead>
+                    <TableHead className="hidden xl:table-cell font-semibold min-w-[120px]">
+                      Data
+                    </TableHead>
                     <TableHead className="font-semibold text-center min-w-[80px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -424,20 +435,34 @@ export default function LogsLembretesPage() {
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-16 mx-auto" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-20 mx-auto" /></TableCell>
-                        <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
-                        <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-6 w-16 mx-auto" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-6 w-20 mx-auto" />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-8 w-8 mx-auto" />
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : logs.length > 0 ? (
                     logs.map((log) => {
                       const StatusIcon = statusMap[log.status]?.icon || Clock
                       const ChannelIcon = channelMap[log.channel]?.icon || MessageSquare
-                      
+
                       return (
                         <TableRow key={log.id} className="hover:bg-muted/50">
                           <TableCell className="font-medium">
@@ -447,17 +472,28 @@ export default function LogsLembretesPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">{getNotificationType(log.notificationType)}</div>
-                            <div className="text-xs text-muted-foreground font-mono">{log.notificationType}</div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className={`flex items-center justify-center gap-1 ${channelMap[log.channel]?.color}`}>
-                              <ChannelIcon className="h-4 w-4" />
-                              <span className="text-xs font-medium">{channelMap[log.channel]?.text}</span>
+                            <div className="text-sm">
+                              {getNotificationType(log.notificationType)}
+                            </div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {log.notificationType}
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Badge variant={statusMap[log.status]?.variant || 'default'} className="text-xs">
+                            <div
+                              className={`flex items-center justify-center gap-1 ${channelMap[log.channel]?.color}`}
+                            >
+                              <ChannelIcon className="h-4 w-4" />
+                              <span className="text-xs font-medium">
+                                {channelMap[log.channel]?.text}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={statusMap[log.status]?.variant || 'default'}
+                              className="text-xs"
+                            >
                               <StatusIcon className="h-3 w-3 mr-1" />
                               {statusMap[log.status]?.text || log.status}
                             </Badge>
@@ -482,84 +518,108 @@ export default function LogsLembretesPage() {
                                   </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Detalhes da Notificação</DialogTitle>
-                                  <DialogDescription>
-                                    Informações completas sobre o envio
-                                  </DialogDescription>
-                                </DialogHeader>
-                                {selectedLog && (
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <label className="text-sm font-medium">Usuário</label>
-                                        <p className="text-sm text-muted-foreground">{selectedLog.userName}</p>
-                                      </div>
-                                      <div>
-                                        <label className="text-sm font-medium">Email</label>
-                                        <p className="text-sm text-muted-foreground">{selectedLog.userEmail}</p>
-                                      </div>
-                                      <div>
-                                        <label className="text-sm font-medium">Tipo</label>
-                                        <p className="text-sm text-muted-foreground">{getNotificationType(selectedLog.notificationType)}</p>
-                                      </div>
-                                      <div>
-                                        <label className="text-sm font-medium">Canal</label>
-                                        <p className="text-sm text-muted-foreground">{channelMap[selectedLog.channel]?.text}</p>
-                                      </div>
-                                      <div>
-                                        <label className="text-sm font-medium">Status</label>
-                                        <Badge variant={statusMap[selectedLog.status]?.variant || 'default'} className="text-xs">
-                                          {statusMap[selectedLog.status]?.text || selectedLog.status}
-                                        </Badge>
-                                      </div>
-                                      <div>
-                                        <label className="text-sm font-medium">Data</label>
-                                        <p className="text-sm text-muted-foreground">{new Date(selectedLog.createdAt).toLocaleString('pt-BR')}</p>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <label className="text-sm font-medium">Destinatário</label>
-                                      <p className="text-sm text-muted-foreground font-mono">{selectedLog.recipient}</p>
-                                    </div>
-                                    {selectedLog.subject && (
-                                      <div>
-                                        <label className="text-sm font-medium">Assunto</label>
-                                        <p className="text-sm text-muted-foreground">{selectedLog.subject}</p>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <label className="text-sm font-medium">Conteúdo</label>
-                                      <div className="bg-muted p-3 rounded-md text-sm max-h-40 overflow-y-auto">
-                                        {selectedLog.messageContent}
-                                      </div>
-                                    </div>
-                                    {selectedLog.errorMessage && (
-                                      <div>
-                                        <label className="text-sm font-medium text-red-600">Erro</label>
-                                        <div className="bg-red-50 border border-red-200 p-3 rounded-md text-sm text-red-800">
-                                          {selectedLog.errorMessage}
+                                  <DialogHeader>
+                                    <DialogTitle>Detalhes da Notificação</DialogTitle>
+                                    <DialogDescription>
+                                      Informações completas sobre o envio
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  {selectedLog && (
+                                    <div className="space-y-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <label className="text-sm font-medium">Usuário</label>
+                                          <p className="text-sm text-muted-foreground">
+                                            {selectedLog.userName}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium">Email</label>
+                                          <p className="text-sm text-muted-foreground">
+                                            {selectedLog.userEmail}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium">Tipo</label>
+                                          <p className="text-sm text-muted-foreground">
+                                            {getNotificationType(selectedLog.notificationType)}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium">Canal</label>
+                                          <p className="text-sm text-muted-foreground">
+                                            {channelMap[selectedLog.channel]?.text}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium">Status</label>
+                                          <Badge
+                                            variant={
+                                              statusMap[selectedLog.status]?.variant || 'default'
+                                            }
+                                            className="text-xs"
+                                          >
+                                            {statusMap[selectedLog.status]?.text ||
+                                              selectedLog.status}
+                                          </Badge>
+                                        </div>
+                                        <div>
+                                          <label className="text-sm font-medium">Data</label>
+                                          <p className="text-sm text-muted-foreground">
+                                            {new Date(selectedLog.createdAt).toLocaleString(
+                                              'pt-BR',
+                                            )}
+                                          </p>
                                         </div>
                                       </div>
-                                    )}
-                                  </div>
+                                      <div>
+                                        <label className="text-sm font-medium">Destinatário</label>
+                                        <p className="text-sm text-muted-foreground font-mono">
+                                          {selectedLog.recipient}
+                                        </p>
+                                      </div>
+                                      {selectedLog.subject && (
+                                        <div>
+                                          <label className="text-sm font-medium">Assunto</label>
+                                          <p className="text-sm text-muted-foreground">
+                                            {selectedLog.subject}
+                                          </p>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <label className="text-sm font-medium">Conteúdo</label>
+                                        <div className="bg-muted p-3 rounded-md text-sm max-h-40 overflow-y-auto">
+                                          {selectedLog.messageContent}
+                                        </div>
+                                      </div>
+                                      {selectedLog.errorMessage && (
+                                        <div>
+                                          <label className="text-sm font-medium text-red-600">
+                                            Erro
+                                          </label>
+                                          <div className="bg-red-50 border border-red-200 p-3 rounded-md text-sm text-red-800">
+                                            {selectedLog.errorMessage}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-videira-blue hover:text-videira-blue hover:bg-videira-blue/10"
+                                onClick={() => handleResend(log.id)}
+                                disabled={resendingId === log.id}
+                                title="Reenviar notificação"
+                              >
+                                {resendingId === log.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Send className="h-4 w-4" />
                                 )}
-                              </DialogContent>
-                            </Dialog>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-videira-blue hover:text-videira-blue hover:bg-videira-blue/10"
-                              onClick={() => handleResend(log.id)}
-                              disabled={resendingId === log.id}
-                              title="Reenviar notificação"
-                            >
-                              {resendingId === log.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Send className="h-4 w-4" />
-                              )}
-                            </Button>
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>

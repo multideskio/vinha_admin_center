@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { notificationLogs, users } from '@/db/schema'
-import { eq, desc, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
 export async function GET(request: NextRequest) {
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const companyId = user.companyId
     const { searchParams } = new URL(request.url)
-    
+
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
@@ -59,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     // Buscar dados dos usuários separadamente
     const userIds = [...new Set(logsResult.rows.map((row: any) => row.user_id))]
-    let usersMap = new Map()
+    const usersMap = new Map()
 
     // Buscar usuários um por vez para evitar problemas com arrays
     for (const userId of userIds) {
@@ -100,13 +99,13 @@ export async function GET(request: NextRequest) {
       sent: 0,
       failed: 0,
       email: 0,
-      whatsapp: 0
+      whatsapp: 0,
     }
 
-    return NextResponse.json({ 
-      logs, 
+    return NextResponse.json({
+      logs,
       total,
-      stats
+      stats,
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'

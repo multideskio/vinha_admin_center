@@ -88,7 +88,7 @@ export async function POST() {
             emailSent = await svc.sendEmail({
               to: u.email,
               subject: 'Lembrete de Dízimo',
-              html: processedMessage.replace(/\n/g, '<br>')
+              html: processedMessage.replace(/\n/g, '<br>'),
             })
           } catch (error) {
             console.error('Erro ao enviar email:', error)
@@ -105,14 +105,16 @@ export async function POST() {
             recipient: u.email,
             subject: 'Lembrete de Dízimo',
             messageContent: processedMessage,
-            errorMessage: emailSent ? null : 'Credenciais SMTP inválidas - verifique as configurações em /admin/configuracoes/smtp'
+            errorMessage: emailSent
+              ? null
+              : 'Credenciais SMTP inválidas - verifique as configurações em /admin/configuracoes/smtp',
           })
         }
 
         if (rule.sendViaWhatsapp && u.phone) {
           whatsappSent = await svc.sendWhatsApp({
             phone: u.phone,
-            message: processedMessage
+            message: processedMessage,
           })
 
           // Log específico para WhatsApp
@@ -192,7 +194,7 @@ export async function POST() {
             emailSent = await svc.sendEmail({
               to: u.email,
               subject: 'Pagamento em Atraso',
-              html: processedMessage.replace(/\n/g, '<br>')
+              html: processedMessage.replace(/\n/g, '<br>'),
             })
           } catch (error) {
             console.error('Erro ao enviar email:', error)
@@ -209,14 +211,16 @@ export async function POST() {
             recipient: u.email,
             subject: 'Pagamento em Atraso',
             messageContent: processedMessage,
-            errorMessage: emailSent ? null : 'Credenciais SMTP inválidas - verifique as configurações em /admin/configuracoes/smtp'
+            errorMessage: emailSent
+              ? null
+              : 'Credenciais SMTP inválidas - verifique as configurações em /admin/configuracoes/smtp',
           })
         }
 
         if (rule.sendViaWhatsapp && u.phone) {
           whatsappSent = await svc.sendWhatsApp({
             phone: u.phone,
-            message: processedMessage
+            message: processedMessage,
           })
 
           // Log específico para WhatsApp

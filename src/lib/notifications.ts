@@ -104,12 +104,19 @@ export class EmailService {
         },
       })
     }
-    
+
     // Configurar SMTP se disponível E se não for credenciais AWS SES
     // AWS SES Access Keys começam com "AKIA" e têm 20 chars
-    const isAwsSesCredentials = config.smtpUser?.startsWith('AKIA') && config.smtpUser?.length === 20
-    
-    if (config.smtpHost && config.smtpPort && config.smtpUser && config.smtpPass && !isAwsSesCredentials) {
+    const isAwsSesCredentials =
+      config.smtpUser?.startsWith('AKIA') && config.smtpUser?.length === 20
+
+    if (
+      config.smtpHost &&
+      config.smtpPort &&
+      config.smtpUser &&
+      config.smtpPass &&
+      !isAwsSesCredentials
+    ) {
       this.smtpTransporter = createTransport({
         host: config.smtpHost,
         port: config.smtpPort,
@@ -121,13 +128,15 @@ export class EmailService {
       })
     } else if (isAwsSesCredentials) {
       // Se as credenciais SMTP são na verdade AWS SES, configurar SES
-      this.sesClient = new SESClient({
-        region: 'us-east-1', // Região padrão para AWS SES
-        credentials: {
-          accessKeyId: config.smtpUser,
-          secretAccessKey: config.smtpPass,
-        },
-      })
+      if (config.smtpUser && config.smtpPass) {
+        this.sesClient = new SESClient({
+          region: 'us-east-1', // Região padrão para AWS SES
+          credentials: {
+            accessKeyId: config.smtpUser,
+            secretAccessKey: config.smtpPass,
+          },
+        })
+      }
     }
   }
 
@@ -186,7 +195,7 @@ export class EmailService {
         await this.sesClient.send(command)
         return { success: true }
       }
-      
+
       // Fallback para SMTP se SES não estiver disponível
       if (this.smtpTransporter) {
         await this.smtpTransporter.sendMail({
@@ -213,15 +222,15 @@ export class EmailService {
         errorMessage,
         hasSmtp: !!this.smtpTransporter,
         hasSes: !!this.sesClient,
-        fromEmail
+        fromEmail,
       })
 
       // Se for erro de autenticação SMTP, não adicionar à blacklist
       if (errorCode === 'EAUTH' || errorMessage.includes('Authentication Credentials Invalid')) {
-        return { 
-          success: false, 
-          error: 'Credenciais SMTP inválidas - verifique as configurações', 
-          errorCode: 'SMTP_AUTH_FAILED' 
+        return {
+          success: false,
+          error: 'Credenciais SMTP inválidas - verifique as configurações',
+          errorCode: 'SMTP_AUTH_FAILED',
         }
       }
 
@@ -404,17 +413,17 @@ export class NotificationService {
     html: string
   }): Promise<boolean> {
     const result = await this.email.sendEmail({ to, subject, html }, this.companyId)
-    
+
     // Log detalhado para debug
     if (!result.success) {
       console.error('Falha no envio de email:', {
         to,
         subject,
         error: result.error,
-        errorCode: result.errorCode
+        errorCode: result.errorCode,
       })
     }
-    
+
     return result.success
   }
 
@@ -531,7 +540,7 @@ export class NotificationService {
         // Usar template padrão
         message = templates.paymentReminder.whatsapp(name, amount, dueDate)
       }
-      
+
       results.whatsapp = await this.whatsapp.sendMessage({
         number: phone,
         text: message,
@@ -544,7 +553,7 @@ export class NotificationService {
     if (email) {
       let subject: string
       let html: string
-      
+
       if (template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
         // Usar template personalizado
         subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
@@ -625,7 +634,7 @@ export class NotificationService {
         // Usar template padrão (mesmo do reminder mas com texto de atraso)
         message = `🚨 Olá ${name}!\n\nSeu dízimo de R$ ${amount} estava previsto para ${dueDate} e está em atraso.\n\nPor favor, regularize sua situação o quanto antes.\n\nObrigado pela compreensão! 🙏`
       }
-      
+
       results.whatsapp = await this.whatsapp.sendMessage({
         number: phone,
         text: message,
@@ -637,7 +646,7 @@ export class NotificationService {
     if (email) {
       let subject: string
       let html: string
-      
+
       if (template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
         // Usar template personalizado
         subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
@@ -650,13 +659,17 @@ export class NotificationService {
             <h2 style="color: #e53e3e;">🚨 Dízimo em Atraso</h2>
             <p>Olá ${name},</p>
             <p>Seu dízimo de <strong>R$ ${amount}</strong> estava previsto para <strong>${dueDate}</strong> e está em atraso.</p>
-            ${paymentLink ? `
+            ${
+              paymentLink
+                ? `
               <div style="text-align: center; margin: 20px 0;">
                 <a href="${paymentLink}" style="background: #e53e3e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
                   Regularizar Agora
                 </a>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
             <p>Por favor, regularize sua situação o quanto antes.</p>
             <p>Obrigado pela compreensão! 🙏</p>
             <hr style="margin: 20px 0;">

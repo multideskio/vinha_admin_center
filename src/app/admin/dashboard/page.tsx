@@ -212,12 +212,13 @@ export default function DashboardPage() {
       if (!response.ok) {
         throw new Error(data?.error || 'Falha ao enviar lembretes.')
       }
-      
+
       // Melhor feedback baseado nos resultados
       if (data.sent === 0 && data.skipped === 0) {
         toast({
           title: 'Nenhum lembrete para enviar',
-          description: 'Não há usuários elegíveis para receber lembretes hoje. Verifique as regras de notificação e se os usuários têm dia de dízimo configurado.',
+          description:
+            'Não há usuários elegíveis para receber lembretes hoje. Verifique as regras de notificação e se os usuários têm dia de dízimo configurado.',
           variant: 'default',
         })
       } else if (data.sent === 0 && data.skipped > 0) {

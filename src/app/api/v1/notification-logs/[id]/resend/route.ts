@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { notificationLogs } from '@/db/schema'
 import { sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { NotificationService } from '@/lib/notifications'
 import { formatBrazilDate } from '@/lib/date-utils'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Validar autenticação
     const { user } = await validateRequest()
@@ -60,18 +56,21 @@ export async function POST(
     try {
       // Criar instância do NotificationService buscando configurações do banco
       const notificationService = await NotificationService.createFromDatabase(user.companyId)
-      
+
       // Extrair nome do email (como no sistema original)
       const name = log.user_email ? log.user_email.split('@')[0] : 'Membro'
-      
+
       // Usar valores padrão como no sistema original com timezone correto do Brasil
       const amount = '100,00' // Valor padrão como no sistema original
       const dueDate = formatBrazilDate(new Date()) // Data atual no timezone do Brasil
-      
+
       // Determinar o tipo de notificação baseado no log original
       let notificationResult = { whatsapp: false, email: false }
-      
-      if (log.notification_type.includes('payment_reminder') || log.notification_type.includes('rem_')) {
+
+      if (
+        log.notification_type.includes('payment_reminder') ||
+        log.notification_type.includes('rem_')
+      ) {
         // Lembrete de pagamento
         notificationResult = await notificationService.sendPaymentReminder(
           log.user_id,
@@ -79,9 +78,12 @@ export async function POST(
           amount,
           dueDate,
           log.channel === 'whatsapp' ? log.user_phone : undefined,
-          log.channel === 'email' ? log.user_email : undefined
+          log.channel === 'email' ? log.user_email : undefined,
         )
-      } else if (log.notification_type.includes('payment_overdue') || log.notification_type.includes('ovr_')) {
+      } else if (
+        log.notification_type.includes('payment_overdue') ||
+        log.notification_type.includes('ovr_')
+      ) {
         // Pagamento em atraso
         notificationResult = await notificationService.sendPaymentOverdue(
           log.user_id,
@@ -89,7 +91,7 @@ export async function POST(
           amount,
           dueDate,
           log.channel === 'whatsapp' ? log.user_phone : undefined,
-          log.channel === 'email' ? log.user_email : undefined
+          log.channel === 'email' ? log.user_email : undefined,
         )
       } else {
         // Fallback para lembrete de pagamento
@@ -99,10 +101,10 @@ export async function POST(
           amount,
           dueDate,
           log.channel === 'whatsapp' ? log.user_phone : undefined,
-          log.channel === 'email' ? log.user_email : undefined
+          log.channel === 'email' ? log.user_email : undefined,
         )
       }
-      
+
       // Verificar sucesso baseado no canal
       if (log.channel === 'email') {
         success = notificationResult.email
@@ -120,7 +122,6 @@ export async function POST(
       } else {
         throw new Error(`Canal não suportado: ${log.channel}`)
       }
-      
     } catch (error) {
       success = false
       errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
@@ -129,10 +130,10 @@ export async function POST(
 
     // Criar novo log do reenvio com notification_type limitado a 50 chars
     const newLogId = crypto.randomUUID()
-    
+
     // Gerar notification_type curto para evitar limite de 50 chars - usar apenas 'resend' + canal
     const newNotificationType = `resend_${log.channel}`.substring(0, 50)
-    
+
     await db.execute(sql`
       INSERT INTO notification_logs (
         id, company_id, user_id, notification_type, channel, status, 
@@ -148,12 +149,11 @@ export async function POST(
 
     return NextResponse.json({
       success,
-      message: success 
-        ? `Notificação reenviada com sucesso via ${log.channel}` 
+      message: success
+        ? `Notificação reenviada com sucesso via ${log.channel}`
         : `Falha ao reenviar: ${errorMessage}`,
-      newLogId
+      newLogId,
     })
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     console.error('Erro ao reenviar notificação:', {
@@ -162,7 +162,7 @@ export async function POST(
     })
     return NextResponse.json(
       { error: 'Erro ao reenviar notificação', details: errorMessage },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
