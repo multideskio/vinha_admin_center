@@ -1,5 +1,7 @@
 'use client'
 
+// @lastReview 2025-01-05 21:50 - Fixed responsive grid classes for better mobile/tablet support
+
 import * as React from 'react'
 import {
   MoreHorizontal,
@@ -240,7 +242,7 @@ const PastorFormModal = ({
                 A senha padrão é <strong>123456</strong> até o usuário cadastrar uma nova senha.
               </AlertDescription>
             </Alert>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="supervisorId"
@@ -415,7 +417,7 @@ const PastorFormModal = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="titheDay"
@@ -668,7 +670,7 @@ export default function PastoresPage() {
 
   const CardView = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="shadow-lg">
