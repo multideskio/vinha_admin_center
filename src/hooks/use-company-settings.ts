@@ -26,7 +26,8 @@ export function useCompanySettings(): UseCompanySettingsReturn {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/v1/company')
+      // Usar API pública que não requer autenticação
+      const response = await fetch('/api/v1/company/public')
       if (!response.ok) {
         throw new Error('Falha ao carregar configurações da empresa')
       }
@@ -36,6 +37,16 @@ export function useCompanySettings(): UseCompanySettingsReturn {
     } catch (err) {
       console.error('Erro ao carregar configurações da empresa:', err)
       setError(err instanceof Error ? err : new Error('Erro desconhecido'))
+
+      // Em caso de erro, usar configurações padrão
+      setSettings({
+        id: 'default',
+        name: 'Vinha Admin Center',
+        logoUrl: null,
+        maintenanceMode: false,
+        createdAt: new Date(),
+        updatedAt: null,
+      })
     } finally {
       setLoading(false)
     }
