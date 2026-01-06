@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { handleLogout } from '@/actions/logout'
 import { sanitizeText } from '@/lib/sanitize'
 
@@ -120,6 +120,11 @@ export function ManagerHeader({
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="flex flex-col p-0">
+          <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
+          <SheetDescription className="sr-only">
+            Menu principal com links para todas as seções do painel gerente
+          </SheetDescription>
+          
           {/* Header Mobile com gradiente */}
           <div className="relative overflow-hidden">
             <div className="absolute inset-0 videira-gradient opacity-90" />
