@@ -14,6 +14,7 @@ import { db } from '@/db/drizzle'
 import { users, adminProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getCompanySettings } from '@/lib/company'
+import { SidebarProvider } from '@/contexts/SidebarContext'
 
 export async function generateMetadata(): Promise<Metadata> {
   const company = await getCompanySettings()
@@ -57,24 +58,26 @@ export default async function AdminLayout({
     : userName.substring(0, 2).toUpperCase()
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <AppSidebar
-        companyLogo={company?.logoUrl || undefined}
-        companyName={company?.name || undefined}
-      />
-      <div className="flex flex-col">
-        <AdminHeader
-          userName={userName}
-          userEmail={user.email}
-          userFallback={userFallback}
-          avatarUrl={userData?.avatarUrl || undefined}
+    <SidebarProvider>
+      <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr]">
+        <AppSidebar
           companyLogo={company?.logoUrl || undefined}
           companyName={company?.name || undefined}
         />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-          {children}
-        </main>
+        <div className="flex flex-col min-w-0">
+          <AdminHeader
+            userName={userName}
+            userEmail={user.email}
+            userFallback={userFallback}
+            avatarUrl={userData?.avatarUrl || undefined}
+            companyLogo={company?.logoUrl || undefined}
+            companyName={company?.name || undefined}
+          />
+          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-x-hidden">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   )
 }

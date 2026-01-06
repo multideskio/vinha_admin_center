@@ -12,16 +12,18 @@ import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
 import { useRouter } from 'next/navigation'
 import { useDebounce } from '@/hooks/use-debounce'
 
 interface SearchResult {
   id: string
-  type: 'pastor' | 'igreja' | 'transacao'
+  type: 'admin' | 'manager' | 'supervisor' | 'pastor' | 'igreja' | 'transacao'
   title: string
   subtitle: string
   description: string
   href: string
+  status?: string // Para transações
 }
 
 interface GlobalSearchProps {
@@ -30,15 +32,53 @@ interface GlobalSearchProps {
 }
 
 const typeIcons = {
+  admin: User,
+  manager: User,
+  supervisor: User,
   pastor: User,
   igreja: Church,
   transacao: ArrowRightLeft,
 }
 
-const typeLabels = {
-  pastor: 'Pastor',
-  igreja: 'Igreja',
-  transacao: 'Transação',
+const typePlurals = {
+  admin: 'Administradores',
+  manager: 'Gerentes',
+  supervisor: 'Supervisores',
+  pastor: 'Pastores',
+  igreja: 'Igrejas',
+  transacao: 'Transações',
+}
+
+// Função para obter a variante do badge baseada no status da transação
+const getStatusBadgeVariant = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'approved':
+    case 'paid':
+      return 'default' // Verde
+    case 'pending':
+    case 'processing':
+      return 'secondary' // Amarelo/Cinza
+    case 'refused':
+    case 'failed':
+    case 'cancelled':
+      return 'destructive' // Vermelho
+    default:
+      return 'outline' // Neutro
+  }
+}
+
+// Função para traduzir o status para português
+const translateStatus = (status: string) => {
+  const statusMap: Record<string, string> = {
+    approved: 'Aprovada',
+    paid: 'Paga',
+    pending: 'Pendente',
+    processing: 'Processando',
+    refused: 'Recusada',
+    failed: 'Falhou',
+    cancelled: 'Cancelada',
+  }
+  return statusMap[status.toLowerCase()] || status
 }
 
 export function GlobalSearch({ role, className }: GlobalSearchProps) {
@@ -50,6 +90,15 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   const debouncedQuery = useDebounce(query, 300)
+
+  // Abrir popover automaticamente quando há query válida
+  React.useEffect(() => {
+    if (query.length >= 3) {
+      setOpen(true)
+    } else if (query.length === 0) {
+      setOpen(false)
+    }
+  }, [query])
 
   React.useEffect(() => {
     if (debouncedQuery.length < 3) {
@@ -66,9 +115,12 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
         if (response.ok) {
           const data = await response.json()
           setResults(data.results || [])
+        } else {
+          setResults([])
         }
       } catch (error) {
         console.error('Erro na busca:', error)
+        setResults([])
       } finally {
         setLoading(false)
       }
@@ -115,7 +167,7 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
           <Input
             ref={inputRef}
             type="search"
-            placeholder="Buscar pastores, igrejas, transações..."
+            placeholder="Buscar usuários, igrejas, transações..."
             className="w-full appearance-none bg-background pl-8 shadow-none md:w-auto"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -147,13 +199,13 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
             {!loading &&
               Object.entries(groupedResults).map(([type, items], groupIndex) => {
                 const Icon = typeIcons[type as keyof typeof typeIcons]
-                const label = typeLabels[type as keyof typeof typeLabels]
+                const pluralLabel = typePlurals[type as keyof typeof typePlurals]
 
                 return (
                   <div key={type}>
                     {groupIndex > 0 && <Separator className="my-2" />}
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {label}s ({items.length})
+                      {pluralLabel} ({items.length})
                     </div>
                     <div className="space-y-1">
                       {items.map((item) => (
@@ -166,8 +218,20 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
                           <Icon className="h-4 w-4 text-muted-foreground mr-3 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="font-medium truncate">{item.title}</div>
-                            <div className="text-sm text-muted-foreground truncate">
-                              {item.subtitle}
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
+                              {item.type === 'transacao' && item.status ? (
+                                <>
+                                  <span>{item.subtitle.split(' • ')[0]}</span>
+                                  <Badge 
+                                    variant={getStatusBadgeVariant(item.status)}
+                                    className="text-xs"
+                                  >
+                                    {translateStatus(item.status)}
+                                  </Badge>
+                                </>
+                              ) : (
+                                <span>{item.subtitle}</span>
+                              )}
                             </div>
                             <div className="text-xs text-muted-foreground">{item.description}</div>
                           </div>

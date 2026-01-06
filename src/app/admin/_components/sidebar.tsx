@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSidebar } from '@/contexts/SidebarContext'
 
 const Logo = (props: React.SVGProps<SVGSVGElement>): JSX.Element => (
   <svg
@@ -62,6 +63,7 @@ type AppSidebarProps = {
 
 export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): JSX.Element {
   const pathname = usePathname()
+  const { isCollapsed } = useSidebar()
 
   const getGradientClass = (gradient: string) => {
     switch (gradient) {
@@ -92,7 +94,10 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
   }
 
   return (
-    <div className="hidden border-r border-border/40 md:block sticky top-0 h-screen bg-gradient-to-b from-background via-background to-muted/20">
+    <div className={cn(
+      "hidden border-r border-border/40 md:block sticky top-0 h-screen bg-gradient-to-b from-background via-background to-muted/20 transition-all duration-300",
+      isCollapsed ? "w-16" : "w-[220px] lg:w-[280px]"
+    )}>
       <div className="flex h-full max-h-screen flex-col">
         {/* Logo Header com Gradiente */}
         <div className="flex h-16 items-center border-b border-border/40 px-6 videira-gradient">
@@ -104,31 +109,35 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                 alt={companyName || 'Logo'}
                 width={32}
                 height={32}
-                className="h-8 object-contain"
+                className="h-8 object-contain flex-shrink-0"
               />
             ) : (
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <Logo className="h-8 w-8 text-white drop-shadow-lg" />
                 <Sparkles className="h-3 w-3 text-white/80 absolute -top-1 -right-1" />
               </div>
             )}
-            <div className="flex flex-col">
-              <span className="text-white text-lg tracking-tight">
-                {companyName || 'Videira Admin'}
-              </span>
-              <span className="text-white/70 text-xs font-normal">Centro de Gestão</span>
-            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="text-white text-lg tracking-tight truncate">
+                  {companyName || 'Videira Admin'}
+                </span>
+                <span className="text-white/70 text-xs font-normal">Centro de Gestão</span>
+              </div>
+            )}
           </Link>
         </div>
 
         {/* Menu Principal */}
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="grid items-start gap-1 px-3">
-            <div className="px-3 pb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Menu Principal
-              </p>
-            </div>
+            {!isCollapsed && (
+              <div className="px-3 pb-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Menu Principal
+                </p>
+              </div>
+            )}
             {menuItems.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -139,32 +148,38 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                   key={item.href}
                   href={item.href}
                   data-active={isActive}
+                  title={isCollapsed ? item.label : undefined}
                   className={cn(
-                    'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+                    'group flex items-center gap-3 rounded-xl transition-all duration-200',
                     'border-l-3 border-l-transparent',
                     'hover:shadow-sm hover:scale-[1.02]',
                     getGradientClass(item.gradient),
                     isActive ? 'font-semibold border-l-4' : 'font-medium',
+                    isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
                   )}
                 >
                   <item.icon
                     className={cn(
-                      'h-5 w-5 transition-all duration-200',
+                      'h-5 w-5 transition-all duration-200 flex-shrink-0',
                       getIconColor(item.gradient, isActive),
                     )}
                   />
-                  <span
-                    className={cn(
-                      'text-base transition-colors',
-                      isActive
-                        ? getIconColor(item.gradient, true)
-                        : 'text-muted-foreground group-hover:text-foreground',
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                  {isActive && (
-                    <div className="ml-auto h-2 w-2 rounded-full bg-current animate-pulse" />
+                  {!isCollapsed && (
+                    <>
+                      <span
+                        className={cn(
+                          'text-base transition-colors',
+                          isActive
+                            ? getIconColor(item.gradient, true)
+                            : 'text-muted-foreground group-hover:text-foreground',
+                        )}
+                      >
+                        {item.label}
+                      </span>
+                      {isActive && (
+                        <div className="ml-auto h-2 w-2 rounded-full bg-current animate-pulse" />
+                      )}
+                    </>
                   )}
                 </Link>
               )
@@ -175,54 +190,60 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
         {/* Settings no Footer */}
         <div className="mt-auto border-t border-border/40 p-4 bg-muted/30">
           <nav className="px-3 space-y-1">
-            <div className="pb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Sistema
-              </p>
-            </div>
+            {!isCollapsed && (
+              <div className="pb-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Sistema
+                </p>
+              </div>
+            )}
             <Link
               href="/admin/perfil"
               data-active={pathname === '/admin/perfil'}
+              title={isCollapsed ? 'Meu Perfil' : undefined}
               className={cn(
-                'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+                'group flex items-center gap-3 rounded-xl transition-all duration-200',
                 'border-l-3 border-l-transparent',
                 'hover:shadow-sm hover:bg-videira-blue/10',
                 pathname === '/admin/perfil'
                   ? 'bg-videira-blue/15 border-l-4 border-l-videira-blue font-semibold text-videira-blue'
                   : 'font-medium text-muted-foreground hover:text-foreground',
+                isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
               )}
             >
               <User
                 className={cn(
-                  'h-5 w-5 transition-all',
+                  'h-5 w-5 transition-all flex-shrink-0',
                   pathname === '/admin/perfil'
                     ? 'text-videira-blue'
                     : 'text-muted-foreground group-hover:text-foreground',
                 )}
               />
-              <span className="text-base">Meu Perfil</span>
+              {!isCollapsed && <span className="text-base">Meu Perfil</span>}
             </Link>
             <Link
               href={settingsItem.href}
               data-active={pathname.startsWith(settingsItem.href)}
+              title={isCollapsed ? settingsItem.label : undefined}
               className={cn(
-                'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
+                'group flex items-center gap-3 rounded-xl transition-all duration-200',
                 'border-l-3 border-l-transparent',
                 'hover:shadow-sm hover:bg-primary/10',
                 pathname.startsWith(settingsItem.href)
                   ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
                   : 'font-medium text-muted-foreground hover:text-foreground',
+                isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
               )}
             >
               <settingsItem.icon
                 className={cn(
-                  'h-5 w-5 transition-all',
+                  'h-5 w-5 transition-all flex-shrink-0',
                   pathname.startsWith(settingsItem.href)
                     ? 'text-primary'
                     : 'text-muted-foreground group-hover:text-foreground',
                 )}
               />
-              <span className="text-base">{settingsItem.label}</span>
+              {!isCollapsed && <span className="text-base">{settingsItem.label}</span>}
             </Link>
           </nav>
         </div>

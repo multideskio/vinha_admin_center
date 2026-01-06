@@ -246,6 +246,11 @@ export const transactions = pgTable('transactions', {
   gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
   refundRequestReason: text('refund_request_reason'),
   installments: integer('installments').default(1).notNull(),
+  // Campos de controle de fraude
+  isFraud: boolean('is_fraud').default(false).notNull(),
+  fraudMarkedAt: timestamp('fraud_marked_at'),
+  fraudMarkedBy: uuid('fraud_marked_by').references(() => users.id),
+  fraudReason: text('fraud_reason'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
   deletedBy: uuid('deleted_by'),
@@ -545,6 +550,7 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   company: one(companies, { fields: [transactions.companyId], references: [companies.id] }),
   contributor: one(users, { fields: [transactions.contributorId], references: [users.id] }),
   originChurch: one(users, { fields: [transactions.originChurchId], references: [users.id] }),
+  fraudMarkedByUser: one(users, { fields: [transactions.fraudMarkedBy], references: [users.id] }),
 }))
 
 export const gatewayConfigurationsRelations = relations(gatewayConfigurations, ({ one }) => ({

@@ -47,6 +47,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
+import { FraudAlert } from '@/components/ui/fraud-alert'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -462,6 +463,14 @@ export default function AdminProfilePage() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
+            {/* Alerta de Fraude */}
+            <div className="mb-6">
+              <FraudAlert 
+                userId={id as string} 
+                userName={`${admin.firstName} ${admin.lastName}`} 
+              />
+            </div>
+
             <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
               <CardContent className="flex flex-col items-center pt-6 text-center">
                 <div className="relative">

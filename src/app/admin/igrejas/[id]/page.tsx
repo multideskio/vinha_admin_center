@@ -96,6 +96,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
+import { FraudAlert } from '@/components/ui/fraud-alert'
 
 const churchUpdateSchema = churchProfileSchema.extend({
   newPassword: z.string().optional().or(z.literal('')),
@@ -757,6 +758,14 @@ export default function IgrejaProfilePage(): JSX.Element {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left Column: Profile Card */}
           <div className="lg:col-span-1">
+            {/* Alerta de Fraude */}
+            <div className="mb-6">
+              <FraudAlert 
+                userId={id as string} 
+                userName={church.nomeFantasia || 'Igreja'} 
+              />
+            </div>
+
             <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
               <CardContent className="flex flex-col items-center pt-6 text-center">
                 <div className="relative">

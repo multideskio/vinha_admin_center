@@ -23,12 +23,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    // Atualizar status para refused e adicionar motivo
+    // Atualizar status para refused e marcar como fraude
     await db
       .update(transactions)
       .set({
         status: 'refused',
         refundRequestReason: 'Marcada como fraude pelo administrador',
+        isFraud: true,
+        fraudMarkedAt: new Date(),
+        fraudMarkedBy: user.id,
+        fraudReason: 'Transação identificada como fraudulenta pela administração',
       })
       .where(eq(transactions.id, id))
 

@@ -1,258 +1,156 @@
+/**
+ * @fileoverview API para buscar detalhes de uma transação específica
+ * @version 1.0
+ * @date 2025-01-06
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import {
   transactions,
   users,
   churchProfiles,
-  pastorProfiles,
-  supervisorProfiles,
   managerProfiles,
+  supervisorProfiles,
+  pastorProfiles,
   adminProfiles,
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
-import { rateLimit } from '@/lib/rate-limit'
-
-// @lastReview 2025-01-05 21:45
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Rate limiting: 60 requests per minute for GET
-    const ip =
-      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-    const rateLimitResult = await rateLimit('transacao-get', ip, 60, 60) // 60 requests per minute
-    if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
-        { status: 429 },
-      )
-    }
-
     const { user } = await validateRequest()
-    if (!user) {
+    if (!user || !['admin', 'manager', 'supervisor'].includes(user.role)) {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     const { id } = await params
 
-    // Buscar a transação primeiro
-    const [transaction] = await db
+    // Buscar transação com dados do contribuinte
+    const [transactionData] = await db
       .select({
+        // Dados da transação
         id: transactions.id,
         amount: transactions.amount,
         status: transactions.status,
-        createdAt: transactions.createdAt,
         paymentMethod: transactions.paymentMethod,
+        description: transactions.description,
         gatewayTransactionId: transactions.gatewayTransactionId,
         refundRequestReason: transactions.refundRequestReason,
+        installments: transactions.installments,
+        createdAt: transactions.createdAt,
+        // Campos de fraude
+        isFraud: transactions.isFraud,
+        fraudMarkedAt: transactions.fraudMarkedAt,
+        fraudReason: transactions.fraudReason,
+        fraudMarkedBy: transactions.fraudMarkedBy,
+        // Dados do contribuinte
+        contributorId: users.id,
         contributorEmail: users.email,
         contributorPhone: users.phone,
         contributorRole: users.role,
-        contributorId: users.id,
-        churchId: transactions.originChurchId,
+        // Igreja de origem
+        originChurchId: transactions.originChurchId,
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
       .where(eq(transactions.id, id))
       .limit(1)
 
-    if (!transaction) {
+    if (!transactionData) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    // Verificar autorização baseada no role
-    let hasAccess = false
-
-    if (user.role === 'admin') {
-      hasAccess = true
-    } else if (user.role === 'supervisor') {
-      // Supervisor pode acessar transações da sua rede (pastores, igrejas e próprias)
-      if (transaction.contributorId === user.id) {
-        hasAccess = true
-      } else {
-        // Verificar se o contribuinte é um pastor ou igreja da supervisão
-        const isInNetwork =
-          (await db
-            .select({ id: pastorProfiles.userId })
-            .from(pastorProfiles)
-            .where(eq(pastorProfiles.supervisorId, user.id))
-            .then((pastors) => pastors.some((p) => p.id === transaction.contributorId))) ||
-          (await db
-            .select({ id: churchProfiles.userId })
-            .from(churchProfiles)
-            .where(eq(churchProfiles.supervisorId, user.id))
-            .then((churches) => churches.some((c) => c.id === transaction.contributorId)))
-
-        hasAccess = isInNetwork
-      }
-    } else if (user.role === 'manager') {
-      // Manager pode acessar transações da sua rede (supervisores, pastores, igrejas e próprias)
-      if (transaction.contributorId === user.id) {
-        hasAccess = true
-      } else {
-        // Verificar se o contribuinte está na rede do manager
-        const isInNetwork =
-          (await db
-            .select({ id: supervisorProfiles.userId })
-            .from(supervisorProfiles)
-            .where(eq(supervisorProfiles.managerId, user.id))
-            .then((supervisors) => supervisors.some((s) => s.id === transaction.contributorId))) ||
-          (await db
-            .select({ id: pastorProfiles.userId })
-            .from(pastorProfiles)
-            .leftJoin(
-              supervisorProfiles,
-              eq(pastorProfiles.supervisorId, supervisorProfiles.userId),
-            )
-            .where(eq(supervisorProfiles.managerId, user.id))
-            .then((pastors) => pastors.some((p) => p.id === transaction.contributorId))) ||
-          (await db
-            .select({ id: churchProfiles.userId })
-            .from(churchProfiles)
-            .leftJoin(
-              supervisorProfiles,
-              eq(churchProfiles.supervisorId, supervisorProfiles.userId),
-            )
-            .where(eq(supervisorProfiles.managerId, user.id))
-            .then((churches) => churches.some((c) => c.id === transaction.contributorId)))
-
-        hasAccess = isInNetwork
-      }
-    } else {
-      // Outros roles só podem acessar suas próprias transações
-      hasAccess = transaction.contributorId === user.id
-    }
-
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Acesso negado a esta transação.' }, { status: 403 })
-    }
-
-    // Buscar nome da igreja se houver
-    let churchName = null
-    let churchAddress = null
-    if (transaction.churchId) {
-      const [church] = await db
-        .select({
-          name: churchProfiles.nomeFantasia,
-          address: churchProfiles.address,
-          city: churchProfiles.city,
-          state: churchProfiles.state,
-        })
-        .from(churchProfiles)
-        .innerJoin(users, eq(churchProfiles.userId, users.id))
-        .where(eq(users.id, transaction.churchId))
+    // Buscar nome do contribuinte baseado no role
+    let contributorName = transactionData.contributorEmail
+    if (transactionData.contributorRole === 'admin') {
+      const [profile] = await db
+        .select({ firstName: adminProfiles.firstName, lastName: adminProfiles.lastName })
+        .from(adminProfiles)
+        .where(eq(adminProfiles.userId, transactionData.contributorId))
         .limit(1)
+      if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+    } else if (transactionData.contributorRole === 'manager') {
+      const [profile] = await db
+        .select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
+        .from(managerProfiles)
+        .where(eq(managerProfiles.userId, transactionData.contributorId))
+        .limit(1)
+      if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+    } else if (transactionData.contributorRole === 'supervisor') {
+      const [profile] = await db
+        .select({ firstName: supervisorProfiles.firstName, lastName: supervisorProfiles.lastName })
+        .from(supervisorProfiles)
+        .where(eq(supervisorProfiles.userId, transactionData.contributorId))
+        .limit(1)
+      if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+    } else if (transactionData.contributorRole === 'pastor') {
+      const [profile] = await db
+        .select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+        .from(pastorProfiles)
+        .where(eq(pastorProfiles.userId, transactionData.contributorId))
+        .limit(1)
+      if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
+    } else if (transactionData.contributorRole === 'church_account') {
+      const [profile] = await db
+        .select({ nomeFantasia: churchProfiles.nomeFantasia })
+        .from(churchProfiles)
+        .where(eq(churchProfiles.userId, transactionData.contributorId))
+        .limit(1)
+      if (profile) contributorName = profile.nomeFantasia
+    }
 
+    // Buscar dados da igreja de origem (se houver)
+    let churchData = null
+    if (transactionData.originChurchId) {
+      const [church] = await db
+        .select({ nomeFantasia: churchProfiles.nomeFantasia, address: churchProfiles.address })
+        .from(churchProfiles)
+        .where(eq(churchProfiles.userId, transactionData.originChurchId))
+        .limit(1)
       if (church) {
-        churchName = church.name
-        churchAddress =
-          church.address && church.city
-            ? `${church.address}, ${church.city}, ${church.state}`
-            : null
+        churchData = {
+          name: church.nomeFantasia,
+          address: church.address,
+        }
       }
     }
 
-    // Buscar nome real do contribuinte baseado no role
-    let contributorName = transaction.contributorEmail.split('@')[0]
-
-    try {
-      if (transaction.contributorRole === 'pastor') {
-        const [profile] = await db
-          .select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
-          .from(pastorProfiles)
-          .where(eq(pastorProfiles.userId, transaction.contributorId))
-          .limit(1)
-        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-      } else if (transaction.contributorRole === 'supervisor') {
-        const [profile] = await db
-          .select({
-            firstName: supervisorProfiles.firstName,
-            lastName: supervisorProfiles.lastName,
-          })
-          .from(supervisorProfiles)
-          .where(eq(supervisorProfiles.userId, transaction.contributorId))
-          .limit(1)
-        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-      } else if (transaction.contributorRole === 'manager') {
-        const [profile] = await db
-          .select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
-          .from(managerProfiles)
-          .where(eq(managerProfiles.userId, transaction.contributorId))
-          .limit(1)
-        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-      } else if (transaction.contributorRole === 'church_account') {
-        const [profile] = await db
-          .select({ nomeFantasia: churchProfiles.nomeFantasia })
-          .from(churchProfiles)
-          .where(eq(churchProfiles.userId, transaction.contributorId))
-          .limit(1)
-        if (profile) contributorName = profile.nomeFantasia
-      } else if (transaction.contributorRole === 'admin') {
-        const [profile] = await db
-          .select({ firstName: adminProfiles.firstName, lastName: adminProfiles.lastName })
-          .from(adminProfiles)
-          .where(eq(adminProfiles.userId, transaction.contributorId))
-          .limit(1)
-        if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-      }
-    } catch (error) {
-      console.error('[TRANSACAO_CONTRIBUTOR_NAME_ERROR]', {
-        transactionId: id,
-        contributorId: transaction.contributorId,
-        contributorRole: transaction.contributorRole,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      })
+    // Formatar resposta
+    const transaction = {
+      id: transactionData.id,
+      date: new Date(transactionData.createdAt).toLocaleString('pt-BR'),
+      amount: parseFloat(transactionData.amount),
+      status: transactionData.status,
+      contributor: {
+        id: transactionData.contributorId,
+        name: contributorName,
+        email: transactionData.contributorEmail,
+        phone: transactionData.contributorPhone,
+        role: transactionData.contributorRole,
+      },
+      church: churchData,
+      payment: {
+        method: transactionData.paymentMethod,
+        details: transactionData.gatewayTransactionId || 'Não disponível',
+      },
+      refundRequestReason: transactionData.refundRequestReason,
+      // Campos de fraude
+      isFraud: transactionData.isFraud,
+      fraudMarkedAt: transactionData.fraudMarkedAt?.toISOString() || null,
+      fraudReason: transactionData.fraudReason,
     }
 
     return NextResponse.json({
-      transaction: {
-        id: transaction.id,
-        date: new Date(transaction.createdAt).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: 'long',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        amount: parseFloat(transaction.amount),
-        status: transaction.status,
-        contributor: {
-          id: transaction.contributorId,
-          name: contributorName,
-          email: transaction.contributorEmail,
-          phone: transaction.contributorPhone,
-          role: transaction.contributorRole,
-        },
-        church: churchName
-          ? {
-              name: churchName,
-              address: churchAddress,
-            }
-          : null,
-        payment: {
-          method:
-            transaction.paymentMethod === 'pix'
-              ? 'PIX'
-              : transaction.paymentMethod === 'credit_card'
-                ? 'Cartão de Crédito'
-                : 'Boleto',
-          details: transaction.gatewayTransactionId || 'N/A',
-        },
-        refundRequestReason: transaction.refundRequestReason,
-        // Dados para sincronização
-        Payment: {
-          Status: transaction.status === 'approved' ? 2 : transaction.status === 'refused' ? 3 : 1,
-        },
-      },
+      success: true,
+      transaction,
     })
   } catch (error) {
-    console.error('[TRANSACAO_GET_ERROR]', {
-      transactionId: 'unknown',
-      userId: 'unknown',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString(),
-    })
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching transaction:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Erro ao buscar transação' },
+      { status: 500 },
+    )
   }
 }

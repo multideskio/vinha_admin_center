@@ -19,6 +19,8 @@ import {
   Clock,
   XCircle,
   AlertCircle,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
@@ -39,6 +41,8 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ModernAlertDialog } from '@/components/ui/alert-dialog-modern'
 import { cn } from '@/lib/utils'
 
 type Transaction = {
@@ -62,6 +66,9 @@ type Transaction = {
     details: string
   } | null
   refundRequestReason: string | null
+  isFraud: boolean
+  fraudMarkedAt: string | null
+  fraudReason: string | null
 }
 
 const statusConfig: Record<
@@ -240,6 +247,14 @@ export default function TransacaoDetalhePage() {
   const { toast } = useToast()
   const [transaction, setTransaction] = React.useState<Transaction | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  
+  // Estados de loading para cada botão
+  const [isResendingReceipt, setIsResendingReceipt] = React.useState(false)
+  const [isSyncing, setIsSyncing] = React.useState(false)
+  const [isMarkingFraud, setIsMarkingFraud] = React.useState(false)
+  
+  // Estado para o modal de confirmação
+  const [showFraudConfirm, setShowFraudConfirm] = React.useState(false)
 
   const fetchTransaction = React.useCallback(async () => {
     setIsLoading(true)
@@ -263,6 +278,31 @@ export default function TransacaoDetalhePage() {
   React.useEffect(() => {
     fetchTransaction()
   }, [fetchTransaction])
+
+  const handleMarkAsFraud = async () => {
+    setIsMarkingFraud(true)
+    try {
+      const response = await fetch(`/api/v1/transacoes/${params.id}/fraud`, {
+        method: 'POST',
+      })
+      if (!response.ok) throw new Error('Falha ao marcar como fraude')
+      toast({
+        title: 'Sucesso',
+        description: 'Transação marcada como fraude',
+        variant: 'success',
+      })
+      setShowFraudConfirm(false)
+      fetchTransaction()
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao marcar como fraude',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsMarkingFraud(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -534,6 +574,43 @@ export default function TransacaoDetalhePage() {
             </Card>
           )}
 
+          {/* Alerta de Fraude (se houver) */}
+          {transaction.isFraud && (
+            <Card className="shadow-lg border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-background dark:from-red-950/20">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-red-100 ring-2 ring-red-300 dark:bg-red-950/30 dark:ring-red-800">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <span className="text-red-800 dark:text-red-200">Transação Marcada como Fraude</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-4 bg-red-100 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                  <p className="text-red-800 dark:text-red-200 font-medium mb-2">
+                    ⚠️ Esta transação foi identificada como fraudulenta
+                  </p>
+                  {transaction.fraudReason && (
+                    <p className="text-red-700 dark:text-red-300 text-sm">
+                      <strong>Motivo:</strong> {transaction.fraudReason}
+                    </p>
+                  )}
+                  {transaction.fraudMarkedAt && (
+                    <p className="text-red-700 dark:text-red-300 text-sm mt-1">
+                      <strong>Marcada em:</strong> {new Date(transaction.fraudMarkedAt).toLocaleString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+                <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800 dark:text-red-200">
+                    <strong>Importante:</strong> Esta marcação é permanente e foi registrada para fins de auditoria e prevenção de fraudes futuras.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Ações */}
           <Card className="shadow-lg border-l-4 border-l-videira-purple">
             <CardHeader>
@@ -555,8 +632,9 @@ export default function TransacaoDetalhePage() {
 
               <Button
                 size="sm"
-                disabled={transaction.status !== 'approved'}
+                disabled={transaction.status !== 'approved' || isResendingReceipt}
                 onClick={async () => {
+                  setIsResendingReceipt(true)
                   try {
                     const response = await fetch(`/api/v1/transacoes/${params.id}/resend`, {
                       method: 'POST',
@@ -573,16 +651,27 @@ export default function TransacaoDetalhePage() {
                       description: error instanceof Error ? error.message : 'Erro ao reenviar',
                       variant: 'destructive',
                     })
+                  } finally {
+                    setIsResendingReceipt(false)
                   }
                 }}
                 className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
               >
-                Reenviar Comprovante
+                {isResendingReceipt ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  'Reenviar Comprovante'
+                )}
               </Button>
 
               <Button
                 size="sm"
+                disabled={isSyncing}
                 onClick={async () => {
+                  setIsSyncing(true)
                   try {
                     const response = await fetch(`/api/v1/transacoes/${params.id}/sync`, {
                       method: 'POST',
@@ -600,47 +689,41 @@ export default function TransacaoDetalhePage() {
                       description: error instanceof Error ? error.message : 'Erro ao sincronizar',
                       variant: 'destructive',
                     })
+                  } finally {
+                    setIsSyncing(false)
                   }
                 }}
                 className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Sincronizar com Cielo
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Sincronizar com Cielo
+                  </>
+                )}
               </Button>
 
               <Button
                 size="sm"
-                onClick={async () => {
-                  if (
-                    !confirm(
-                      'Tem certeza que deseja marcar esta transação como fraude? Esta ação é irreversível.',
-                    )
-                  )
-                    return
-
-                  try {
-                    const response = await fetch(`/api/v1/transacoes/${params.id}/fraud`, {
-                      method: 'POST',
-                    })
-                    if (!response.ok) throw new Error('Falha ao marcar como fraude')
-                    toast({
-                      title: 'Sucesso',
-                      description: 'Transação marcada como fraude',
-                      variant: 'success',
-                    })
-                    fetchTransaction()
-                  } catch (error) {
-                    toast({
-                      title: 'Erro',
-                      description:
-                        error instanceof Error ? error.message : 'Erro ao marcar como fraude',
-                      variant: 'destructive',
-                    })
-                  }
-                }}
-                className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                disabled={isMarkingFraud || transaction.isFraud}
+                onClick={() => setShowFraudConfirm(true)}
+                className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Marcar como Fraude
+                {isMarkingFraud ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : transaction.isFraud ? (
+                  'Já Marcada como Fraude'
+                ) : (
+                  'Marcar como Fraude'
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -736,6 +819,19 @@ export default function TransacaoDetalhePage() {
           </Card>
         </div>
       </div>
+
+      {/* Modal de Confirmação Moderno */}
+      <ModernAlertDialog
+        open={showFraudConfirm}
+        onOpenChange={setShowFraudConfirm}
+        title="Marcar como Fraude"
+        description="Tem certeza que deseja marcar esta transação como fraude? Esta ação é irreversível e pode afetar o histórico do contribuinte."
+        confirmText="Sim, Marcar como Fraude"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={handleMarkAsFraud}
+        isLoading={isMarkingFraud}
+      />
     </div>
   )
 }
