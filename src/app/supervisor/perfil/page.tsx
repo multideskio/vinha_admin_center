@@ -498,14 +498,14 @@ export default function SupervisorProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file || !supervisor) return
 
     setIsUploadingAvatar(true)
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('folder', 'avatars/supervisors')
-      formData.append('filename', file.name)
+      formData.append('folder', 'avatars')
+      formData.append('filename', `supervisor-${supervisor.id}-${file.name}`)
 
       const uploadResponse = await fetch('/api/v1/upload', {
         method: 'POST',

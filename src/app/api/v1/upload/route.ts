@@ -14,6 +14,7 @@ import { z } from 'zod'
 const uploadSchema = z.object({
   folder: z.enum(['uploads', 'avatars', 'documents', 'receipts']).default('uploads'),
   filename: z.string().min(1).max(255),
+  subfolder: z.string().optional(), // Para organizar melhor os arquivos
 })
 
 // ✅ CORRIGIDO: Constantes de segurança
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const folder = (formData.get('folder') as string) || 'uploads'
     const filename = (formData.get('filename') as string) || file.name
+    const subfolder = formData.get('subfolder') as string | null
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -74,6 +76,7 @@ export async function POST(request: NextRequest) {
     const validatedData = uploadSchema.parse({
       folder,
       filename: sanitizedFilename,
+      subfolder,
     })
 
     // Converter arquivo para buffer
@@ -94,8 +97,11 @@ export async function POST(request: NextRequest) {
     // Inicializar serviço S3
     const s3Service = await createS3Service(userData.companyId)
 
-    // Gerar chave única
-    const key = s3Service.generateKey(validatedData.folder, validatedData.filename)
+    // Gerar chave única com subfolder se fornecida
+    const folderPath = validatedData.subfolder 
+      ? `${validatedData.folder}/${validatedData.subfolder}`
+      : validatedData.folder
+    const key = s3Service.generateKey(folderPath, validatedData.filename)
 
     // Upload do arquivo
     const url = await s3Service.uploadFile(buffer, key, file.type)
