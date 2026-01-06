@@ -135,12 +135,12 @@ const SettingsTab = ({ userId }: { userId: string }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || 'Falha ao salvar configurações.')
       }
-      
+
       toast({
         title: 'Sucesso',
         description: 'Configurações de notificação salvas.',
@@ -257,7 +257,7 @@ export default function PastorProfilePage() {
         throw new Error(errorData.error || 'Falha ao carregar perfil.')
       }
       const data = await response.json()
-      
+
       // Garantir que street está mapeado corretamente (API retorna address como street)
       // Converter null para undefined para campos opcionais
       const profileData = {
@@ -268,7 +268,7 @@ export default function PastorProfilePage() {
         complement: data.complement || undefined,
         birthDate: data.birthDate || undefined,
       }
-      
+
       setPastor(profileData)
       form.reset(profileData)
     } catch (error) {
@@ -306,12 +306,12 @@ export default function PastorProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData),
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || 'Falha ao atualizar perfil.')
       }
-      
+
       toast({ title: 'Sucesso', description: 'Perfil atualizado.', variant: 'success' })
       fetchProfile()
     } catch (error) {
@@ -552,12 +552,18 @@ export default function PastorProfilePage() {
         <div className="lg:col-span-2">
           <Tabs defaultValue="profile">
             <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-videira-cyan/10 to-videira-blue/10">
-              <TabsTrigger value="profile" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <TabsTrigger
+                value="profile"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
                 <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Dados do perfil</span>
                 <span className="sm:hidden">Perfil</span>
               </TabsTrigger>
-              <TabsTrigger value="configuracoes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <TabsTrigger
+                value="configuracoes"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
                 <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Configurações</span>
                 <span className="sm:hidden">Config</span>
@@ -615,7 +621,9 @@ export default function PastorProfilePage() {
                           name="birthDate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-xs sm:text-sm">Data de nascimento</FormLabel>
+                              <FormLabel className="text-xs sm:text-sm">
+                                Data de nascimento
+                              </FormLabel>
                               <FormControl>
                                 <Input
                                   placeholder="dd/mm/aaaa"
@@ -740,7 +748,12 @@ export default function PastorProfilePage() {
                             <FormItem className="sm:col-span-1">
                               <FormLabel className="text-xs sm:text-sm">Email</FormLabel>
                               <FormControl>
-                                <Input type="email" {...field} value={field.value ?? ''} className="text-sm" />
+                                <Input
+                                  type="email"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  className="text-sm"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -852,7 +865,12 @@ export default function PastorProfilePage() {
                             <FormItem>
                               <FormLabel className="text-xs sm:text-sm">Dia do dízimo</FormLabel>
                               <FormControl>
-                                <Input type="number" {...field} value={field.value ?? ''} className="text-sm" />
+                                <Input
+                                  type="number"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  className="text-sm"
+                                />
                               </FormControl>
                             </FormItem>
                           )}

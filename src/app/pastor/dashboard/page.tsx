@@ -80,7 +80,9 @@ const InfoItem = ({ icon: Icon, label, value }: InfoItemProps) => (
     <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mt-0.5 sm:mt-1 flex-shrink-0" />
     <div className="min-w-0 flex-1">
       <p className="font-semibold text-foreground text-sm sm:text-base">{label}</p>
-      <p className="text-muted-foreground text-xs sm:text-sm break-words">{value || 'Não informado'}</p>
+      <p className="text-muted-foreground text-xs sm:text-sm break-words">
+        {value || 'Não informado'}
+      </p>
     </div>
   </div>
 )
@@ -206,7 +208,8 @@ export default function PastorDashboardPage() {
                   {dateRange?.from && (
                     <span className="block sm:inline sm:ml-2 mt-1 sm:mt-0">
                       • Período: {format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })}
-                      {dateRange.to && ` até ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`}
+                      {dateRange.to &&
+                        ` até ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`}
                     </span>
                   )}
                 </p>
@@ -251,7 +254,9 @@ export default function PastorDashboardPage() {
           return (
             <Card key={kpi.title} className={classes.card}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-semibold truncate pr-2">{kpi.title}</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-semibold truncate pr-2">
+                  {kpi.title}
+                </CardTitle>
                 <div className={`${classes.icon} flex-shrink-0`}>
                   <kpi.icon className={classes.iconColor} />
                 </div>

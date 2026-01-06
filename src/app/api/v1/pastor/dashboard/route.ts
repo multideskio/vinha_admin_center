@@ -74,14 +74,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     const endDateParam = searchParams.get('endDate')
 
     const now = new Date()
-    
+
     // Se há parâmetros de data, usar eles; senão usar mês atual
-    const dateFrom = startDateParam
-      ? startOfDay(new Date(startDateParam))
-      : startOfMonth(now)
-    const dateTo = endDateParam
-      ? endOfDay(new Date(endDateParam))
-      : now
+    const dateFrom = startDateParam ? startOfDay(new Date(startDateParam)) : startOfMonth(now)
+    const dateTo = endDateParam ? endOfDay(new Date(endDateParam)) : now
 
     // Para comparação com mês anterior (quando não há filtro de período)
     const startOfCurrentMonth = startOfMonth(now)
@@ -174,9 +170,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     const kpis = {
       totalContributed: {
         value: `R$ ${totalContributed.toFixed(2)}`,
-        change: startDateParam || endDateParam
-          ? `R$ ${contributionSelectedPeriod.toFixed(2)} no período`
-          : `R$ ${contributionSelectedPeriod.toFixed(2)} este mês`,
+        change:
+          startDateParam || endDateParam
+            ? `R$ ${contributionSelectedPeriod.toFixed(2)} no período`
+            : `R$ ${contributionSelectedPeriod.toFixed(2)} este mês`,
       },
       monthlyContribution: {
         value: `R$ ${contributionSelectedPeriod.toFixed(2)}`,
