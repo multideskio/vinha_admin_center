@@ -29,11 +29,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { user } = await validateRequest()
-    if (!user || user.role !== 'admin') {
+    if (!user) {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     const { id } = await params
+    
+    // Buscar a transação primeiro
     const [transaction] = await db
       .select({
         id: transactions.id,
@@ -56,6 +58,65 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!transaction) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
+    }
+
+    // Verificar autorização baseada no role
+    let hasAccess = false
+    
+    if (user.role === 'admin') {
+      hasAccess = true
+    } else if (user.role === 'supervisor') {
+      // Supervisor pode acessar transações da sua rede (pastores, igrejas e próprias)
+      if (transaction.contributorId === user.id) {
+        hasAccess = true
+      } else {
+        // Verificar se o contribuinte é um pastor ou igreja da supervisão
+        const isInNetwork = await db
+          .select({ id: pastorProfiles.userId })
+          .from(pastorProfiles)
+          .where(eq(pastorProfiles.supervisorId, user.id))
+          .then((pastors) => pastors.some((p) => p.id === transaction.contributorId)) ||
+          await db
+            .select({ id: churchProfiles.userId })
+            .from(churchProfiles)
+            .where(eq(churchProfiles.supervisorId, user.id))
+            .then((churches) => churches.some((c) => c.id === transaction.contributorId))
+        
+        hasAccess = isInNetwork
+      }
+    } else if (user.role === 'manager') {
+      // Manager pode acessar transações da sua rede (supervisores, pastores, igrejas e próprias)
+      if (transaction.contributorId === user.id) {
+        hasAccess = true
+      } else {
+        // Verificar se o contribuinte está na rede do manager
+        const isInNetwork = await db
+          .select({ id: supervisorProfiles.userId })
+          .from(supervisorProfiles)
+          .where(eq(supervisorProfiles.managerId, user.id))
+          .then((supervisors) => supervisors.some((s) => s.id === transaction.contributorId)) ||
+          await db
+            .select({ id: pastorProfiles.userId })
+            .from(pastorProfiles)
+            .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+            .where(eq(supervisorProfiles.managerId, user.id))
+            .then((pastors) => pastors.some((p) => p.id === transaction.contributorId)) ||
+          await db
+            .select({ id: churchProfiles.userId })
+            .from(churchProfiles)
+            .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
+            .where(eq(supervisorProfiles.managerId, user.id))
+            .then((churches) => churches.some((c) => c.id === transaction.contributorId))
+        
+        hasAccess = isInNetwork
+      }
+    } else {
+      // Outros roles só podem acessar suas próprias transações
+      hasAccess = transaction.contributorId === user.id
+    }
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Acesso negado a esta transação.' }, { status: 403 })
     }
 
     // Buscar nome da igreja se houver
@@ -137,39 +198,45 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json({
-      id: transaction.id,
-      date: new Date(transaction.createdAt).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      amount: parseFloat(transaction.amount),
-      status: transaction.status,
-      contributor: {
-        id: transaction.contributorId,
-        name: contributorName,
-        email: transaction.contributorEmail,
-        phone: transaction.contributorPhone,
-        role: transaction.contributorRole,
+      transaction: {
+        id: transaction.id,
+        date: new Date(transaction.createdAt).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        amount: parseFloat(transaction.amount),
+        status: transaction.status,
+        contributor: {
+          id: transaction.contributorId,
+          name: contributorName,
+          email: transaction.contributorEmail,
+          phone: transaction.contributorPhone,
+          role: transaction.contributorRole,
+        },
+        church: churchName
+          ? {
+              name: churchName,
+              address: churchAddress,
+            }
+          : null,
+        payment: {
+          method:
+            transaction.paymentMethod === 'pix'
+              ? 'PIX'
+              : transaction.paymentMethod === 'credit_card'
+                ? 'Cartão de Crédito'
+                : 'Boleto',
+          details: transaction.gatewayTransactionId || 'N/A',
+        },
+        refundRequestReason: transaction.refundRequestReason,
+        // Dados para sincronização
+        Payment: {
+          Status: transaction.status === 'approved' ? 2 : transaction.status === 'refused' ? 3 : 1,
+        },
       },
-      church: churchName
-        ? {
-            name: churchName,
-            address: churchAddress,
-          }
-        : null,
-      payment: {
-        method:
-          transaction.paymentMethod === 'pix'
-            ? 'PIX'
-            : transaction.paymentMethod === 'credit_card'
-              ? 'Cartão de Crédito'
-              : 'Boleto',
-        details: transaction.gatewayTransactionId || 'N/A',
-      },
-      refundRequestReason: transaction.refundRequestReason,
     })
   } catch (error) {
     console.error('[TRANSACAO_GET_ERROR]', {

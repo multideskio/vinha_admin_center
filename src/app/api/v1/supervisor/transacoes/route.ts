@@ -73,12 +73,85 @@ export async function GET(request: Request): Promise<NextResponse> {
       supervisorId: sessionUser.id,
       timestamp: new Date().toISOString(),
     })
-    // Extrair parâmetros de data da URL
+    
+    // Extrair parâmetros da URL
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const userId = searchParams.get('userId') // Novo parâmetro para buscar transações de um usuário específico
 
-    // Buscar pastores e igrejas da supervisão
+    // Se userId for fornecido, buscar apenas transações desse usuário (se ele estiver na rede do supervisor)
+    if (userId) {
+      // Verificar se o usuário está na rede do supervisor
+      const isInNetwork = await db
+        .select({ id: pastorProfiles.userId })
+        .from(pastorProfiles)
+        .where(eq(pastorProfiles.supervisorId, sessionUser.id))
+        .then((pastors) => pastors.some((p) => p.id === userId)) ||
+        await db
+          .select({ id: churchProfiles.userId })
+          .from(churchProfiles)
+          .where(eq(churchProfiles.supervisorId, sessionUser.id))
+          .then((churches) => churches.some((c) => c.id === userId)) ||
+        userId === sessionUser.id // O próprio supervisor
+
+      if (!isInNetwork) {
+        console.error('[SUPERVISOR_TRANSACOES_UNAUTHORIZED_USER]', {
+          supervisorId: sessionUser.id,
+          requestedUserId: userId,
+          timestamp: new Date().toISOString(),
+        })
+        return NextResponse.json(
+          { error: 'Usuário não está na sua rede de supervisão.' },
+          { status: 403 },
+        )
+      }
+
+      // Buscar transações do usuário específico
+      const conditions = [eq(transactionsTable.contributorId, userId)]
+
+      if (startDate) {
+        conditions.push(gte(transactionsTable.createdAt, new Date(startDate)))
+      }
+
+      if (endDate) {
+        const endDateTime = new Date(endDate)
+        endDateTime.setDate(endDateTime.getDate() + 1)
+        conditions.push(lte(transactionsTable.createdAt, endDateTime))
+      }
+
+      const results = await db
+        .select({
+          id: transactionsTable.id,
+          contributor: users.email,
+          church: churchProfiles.nomeFantasia,
+          amount: transactionsTable.amount,
+          method: transactionsTable.paymentMethod,
+          status: transactionsTable.status,
+          date: transactionsTable.createdAt,
+          createdAt: transactionsTable.createdAt,
+          paymentMethod: transactionsTable.paymentMethod,
+          refundRequestReason: transactionsTable.refundRequestReason,
+        })
+        .from(transactionsTable)
+        .leftJoin(users, eq(transactionsTable.contributorId, users.id))
+        .leftJoin(churchProfiles, eq(transactionsTable.originChurchId, churchProfiles.userId))
+        .where(and(...conditions))
+        .orderBy(desc(transactionsTable.createdAt))
+
+      const formattedTransactions = results.map((t) => ({
+        id: t.id,
+        amount: Number(t.amount),
+        status: t.status,
+        paymentMethod: t.paymentMethod,
+        createdAt: t.createdAt.toISOString(),
+        date: format(new Date(t.date), 'dd/MM/yyyy'),
+      }))
+
+      return NextResponse.json({ transactions: formattedTransactions })
+    }
+
+    // Buscar pastores e igrejas da supervisão (comportamento original)
     const pastorIdsResult = await db
       .select({ id: pastorProfiles.userId })
       .from(pastorProfiles)
