@@ -1,5 +1,7 @@
 'use client'
 
+// @lastReview 2025-01-05 21:45 - Fixed responsive grid classes for better tablet/iPad support
+
 import * as React from 'react'
 import { DollarSign, Users, Church, UserCog, User, RefreshCw, ArrowRightLeft } from 'lucide-react'
 import { sanitizeText } from '@/lib/sanitize'
@@ -165,7 +167,7 @@ export default function GerenteDashboardPage() {
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-10 w-64" />
         </div>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -179,7 +181,7 @@ export default function GerenteDashboardPage() {
             </Card>
           ))}
         </div>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
           <Card>
             <CardContent className="pt-6">
               <Skeleton className="h-80 w-full" />
@@ -269,7 +271,7 @@ export default function GerenteDashboardPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {kpiDisplayData.map((kpi, index) => {
           const colorClasses = [
             {
@@ -321,7 +323,7 @@ export default function GerenteDashboardPage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -414,7 +416,7 @@ export default function GerenteDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="shadow-lg border-t-4 border-t-green-500">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
