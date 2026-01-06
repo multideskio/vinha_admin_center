@@ -8,11 +8,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions, pastorProfiles } from '@/db/schema'
-import { count, sum, eq, and, gte, lt, sql } from 'drizzle-orm'
-import { subMonths, startOfMonth } from 'date-fns'
+import { count, sum, eq, and, gte, lt, lte, sql } from 'drizzle-orm'
+import { subMonths, startOfMonth, endOfDay, startOfDay } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
+import { rateLimit } from '@/lib/rate-limit'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -24,24 +25,74 @@ const calculateChange = (current: number, previous: number): string => {
   return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`
 }
 
-export async function GET(): Promise<NextResponse> {
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  if (sessionUser.role !== 'pastor') {
-    return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
-  }
-  const pastorId = sessionUser.id
+export async function GET(request: Request): Promise<NextResponse> {
+  let sessionUser: any = null
 
   try {
+    // Rate limiting: 60 requests per minute
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('pastor-dashboard', ip, 60, 60)
+    if (!rateLimitResult.allowed) {
+      console.error('[PASTOR_DASHBOARD_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    const { user: authUser } = await validateRequest()
+    sessionUser = authUser
+
+    if (!sessionUser) {
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+      console.error('[PASTOR_DASHBOARD_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    if (sessionUser.role !== 'pastor') {
+      console.error('[PASTOR_DASHBOARD_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
+    }
+
+    const pastorId = sessionUser.id
+
+    // Extrair parâmetros de data da URL
+    const { searchParams } = new URL(request.url)
+    const startDateParam = searchParams.get('startDate')
+    const endDateParam = searchParams.get('endDate')
+
     const now = new Date()
+    
+    // Se há parâmetros de data, usar eles; senão usar mês atual
+    const dateFrom = startDateParam
+      ? startOfDay(new Date(startDateParam))
+      : startOfMonth(now)
+    const dateTo = endDateParam
+      ? endOfDay(new Date(endDateParam))
+      : now
+
+    // Para comparação com mês anterior (quando não há filtro de período)
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
+
+    console.log('[PASTOR_DASHBOARD_REQUEST]', {
+      pastorId,
+      startDate: startDateParam,
+      endDate: endDateParam,
+      timestamp: new Date().toISOString(),
+    })
 
     const [profileData] = await db
       .select()
@@ -49,57 +100,100 @@ export async function GET(): Promise<NextResponse> {
       .where(eq(pastorProfiles.userId, pastorId))
 
     // KPI Calculations
+    // Total Contribuído: sempre todas as transações aprovadas (sem filtro de período)
     const totalContributedResult = await db
       .select({ value: sum(transactions.amount) })
       .from(transactions)
       .where(and(eq(transactions.contributorId, pastorId), eq(transactions.status, 'approved')))
     const totalContributed = parseFloat(totalContributedResult[0]?.value || '0')
 
-    const contributionCurrentMonthResult = await db
+    // Contribuição no período selecionado (ou mês atual se não houver filtro)
+    const contributionSelectedPeriodResult = await db
       .select({ value: sum(transactions.amount) })
       .from(transactions)
       .where(
         and(
           eq(transactions.contributorId, pastorId),
           eq(transactions.status, 'approved'),
-          gte(transactions.createdAt, startOfCurrentMonth),
+          gte(transactions.createdAt, dateFrom),
+          lte(transactions.createdAt, dateTo),
         ),
       )
-    const contributionPreviousMonthResult = await db
-      .select({ value: sum(transactions.amount) })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.contributorId, pastorId),
-          eq(transactions.status, 'approved'),
-          gte(transactions.createdAt, startOfPreviousMonth),
-          lt(transactions.createdAt, startOfCurrentMonth),
-        ),
-      )
-    const contributionCurrentMonth = parseFloat(contributionCurrentMonthResult[0]?.value || '0')
-    const contributionPreviousMonth = parseFloat(contributionPreviousMonthResult[0]?.value || '0')
+    const contributionSelectedPeriod = parseFloat(contributionSelectedPeriodResult[0]?.value || '0')
 
+    // Para calcular a mudança, comparar com período anterior de mesma duração
+    let contributionPreviousPeriod = 0
+    if (startDateParam && endDateParam) {
+      // Se há filtro de período, calcular período anterior de mesma duração
+      const periodDuration = dateTo.getTime() - dateFrom.getTime()
+      const previousPeriodEnd = new Date(dateFrom.getTime() - 1) // 1ms antes do início
+      const previousPeriodStart = new Date(previousPeriodEnd.getTime() - periodDuration)
+
+      const contributionPreviousPeriodResult = await db
+        .select({ value: sum(transactions.amount) })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.contributorId, pastorId),
+            eq(transactions.status, 'approved'),
+            gte(transactions.createdAt, previousPeriodStart),
+            lte(transactions.createdAt, previousPeriodEnd),
+          ),
+        )
+      contributionPreviousPeriod = parseFloat(contributionPreviousPeriodResult[0]?.value || '0')
+    } else {
+      // Se não há filtro, comparar com mês anterior
+      const contributionPreviousMonthResult = await db
+        .select({ value: sum(transactions.amount) })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.contributorId, pastorId),
+            eq(transactions.status, 'approved'),
+            gte(transactions.createdAt, startOfPreviousMonth),
+            lt(transactions.createdAt, startOfCurrentMonth),
+          ),
+        )
+      contributionPreviousPeriod = parseFloat(contributionPreviousMonthResult[0]?.value || '0')
+    }
+
+    // Total de transações no período selecionado (ou todas se não houver filtro)
     const totalTransactionsResult = await db
       .select({ value: count() })
       .from(transactions)
-      .where(eq(transactions.contributorId, pastorId))
+      .where(
+        startDateParam || endDateParam
+          ? and(
+              eq(transactions.contributorId, pastorId),
+              gte(transactions.createdAt, dateFrom),
+              lte(transactions.createdAt, dateTo),
+            )
+          : eq(transactions.contributorId, pastorId),
+      )
 
     const kpis = {
       totalContributed: {
         value: `R$ ${totalContributed.toFixed(2)}`,
-        change: `R$ ${contributionCurrentMonth.toFixed(2)} este mês`,
+        change: startDateParam || endDateParam
+          ? `R$ ${contributionSelectedPeriod.toFixed(2)} no período`
+          : `R$ ${contributionSelectedPeriod.toFixed(2)} este mês`,
       },
       monthlyContribution: {
-        value: `R$ ${contributionCurrentMonth.toFixed(2)}`,
-        change: calculateChange(contributionCurrentMonth, contributionPreviousMonth),
+        value: `R$ ${contributionSelectedPeriod.toFixed(2)}`,
+        change: calculateChange(contributionSelectedPeriod, contributionPreviousPeriod),
       },
       totalTransactions: {
         value: `${totalTransactionsResult[0]?.value ?? 0}`,
-        change: '',
+        change: startDateParam || endDateParam ? 'no período selecionado' : '',
       },
     }
 
-    const startOfSixMonthsAgo = startOfMonth(subMonths(now, 5))
+    // Gráfico mensal: usar período selecionado ou últimos 6 meses
+    const chartStartDate = startDateParam
+      ? startOfDay(new Date(startDateParam))
+      : startOfMonth(subMonths(now, 5))
+    const chartEndDate = endDateParam ? endOfDay(new Date(endDateParam)) : now
+
     const monthlyContributionsData = await db
       .select({
         month: sql<string>`TO_CHAR(${transactions.createdAt}, 'YYYY-MM')`,
@@ -110,7 +204,8 @@ export async function GET(): Promise<NextResponse> {
         and(
           eq(transactions.contributorId, pastorId),
           eq(transactions.status, 'approved'),
-          gte(transactions.createdAt, startOfSixMonthsAgo),
+          gte(transactions.createdAt, chartStartDate),
+          lte(transactions.createdAt, chartEndDate),
         ),
       )
       .groupBy(sql`TO_CHAR(${transactions.createdAt}, 'YYYY-MM')`)
@@ -135,13 +230,23 @@ export async function GET(): Promise<NextResponse> {
       total: item.total,
     }))
 
+    // Métodos de pagamento: filtrar por período se fornecido
     const paymentMethodsData = await db
       .select({
         method: transactions.paymentMethod,
         value: sum(transactions.amount).mapWith(Number),
       })
       .from(transactions)
-      .where(and(eq(transactions.contributorId, pastorId), eq(transactions.status, 'approved')))
+      .where(
+        startDateParam || endDateParam
+          ? and(
+              eq(transactions.contributorId, pastorId),
+              eq(transactions.status, 'approved'),
+              gte(transactions.createdAt, dateFrom),
+              lte(transactions.createdAt, dateTo),
+            )
+          : and(eq(transactions.contributorId, pastorId), eq(transactions.status, 'approved')),
+      )
       .groupBy(transactions.paymentMethod)
 
     const formattedPaymentMethods = paymentMethodsData.map((item) => ({
@@ -157,7 +262,11 @@ export async function GET(): Promise<NextResponse> {
       paymentMethods: formattedPaymentMethods,
     })
   } catch (error: unknown) {
-    console.error('Erro ao buscar dados para o dashboard do pastor:', error)
+    console.error('[PASTOR_DASHBOARD_ERROR]', {
+      pastorId: sessionUser?.id,
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json(
       { error: 'Erro ao buscar dados do dashboard do pastor', details: getErrorMessage(error) },
       { status: 500 },
