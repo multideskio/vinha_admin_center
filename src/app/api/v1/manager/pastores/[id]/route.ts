@@ -1,8 +1,9 @@
 /**
  * @fileoverview API para gerenciamento de pastores específicos (visão do gerente).
- * @version 1.1
+ * @version 1.2
  * @date 2024-08-07
  * @author PH
+ * @lastReview 2025-01-05 21:45
  */
 
 import { NextResponse } from 'next/server'
@@ -14,6 +15,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { pastorProfileSchema } from '@/lib/types'
 import { ApiError } from '@/lib/errors'
+import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
 
 const pastorUpdateSchema = pastorProfileSchema
@@ -40,6 +42,17 @@ export async function GET(
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const params = await props.params
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const rateLimitResult = await rateLimit('manager-pastor-get', ip, 30, 60) // 30 requests per minute
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -79,7 +92,14 @@ export async function GET(
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
-    console.error('Erro ao buscar pastor:', error)
+    // Structured logging instead of console.error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[MANAGER_PASTOR_GET_ERROR]', {
+      pastorId: id,
+      managerId: sessionUser.id,
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
@@ -89,6 +109,17 @@ export async function PUT(
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const params = await props.params
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const rateLimitResult = await rateLimit('manager-pastor-put', ip, 10, 60) // 10 requests per minute
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -149,6 +180,14 @@ export async function PUT(
       }
     })
 
+    // Structured logging for successful update
+    console.log('[MANAGER_PASTOR_UPDATE_SUCCESS]', {
+      pastorId: id,
+      managerId: sessionUser.id,
+      updatedFields: Object.keys(validatedData),
+      timestamp: new Date().toISOString(),
+    })
+
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
@@ -160,7 +199,14 @@ export async function PUT(
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
-    console.error('Erro ao atualizar pastor:', error)
+    // Structured logging instead of console.error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[MANAGER_PASTOR_UPDATE_ERROR]', {
+      pastorId: id,
+      managerId: sessionUser.id,
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
@@ -170,6 +216,17 @@ export async function DELETE(
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const params = await props.params
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const rateLimitResult = await rateLimit('manager-pastor-delete', ip, 5, 60) // 5 requests per minute
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   const { user: sessionUser } = await validateRequest()
   if (!sessionUser || (sessionUser.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
@@ -186,6 +243,18 @@ export async function DELETE(
     const body = await request.json()
     const deletionReason = body.deletionReason || 'Sem motivo informado'
 
+    // Get pastor data for audit logging before deletion
+    const pastorData = await db
+      .select({
+        firstName: pastorProfiles.firstName,
+        lastName: pastorProfiles.lastName,
+        email: users.email,
+      })
+      .from(users)
+      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .where(eq(users.id, id))
+      .limit(1)
+
     await db
       .update(users)
       .set({
@@ -196,12 +265,31 @@ export async function DELETE(
       })
       .where(eq(users.id, id))
 
+    // Audit logging for deletion
+    console.log('[MANAGER_PASTOR_DELETE_SUCCESS]', {
+      pastorId: id,
+      pastorName: pastorData[0]
+        ? `${pastorData[0].firstName} ${pastorData[0].lastName}`
+        : 'Unknown',
+      pastorEmail: pastorData[0]?.email || 'Unknown',
+      managerId: sessionUser.id,
+      deletionReason,
+      timestamp: new Date().toISOString(),
+    })
+
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error: unknown) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
-    console.error('Erro ao excluir pastor:', error)
+    // Structured logging instead of console.error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[MANAGER_PASTOR_DELETE_ERROR]', {
+      pastorId: id,
+      managerId: sessionUser.id,
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
