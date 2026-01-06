@@ -73,7 +73,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       supervisorId: sessionUser.id,
       timestamp: new Date().toISOString(),
     })
-    
+
     // Extrair parâmetros da URL
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
@@ -83,16 +83,17 @@ export async function GET(request: Request): Promise<NextResponse> {
     // Se userId for fornecido, buscar apenas transações desse usuário (se ele estiver na rede do supervisor)
     if (userId) {
       // Verificar se o usuário está na rede do supervisor
-      const isInNetwork = await db
-        .select({ id: pastorProfiles.userId })
-        .from(pastorProfiles)
-        .where(eq(pastorProfiles.supervisorId, sessionUser.id))
-        .then((pastors) => pastors.some((p) => p.id === userId)) ||
-        await db
+      const isInNetwork =
+        (await db
+          .select({ id: pastorProfiles.userId })
+          .from(pastorProfiles)
+          .where(eq(pastorProfiles.supervisorId, sessionUser.id))
+          .then((pastors) => pastors.some((p) => p.id === userId))) ||
+        (await db
           .select({ id: churchProfiles.userId })
           .from(churchProfiles)
           .where(eq(churchProfiles.supervisorId, sessionUser.id))
-          .then((churches) => churches.some((c) => c.id === userId)) ||
+          .then((churches) => churches.some((c) => c.id === userId))) ||
         userId === sessionUser.id // O próprio supervisor
 
       if (!isInNetwork) {

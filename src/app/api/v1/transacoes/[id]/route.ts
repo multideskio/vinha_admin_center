@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id } = await params
-    
+
     // Buscar a transação primeiro
     const [transaction] = await db
       .select({
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Verificar autorização baseada no role
     let hasAccess = false
-    
+
     if (user.role === 'admin') {
       hasAccess = true
     } else if (user.role === 'supervisor') {
@@ -71,17 +71,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         hasAccess = true
       } else {
         // Verificar se o contribuinte é um pastor ou igreja da supervisão
-        const isInNetwork = await db
-          .select({ id: pastorProfiles.userId })
-          .from(pastorProfiles)
-          .where(eq(pastorProfiles.supervisorId, user.id))
-          .then((pastors) => pastors.some((p) => p.id === transaction.contributorId)) ||
-          await db
+        const isInNetwork =
+          (await db
+            .select({ id: pastorProfiles.userId })
+            .from(pastorProfiles)
+            .where(eq(pastorProfiles.supervisorId, user.id))
+            .then((pastors) => pastors.some((p) => p.id === transaction.contributorId))) ||
+          (await db
             .select({ id: churchProfiles.userId })
             .from(churchProfiles)
             .where(eq(churchProfiles.supervisorId, user.id))
-            .then((churches) => churches.some((c) => c.id === transaction.contributorId))
-        
+            .then((churches) => churches.some((c) => c.id === transaction.contributorId)))
+
         hasAccess = isInNetwork
       }
     } else if (user.role === 'manager') {
@@ -90,24 +91,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         hasAccess = true
       } else {
         // Verificar se o contribuinte está na rede do manager
-        const isInNetwork = await db
-          .select({ id: supervisorProfiles.userId })
-          .from(supervisorProfiles)
-          .where(eq(supervisorProfiles.managerId, user.id))
-          .then((supervisors) => supervisors.some((s) => s.id === transaction.contributorId)) ||
-          await db
+        const isInNetwork =
+          (await db
+            .select({ id: supervisorProfiles.userId })
+            .from(supervisorProfiles)
+            .where(eq(supervisorProfiles.managerId, user.id))
+            .then((supervisors) => supervisors.some((s) => s.id === transaction.contributorId))) ||
+          (await db
             .select({ id: pastorProfiles.userId })
             .from(pastorProfiles)
-            .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
+            .leftJoin(
+              supervisorProfiles,
+              eq(pastorProfiles.supervisorId, supervisorProfiles.userId),
+            )
             .where(eq(supervisorProfiles.managerId, user.id))
-            .then((pastors) => pastors.some((p) => p.id === transaction.contributorId)) ||
-          await db
+            .then((pastors) => pastors.some((p) => p.id === transaction.contributorId))) ||
+          (await db
             .select({ id: churchProfiles.userId })
             .from(churchProfiles)
-            .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
+            .leftJoin(
+              supervisorProfiles,
+              eq(churchProfiles.supervisorId, supervisorProfiles.userId),
+            )
             .where(eq(supervisorProfiles.managerId, user.id))
-            .then((churches) => churches.some((c) => c.id === transaction.contributorId))
-        
+            .then((churches) => churches.some((c) => c.id === transaction.contributorId)))
+
         hasAccess = isInNetwork
       }
     } else {
