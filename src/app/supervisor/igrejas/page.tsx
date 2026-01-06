@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Página de listagem de igrejas (visão do supervisor).
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 18:00
+ */
+
 'use client'
 
 import * as React from 'react'
@@ -686,8 +694,8 @@ export default function IgrejasPage() {
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
                 <TableHead className="font-semibold">Nome Fantasia</TableHead>
-                <TableHead className="hidden md:table-cell font-semibold">CNPJ</TableHead>
-                <TableHead className="hidden md:table-cell font-semibold">Email</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">CNPJ</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">Email</TableHead>
                 <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
@@ -701,10 +709,10 @@ export default function IgrejasPage() {
                     <TableCell>
                       <Skeleton className="h-4 w-40" />
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden sm:table-cell">
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden sm:table-cell">
                       <Skeleton className="h-4 w-48" />
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
@@ -719,10 +727,10 @@ export default function IgrejasPage() {
                 paginatedChurches.map((church) => (
                   <TableRow key={church.id}>
                     <TableCell className="font-medium">{church.nomeFantasia}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">
                       {church.cnpj}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">
                       {church.email}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
@@ -787,7 +795,7 @@ export default function IgrejasPage() {
 
   const CardView = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i}>

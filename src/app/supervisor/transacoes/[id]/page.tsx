@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Página de detalhes de transação individual (visão do supervisor).
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 18:30
+ */
+
 'use client'
 
 import * as React from 'react'

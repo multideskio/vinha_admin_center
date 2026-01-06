@@ -1,18 +1,36 @@
-import { NextResponse } from 'next/server'
-import { validateRequest } from '@/lib/jwt'
-import { logUserAction } from '@/lib/action-logger'
-import { db } from '@/db/drizzle'
-import { transactions, gatewayConfigurations } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+/**
+ * @fileoverview API para sincronizar status de transação com gateway (visão do supervisor).
+ * @version 1.0
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 18:30
+ */
 
-async function getCieloCredentials() {
+import { NextResponse } from 'next/server'
+import { db } from '@/db/drizzle'
+import {
+  transactions as transactionsTable,
+  gatewayConfigurations,
+  pastorProfiles,
+  churchProfiles,
+} from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { authenticateApiKey } from '@/lib/api-auth'
+import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
+
+async function getCieloCredentials(): Promise<{
+  merchantId: string | null
+  merchantKey: string | null
+  apiUrl: string
+}> {
   const [config] = await db
     .select()
     .from(gatewayConfigurations)
     .where(eq(gatewayConfigurations.gatewayName, 'Cielo'))
     .limit(1)
 
-  if (!config) throw new Error('Configuração do gateway Cielo não encontrada')
+  if (!config) throw new Error('Configuração do gateway Cielo não encontrada.')
 
   const isProduction = config.environment === 'production'
   return {
@@ -24,40 +42,142 @@ async function getCieloCredentials() {
   }
 }
 
-export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+async function verifyTransactionOwnership(
+  transactionId: string,
+  supervisorId: string,
+): Promise<boolean> {
+  const [transaction] = await db
+    .select({ contributorId: transactionsTable.contributorId })
+    .from(transactionsTable)
+    .where(eq(transactionsTable.id, transactionId))
+    .limit(1)
+
+  if (!transaction || !transaction.contributorId) return false
+
+  const contributorId = transaction.contributorId
+
+  // Verificar se é o próprio supervisor
+  if (contributorId === supervisorId) return true
+
+  // Verificar se é um pastor da supervisão
+  const pastorIdsResult = await db
+    .select({ id: pastorProfiles.userId })
+    .from(pastorProfiles)
+    .where(eq(pastorProfiles.supervisorId, supervisorId))
+  const pastorIds = pastorIdsResult.map((p) => p.id)
+  if (pastorIds.includes(contributorId)) return true
+
+  // Verificar se é uma igreja da supervisão
+  const churchIdsResult = await db
+    .select({ id: churchProfiles.userId })
+    .from(churchProfiles)
+    .where(eq(churchProfiles.supervisorId, supervisorId))
+  const churchIds = churchIdsResult.map((c) => c.id)
+  if (churchIds.includes(contributorId)) return true
+
+  return false
+}
+
+function mapCieloStatus(status: number): 'approved' | 'pending' | 'refused' | 'refunded' {
+  // Mapear status da Cielo: 0=Pendente, 1=Autorizado, 2=Pago, 3=Negado, 10=Cancelado, 13=Estornado
+  if (status === 2) return 'approved'
+  if (status === 3) return 'refused'
+  if (status === 10 || status === 13) return 'refunded'
+  return 'pending'
+}
+
+export async function POST(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   const params = await props.params
-  const { user } = await validateRequest()
-
-  if (!user || user.role !== 'supervisor') {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
-
   const { id } = params
+  let sessionUser: any = null
 
   try {
-    const [transaction] = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.id, id))
-      .limit(1)
-
-    if (!transaction) {
-      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
-    }
-
-    if (transaction.status !== 'pending') {
+    // Rate limiting: 30 requests per minute
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('supervisor-transacoes-sync', ip, 30, 60)
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_TRANSACOES_SYNC_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
       return NextResponse.json(
-        { error: 'Apenas transações pendentes podem ser sincronizadas' },
-        { status: 400 },
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
       )
     }
 
-    if (!transaction.gatewayTransactionId) {
-      return NextResponse.json({ error: 'Transação não possui ID do gateway' }, { status: 400 })
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: authUser } = await validateRequest()
+    sessionUser = authUser
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_TRANSACOES_SYNC_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
+    // Verifica se o usuário tem a role correta
+    if (sessionUser.role !== 'supervisor') {
+      console.error('[SUPERVISOR_TRANSACOES_SYNC_ROLE_ERROR]', { 
+        userId: sessionUser.id, 
+        role: sessionUser.role, 
+        timestamp: new Date().toISOString() 
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
+    }
+
+    console.log('[SUPERVISOR_TRANSACOES_SYNC_REQUEST]', { 
+      supervisorId: sessionUser.id, 
+      transactionId: id,
+      timestamp: new Date().toISOString() 
+    })
+
+    // Verificar se o supervisor tem acesso a esta transação
+    const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Transação não encontrada ou você não tem permissão para acessá-la.' },
+        { status: 404 },
+      )
+    }
+
+    // Buscar transação no banco local
+    const [transaction] = await db
+      .select()
+      .from(transactionsTable)
+      .where(eq(transactionsTable.id, id))
+      .limit(1)
+
+    if (!transaction || !transaction.gatewayTransactionId) {
+      return NextResponse.json(
+        { error: 'Transação não encontrada ou não possui ID de gateway.' },
+        { status: 404 },
+      )
+    }
+
+    // Buscar credenciais da Cielo
     const credentials = await getCieloCredentials()
 
+    console.log('[SUPERVISOR_TRANSACOES_SYNC_CIELO_REQUEST]', {
+      supervisorId: sessionUser.id,
+      transactionId: id,
+      gatewayTransactionId: transaction.gatewayTransactionId,
+      url: `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
+      timestamp: new Date().toISOString(),
+    })
+
+    // Consultar status na Cielo
     const response = await fetch(
       `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
       {
@@ -71,35 +191,69 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     )
 
     if (!response.ok) {
-      throw new Error('Falha ao consultar transação na Cielo')
+      console.error('[SUPERVISOR_TRANSACOES_SYNC_CIELO_ERROR]', {
+        supervisorId: sessionUser.id,
+        transactionId: id,
+        status: response.status,
+        statusText: response.statusText,
+        timestamp: new Date().toISOString(),
+      })
+
+      if (response.status === 404) {
+        return NextResponse.json(
+          { error: 'Transação ainda não processada pela Cielo.' },
+          { status: 404 },
+        )
+      }
+
+      throw new Error('Falha ao consultar status na Cielo.')
     }
 
     const cieloData = await response.json()
-    const cieloStatus = cieloData.Payment.Status
+    const newStatus = mapCieloStatus(cieloData.Payment.Status)
 
-    let newStatus: 'approved' | 'pending' | 'refused' | 'refunded' = 'pending'
-    if (cieloStatus === 2) newStatus = 'approved'
-    else if (cieloStatus === 3) newStatus = 'refused'
-    else if (cieloStatus === 10 || cieloStatus === 13) newStatus = 'refunded'
+    // Atualizar status no banco local se mudou
+    if (newStatus !== transaction.status) {
+      await db
+        .update(transactionsTable)
+        .set({
+          status: newStatus,
+        })
+        .where(eq(transactionsTable.id, id))
 
-    await db.update(transactions).set({ status: newStatus }).where(eq(transactions.id, id))
+      console.log('[SUPERVISOR_TRANSACOES_SYNC_STATUS_UPDATED]', {
+        supervisorId: sessionUser.id,
+        transactionId: id,
+        oldStatus: transaction.status,
+        newStatus: newStatus,
+        timestamp: new Date().toISOString(),
+      })
 
-    await logUserAction(
-      user.id,
-      'sync_transaction',
-      'transaction',
-      id,
-      `Transação sincronizada: ${transaction.status} → ${newStatus}`,
-    )
-
-    return NextResponse.json({
-      success: true,
-      oldStatus: transaction.status,
-      newStatus,
-      message: 'Transação sincronizada com sucesso',
+      return NextResponse.json({
+        success: true,
+        message: `Status atualizado de "${transaction.status}" para "${newStatus}".`,
+        oldStatus: transaction.status,
+        newStatus: newStatus,
+      })
+    } else {
+      return NextResponse.json({
+        success: true,
+        message: 'Status já está atualizado.',
+        status: newStatus,
+      })
+    }
+  } catch (error: unknown) {
+    console.error('[SUPERVISOR_TRANSACOES_SYNC_ERROR]', { 
+      supervisorId: sessionUser?.id, 
+      transactionId: id,
+      error: error instanceof Error ? error.message : 'Unknown error', 
+      timestamp: new Date().toISOString() 
     })
-  } catch (error) {
-    console.error('Erro ao sincronizar transação:', error)
-    return NextResponse.json({ error: 'Erro ao sincronizar transação' }, { status: 500 })
+    
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    return NextResponse.json(
+      { error: 'Erro interno do servidor.', details: errorMessage },
+      { status: 500 },
+    )
   }
 }

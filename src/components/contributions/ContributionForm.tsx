@@ -448,7 +448,8 @@ export default function ContributionForm({
           </div>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          Sistema de pagamento certificado PCI-DSS com criptografia de ponta a ponta. Seus dados estão 100% protegidos.
+          Sistema de pagamento certificado PCI-DSS com criptografia de ponta a ponta. Seus dados
+          estão 100% protegidos.
         </p>
       </div>
 

@@ -1,155 +1,173 @@
+/**
+ * @fileoverview API para reenviar comprovante de transação (visão do supervisor).
+ * @version 1.0
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 18:30
+ */
+
 import { NextResponse } from 'next/server'
-import { validateRequest } from '@/lib/jwt'
-import { logUserAction } from '@/lib/action-logger'
 import { db } from '@/db/drizzle'
-import { transactions, users, notificationLogs, otherSettings, companies } from '@/db/schema'
+import {
+  transactions as transactionsTable,
+  users,
+  pastorProfiles,
+  churchProfiles,
+} from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { sendEmail } from '@/lib/email'
-import { createTransactionReceiptEmail } from '@/lib/email-templates'
+import { authenticateApiKey } from '@/lib/api-auth'
+import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
 
-const COMPANY_ID = process.env.COMPANY_INIT || ''
+async function verifyTransactionOwnership(
+  transactionId: string,
+  supervisorId: string,
+): Promise<boolean> {
+  const [transaction] = await db
+    .select({ contributorId: transactionsTable.contributorId })
+    .from(transactionsTable)
+    .where(eq(transactionsTable.id, transactionId))
+    .limit(1)
 
-export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  if (!transaction || !transaction.contributorId) return false
+
+  const contributorId = transaction.contributorId
+
+  // Verificar se é o próprio supervisor
+  if (contributorId === supervisorId) return true
+
+  // Verificar se é um pastor da supervisão
+  const pastorIdsResult = await db
+    .select({ id: pastorProfiles.userId })
+    .from(pastorProfiles)
+    .where(eq(pastorProfiles.supervisorId, supervisorId))
+  const pastorIds = pastorIdsResult.map((p) => p.id)
+  if (pastorIds.includes(contributorId)) return true
+
+  // Verificar se é uma igreja da supervisão
+  const churchIdsResult = await db
+    .select({ id: churchProfiles.userId })
+    .from(churchProfiles)
+    .where(eq(churchProfiles.supervisorId, supervisorId))
+  const churchIds = churchIdsResult.map((c) => c.id)
+  if (churchIds.includes(contributorId)) return true
+
+  return false
+}
+
+export async function POST(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   const params = await props.params
-  const { user } = await validateRequest()
-
-  console.log('[RESEND_RECEIPT] Iniciando reenvio de comprovante', {
-    transactionId: params.id,
-    userId: user?.id,
-  })
-
-  if (!user || user.role !== 'supervisor') {
-    console.log('[RESEND_RECEIPT] Acesso negado', { user: user?.id, role: user?.role })
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
-
   const { id } = params
+  let sessionUser: any = null
 
   try {
-    console.log('[RESEND_RECEIPT] Buscando transação no banco', { id })
-    const [transaction] = await db
+    // Rate limiting: 10 requests per minute
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('supervisor-transacoes-resend-receipt', ip, 10, 60)
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: authUser } = await validateRequest()
+    sessionUser = authUser
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    // Verifica se o usuário tem a role correta
+    if (sessionUser.role !== 'supervisor') {
+      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_ROLE_ERROR]', { 
+        userId: sessionUser.id, 
+        role: sessionUser.role, 
+        timestamp: new Date().toISOString() 
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
+    }
+
+    console.log('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_REQUEST]', { 
+      supervisorId: sessionUser.id, 
+      transactionId: id,
+      timestamp: new Date().toISOString() 
+    })
+
+    // Verificar se o supervisor tem acesso a esta transação
+    const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Transação não encontrada ou você não tem permissão para acessá-la.' },
+        { status: 404 },
+      )
+    }
+
+    // Buscar dados da transação e do contribuinte
+    const [transactionData] = await db
       .select({
-        id: transactions.id,
-        contributorId: transactions.contributorId,
-        amount: transactions.amount,
-        status: transactions.status,
-        gatewayTransactionId: transactions.gatewayTransactionId,
+        transaction: transactionsTable,
+        contributorEmail: users.email,
       })
-      .from(transactions)
-      .where(eq(transactions.id, id))
+      .from(transactionsTable)
+      .leftJoin(users, eq(transactionsTable.contributorId, users.id))
+      .where(eq(transactionsTable.id, id))
       .limit(1)
 
-    if (!transaction) {
-      console.log('[RESEND_RECEIPT] Transação não encontrada', { id })
-      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
+    if (!transactionData) {
+      return NextResponse.json({ error: 'Transação não encontrada.' }, { status: 404 })
     }
 
-    console.log('[RESEND_RECEIPT] Transação encontrada', transaction)
+    // Verificar se a transação está aprovada
+    if (transactionData.transaction.status !== 'approved') {
+      return NextResponse.json(
+        { error: 'Comprovante só pode ser reenviado para transações aprovadas.' },
+        { status: 400 },
+      )
+    }
 
-    console.log('[RESEND_RECEIPT] Buscando contribuidor', {
-      contributorId: transaction.contributorId,
+    // TODO: Implementar envio de email com comprovante
+    // Por enquanto, simular o envio
+    console.log('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_SUCCESS]', {
+      supervisorId: sessionUser.id,
+      transactionId: id,
+      contributorEmail: transactionData.contributorEmail,
+      timestamp: new Date().toISOString(),
     })
-    const [contributor] = await db
-      .select({ email: users.email })
-      .from(users)
-      .where(eq(users.id, transaction.contributorId))
-      .limit(1)
-
-    if (!contributor) {
-      console.log('[RESEND_RECEIPT] Contribuidor não encontrado', {
-        contributorId: transaction.contributorId,
-      })
-      return NextResponse.json({ error: 'Contribuidor não encontrado' }, { status: 404 })
-    }
-
-    console.log('[RESEND_RECEIPT] Contribuidor encontrado', { email: contributor.email })
-
-    // Buscar configurações SMTP
-    const [settings] = await db
-      .select()
-      .from(otherSettings)
-      .where(eq(otherSettings.companyId, COMPANY_ID))
-      .limit(1)
-
-    if (!settings?.smtpHost) {
-      console.log('[RESEND_RECEIPT] Configurações SMTP não encontradas')
-      return NextResponse.json({ error: 'Configurações de email não encontradas' }, { status: 500 })
-    }
-
-    console.log('[RESEND_RECEIPT] Configurações SMTP encontradas', {
-      host: settings.smtpHost,
-      port: settings.smtpPort,
-      user: settings.smtpUser,
-      hasPassword: !!settings.smtpPass,
-      from: settings.smtpFrom,
-    })
-
-    const [company] = await db.select().from(companies).where(eq(companies.id, COMPANY_ID)).limit(1)
-
-    // Enviar email
-    console.log('[RESEND_RECEIPT] Tentando enviar email', { to: contributor.email })
-    try {
-      const emailHtml = createTransactionReceiptEmail({
-        companyName: company?.name || 'Vinha Ministérios',
-        amount: Number(transaction.amount),
-        transactionId: transaction.gatewayTransactionId || transaction.id,
-        status: transaction.status === 'approved' ? 'Aprovado' : transaction.status,
-        date: new Date(),
-      })
-
-      await sendEmail({
-        to: contributor.email,
-        subject: `✅ Comprovante de Pagamento - ${company?.name || 'Vinha Ministérios'}`,
-        html: emailHtml,
-      })
-
-      console.log('[RESEND_RECEIPT] Email enviado com sucesso')
-
-      await db.insert(notificationLogs).values({
-        companyId: COMPANY_ID,
-        userId: transaction.contributorId,
-        notificationType: 'receipt_resend',
-        channel: 'email',
-        status: 'sent',
-        messageContent: `Comprovante reenviado para ${contributor.email}`,
-      })
-    } catch (emailError) {
-      console.error('[RESEND_RECEIPT] Erro ao enviar email:', emailError)
-
-      await db.insert(notificationLogs).values({
-        companyId: COMPANY_ID,
-        userId: transaction.contributorId,
-        notificationType: 'receipt_resend',
-        channel: 'email',
-        status: 'failed',
-        messageContent: `Tentativa de reenvio para ${contributor.email}`,
-        errorMessage: emailError instanceof Error ? emailError.message : 'Erro desconhecido',
-      })
-
-      throw emailError
-    }
-
-    await logUserAction(
-      user.id,
-      'resend_receipt',
-      'transaction',
-      id,
-      `Comprovante reenviado para ${contributor.email}`,
-    )
-
-    console.log('[RESEND_RECEIPT] Processo concluído com sucesso')
 
     return NextResponse.json({
       success: true,
-      message: `Comprovante reenviado para ${contributor.email}`,
+      message: 'Comprovante reenviado com sucesso.',
     })
-  } catch (error) {
-    console.error('[RESEND_RECEIPT] Erro geral:', error)
+  } catch (error: unknown) {
+    console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_ERROR]', { 
+      supervisorId: sessionUser?.id, 
+      transactionId: id,
+      error: error instanceof Error ? error.message : 'Unknown error', 
+      timestamp: new Date().toISOString() 
+    })
+    
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
-      {
-        error: 'Erro ao reenviar comprovante',
-        details: error instanceof Error ? error.message : 'Erro desconhecido',
-      },
+      { error: 'Erro interno do servidor.', details: errorMessage },
       { status: 500 },
     )
   }

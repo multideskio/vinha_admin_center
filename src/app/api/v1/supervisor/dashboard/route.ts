@@ -1,8 +1,9 @@
 /**
  * @fileoverview Rota da API para buscar dados para o dashboard do supervisor.
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 17:00
  */
 
 import { NextResponse } from 'next/server'
@@ -14,6 +15,7 @@ import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { type UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
+import { rateLimit } from '@/lib/rate-limit'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -26,28 +28,50 @@ const calculateChange = (current: number, previous: number): string => {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-  // Primeiro tenta autenticação JWT (usuário logado via web)
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    // Se não há usuário logado, tenta autenticação por API Key
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-
-    // Se nem JWT nem API Key funcionaram, retorna 401
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  // Verifica se o usuário tem a role correta
-  if ((sessionUser.role as UserRole) !== 'supervisor') {
-    return NextResponse.json(
-      { error: 'Acesso negado. Role supervisor necessária.' },
-      { status: 403 },
-    )
-  }
-  const supervisorId = sessionUser.id
-
   try {
+    // Rate limiting: 60 requests per minute
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('supervisor-dashboard', ip, 60, 60) // 60 requests per minute
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_DASHBOARD_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: sessionUser } = await validateRequest()
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_DASHBOARD_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    // Verifica se o usuário tem a role correta
+    if ((sessionUser.role as UserRole) !== 'supervisor') {
+      console.error('[SUPERVISOR_DASHBOARD_ROLE_ERROR]', { 
+        userId: sessionUser.id, 
+        role: sessionUser.role, 
+        timestamp: new Date().toISOString() 
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+    const supervisorId = sessionUser.id
+
+    console.log('[SUPERVISOR_DASHBOARD_REQUEST]', { 
+      supervisorId, 
+      timestamp: new Date().toISOString() 
+    })
+
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
     const startDateParam = searchParams.get('startDate')
@@ -58,6 +82,13 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startOfCurrentMonth = startDateParam ? new Date(startDateParam) : startOfMonth(now)
     const endOfCurrentMonth = endDateParam ? new Date(endDateParam) : now
     const startOfPreviousMonth = startOfMonth(subMonths(startOfCurrentMonth, 1))
+
+    console.log('[SUPERVISOR_DASHBOARD_DATE_FILTER]', { 
+      supervisorId,
+      startOfCurrentMonth: startOfCurrentMonth.toISOString(),
+      endOfCurrentMonth: endOfCurrentMonth.toISOString(),
+      timestamp: new Date().toISOString() 
+    })
 
     const pastorsResult = await db
       .select({ id: pastorProfiles.userId })
@@ -337,7 +368,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     })
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
-    console.error('Erro ao buscar dados para o dashboard do supervisor:', error)
+    console.error('[SUPERVISOR_DASHBOARD_ERROR]', { 
+      error: errorMessage, 
+      timestamp: new Date().toISOString() 
+    })
     return NextResponse.json(
       { error: 'Erro ao buscar dados do dashboard do supervisor', details: errorMessage },
       { status: 500 },

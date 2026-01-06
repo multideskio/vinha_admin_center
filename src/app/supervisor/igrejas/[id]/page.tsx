@@ -1,8 +1,9 @@
 /**
  * @fileoverview Página de edição de perfil da igreja (visão do supervisor).
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 18:00
  */
 
 'use client'

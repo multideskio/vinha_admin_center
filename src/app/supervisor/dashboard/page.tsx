@@ -1,8 +1,9 @@
 /**
  * @fileoverview Página do dashboard do supervisor.
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 16:50
  */
 
 'use client'
@@ -116,8 +117,11 @@ export default function SupervisorDashboardPage(): JSX.Element {
   const handleSearch = React.useCallback(() => {
     if (dateRange?.from && dateRange?.to) {
       fetchData(dateRange.from, dateRange.to)
+    } else if (dateRange?.from) {
+      // Se só tem data inicial, usa ela como início e hoje como fim
+      fetchData(dateRange.from, new Date())
     } else {
-      fetchData() // Busca sem filtro se não há range completo
+      fetchData() // Busca sem filtro se não há range
     }
   }, [dateRange, fetchData])
 
@@ -143,7 +147,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-10 w-64" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
             <Card key={i}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -157,7 +161,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
             </Card>
           ))}
         </div>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">{/* Melhorado para xl:grid-cols-2 */}
           <Card>
             <CardContent className="pt-6">
               <Skeleton className="h-80 w-full" />
@@ -230,7 +234,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">{/* Melhorado para melhor responsividade */}
         {kpiDisplayData.map((kpi, index) => {
           const colorClasses = [
             {
@@ -277,7 +281,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="shadow-lg border-t-4 border-t-videira-cyan">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -304,7 +308,8 @@ export default function SupervisorDashboardPage(): JSX.Element {
                   <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
                     <TableHead className="font-semibold">Contribuinte</TableHead>
                     <TableHead className="text-right font-semibold">Valor</TableHead>
-                    <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold">Data</TableHead>
+                    <TableHead className="hidden md:table-cell font-semibold">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -312,13 +317,16 @@ export default function SupervisorDashboardPage(): JSX.Element {
                     data.recentTransactions.map((transaction) => (
                       <TableRow key={transaction.id}>
                         <TableCell className="font-medium">{transaction.name}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right font-medium">
                           {new Intl.NumberFormat('pt-BR', {
                             style: 'currency',
                             currency: 'BRL',
                           }).format(transaction.amount)}
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell">
+                        <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                          {transaction.date}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
                             {statusMap[transaction.status]?.text || transaction.status}
                           </Badge>
@@ -327,7 +335,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                         Nenhuma transação encontrada
                       </TableCell>
                     </TableRow>
@@ -379,7 +387,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">{/* Melhorado para xl:grid-cols-2 */}
         <Card className="shadow-lg border-t-4 border-t-videira-purple">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

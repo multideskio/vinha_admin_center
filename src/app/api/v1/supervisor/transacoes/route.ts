@@ -1,8 +1,9 @@
 /**
  * @fileoverview Rota da API para buscar transações da supervisão.
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 18:30
  */
 
 import { NextResponse } from 'next/server'
@@ -17,35 +18,60 @@ import { eq, desc, inArray, gte, lte, and } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
-import { getErrorMessage } from '@/lib/error-types'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request): Promise<NextResponse> {
-  // Primeiro tenta autenticação JWT (usuário logado via web)
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    // Se não há usuário logado, tenta autenticação por API Key
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-
-    // Se nem JWT nem API Key funcionaram, retorna 401
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  // Verifica se o usuário tem a role correta
-  if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json(
-      { error: 'Acesso negado. Role supervisor necessária.' },
-      { status: 403 },
-    )
-  }
+  let sessionUser: any = null
 
   try {
+    // Rate limiting: 60 requests per minute
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('supervisor-transacoes', ip, 60, 60)
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_TRANSACOES_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: authUser } = await validateRequest()
+    sessionUser = authUser
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_TRANSACOES_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    // Verifica se o usuário tem a role correta
+    if (sessionUser.role !== 'supervisor') {
+      console.error('[SUPERVISOR_TRANSACOES_ROLE_ERROR]', { 
+        userId: sessionUser.id, 
+        role: sessionUser.role, 
+        timestamp: new Date().toISOString() 
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+
+    console.log('[SUPERVISOR_TRANSACOES_REQUEST]', { 
+      supervisorId: sessionUser.id, 
+      timestamp: new Date().toISOString() 
+    })
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
+    // Buscar pastores e igrejas da supervisão
     const pastorIdsResult = await db
       .select({ id: pastorProfiles.userId })
       .from(pastorProfiles)
@@ -58,8 +84,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       .where(eq(churchProfiles.supervisorId, sessionUser.id))
     const churchIds = churchIdsResult.map((c) => c.id)
 
+    // Incluir o próprio supervisor na rede
     const networkUserIds = [sessionUser.id, ...pastorIds, ...churchIds]
-    if (networkUserIds.length === 0) {
+    if (networkUserIds.length === 1) {
+      // Se só tem o supervisor (sem pastores/igrejas), retorna array vazio
       return NextResponse.json({ transactions: [] })
     }
 
@@ -102,8 +130,13 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ transactions: formattedTransactions })
   } catch (error: unknown) {
-    const errorMessage = getErrorMessage(error)
-    console.error('Erro ao buscar transações da supervisão:', error)
+    console.error('[SUPERVISOR_TRANSACOES_GET_ERROR]', { 
+      supervisorId: sessionUser?.id, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
+      timestamp: new Date().toISOString() 
+    })
+    
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: errorMessage },
       { status: 500 },

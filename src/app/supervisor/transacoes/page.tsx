@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Página de listagem de transações (visão do supervisor).
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 18:30
+ */
+
 'use client'
 
 import * as React from 'react'
@@ -243,12 +251,12 @@ export default function TransacoesPage() {
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
                   <TableHead className="font-semibold">Contribuinte</TableHead>
-                  <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
-                  <TableHead className="hidden md:table-cell text-right font-semibold">
+                  <TableHead className="hidden sm:table-cell font-semibold">Igreja</TableHead>
+                  <TableHead className="hidden sm:table-cell text-right font-semibold">
                     Valor
                   </TableHead>
                   <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
-                  <TableHead className="hidden md:table-cell font-semibold">
+                  <TableHead className="hidden sm:table-cell font-semibold">
                     Motivo Solicitação
                   </TableHead>
                   <TableHead>
@@ -263,16 +271,16 @@ export default function TransacoesPage() {
                       <TableCell>
                         <Skeleton className="h-4 w-40" />
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
+                      <TableCell className="hidden sm:table-cell">
                         <Skeleton className="h-4 w-48" />
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      <TableCell className="hidden sm:table-cell">
                         <Skeleton className="h-4 w-20 ml-auto" />
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Skeleton className="h-6 w-24 rounded-full" />
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      <TableCell className="hidden sm:table-cell">
                         <Skeleton className="h-4 w-32" />
                       </TableCell>
                       <TableCell>
@@ -284,10 +292,10 @@ export default function TransacoesPage() {
                   paginatedTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell className="font-medium">{transaction.contributor}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {transaction.church || 'N/A'}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-right">
+                      <TableCell className="hidden sm:table-cell text-right">
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
@@ -298,7 +306,7 @@ export default function TransacoesPage() {
                           {statusMap[transaction.status]?.text || transaction.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {transaction.refundRequestReason ? (
                           <TooltipProvider>
                             <Tooltip>

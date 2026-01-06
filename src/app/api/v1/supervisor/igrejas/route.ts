@@ -1,8 +1,9 @@
 /**
  * @fileoverview Rota da API para gerenciar igrejas (visão do supervisor).
- * @version 1.2
- * @date 2024-08-07
- * @author PH
+ * @version 1.3
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 17:45
  */
 
 import { NextResponse } from 'next/server'
@@ -13,6 +14,7 @@ import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
 
 import { getCompanyId } from '@/lib/utils'
 
@@ -39,27 +41,51 @@ const churchSchema = z.object({
 })
 
 export async function GET(request: Request): Promise<NextResponse> {
-  // Primeiro tenta autenticação JWT (usuário logado via web)
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    // Se não há usuário logado, tenta autenticação por API Key
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-
-    // Se nem JWT nem API Key funcionaram, retorna 401
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  // Verifica se o usuário tem a role correta
-  if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json(
-      { error: 'Acesso negado. Role supervisor necessária.' },
-      { status: 403 },
-    )
-  }
+  let sessionUser: any = null
 
   try {
+    // Rate limiting: 60 requests per minute
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('supervisor-igrejas', ip, 60, 60) // 60 requests per minute
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_IGREJAS_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: authUser } = await validateRequest()
+    sessionUser = authUser
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_IGREJAS_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    // Verifica se o usuário tem a role correta
+    if (sessionUser.role !== 'supervisor') {
+      console.error('[SUPERVISOR_IGREJAS_ROLE_ERROR]', { 
+        userId: sessionUser.id, 
+        role: sessionUser.role, 
+        timestamp: new Date().toISOString() 
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+
+    console.log('[SUPERVISOR_IGREJAS_REQUEST]', { 
+      supervisorId: sessionUser.id, 
+      timestamp: new Date().toISOString() 
+    })
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
@@ -103,7 +129,12 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ churches: result })
   } catch (error) {
-    console.error('Erro ao buscar igrejas:', error)
+    console.error('[SUPERVISOR_IGREJAS_GET_ERROR]', { 
+      supervisorId: sessionUser?.id, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
+      timestamp: new Date().toISOString() 
+    })
+    
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
       { error: 'Erro interno do servidor.', details: errorMessage },
@@ -113,27 +144,51 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  // Primeiro tenta autenticação JWT (usuário logado via web)
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    // Se não há usuário logado, tenta autenticação por API Key
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-
-    // Se nem JWT nem API Key funcionaram, retorna 401
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  // Verifica se o usuário tem a role correta
-  if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json(
-      { error: 'Acesso negado. Role supervisor necessária.' },
-      { status: 403 },
-    )
-  }
+  let sessionUser: any = null
 
   try {
+    // Rate limiting: 10 requests per minute
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('supervisor-igrejas-post', ip, 10, 60) // 10 requests per minute
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_IGREJAS_POST_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: authUser } = await validateRequest()
+    sessionUser = authUser
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_IGREJAS_POST_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    // Verifica se o usuário tem a role correta
+    if (sessionUser.role !== 'supervisor') {
+      console.error('[SUPERVISOR_IGREJAS_POST_ROLE_ERROR]', { 
+        userId: sessionUser.id, 
+        role: sessionUser.role, 
+        timestamp: new Date().toISOString() 
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+
+    console.log('[SUPERVISOR_IGREJAS_POST_REQUEST]', { 
+      supervisorId: sessionUser.id, 
+      timestamp: new Date().toISOString() 
+    })
     const body = await request.json()
     const validatedData = churchSchema.parse({
       ...body,
@@ -188,13 +243,19 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ success: true, church: newChurch }, { status: 201 })
   } catch (error) {
+    console.error('[SUPERVISOR_IGREJAS_POST_ERROR]', { 
+      supervisorId: sessionUser?.id, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
+      timestamp: new Date().toISOString() 
+    })
+    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Dados inválidos.', details: error.errors },
         { status: 400 },
       )
     }
-    console.error('Erro ao criar igreja:', error)
+    
     if (
       error instanceof Error &&
       'constraint' in error &&

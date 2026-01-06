@@ -1,8 +1,9 @@
 /**
  * @fileoverview Página de listagem e gerenciamento de pastores (visão do supervisor).
- * @version 1.3
- * @date 2024-08-08
- * @author PH
+ * @version 1.4
+ * @date 2025-01-06
+ * @author Sistema de Padronização
+ * @lastReview 2025-01-06 17:30
  */
 
 'use client'
@@ -586,9 +587,9 @@ export default function PastoresPage(): JSX.Element {
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
                 <TableHead className="font-semibold">Nome</TableHead>
-                <TableHead className="hidden md:table-cell font-semibold">Email</TableHead>
+                <TableHead className="hidden sm:table-cell font-semibold">Email</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold">Celular</TableHead>
-                <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
+                <TableHead className="hidden lg:table-cell font-semibold">Status</TableHead>{/* Melhorado para lg:table-cell */}
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -601,13 +602,13 @@ export default function PastoresPage(): JSX.Element {
                     <TableCell>
                       <Skeleton className="h-4 w-40" />
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden sm:table-cell">
                       <Skeleton className="h-4 w-48" />
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    <TableCell className="hidden lg:table-cell">{/* Melhorado para lg:table-cell */}
                       <Skeleton className="h-6 w-16 rounded-full" />
                     </TableCell>
                     <TableCell>
@@ -619,13 +620,13 @@ export default function PastoresPage(): JSX.Element {
                 paginatedPastores.map((pastor) => (
                   <TableRow key={pastor.id}>
                     <TableCell className="font-medium">{`${pastor.firstName} ${pastor.lastName}`}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">
                       {pastor.email}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">
                       {pastor.phone}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    <TableCell className="hidden lg:table-cell">{/* Melhorado para lg:table-cell */}
                       <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
                         {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
                       </Badge>
@@ -672,9 +673,9 @@ export default function PastoresPage(): JSX.Element {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    Nenhum pastor encontrado.
-                  </TableCell>
+                      <TableCell colSpan={5} className="text-center">
+                        Nenhum pastor encontrado.
+                      </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -687,7 +688,7 @@ export default function PastoresPage(): JSX.Element {
 
   const CardView = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">{/* Melhorado para xl:grid-cols-3 */}
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i}>
