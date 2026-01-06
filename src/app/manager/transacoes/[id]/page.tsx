@@ -67,21 +67,107 @@ export default function TransacaoDetalhePage({ params }: { params: Promise<{ id:
 
   if (isLoading) {
     return (
-      <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-        <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-6 w-24 ml-auto" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
-            <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-32 w-full" />
+      <div className="flex flex-col gap-6">
+        {/* Header Skeleton com gradiente */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg">
+          <div className="absolute inset-0 videira-gradient opacity-90" />
+          <div className="relative z-10 p-8">
+            <div className="flex items-center justify-between">
+              <div className="space-y-3">
+                <Skeleton className="h-6 w-32 bg-white/20" />
+                <Skeleton className="h-10 w-80 bg-white/20" />
+                <Skeleton className="h-5 w-96 bg-white/20" />
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <Skeleton className="h-8 w-24 bg-white/20 rounded-full" />
+                <Skeleton className="h-10 w-36 bg-white/20 rounded-md" />
+              </div>
             </div>
-            <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+
+        {/* Content Grid Skeleton */}
+        <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
+          {/* Main Content Column */}
+          <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
+            {/* Transaction Info Card */}
+            <div className="rounded-lg border shadow-lg p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+                <div className="h-px bg-border" />
+                <div className="flex justify-between items-center py-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-6 w-24" />
+                </div>
+                <div className="h-px bg-border" />
+                <div className="flex justify-between items-center py-2">
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
+                <div className="h-px bg-border" />
+                <div className="flex justify-between items-center py-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Details Card */}
+            <div className="rounded-lg border shadow-lg p-6 space-y-4">
+              <Skeleton className="h-6 w-44" />
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div className="h-px bg-border" />
+                <div className="flex justify-between items-center py-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Column */}
+          <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
+            {/* Contributor Card */}
+            <div className="rounded-lg border shadow-lg p-6 space-y-4">
+              <Skeleton className="h-6 w-28" />
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                <div className="h-px bg-border" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-14" />
+                  <Skeleton className="h-4 w-48" />
+                </div>
+              </div>
+            </div>
+
+            {/* Church Card (conditional) */}
+            <div className="rounded-lg border shadow-lg p-6 space-y-4">
+              <Skeleton className="h-6 w-16" />
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-5 w-36" />
+                </div>
+                <div className="h-px bg-border" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-44" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
