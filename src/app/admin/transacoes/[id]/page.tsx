@@ -60,7 +60,7 @@ type Transaction = {
   payment: {
     method: string
     details: string
-  }
+  } | null
   refundRequestReason: string | null
 }
 
@@ -467,10 +467,12 @@ export default function TransacaoDetalhePage() {
                   <Badge
                     className={cn(
                       'text-sm border',
-                      methodConfig[transaction.payment.method]?.color,
+                      transaction.payment?.method
+                        ? methodConfig[transaction.payment.method]?.color
+                        : '',
                     )}
                   >
-                    {transaction.payment.method}
+                    {transaction.payment?.method || 'Não informado'}
                   </Badge>
                 </div>
                 <div className="space-y-1">
@@ -488,20 +490,23 @@ export default function TransacaoDetalhePage() {
                 </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs font-mono">
-                    {transaction.payment.details}
+                    {transaction.payment?.details || 'Não disponível'}
                   </code>
                   <Button
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8"
                     onClick={() => {
-                      navigator.clipboard.writeText(transaction.payment.details)
-                      toast({
-                        title: 'Copiado!',
-                        description: 'ID copiado para área de transferência',
-                        variant: 'success',
-                      })
+                      if (transaction.payment?.details) {
+                        navigator.clipboard.writeText(transaction.payment.details)
+                        toast({
+                          title: 'Copiado!',
+                          description: 'ID copiado para área de transferência',
+                          variant: 'success',
+                        })
+                      }
                     }}
+                    disabled={!transaction.payment?.details}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
