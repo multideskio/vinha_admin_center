@@ -213,6 +213,43 @@ export default function OpenAISettingsPage() {
                 </Button>
               )}
             </div>
+
+            {hasKey && (
+              <div className="pt-4 border-t">
+                <Button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/v1/test/openai')
+                      const data = await res.json()
+                      if (data.success) {
+                        toast({
+                          title: 'Teste bem-sucedido',
+                          description: 'A chave OpenAI está funcionando corretamente.',
+                          variant: 'success',
+                        })
+                      } else {
+                        toast({
+                          title: 'Teste falhou',
+                          description: data.error || 'Erro desconhecido',
+                          variant: 'destructive',
+                        })
+                      }
+                    } catch (error) {
+                      toast({
+                        title: 'Erro no teste',
+                        description: 'Não foi possível testar a chave.',
+                        variant: 'destructive',
+                      })
+                    }
+                  }}
+                  disabled={saving}
+                  className="w-full bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  Testar Chave OpenAI
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

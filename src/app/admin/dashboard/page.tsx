@@ -202,17 +202,44 @@ export default function DashboardPage() {
       if (dateRange.to) params.append('to', dateRange.to.toISOString())
       const res = await fetch(`/api/v1/dashboard/insights?${params.toString()}`)
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Falha ao gerar insights')
+      if (!res.ok) {
+        console.error('Insights API error:', res.status, data)
+        throw new Error(data?.error || 'Falha ao gerar insights')
+      }
       setInsightSummary(data.summary || '')
       setInsightCards(data.cards || [])
+      toast({
+        title: 'Insights gerados',
+        description: 'Análise da IA concluída com sucesso.',
+        variant: 'success',
+      })
     } catch (e: unknown) {
       setInsightSummary('')
       setInsightCards([])
-      toast({
-        title: 'Erro',
-        description: e instanceof Error ? e.message : 'Erro desconhecido',
-        variant: 'destructive',
-      })
+      const errorMessage = e instanceof Error ? e.message : 'Erro desconhecido'
+      console.error('Insights generation failed:', e)
+      
+      // Mostrar erro mais detalhado
+      if (errorMessage.includes('Chave OpenAI não configurada')) {
+        toast({
+          title: 'Configuração necessária',
+          description: 'Configure a chave OpenAI nas configurações do sistema.',
+          variant: 'destructive',
+          action: (
+            <Link href="/admin/configuracoes/openai">
+              <Button variant="outline" size="sm">
+                Configurar
+              </Button>
+            </Link>
+          ),
+        })
+      } else {
+        toast({
+          title: 'Erro ao gerar insights',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      }
     } finally {
       setInsightLoading(false)
     }

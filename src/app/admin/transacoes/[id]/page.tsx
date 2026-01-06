@@ -52,7 +52,7 @@ type Transaction = {
     email: string
     phone: string | null
     role: string
-  }
+  } | null
   church: {
     name: string
     address: string | null
@@ -121,7 +121,7 @@ const RefundModal = ({
   transactionId: string
   onSuccess: () => void
 }) => {
-  const [refundAmount, setRefundAmount] = React.useState(amount.toFixed(2))
+  const [refundAmount, setRefundAmount] = React.useState((amount ?? 0).toFixed(2))
   const [reason, setReason] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
   const [open, setOpen] = React.useState(false)
@@ -203,7 +203,7 @@ const RefundModal = ({
             <p className="text-xs text-muted-foreground">
               Valor máximo:{' '}
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                amount,
+                amount ?? 0,
               )}
             </p>
           </div>
@@ -247,7 +247,7 @@ export default function TransacaoDetalhePage() {
       const response = await fetch(`/api/v1/transacoes/${params.id}`)
       if (!response.ok) throw new Error('Falha ao carregar transação')
       const data = await response.json()
-      setTransaction(data)
+      setTransaction(data.transaction)
     } catch (error) {
       console.error(error)
       toast({
@@ -660,46 +660,50 @@ export default function TransacaoDetalhePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <p className="font-bold text-lg">{transaction.contributor.name}</p>
+                <p className="font-bold text-lg">{transaction.contributor?.name || 'Não informado'}</p>
                 <p className="text-sm text-muted-foreground flex items-start gap-2">
                   <span className="text-xs bg-muted px-2 py-1 rounded">
-                    {transaction.contributor.role === 'pastor'
+                    {transaction.contributor?.role === 'pastor'
                       ? 'Pastor'
-                      : transaction.contributor.role === 'church_account'
+                      : transaction.contributor?.role === 'church_account'
                         ? 'Igreja'
-                        : transaction.contributor.role === 'supervisor'
+                        : transaction.contributor?.role === 'supervisor'
                           ? 'Supervisor'
-                          : transaction.contributor.role === 'manager'
+                          : transaction.contributor?.role === 'manager'
                             ? 'Gerente'
-                            : 'Admin'}
+                            : transaction.contributor?.role === 'admin'
+                              ? 'Admin'
+                              : 'Não informado'}
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground">{transaction.contributor.email}</p>
-                {transaction.contributor.phone && (
+                <p className="text-sm text-muted-foreground">{transaction.contributor?.email || 'Não informado'}</p>
+                {transaction.contributor?.phone && (
                   <p className="text-sm text-muted-foreground">{transaction.contributor.phone}</p>
                 )}
               </div>
 
-              <Link
-                href={`/admin/${
-                  transaction.contributor.role === 'manager'
-                    ? 'gerentes'
-                    : transaction.contributor.role === 'supervisor'
-                      ? 'supervisores'
-                      : transaction.contributor.role === 'pastor'
-                        ? 'pastores'
-                        : transaction.contributor.role === 'church_account'
-                          ? 'igrejas'
-                          : '#'
-                }/${transaction.contributor.id}`}
-              >
-                <Button
-                  size="sm"
-                  className="w-full bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+              {transaction.contributor && (
+                <Link
+                  href={`/admin/${
+                    transaction.contributor.role === 'manager'
+                      ? 'gerentes'
+                      : transaction.contributor.role === 'supervisor'
+                        ? 'supervisores'
+                        : transaction.contributor.role === 'pastor'
+                          ? 'pastores'
+                          : transaction.contributor.role === 'church_account'
+                            ? 'igrejas'
+                            : 'administradores'
+                  }/${transaction.contributor.id}`}
                 >
-                  Ver perfil completo →
-                </Button>
-              </Link>
+                  <Button
+                    size="sm"
+                    className="w-full bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                  >
+                    Ver perfil completo →
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
 

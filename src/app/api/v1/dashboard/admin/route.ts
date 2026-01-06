@@ -14,8 +14,10 @@ import {
   pastorProfiles,
   supervisorProfiles,
   churchProfiles,
+  managerProfiles,
+  adminProfiles,
 } from '@/db/schema'
-import { count, sum, eq, isNull, and, desc, sql, gte, lt } from 'drizzle-orm'
+import { count, sum, eq, isNull, and, desc, sql, gte, lt, inArray } from 'drizzle-orm'
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
@@ -219,7 +221,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const recentTransactionsData = await db
       .select({
         id: transactions.id,
-        name: users.email,
+        email: users.email,
         amount: transactions.amount,
         date: transactions.createdAt,
         status: transactions.status,
@@ -231,6 +233,92 @@ export async function GET(request: Request): Promise<NextResponse> {
       .where(and(gte(transactions.createdAt, startDate), lt(transactions.createdAt, endDate)))
       .orderBy(desc(transactions.createdAt))
       .limit(10)
+
+    // Buscar nomes reais dos contribuintes das transações recentes
+    const contributorIds = recentTransactionsData.map((t) => t.contributorId)
+    
+    console.log('[DASHBOARD_DEBUG] Contributor IDs:', contributorIds)
+
+    // Buscar nomes de pastores
+    const pastorNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: pastorProfiles.userId,
+              name: sql<string>`${pastorProfiles.firstName} || ' ' || ${pastorProfiles.lastName}`,
+            })
+            .from(pastorProfiles)
+            .where(inArray(pastorProfiles.userId, contributorIds))
+        : []
+
+    console.log('[DASHBOARD_DEBUG] Pastor names found:', pastorNames.length)
+
+    // Buscar nomes de supervisores
+    const supervisorNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: supervisorProfiles.userId,
+              name: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+            })
+            .from(supervisorProfiles)
+            .where(inArray(supervisorProfiles.userId, contributorIds))
+        : []
+
+    console.log('[DASHBOARD_DEBUG] Supervisor names found:', supervisorNames.length)
+
+    // Buscar nomes de igrejas
+    const churchNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: churchProfiles.userId,
+              name: churchProfiles.nomeFantasia,
+            })
+            .from(churchProfiles)
+            .where(inArray(churchProfiles.userId, contributorIds))
+        : []
+
+    console.log('[DASHBOARD_DEBUG] Church names found:', churchNames.length)
+
+    // Buscar nomes de managers
+    const managerNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: managerProfiles.userId,
+              name: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
+            })
+            .from(managerProfiles)
+            .where(inArray(managerProfiles.userId, contributorIds))
+        : []
+
+    console.log('[DASHBOARD_DEBUG] Manager names found:', managerNames.length)
+
+    // Buscar nomes de admins
+    const adminNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: adminProfiles.userId,
+              name: sql<string>`${adminProfiles.firstName} || ' ' || ${adminProfiles.lastName}`,
+            })
+            .from(adminProfiles)
+            .where(inArray(adminProfiles.userId, contributorIds))
+        : []
+
+    console.log('[DASHBOARD_DEBUG] Admin names found:', adminNames.length)
+
+    // Criar mapa de nomes
+    const nameMap = new Map<string, string>()
+    for (const p of pastorNames) nameMap.set(p.id, p.name)
+    for (const s of supervisorNames) nameMap.set(s.id, s.name)
+    for (const c of churchNames) nameMap.set(c.id, c.name)
+    for (const m of managerNames) nameMap.set(m.id, m.name)
+    for (const a of adminNames) nameMap.set(a.id, a.name)
+    
+    console.log('[DASHBOARD_DEBUG] Name map size:', nameMap.size)
+    console.log('[DASHBOARD_DEBUG] Name map entries:', Array.from(nameMap.entries()))
 
     const recentRegistrationsData = await db
       .select({
@@ -402,6 +490,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const recentTransactions = recentTransactionsData.map((t) => ({
       ...t,
+      name: nameMap.get(t.contributorId) || t.email,
       amount: Number(t.amount),
       date: format(new Date(t.date), 'dd/MM/yyyy'),
     }))
