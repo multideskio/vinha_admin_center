@@ -121,7 +121,7 @@ export default function GerenteDashboardPage() {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         console.error('[MANAGER_PROFILE_CHECK_ERROR]', {
           error: errorMessage,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         })
       }
     }

@@ -34,12 +34,13 @@ const calculateChange = (current: number, previous: number): string => {
 export async function GET(request: Request): Promise<NextResponse> {
   try {
     // Rate limiting
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('manager-dashboard', ip, 60, 60) // 60 requests per minute
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
-        { status: 429 }
+        { status: 429 },
       )
     }
 

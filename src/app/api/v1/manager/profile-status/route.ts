@@ -16,12 +16,13 @@ import { rateLimit } from '@/lib/rate-limit'
 export async function GET(request: Request) {
   try {
     // Rate limiting
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('manager-profile-status', ip, 30, 60) // 30 requests per minute
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
-        { status: 429 }
+        { status: 429 },
       )
     }
 
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('[MANAGER_PROFILE_STATUS_ERROR]', {
       error: errorMessage,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json({ complete: false })
   }
