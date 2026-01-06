@@ -1,5 +1,6 @@
 /**
  * Utilitários para o sistema de contribuições
+ * @lastReview 2025-01-05 15:30
  */
 
 import { PaymentMethod, ContributionType } from './types'
@@ -12,6 +13,47 @@ export const formatCurrency = (value: number): string => {
     style: 'currency',
     currency: 'BRL',
   }).format(value)
+}
+
+/**
+ * Formata input de dinheiro em tempo real
+ */
+export const formatMoneyInput = (value: string): string => {
+  // Remove tudo que não é dígito
+  const numbers = value.replace(/\D/g, '')
+
+  // Se não há números, retorna vazio
+  if (!numbers) return ''
+
+  // Converte para centavos
+  const amount = parseInt(numbers) / 100
+
+  // Formata como moeda brasileira
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+  }).format(amount)
+}
+
+/**
+ * Converte string formatada para número
+ */
+export const parseMoneyInput = (value: string): number => {
+  // Remove formatação e converte para número
+  const numbers = value.replace(/[^\d]/g, '')
+  if (!numbers) return 0
+  return parseInt(numbers) / 100
+}
+
+/**
+ * Valida valor monetário
+ */
+export const validateMoneyAmount = (amount: number): string | null => {
+  if (amount <= 0) return 'Valor deve ser maior que zero'
+  if (amount > 100000) return 'Valor muito alto. Entre em contato conosco'
+  if (amount < 1) return 'Valor mínimo é R$ 1,00'
+  return null
 }
 
 /**

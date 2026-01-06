@@ -1,6 +1,7 @@
 /**
  * Componente principal do sistema de contribuições
  * Orquestra todos os componentes filhos e gerencia o fluxo completo
+ * @lastReview 2025-01-05 15:30
  */
 
 import React from 'react'
@@ -229,93 +230,111 @@ export default function ContributionForm({
 
     // Etapa 1: Formulário de dados
     return (
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Formulário de dados */}
-          <ContributionDataForm
-            onSubmit={handleDataFormSubmit}
-            onChange={updateFormData}
-            isLoading={paymentState.isProcessing}
-            defaultValues={formData}
-          />
+      <div className="space-y-6">
+        {/* Layout responsivo otimizado */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Formulário de dados - 2 colunas */}
+          <div className="xl:col-span-2">
+            <ContributionDataForm
+              onSubmit={handleDataFormSubmit}
+              onChange={updateFormData}
+              isLoading={paymentState.isProcessing}
+              defaultValues={formData}
+            />
+          </div>
 
-          {/* Seletor de método de pagamento */}
-          <PaymentMethodSelector
-            value={formData.paymentMethod}
-            onChange={handlePaymentMethodChange}
-            disabled={paymentState.isProcessing}
-          />
+          {/* Seletor de método de pagamento - 1 coluna */}
+          <div className="xl:col-span-1">
+            <PaymentMethodSelector
+              value={formData.paymentMethod}
+              onChange={handlePaymentMethodChange}
+              disabled={paymentState.isProcessing}
+            />
+          </div>
         </div>
 
         <Separator />
 
-        {/* Resumo Premium e Botão */}
+        {/* Resumo Premium Sticky */}
         {formData.amount > 0 && (
-          <div className="relative overflow-hidden rounded-2xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10" />
-            <div className="relative p-6 backdrop-blur-sm">
-              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-                <div className="text-center sm:text-left space-y-1">
-                  <p className="text-sm text-muted-foreground font-medium">Total da Contribuição</p>
-                  <p className="text-4xl font-bold bg-gradient-to-r from-videira-cyan to-videira-blue bg-clip-text text-transparent">
-                    R$ {Number(formData.amount).toFixed(2)}
-                  </p>
-                  {formData.contributionType && (
-                    <div className="inline-flex items-center gap-2 bg-white/50 dark:bg-black/20 px-3 py-1 rounded-full">
-                      <div className="w-2 h-2 rounded-full bg-videira-cyan animate-pulse" />
-                      <p className="text-xs font-semibold capitalize">
-                        {formData.contributionType}
+          <div className="sticky bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-videira-cyan/20 p-4 -mx-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="relative overflow-hidden rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10" />
+                <div className="relative p-6 backdrop-blur-sm">
+                  <div className="flex flex-col lg:flex-row gap-4 justify-between items-center">
+                    <div className="text-center lg:text-left space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <p className="text-sm text-muted-foreground font-medium">
+                          Total da Contribuição
+                        </p>
+                        {formData.contributionType && (
+                          <div className="inline-flex items-center gap-2 bg-white/50 dark:bg-black/20 px-3 py-1 rounded-full">
+                            <div className="w-2 h-2 rounded-full bg-videira-cyan animate-pulse" />
+                            <p className="text-xs font-semibold capitalize">
+                              {formData.contributionType}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-videira-cyan to-videira-blue bg-clip-text text-transparent">
+                        R$ {Number(formData.amount).toFixed(2)}
                       </p>
+                      {formData.description && (
+                        <p className="text-xs text-muted-foreground max-w-md">
+                          &ldquo;{formData.description}&rdquo;
+                        </p>
+                      )}
                     </div>
-                  )}
+                    <Button
+                      onClick={() => handleDataFormSubmit(formData)}
+                      size="lg"
+                      disabled={
+                        isLoadingMethods ||
+                        paymentState.isProcessing ||
+                        !formData.amount ||
+                        formData.amount <= 0 ||
+                        availablePaymentMethods.length === 0 ||
+                        !availablePaymentMethods.includes(formData.paymentMethod)
+                      }
+                      className="min-w-[220px] h-12 font-bold text-base bg-gradient-to-r from-videira-cyan to-videira-blue hover:from-videira-cyan/90 hover:to-videira-blue/90 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                    >
+                      {isLoadingMethods ? (
+                        <>
+                          <div className="mr-2 h-5 w-5 animate-spin rounded-full border-3 border-white border-t-transparent" />
+                          Verificando métodos...
+                        </>
+                      ) : paymentState.isProcessing ? (
+                        <>
+                          <div className="mr-2 h-5 w-5 animate-spin rounded-full border-3 border-white border-t-transparent" />
+                          Processando...
+                        </>
+                      ) : availablePaymentMethods.length === 0 ? (
+                        <>
+                          <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Métodos Indisponíveis
+                        </>
+                      ) : (
+                        <>
+                          <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                              fillRule="evenodd"
+                              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Prosseguir com Segurança
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  onClick={() => handleDataFormSubmit(formData)}
-                  size="lg"
-                  disabled={
-                    isLoadingMethods ||
-                    paymentState.isProcessing ||
-                    !formData.amount ||
-                    formData.amount <= 0 ||
-                    availablePaymentMethods.length === 0 ||
-                    !availablePaymentMethods.includes(formData.paymentMethod)
-                  }
-                  className="min-w-[220px] h-12 font-bold text-base bg-gradient-to-r from-videira-cyan to-videira-blue hover:from-videira-cyan/90 hover:to-videira-blue/90 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-                >
-                  {isLoadingMethods ? (
-                    <>
-                      <div className="mr-2 h-5 w-5 animate-spin rounded-full border-3 border-white border-t-transparent" />
-                      Verificando métodos...
-                    </>
-                  ) : paymentState.isProcessing ? (
-                    <>
-                      <div className="mr-2 h-5 w-5 animate-spin rounded-full border-3 border-white border-t-transparent" />
-                      Processando...
-                    </>
-                  ) : availablePaymentMethods.length === 0 ? (
-                    <>
-                      <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      Métodos Indisponíveis
-                    </>
-                  ) : (
-                    <>
-                      <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      Prosseguir com Segurança
-                    </>
-                  )}
-                </Button>
               </div>
             </div>
           </div>
