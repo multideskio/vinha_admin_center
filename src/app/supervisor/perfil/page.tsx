@@ -493,24 +493,13 @@ export default function SupervisorProfilePage() {
   }
 
   const handleAvatarClick = () => {
-    console.log('Avatar clicked, fileInputRef:', fileInputRef.current)
-    if (fileInputRef.current) {
-      console.log('Triggering file input click')
-      fileInputRef.current.click()
-    } else {
-      console.error('fileInputRef.current is null')
-    }
+    fileInputRef.current?.click()
   }
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('File change event triggered:', event.target.files)
     const file = event.target.files?.[0]
-    if (!file) {
-      console.log('No file selected')
-      return
-    }
+    if (!file) return
 
-    console.log('File selected:', file.name, file.type, file.size)
     setIsUploadingAvatar(true)
     try {
       const formData = new FormData()
