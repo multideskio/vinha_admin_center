@@ -139,7 +139,8 @@ export async function GET(request: NextRequest) {
       ...supervisors.map((supervisor) => ({
         id: supervisor.id,
         type: 'supervisor' as const,
-        title: `${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim() || supervisor.email,
+        title:
+          `${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim() || supervisor.email,
         subtitle: supervisor.email,
         description: `Supervisor • CPF: ${supervisor.cpf || 'N/A'}`,
         href: `/admin/supervisores/${supervisor.id}`,
@@ -230,12 +231,7 @@ export async function GET(request: NextRequest) {
       })
       .from(transactions)
       .leftJoin(users, eq(transactions.contributorId, users.id))
-      .where(
-        and(
-          isNull(transactions.deletedAt),
-          ilike(users.email, searchTerm),
-        ),
-      )
+      .where(and(isNull(transactions.deletedAt), ilike(users.email, searchTerm)))
       .orderBy(transactions.createdAt)
       .limit(5)
 

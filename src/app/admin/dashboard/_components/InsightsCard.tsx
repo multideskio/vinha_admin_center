@@ -92,8 +92,7 @@ export function InsightsCard({
             {insightCards.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {insightCards.map((card, idx) => {
-                  const colors =
-                    typeColors[card.type as keyof typeof typeColors] || typeColors.info
+                  const colors = typeColors[card.type as keyof typeof typeColors] || typeColors.info
                   return (
                     <div
                       key={idx}

@@ -760,10 +760,7 @@ export default function IgrejaProfilePage(): JSX.Element {
           <div className="lg:col-span-1">
             {/* Alerta de Fraude */}
             <div className="mb-6">
-              <FraudAlert 
-                userId={id as string} 
-                userName={church.nomeFantasia || 'Igreja'} 
-              />
+              <FraudAlert userId={id as string} userName={church.nomeFantasia || 'Igreja'} />
             </div>
 
             <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">

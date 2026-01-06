@@ -626,9 +626,9 @@ export default function SupervisorProfilePage(): JSX.Element {
           <div className="lg:col-span-1">
             {/* Alerta de Fraude */}
             <div className="mb-6">
-              <FraudAlert 
-                userId={id as string} 
-                userName={`${supervisor.firstName} ${supervisor.lastName}`} 
+              <FraudAlert
+                userId={id as string}
+                userName={`${supervisor.firstName} ${supervisor.lastName}`}
               />
             </div>
 

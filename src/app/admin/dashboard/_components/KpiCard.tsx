@@ -73,11 +73,11 @@ const secondaryColors = [
 
 export function KpiCard({ title, icon: Icon, data, variant, colorIndex }: KpiCardProps) {
   const colors = variant === 'primary' ? primaryColors[colorIndex] : secondaryColors[colorIndex]
-  
+
   if (!colors) {
     return null // Fallback para índices inválidos
   }
-  
+
   const isPrimary = variant === 'primary'
 
   return (

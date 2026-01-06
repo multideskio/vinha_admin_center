@@ -766,9 +766,9 @@ export default function GerenteProfilePage() {
           <div className="lg:col-span-1">
             {/* Alerta de Fraude */}
             <div className="mb-6">
-              <FraudAlert 
-                userId={id as string} 
-                userName={`${manager.firstName} ${manager.lastName}`} 
+              <FraudAlert
+                userId={id as string}
+                userName={`${manager.firstName} ${manager.lastName}`}
               />
             </div>
 

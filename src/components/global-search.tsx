@@ -222,7 +222,7 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
                               {item.type === 'transacao' && item.status ? (
                                 <>
                                   <span>{item.subtitle.split(' • ')[0]}</span>
-                                  <Badge 
+                                  <Badge
                                     variant={getStatusBadgeVariant(item.status)}
                                     className="text-xs"
                                   >

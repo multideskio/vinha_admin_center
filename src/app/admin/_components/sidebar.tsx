@@ -94,10 +94,12 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
   }
 
   return (
-    <div className={cn(
-      "hidden border-r border-border/40 md:block sticky top-0 h-screen bg-gradient-to-b from-background via-background to-muted/20 transition-all duration-300",
-      isCollapsed ? "w-16" : "w-[220px] lg:w-[280px]"
-    )}>
+    <div
+      className={cn(
+        'hidden border-r border-border/40 md:block sticky top-0 h-screen bg-gradient-to-b from-background via-background to-muted/20 transition-all duration-300',
+        isCollapsed ? 'w-16' : 'w-[220px] lg:w-[280px]',
+      )}
+    >
       <div className="flex h-full max-h-screen flex-col">
         {/* Logo Header com Gradiente */}
         <div className="flex h-16 items-center border-b border-border/40 px-6 videira-gradient">
@@ -155,7 +157,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                     'hover:shadow-sm hover:scale-[1.02]',
                     getGradientClass(item.gradient),
                     isActive ? 'font-semibold border-l-4' : 'font-medium',
-                    isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
+                    isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3',
                   )}
                 >
                   <item.icon
@@ -208,7 +210,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                 pathname === '/admin/perfil'
                   ? 'bg-videira-blue/15 border-l-4 border-l-videira-blue font-semibold text-videira-blue'
                   : 'font-medium text-muted-foreground hover:text-foreground',
-                isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
+                isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3',
               )}
             >
               <User
@@ -232,7 +234,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                 pathname.startsWith(settingsItem.href)
                   ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
                   : 'font-medium text-muted-foreground hover:text-foreground',
-                isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'
+                isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3',
               )}
             >
               <settingsItem.icon

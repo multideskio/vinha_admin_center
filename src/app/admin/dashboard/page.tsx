@@ -445,7 +445,11 @@ export default function DashboardPage() {
                     data={dumbbellData}
                     margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      className="stroke-muted"
+                    />
                     <XAxis
                       dataKey="month"
                       tickLine={false}
@@ -524,14 +528,14 @@ export default function DashboardPage() {
                     onClick={handleExportDefaulters}
                     className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold text-sm"
                   >
-                    <Save className="h-4 w-4 mr-1 sm:mr-2" /> 
+                    <Save className="h-4 w-4 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Exportar </span>Inadimplentes
                   </Button>
                   <Button
                     onClick={handleExportTransactions}
                     className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold text-sm"
                   >
-                    <Save className="h-4 w-4 mr-1 sm:mr-2" /> 
+                    <Save className="h-4 w-4 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Exportar </span>Transações
                   </Button>
                 </>
@@ -585,7 +589,10 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-3 sm:gap-4">
                       {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
                           <div className="flex-1">
                             <Skeleton className="h-4 w-32 mb-1" />
                             <Skeleton className="h-3 w-24" />
@@ -714,7 +721,10 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {data.revenueByRegion && data.revenueByRegion.length > 0 ? (
                       <div className="w-full overflow-x-auto">
-                        <ChartContainer config={{}} className="h-[240px] sm:h-[260px] min-w-[240px]">
+                        <ChartContainer
+                          config={{}}
+                          className="h-[240px] sm:h-[260px] min-w-[240px]"
+                        >
                           <PieChart>
                             <Tooltip content={<ChartTooltipContent hideLabel />} />
                             <Legend content={<ChartLegendContent nameKey="name" />} />
@@ -725,7 +735,10 @@ export default function DashboardPage() {
                               innerRadius={50}
                             >
                               {data.revenueByRegion.map((entry, index) => (
-                                <Cell key={`cell-revenue-${index}`} fill={entry.fill || '#8884d8'} />
+                                <Cell
+                                  key={`cell-revenue-${index}`}
+                                  fill={entry.fill || '#8884d8'}
+                                />
                               ))}
                             </Pie>
                           </PieChart>
@@ -740,7 +753,10 @@ export default function DashboardPage() {
                       <h4 className="text-sm font-medium">Regiões (lista)</h4>
                       <div className="divide-y max-h-[200px] sm:max-h-[220px] overflow-y-auto">
                         {(data.revenueByRegion || []).map((r) => (
-                          <div key={r.name} className="flex items-center justify-between py-2 gap-2">
+                          <div
+                            key={r.name}
+                            className="flex items-center justify-between py-2 gap-2"
+                          >
                             <div className="flex items-center gap-2 min-w-0 flex-1">
                               <span
                                 className="h-3 w-3 rounded-full flex-shrink-0"

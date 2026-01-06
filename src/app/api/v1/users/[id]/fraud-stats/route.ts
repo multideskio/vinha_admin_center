@@ -20,11 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
 
     // Verificar se o usuário existe
-    const [targetUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1)
+    const [targetUser] = await db.select().from(users).where(eq(users.id, id)).limit(1)
 
     if (!targetUser) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
@@ -41,21 +37,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         gatewayTransactionId: transactions.gatewayTransactionId,
       })
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.contributorId, id),
-          eq(transactions.isFraud, true)
-        )
-      )
+      .where(and(eq(transactions.contributorId, id), eq(transactions.isFraud, true)))
       .orderBy(desc(transactions.fraudMarkedAt))
 
     // Calcular estatísticas
     const totalFraudTransactions = fraudTransactions.length
     const totalFraudAmount = fraudTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0)
-    
+
     const lastTransaction = fraudTransactions[fraudTransactions.length - 1]
     const firstTransaction = fraudTransactions[0]
-    
+
     const firstFraudDate = lastTransaction?.fraudMarkedAt || null
     const lastFraudDate = firstTransaction?.fraudMarkedAt || null
 
@@ -66,9 +57,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .where(eq(transactions.contributorId, id))
 
     const totalTransactions = allTransactions.length
-    const fraudPercentage = totalTransactions > 0 
-      ? (totalFraudTransactions / totalTransactions) * 100 
-      : 0
+    const fraudPercentage =
+      totalTransactions > 0 ? (totalFraudTransactions / totalTransactions) * 100 : 0
 
     return NextResponse.json({
       success: true,
@@ -80,7 +70,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         firstFraudDate,
         lastFraudDate,
       },
-      fraudTransactions: fraudTransactions.map(t => ({
+      fraudTransactions: fraudTransactions.map((t) => ({
         ...t,
         amount: parseFloat(t.amount),
         fraudMarkedAt: t.fraudMarkedAt?.toISOString(),

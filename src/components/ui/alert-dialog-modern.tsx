@@ -78,9 +78,7 @@ export function ModernAlertDialog({
             <Icon className={cn('h-6 w-6', config.iconColor)} />
           </div>
           <div className="flex-1">
-            <DialogTitle className="text-xl font-semibold text-foreground">
-              {title}
-            </DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-foreground">{title}</DialogTitle>
           </div>
         </div>
 

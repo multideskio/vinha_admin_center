@@ -107,8 +107,9 @@ export function FraudAlert({ userId, userName, className }: FraudAlertProps) {
     return null
   }
 
-  const riskLevel = stats.fraudPercentage >= 50 ? 'high' : stats.fraudPercentage >= 20 ? 'medium' : 'low'
-  
+  const riskLevel =
+    stats.fraudPercentage >= 50 ? 'high' : stats.fraudPercentage >= 20 ? 'medium' : 'low'
+
   const riskConfig = {
     high: {
       color: 'border-t-red-500',
@@ -161,9 +162,7 @@ export function FraudAlert({ userId, userName, className }: FraudAlertProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Total de Fraudes</p>
-            <p className="text-2xl font-bold text-red-600">
-              {stats.totalFraudTransactions}
-            </p>
+            <p className="text-2xl font-bold text-red-600">{stats.totalFraudTransactions}</p>
             <p className="text-xs text-muted-foreground">
               de {stats.totalTransactions} transações ({stats.fraudPercentage}%)
             </p>
@@ -250,7 +249,7 @@ export function FraudAlert({ userId, userName, className }: FraudAlertProps) {
         <Alert className={cn('border-2', config.color.replace('border-t-', 'border-'))}>
           <AlertTriangle className={cn('h-4 w-4', config.iconColor)} />
           <AlertDescription className={config.textColor}>
-            <strong>Ação Recomendada:</strong> Monitore de perto as transações deste usuário e 
+            <strong>Ação Recomendada:</strong> Monitore de perto as transações deste usuário e
             considere implementar verificações adicionais antes de aprovar novos pagamentos.
           </AlertDescription>
         </Alert>

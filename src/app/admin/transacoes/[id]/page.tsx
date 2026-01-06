@@ -247,12 +247,12 @@ export default function TransacaoDetalhePage() {
   const { toast } = useToast()
   const [transaction, setTransaction] = React.useState<Transaction | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
-  
+
   // Estados de loading para cada botão
   const [isResendingReceipt, setIsResendingReceipt] = React.useState(false)
   const [isSyncing, setIsSyncing] = React.useState(false)
   const [isMarkingFraud, setIsMarkingFraud] = React.useState(false)
-  
+
   // Estado para o modal de confirmação
   const [showFraudConfirm, setShowFraudConfirm] = React.useState(false)
 
@@ -582,7 +582,9 @@ export default function TransacaoDetalhePage() {
                   <div className="p-2 rounded-lg bg-red-100 ring-2 ring-red-300 dark:bg-red-950/30 dark:ring-red-800">
                     <AlertTriangle className="h-5 w-5 text-red-600" />
                   </div>
-                  <span className="text-red-800 dark:text-red-200">Transação Marcada como Fraude</span>
+                  <span className="text-red-800 dark:text-red-200">
+                    Transação Marcada como Fraude
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -597,14 +599,16 @@ export default function TransacaoDetalhePage() {
                   )}
                   {transaction.fraudMarkedAt && (
                     <p className="text-red-700 dark:text-red-300 text-sm mt-1">
-                      <strong>Marcada em:</strong> {new Date(transaction.fraudMarkedAt).toLocaleString('pt-BR')}
+                      <strong>Marcada em:</strong>{' '}
+                      {new Date(transaction.fraudMarkedAt).toLocaleString('pt-BR')}
                     </p>
                   )}
                 </div>
                 <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
                   <AlertTriangle className="h-4 w-4 text-red-600" />
                   <AlertDescription className="text-red-800 dark:text-red-200">
-                    <strong>Importante:</strong> Esta marcação é permanente e foi registrada para fins de auditoria e prevenção de fraudes futuras.
+                    <strong>Importante:</strong> Esta marcação é permanente e foi registrada para
+                    fins de auditoria e prevenção de fraudes futuras.
                   </AlertDescription>
                 </Alert>
               </CardContent>

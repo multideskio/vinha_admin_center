@@ -58,9 +58,7 @@ export function DashboardHeader({
               Visão geral do sistema e estatísticas em tempo real
             </p>
             {lastUpdatedAt ? (
-              <p className="text-xs sm:text-sm text-white/70 mt-1">
-                Atualizado em {lastUpdatedAt}
-              </p>
+              <p className="text-xs sm:text-sm text-white/70 mt-1">Atualizado em {lastUpdatedAt}</p>
             ) : (
               <div className="mt-1">
                 <Skeleton className="h-3 sm:h-4 w-32 sm:w-40 lg:w-48 bg-white/20" />

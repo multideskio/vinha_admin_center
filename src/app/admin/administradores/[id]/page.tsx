@@ -465,10 +465,7 @@ export default function AdminProfilePage() {
           <div className="lg:col-span-1">
             {/* Alerta de Fraude */}
             <div className="mb-6">
-              <FraudAlert 
-                userId={id as string} 
-                userName={`${admin.firstName} ${admin.lastName}`} 
-              />
+              <FraudAlert userId={id as string} userName={`${admin.firstName} ${admin.lastName}`} />
             </div>
 
             <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">

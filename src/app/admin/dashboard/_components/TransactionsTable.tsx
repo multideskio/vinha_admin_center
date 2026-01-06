@@ -105,7 +105,9 @@ export function TransactionsTable({
                 <TableHead className="min-w-[100px] sm:min-w-[120px]">Contribuinte</TableHead>
                 <TableHead className="text-right min-w-[80px] sm:min-w-[100px]">Valor</TableHead>
                 <TableHead className="hidden sm:table-cell min-w-[80px]">Status</TableHead>
-                <TableHead className="hidden md:table-cell min-w-[80px] sm:min-w-[100px]">Data</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[80px] sm:min-w-[100px]">
+                  Data
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -137,7 +139,9 @@ export function TransactionsTable({
                               href={`/admin/${profilePath}/${transaction.contributorId}`}
                               className="flex items-center gap-1 hover:underline text-primary"
                             >
-                              <span className="truncate text-xs sm:text-sm">{transaction.name}</span>
+                              <span className="truncate text-xs sm:text-sm">
+                                {transaction.name}
+                              </span>
                               <ExternalLink className="h-3 w-3 flex-shrink-0" />
                             </Link>
                           ) : (
@@ -153,7 +157,10 @@ export function TransactionsTable({
                           }).format(transaction.amount)}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
-                          <Badge variant={statusMap[transaction.status]?.variant || 'default'} className="text-xs">
+                          <Badge
+                            variant={statusMap[transaction.status]?.variant || 'default'}
+                            className="text-xs"
+                          >
                             {statusMap[transaction.status]?.text || transaction.status}
                           </Badge>
                         </TableCell>

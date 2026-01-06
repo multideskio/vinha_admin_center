@@ -7,6 +7,7 @@ Sistema completo de detecção, marcação e monitoramento de transações fraud
 ## O que acontece quando uma transação é marcada como fraude?
 
 ### 1. Alterações na Transação
+
 - **Status**: Muda para `'refused'`
 - **Motivo de Reembolso**: Definido como "Marcada como fraude pelo administrador"
 - **Marcação de Fraude**: `isFraud` = `true`
@@ -15,6 +16,7 @@ Sistema completo de detecção, marcação e monitoramento de transações fraud
 - **Motivo da Fraude**: `fraudReason` = "Transação identificada como fraudulenta pela administração"
 
 ### 2. Registro de Auditoria
+
 - Todas as marcações de fraude são registradas permanentemente
 - Incluem timestamp, responsável e motivo
 - Não podem ser revertidas (ação irreversível)
@@ -22,9 +24,10 @@ Sistema completo de detecção, marcação e monitoramento de transações fraud
 ## Funcionalidades Implementadas
 
 ### 1. **Estrutura de Banco de Dados**
+
 ```sql
 -- Novos campos na tabela transactions
-ALTER TABLE transactions 
+ALTER TABLE transactions
 ADD COLUMN is_fraud BOOLEAN DEFAULT FALSE NOT NULL,
 ADD COLUMN fraud_marked_at TIMESTAMP,
 ADD COLUMN fraud_marked_by UUID REFERENCES users(id),
@@ -35,6 +38,7 @@ CREATE INDEX idx_transactions_fraud ON transactions(is_fraud, contributor_id) WH
 ```
 
 ### 2. **API de Estatísticas de Fraude**
+
 - **Endpoint**: `GET /api/v1/users/[id]/fraud-stats`
 - **Funcionalidade**: Retorna estatísticas completas de fraude de um usuário
 - **Dados Retornados**:
@@ -45,6 +49,7 @@ CREATE INDEX idx_transactions_fraud ON transactions(is_fraud, contributor_id) WH
   - Lista das transações fraudulentas
 
 ### 3. **Componente de Alerta de Fraude**
+
 - **Arquivo**: `src/components/ui/fraud-alert.tsx`
 - **Funcionalidade**: Exibe alertas visuais nos perfis dos usuários
 - **Características**:
@@ -55,7 +60,9 @@ CREATE INDEX idx_transactions_fraud ON transactions(is_fraud, contributor_id) WH
   - Links diretos para detalhes das transações
 
 ### 4. **Integração nos Perfis de Usuários**
+
 Alertas de fraude adicionados em todas as páginas de perfil:
+
 - **Pastores**: `src/app/admin/pastores/[id]/page.tsx`
 - **Gerentes**: `src/app/admin/gerentes/[id]/page.tsx`
 - **Supervisores**: `src/app/admin/supervisores/[id]/page.tsx`
@@ -63,6 +70,7 @@ Alertas de fraude adicionados em todas as páginas de perfil:
 - **Administradores**: `src/app/admin/administradores/[id]/page.tsx`
 
 ### 5. **Melhorias na Página de Transações**
+
 - **Seção de Alerta de Fraude**: Exibida quando uma transação é marcada como fraude
 - **Botão Desabilitado**: "Marcar como Fraude" fica desabilitado se já foi marcada
 - **Informações Detalhadas**: Data da marcação, responsável e motivo
@@ -71,45 +79,53 @@ Alertas de fraude adicionados em todas as páginas de perfil:
 ## Níveis de Risco
 
 ### Alto Risco (≥50% de fraudes)
+
 - **Cor**: Vermelho
 - **Ação**: Monitoramento rigoroso, verificações adicionais obrigatórias
 
 ### Risco Médio (20-49% de fraudes)
+
 - **Cor**: Laranja
 - **Ação**: Monitoramento aumentado, verificações recomendadas
 
 ### Baixo Risco (<20% de fraudes)
+
 - **Cor**: Amarelo
 - **Ação**: Monitoramento padrão
 
 ## Como Monitorar Fraudes
 
 ### 1. **No Perfil do Contribuinte**
+
 - Acesse qualquer perfil de usuário (pastor, gerente, supervisor, igreja, admin)
 - O alerta de fraude aparece automaticamente se houver transações fraudulentas
 - Visualize estatísticas resumidas e transações recentes
 
 ### 2. **Na Página da Transação**
+
 - Acesse `/admin/transacoes/[id]`
 - Veja se a transação foi marcada como fraude
 - Visualize detalhes da marcação (data, responsável, motivo)
 
 ### 3. **Através da API**
+
 ```javascript
 // Buscar estatísticas de fraude de um usuário
-GET /api/v1/users/[userId]/fraud-stats
+GET / api / v1 / users / [userId] / fraud - stats
 
 // Buscar detalhes de uma transação (inclui dados de fraude)
-GET /api/v1/transacoes/[transactionId]
+GET / api / v1 / transacoes / [transactionId]
 ```
 
 ## Segurança e Auditoria
 
 ### Controle de Acesso
+
 - Apenas **administradores** podem marcar transações como fraude
 - **Administradores, gerentes e supervisores** podem visualizar estatísticas de fraude
 
 ### Registro de Auditoria
+
 - Todas as marcações são registradas com:
   - Timestamp exato
   - ID do administrador responsável
@@ -117,6 +133,7 @@ GET /api/v1/transacoes/[transactionId]
   - Dados da transação original
 
 ### Irreversibilidade
+
 - Marcações de fraude são **permanentes**
 - Não há funcionalidade para "desmarcar" uma fraude
 - Garante integridade dos dados de auditoria
@@ -141,6 +158,7 @@ GET /api/v1/transacoes/[transactionId]
 ## Arquivos Modificados/Criados
 
 ### Novos Arquivos
+
 - `drizzle/0001_add_fraud_tracking.sql` - Migration do banco
 - `src/app/api/v1/users/[id]/fraud-stats/route.ts` - API de estatísticas
 - `src/app/api/v1/transacoes/[id]/route.ts` - API de transação individual
@@ -148,6 +166,7 @@ GET /api/v1/transacoes/[transactionId]
 - `docs/FRAUD_MONITORING_SYSTEM.md` - Esta documentação
 
 ### Arquivos Modificados
+
 - `src/db/schema.ts` - Adicionados campos de fraude
 - `src/app/api/v1/transacoes/[id]/fraud/route.ts` - Atualizada para novos campos
 - `src/app/admin/transacoes/[id]/page.tsx` - Adicionada seção de fraude

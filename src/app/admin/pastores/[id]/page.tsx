@@ -760,9 +760,9 @@ export default function PastorProfilePage(): JSX.Element {
           <div className="lg:col-span-1">
             {/* Alerta de Fraude */}
             <div className="mb-6">
-              <FraudAlert 
-                userId={id as string} 
-                userName={`${pastor.firstName} ${pastor.lastName}`} 
+              <FraudAlert
+                userId={id as string}
+                userName={`${pastor.firstName} ${pastor.lastName}`}
               />
             </div>
 
