@@ -5,8 +5,12 @@ import { eq, and, isNull, desc, sql, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
+import type { UserRole } from '@/lib/types'
 
 import { getCompanyId } from '@/lib/utils'
+
+// @lastReview 2025-01-05 21:30 - Rate limiting and structured logging implemented
 
 const COMPANY_ID = getCompanyId()
 
@@ -32,8 +36,17 @@ const churchSchema = z.object({
 })
 
 export async function GET(): Promise<NextResponse> {
+  // Rate limiting
+  const rateLimitResult = await rateLimit('anonymous', 'manager-churches-get', 60, 60000) // 60 requests per minute
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   const { user } = await validateRequest()
-  if (!user || user.role !== 'manager') {
+  if (!user || (user.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
@@ -76,14 +89,30 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({ churches: result })
   } catch (error) {
-    console.error('Erro ao buscar igrejas:', error)
+    // Structured logging instead of console.error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[MANAGER_CHURCHES_GET_ERROR]', {
+      managerId: user.id,
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const rateLimitResult = await rateLimit(ip, 'manager-churches-post', 10, 60000) // 10 requests per minute
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   const { user } = await validateRequest()
-  if (!user || user.role !== 'manager') {
+  if (!user || (user.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
@@ -166,6 +195,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       )
     }
     console.error('Erro ao criar igreja:', error)
+    // Structured logging instead of console.error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[MANAGER_CHURCHES_POST_ERROR]', {
+      managerId: user.id,
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    })
     if (
       error instanceof Error &&
       'constraint' in error &&

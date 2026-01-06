@@ -1,5 +1,7 @@
 'use client'
 
+// @lastReview 2025-01-05 21:30 - Fixed responsive grid classes for better mobile support
+
 import * as React from 'react'
 import {
   MoreHorizontal,
@@ -277,7 +279,7 @@ const ChurchFormModal = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="cnpj"
@@ -312,7 +314,7 @@ const ChurchFormModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="razaoSocial"
@@ -341,7 +343,7 @@ const ChurchFormModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="cep"
@@ -400,7 +402,7 @@ const ChurchFormModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="neighborhood"
@@ -478,7 +480,7 @@ const ChurchFormModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="titheDay"
@@ -518,7 +520,7 @@ const ChurchFormModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="treasurerFirstName"
@@ -735,7 +737,7 @@ export default function IgrejasPage() {
 
   const CardView = () => (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="shadow-lg">
