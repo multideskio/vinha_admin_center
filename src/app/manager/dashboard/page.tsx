@@ -116,11 +116,13 @@ export default function GerenteDashboardPage() {
         }
         const data = await res.json()
         setProfileIncomplete(!data.complete)
-        console.log('Profile status checked:', data.complete ? 'complete' : 'incomplete')
       } catch (error) {
-        console.error('Error checking profile:', error)
+        // Structured logging instead of console.error
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-        console.error('Profile check failed:', errorMessage)
+        console.error('[MANAGER_PROFILE_CHECK_ERROR]', {
+          error: errorMessage,
+          timestamp: new Date().toISOString()
+        })
       }
     }
     checkProfile()

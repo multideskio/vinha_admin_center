@@ -1,8 +1,9 @@
 /**
- * @fileoverview Rota da API para buscar dados para o dashboard do gerente (legado).
- * @version 1.2
+ * @fileoverview Rota da API para buscar dados para o dashboard do gerente.
+ * @version 1.3
  * @date 2024-08-07
  * @author PH
+ * @lastReview 2025-01-05 22:00
  */
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
@@ -18,6 +19,7 @@ import { format, subMonths, startOfMonth } from 'date-fns'
 import { validateRequest } from '@/lib/jwt'
 import { type UserRole } from '@/lib/types'
 import { handleApiError, ApiError } from '@/lib/api-error-handler'
+import { rateLimit } from '@/lib/rate-limit'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -29,8 +31,18 @@ const calculateChange = (current: number, previous: number): string => {
   return `${sign}${percentage.toFixed(1)}% em relação ao mês passado`
 }
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('manager-dashboard', ip, 60, 60) // 60 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 }
+      )
+    }
+
     const { user } = await validateRequest()
     if (!user || (user.role as UserRole) !== 'manager') {
       throw new ApiError(401, 'Não autorizado')
