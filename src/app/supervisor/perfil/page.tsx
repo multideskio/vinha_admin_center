@@ -438,7 +438,25 @@ export default function SupervisorProfilePage() {
 
   const form = useForm<SupervisorProfile>({
     resolver: zodResolver(supervisorUpdateSchema),
-    defaultValues: {},
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      landline: '',
+      cep: '',
+      state: '',
+      city: '',
+      neighborhood: '',
+      address: '',
+      number: '',
+      complement: '',
+      titheDay: undefined,
+      facebook: '',
+      instagram: '',
+      website: '',
+      newPassword: '',
+    },
   })
 
   const fetchProfile = React.useCallback(async () => {
