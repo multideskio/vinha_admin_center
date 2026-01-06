@@ -15,6 +15,7 @@ import {
   ChevronsRight,
   ArrowRightLeft,
   RefreshCw,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -43,11 +44,13 @@ import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { QuickProfileModal } from '@/components/ui/quick-profile-modal'
 
 type Transaction = {
   id: string
   contributor: string
   contributorEmail: string
+  contributorId?: string
   church: string | null
   amount: number
   method: 'pix' | 'credit_card' | 'boleto'
@@ -55,6 +58,7 @@ type Transaction = {
   date: string
   paidAt: string | null
   refundRequestReason?: string | null
+  isFraud?: boolean
 }
 
 const statusMap: {
@@ -93,6 +97,9 @@ export default function TransacoesPage() {
     to: undefined,
   })
   const [currentPage, setCurrentPage] = React.useState(1)
+  const [quickProfileUserId, setQuickProfileUserId] = React.useState<string | null>(null)
+  const [isQuickProfileOpen, setIsQuickProfileOpen] = React.useState(false)
+  const [loadingActions, setLoadingActions] = React.useState<Set<string>>(new Set())
   const itemsPerPage = 20 // Aumentado de 10 para 20
   const { toast } = useToast()
 
@@ -182,6 +189,80 @@ export default function TransacoesPage() {
         title: 'Erro',
         description: 'Erro ao exportar transações',
         variant: 'destructive',
+      })
+    }
+  }
+
+  const handleOpenQuickProfile = (contributorId: string) => {
+    setQuickProfileUserId(contributorId)
+    setIsQuickProfileOpen(true)
+  }
+
+  const handleCloseQuickProfile = () => {
+    setIsQuickProfileOpen(false)
+    setQuickProfileUserId(null)
+  }
+
+  const handleSyncTransaction = async (transactionId: string) => {
+    const actionKey = `sync-${transactionId}`
+    setLoadingActions(prev => new Set(prev).add(actionKey))
+    
+    try {
+      const response = await fetch(`/api/v1/transacoes/${transactionId}/sync`, {
+        method: 'POST',
+      })
+      
+      if (!response.ok) throw new Error('Falha ao sincronizar')
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Transação sincronizada com sucesso',
+        variant: 'success',
+      })
+      
+      fetchTransactions()
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao sincronizar',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoadingActions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(actionKey)
+        return newSet
+      })
+    }
+  }
+
+  const handleResendReceipt = async (transactionId: string) => {
+    const actionKey = `resend-${transactionId}`
+    setLoadingActions(prev => new Set(prev).add(actionKey))
+    
+    try {
+      const response = await fetch(`/api/v1/transacoes/${transactionId}/resend`, {
+        method: 'POST',
+      })
+      
+      if (!response.ok) throw new Error('Falha ao reenviar comprovante')
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Comprovante reenviado com sucesso',
+        variant: 'success',
+      })
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Erro ao reenviar comprovante',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoadingActions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(actionKey)
+        return newSet
       })
     }
   }
@@ -287,157 +368,208 @@ export default function TransacoesPage() {
             />
           </div>
 
-          {/* Tabela */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
-                  <TableHead className="font-semibold">Contribuinte</TableHead>
-                  <TableHead className="hidden lg:table-cell font-semibold">Igreja</TableHead>
-                  <TableHead className="hidden xl:table-cell font-semibold">
-                    Data Pagamento
-                  </TableHead>
-                  <TableHead className="hidden xl:table-cell font-semibold">
-                    Forma Pagamento
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell text-right font-semibold">
-                    Valor
-                  </TableHead>
-                  <TableHead className="hidden sm:table-cell font-semibold">Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-4 w-40" />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-4 w-48" />
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Skeleton className="h-4 w-32" />
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Skeleton className="h-4 w-28" />
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-4 w-20 ml-auto" />
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-8" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : paginatedTransactions.length > 0 ? (
-                  paginatedTransactions.map((transaction) => (
-                    <TableRow key={transaction.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        <div className="flex flex-col">
-                          <span>{transaction.contributor}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {transaction.contributorEmail}
-                          </span>
+          {/* Tabela Responsiva */}
+          <div className="rounded-md border overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
+                    <TableHead className="font-semibold min-w-[200px]">Contribuinte</TableHead>
+                    <TableHead className="font-semibold text-center min-w-[80px]">Perfil</TableHead>
+                    <TableHead className="font-semibold text-center min-w-[80px]">Fraude</TableHead>
+                    <TableHead className="hidden lg:table-cell font-semibold min-w-[120px]">Igreja</TableHead>
+                    <TableHead className="hidden xl:table-cell font-semibold min-w-[120px]">Data</TableHead>
+                    <TableHead className="hidden lg:table-cell font-semibold min-w-[100px]">Método</TableHead>
+                    <TableHead className="font-semibold text-right min-w-[100px]">Valor</TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold min-w-[100px]">Status</TableHead>
+                    <TableHead className="font-semibold text-center min-w-[80px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-40" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Skeleton className="h-6 w-6 mx-auto" />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Skeleton className="h-6 w-16 mx-auto" />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Skeleton className="h-6 w-16" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-4 w-20 ml-auto" />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Skeleton className="h-6 w-20" />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Skeleton className="h-8 w-8 mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : paginatedTransactions.length > 0 ? (
+                    paginatedTransactions.map((transaction) => (
+                      <TableRow key={transaction.id} className="hover:bg-muted/50">
+                        {/* Coluna Contribuinte */}
+                        <TableCell className="font-medium">
+                          <div className="space-y-1">
+                            <div className="font-medium text-sm">{transaction.contributor}</div>
+                            <div className="text-xs text-muted-foreground">{transaction.contributorEmail}</div>
+                            {/* Informações extras em mobile */}
+                            <div className="flex flex-wrap gap-2 sm:hidden">
+                              <Badge className={cn('text-xs border', methodMap[transaction.method]?.color)}>
+                                {methodMap[transaction.method]?.text}
+                              </Badge>
+                              <Badge variant={statusMap[transaction.status]?.variant || 'default'} className="text-xs">
+                                {statusMap[transaction.status]?.text}
+                              </Badge>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Coluna Perfil Rápido */}
+                        <TableCell className="text-center">
+                          {transaction.contributorId ? (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 hover:bg-videira-blue/10 hover:text-videira-blue"
+                              onClick={() => handleOpenQuickProfile(transaction.contributorId as string)}
+                              title="Ver perfil rápido"
+                            >
+                              <Search className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Coluna Fraude */}
+                        <TableCell className="text-center">
+                          {transaction.isFraud ? (
+                            <Badge 
+                              variant="destructive" 
+                              className="text-xs px-2 py-1 bg-red-100 text-red-800 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
+                            >
+                              🚨
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Coluna Igreja */}
+                        <TableCell className="hidden lg:table-cell text-muted-foreground">
+                          {transaction.church || 'N/A'}
+                        </TableCell>
+
+                        {/* Coluna Data */}
+                        <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
+                          {transaction.paidAt
+                            ? new Date(transaction.paidAt).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: '2-digit',
+                              })
+                            : '-'}
+                        </TableCell>
+
+                        {/* Coluna Método */}
+                        <TableCell className="hidden lg:table-cell">
+                          <Badge className={cn('text-xs border', methodMap[transaction.method]?.color)}>
+                            {methodMap[transaction.method]?.text || transaction.method}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Coluna Valor */}
+                        <TableCell className="text-right font-semibold">
+                          <div className="text-sm font-semibold">
+                            {new Intl.NumberFormat('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            }).format(transaction.amount)}
+                          </div>
+                        </TableCell>
+
+                        {/* Coluna Status */}
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant={statusMap[transaction.status]?.variant || 'default'} className="text-xs">
+                            {statusMap[transaction.status]?.text || transaction.status}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Coluna Ações */}
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button aria-haspopup="true" size="icon" variant="ghost" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Menu de ações</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleSyncTransaction(transaction.id)}
+                                disabled={loadingActions.has(`sync-${transaction.id}`)}
+                                className="flex items-center gap-2"
+                              >
+                                {loadingActions.has(`sync-${transaction.id}`) ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-4 w-4" />
+                                )}
+                                Sincronizar com Cielo
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleResendReceipt(transaction.id)}
+                                disabled={loadingActions.has(`resend-${transaction.id}`)}
+                                className="flex items-center gap-2"
+                              >
+                                {loadingActions.has(`resend-${transaction.id}`) ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <ArrowRightLeft className="h-4 w-4" />
+                                )}
+                                Reenviar Comprovante
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center h-24">
+                        <div className="flex flex-col items-center gap-2 py-8">
+                          <ArrowRightLeft className="h-12 w-12 text-muted-foreground" />
+                          <p className="text-lg font-medium text-muted-foreground">
+                            Nenhuma transação encontrada
+                          </p>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
-                        {transaction.church || 'N/A'}
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell text-muted-foreground">
-                        {transaction.paidAt
-                          ? new Date(transaction.paidAt).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                            })
-                          : '-'}
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Badge className={cn('border', methodMap[transaction.method]?.color)}>
-                          {methodMap[transaction.method]?.text || transaction.method}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-right font-semibold">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(transaction.amount)}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                          {statusMap[transaction.status]?.text || transaction.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch(
-                                    `/api/v1/transacoes/${transaction.id}/sync`,
-                                    {
-                                      method: 'POST',
-                                    },
-                                  )
-                                  if (!response.ok) throw new Error('Falha ao sincronizar')
-                                  toast({
-                                    title: 'Sucesso',
-                                    description: 'Transação sincronizada com sucesso',
-                                    variant: 'success',
-                                  })
-                                  fetchTransactions()
-                                } catch (error) {
-                                  toast({
-                                    title: 'Erro',
-                                    description:
-                                      error instanceof Error
-                                        ? error.message
-                                        : 'Erro ao sincronizar',
-                                    variant: 'destructive',
-                                  })
-                                }
-                              }}
-                            >
-                              Sincronizar com Cielo
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Reenviar Comprovante</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center h-24">
-                      <div className="flex flex-col items-center gap-2 py-8">
-                        <ArrowRightLeft className="h-12 w-12 text-muted-foreground" />
-                        <p className="text-lg font-medium text-muted-foreground">
-                          Nenhuma transação encontrada
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* Paginação Melhorada */}
@@ -495,6 +627,13 @@ export default function TransacoesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Perfil Rápido */}
+      <QuickProfileModal
+        isOpen={isQuickProfileOpen}
+        onClose={handleCloseQuickProfile}
+        userId={quickProfileUserId}
+      />
     </div>
   )
 }

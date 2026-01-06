@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
         contributorEmail: users.email,
         churchId: transactions.originChurchId,
         refundRequestReason: transactions.refundRequestReason,
+        isFraud: transactions.isFraud,
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
@@ -142,6 +143,7 @@ export async function GET(request: NextRequest) {
           id: t.id,
           contributor: contributorName,
           contributorEmail: t.contributorEmail,
+          contributorId: t.contributorId,
           church: t.churchId || null,
           amount: parseFloat(t.amount),
           method: t.paymentMethod,
@@ -149,6 +151,7 @@ export async function GET(request: NextRequest) {
           date: new Date(t.createdAt).toLocaleDateString('pt-BR'),
           paidAt: new Date(t.createdAt).toISOString(),
           refundRequestReason: t.refundRequestReason,
+          isFraud: t.isFraud,
         }
       }),
     )

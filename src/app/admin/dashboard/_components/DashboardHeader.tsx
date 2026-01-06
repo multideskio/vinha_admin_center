@@ -38,8 +38,9 @@ export function DashboardHeader({
       <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
       <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
 
-      <div className="relative z-10 space-y-4">
-        <div className="flex flex-col gap-4">
+      <div className="relative z-10">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 lg:gap-6">
+          {/* Conteúdo principal à esquerda */}
           <div className="min-w-0 flex-1">
             {userName ? (
               <p className="text-sm sm:text-base lg:text-lg text-white/80 mb-2 font-medium">
@@ -66,9 +67,10 @@ export function DashboardHeader({
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 flex-1 sm:flex-initial">
-              <div className="flex-1 sm:flex-initial min-w-0">
+          {/* Filtros e ações à direita */}
+          <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-2 sm:gap-3 lg:gap-3 lg:min-w-[280px]">
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial lg:w-full">
+              <div className="flex-1 sm:flex-initial lg:flex-1 min-w-0">
                 <DateRangePicker
                   value={{ from: dateRange.from, to: dateRange.to }}
                   onDateRangeChange={onDateRangeChange}
@@ -87,7 +89,7 @@ export function DashboardHeader({
             <Button
               onClick={onSendReminders}
               disabled={sending}
-              className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold whitespace-nowrap text-sm sm:text-base"
+              className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold whitespace-nowrap text-sm sm:text-base lg:w-full"
             >
               {sending ? 'Enviando...' : 'Enviar lembretes'}
             </Button>
