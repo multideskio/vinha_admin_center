@@ -11,6 +11,7 @@
 No painel do EasyPanel, configure estas variáveis obrigatórias:
 
 ### Aplicação
+
 ```
 NODE_ENV=production
 PORT=9002
@@ -19,17 +20,20 @@ NEXT_PUBLIC_APP_URL=https://seu-dominio.com
 ```
 
 ### Banco de Dados
+
 ```
 DATABASE_URL=postgresql://usuario:senha@host:5432/database
 ```
 
 ### Autenticação
+
 ```
 JWT_SECRET=seu-jwt-secret-super-seguro
 COMPANY_INIT=uuid-da-empresa-inicial
 ```
 
 ### AWS (S3 + SES)
+
 ```
 AWS_S3_REGION=us-east-1
 AWS_S3_BUCKET_NAME=seu-bucket
@@ -44,6 +48,7 @@ AWS_SES_FROM_EMAIL=noreply@seudominio.com
 ```
 
 ### Cielo (Pagamentos)
+
 ```
 CIELO_MERCHANT_ID=seu-merchant-id
 CIELO_MERCHANT_KEY=sua-merchant-key
@@ -51,6 +56,7 @@ CIELO_ENVIRONMENT=production
 ```
 
 ### WhatsApp (Evolution API)
+
 ```
 EVOLUTION_API_URL=https://sua-evolution-api.com
 EVOLUTION_API_KEY=sua-api-key
@@ -88,6 +94,7 @@ O EasyPanel detectará automaticamente o `Dockerfile` otimizado. Configurações
 ### 4. Configurar Health Check
 
 O health check já está configurado no Dockerfile:
+
 - **Endpoint**: `/api/health`
 - **Interval**: 30s
 - **Timeout**: 10s
@@ -103,16 +110,19 @@ O health check já está configurado no Dockerfile:
 ## Otimizações para EasyPanel
 
 ### Build Otimizado
+
 - **Multi-stage build** reduz tamanho da imagem
 - **Standalone output** do Next.js para máxima eficiência
 - **Cache de layers** para builds mais rápidos
 
 ### Recursos Recomendados
+
 - **CPU**: 0.5-1 vCPU
 - **RAM**: 512MB-1GB
 - **Storage**: 10GB
 
 ### Monitoramento
+
 - Health check automático em `/api/health`
 - Logs centralizados no painel
 - Métricas de performance disponíveis
@@ -120,6 +130,7 @@ O health check já está configurado no Dockerfile:
 ## Troubleshooting
 
 ### Build Falha
+
 ```bash
 # Verifique se todas as dependências estão no package.json
 npm install
@@ -129,16 +140,19 @@ npm run build
 ```
 
 ### Aplicação não inicia
+
 1. Verifique as variáveis de ambiente
 2. Confirme se `DATABASE_URL` está acessível
 3. Verifique os logs no painel EasyPanel
 
 ### Problemas de Conectividade
+
 1. Confirme se a porta 9002 está exposta
 2. Verifique se o health check está respondendo
 3. Teste conectividade com banco de dados
 
 ### Performance
+
 1. Monitore uso de CPU/RAM no painel
 2. Ajuste recursos se necessário
 3. Considere usar Redis para cache (opcional)
@@ -146,16 +160,19 @@ npm run build
 ## Comandos Úteis
 
 ### Logs em Tempo Real
+
 ```bash
 # No painel EasyPanel, vá em "Logs" para ver em tempo real
 ```
 
 ### Restart da Aplicação
+
 ```bash
 # Use o botão "Restart" no painel
 ```
 
 ### Rollback
+
 ```bash
 # Use "Deployments" > "Rollback" para versão anterior
 ```
@@ -174,11 +191,13 @@ npm run build
 ## Suporte
 
 Para problemas específicos do EasyPanel:
+
 1. Consulte a documentação oficial
 2. Verifique os logs detalhados
 3. Entre em contato com o suporte se necessário
 
 O Dockerfile está otimizado especificamente para o EasyPanel com:
+
 - Compatibilidade total com a plataforma
 - Build eficiente e rápido
 - Segurança aprimorada
