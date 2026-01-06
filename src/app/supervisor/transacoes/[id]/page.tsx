@@ -62,29 +62,49 @@ export default function TransacaoDetalhePage() {
         return 'pending'
       }
 
+      // Buscar informações da igreja se originChurchId estiver disponível
+      let churchInfo = null
+      if (data.originChurchId) {
+        try {
+          const churchResponse = await fetch(`/api/v1/supervisor/igrejas/${data.originChurchId}`)
+          if (churchResponse.ok) {
+            const churchData = await churchResponse.json()
+            churchInfo = {
+              name: churchData.nomeFantasia || churchData.razaoSocial || 'Igreja',
+              address: churchData.address
+                ? `${churchData.address}, ${churchData.neighborhood || ''}, ${churchData.city || ''} - ${churchData.state || ''}`
+                : 'Endereço não disponível',
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao buscar informações da igreja:', error)
+        }
+      }
+
       const formattedData: TransactionDetail = {
         id: cieloData.Payment.PaymentId,
         date: format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss'),
         amount: cieloData.Payment.Amount / 100,
         status: mapCieloStatus(cieloData.Payment.Status),
         contributor: {
-          name: cieloData.Customer.Name,
-          email: 'email@naodisponivel.com',
+          name: cieloData.Customer?.Name || 'N/A',
+          email: cieloData.Customer?.Email || data.contributorEmail || 'email@naodisponivel.com',
         },
-        church: null,
+        church: churchInfo,
         payment: {
           method: cieloData.Payment.Type,
           details:
-            cieloData.Payment.Type === 'CreditCard'
-              ? `Cartão final ${cieloData.Payment.CreditCard.CardNumber.slice(-4)}`
-              : cieloData.Payment.ProofOfSale,
+            cieloData.Payment.Type === 'CreditCard' && cieloData.Payment.CreditCard
+              ? `${cieloData.Payment.CreditCard.Brand || 'Cartão'} final ${cieloData.Payment.CreditCard.CardNumber?.slice(-4) || 'N/A'}`
+              : cieloData.Payment.ProofOfSale || 'N/A',
         },
-        refundRequestReason: cieloData.Payment.VoidReason,
+        refundRequestReason: cieloData.Payment.VoidReason || null,
       }
 
       setTransaction(formattedData)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      console.error('Erro ao buscar transação:', error)
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
     } finally {
       setIsLoading(false)
@@ -97,21 +117,110 @@ export default function TransacaoDetalhePage() {
 
   if (isLoading) {
     return (
-      <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-        <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-6 w-24 ml-auto" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
-            <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-32 w-full" />
+      <div className="flex flex-col gap-6">
+        {/* Header Skeleton */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-r from-videira-cyan via-videira-blue to-videira-purple opacity-90" />
+          <div className="relative z-10 p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <Skeleton className="h-10 w-32 mb-3 bg-white/20" />
+                <Skeleton className="h-10 w-64 mb-2 bg-white/20" />
+                <Skeleton className="h-5 w-48 bg-white/20" />
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <Skeleton className="h-8 w-32 bg-white/20" />
+                <Skeleton className="h-10 w-40 bg-white/20" />
+              </div>
             </div>
-            <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
+          <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
+            {/* Transaction Info Card */}
+            <div className="rounded-lg border border-border bg-card shadow-lg">
+              <div className="border-b border-border p-6">
+                <Skeleton className="h-6 w-48" />
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-px w-full" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-6 w-32" />
+                </div>
+                <Skeleton className="h-px w-full" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
+                <Skeleton className="h-px w-full" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-6 w-24" />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Details Card */}
+            <div className="rounded-lg border border-border bg-card shadow-lg">
+              <div className="border-b border-border p-6">
+                <Skeleton className="h-6 w-40" />
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-px w-full" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
+            {/* Contributor Card */}
+            <div className="rounded-lg border border-border bg-card shadow-lg">
+              <div className="border-b border-border p-6">
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <Skeleton className="h-3 w-16 mb-2" />
+                  <Skeleton className="h-5 w-full" />
+                </div>
+                <Skeleton className="h-px w-full" />
+                <div>
+                  <Skeleton className="h-3 w-20 mb-2" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            </div>
+
+            {/* Church Card (optional) */}
+            <div className="rounded-lg border border-border bg-card shadow-lg">
+              <div className="border-b border-border p-6">
+                <Skeleton className="h-6 w-24" />
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <Skeleton className="h-3 w-16 mb-2" />
+                  <Skeleton className="h-5 w-full" />
+                </div>
+                <Skeleton className="h-px w-full" />
+                <div>
+                  <Skeleton className="h-3 w-20 mb-2" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
