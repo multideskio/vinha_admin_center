@@ -15,6 +15,7 @@ interface DateRangePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>
   value?: DateRange | undefined
   onChange?: (dateRange: DateRange | undefined) => void
   onDateRangeChange?: (range: { from: Date | undefined; to: Date | undefined }) => void
+  disabled?: boolean
 }
 
 export function DateRangePicker({
@@ -22,6 +23,7 @@ export function DateRangePicker({
   value,
   onChange,
   onDateRangeChange,
+  disabled,
 }: DateRangePickerProps): React.JSX.Element {
   const [open, setOpen] = React.useState(false)
   const [internalDate, setInternalDate] = React.useState<DateRange | undefined>(value)
@@ -71,6 +73,7 @@ export function DateRangePicker({
           <Button
             id="date"
             variant={'outline'}
+            disabled={disabled}
             className={cn(
               'w-[300px] justify-start text-left font-normal',
               !value?.from && 'text-muted-foreground',

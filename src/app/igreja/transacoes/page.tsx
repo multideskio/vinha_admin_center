@@ -139,21 +139,37 @@ export default function TransacoesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative z-10 p-8">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
-            Transações da Igreja
-          </h1>
-          <p className="text-base text-white/90 mt-2 font-medium">
-            Visualize o histórico de contribuições recebidas
-          </p>
+        <div className="relative z-10 p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+                Transações da Igreja
+              </h1>
+              <p className="text-sm sm:text-base text-white/90 mt-1 sm:mt-2 font-medium">
+                Visualize o histórico de contribuições recebidas
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 w-full sm:w-auto">
+              <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 w-full sm:w-auto"
+                onClick={exportToCSV}
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only">Exportar</span>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
       <Card className="shadow-lg border-t-4 border-t-videira-blue">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center justify-end gap-2 pb-4">
+        <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6 pb-4 sm:pb-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-2 pb-3 sm:pb-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
+                <Button variant="outline" size="sm" className="gap-1 w-full sm:w-auto">
                   <ListFilter className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only">Filtro</span>
                 </Button>
@@ -187,11 +203,6 @@ export default function TransacoesPage() {
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
-            <Button size="sm" variant="outline" className="gap-1" onClick={exportToCSV}>
-              <Download className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only">Exportar</span>
-            </Button>
           </div>
           <Table>
             <TableHeader className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">

@@ -149,17 +149,49 @@ export default function ChurchDashboardPage() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
+      <div className="flex flex-col gap-4 sm:gap-6">
+        {/* Header com gradiente Videira - já aparece durante o loading */}
+        <div className="relative overflow-hidden rounded-2xl">
+          <div className="absolute inset-0 videira-gradient opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+
+          <div className="relative z-10 p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+                  Dashboard da Igreja
+                </h1>
+                <div className="text-sm sm:text-base text-white/90 mt-1 sm:mt-2 font-medium">
+                  Bem-vindo ao painel da{' '}
+                  <Skeleton className="h-4 sm:h-5 w-32 sm:w-40 bg-white/20 inline-block align-middle" />
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <DateRangePicker value={undefined} onChange={() => {}} disabled />
+                <Button
+                  asChild
+                  className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold w-full sm:w-auto"
+                  disabled
+                >
+                  <Link href="/igreja/perfil">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    <span className="text-xs sm:text-sm">Editar Perfil</span>
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+        {/* KPIs Skeleton */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-8 w-8 rounded-lg" />
               </CardHeader>
               <CardContent>
                 <Skeleton className="h-8 w-24 mb-2" />
@@ -168,20 +200,46 @@ export default function ChurchDashboardPage() {
             </Card>
           ))}
         </div>
-        <div className="grid gap-8 lg:grid-cols-2">
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-80 w-full" />
+
+        {/* Charts and Profile Skeleton */}
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <Skeleton className="h-5 w-40 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="pt-4 sm:pt-6">
+              <Skeleton className="h-[250px] sm:h-[300px] w-full" />
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-80 w-full" />
+          <Card className="shadow-lg">
+            <CardHeader>
+              <Skeleton className="h-5 w-48 mb-2" />
+              <Skeleton className="h-4 w-72" />
+            </CardHeader>
+            <CardContent className="pt-4 sm:pt-6">
+              <Skeleton className="h-[250px] sm:h-[300px] w-full rounded-full" />
             </CardContent>
           </Card>
-          <Card className="lg:col-span-2">
-            <CardContent className="pt-6">
-              <Skeleton className="h-64 w-full" />
+          <Card className="lg:col-span-2 shadow-lg">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              <Skeleton className="h-16 w-16 sm:h-20 sm:w-20 rounded-full" />
+              <div className="flex-1 min-w-0">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </CardHeader>
+            <Separator />
+            <CardContent className="pt-4 sm:pt-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-4">
+                  <Skeleton className="h-5 w-5 mt-1" />
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>
@@ -200,31 +258,31 @@ export default function ChurchDashboardPage() {
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
 
-        <div className="relative z-10 p-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg">
+        <div className="relative z-10 p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white drop-shadow-lg break-words">
                 Dashboard da Igreja
               </h1>
-              <p className="text-base text-white/90 mt-2 font-medium">
+              <p className="text-sm sm:text-base text-white/90 mt-1 sm:mt-2 font-medium break-words">
                 Bem-vindo ao painel da {profile.nomeFantasia}
                 {dateRange?.from && (
-                  <span className="ml-2">
+                  <span className="ml-1 sm:ml-2 block sm:inline">
                     • Período: {format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })}
                     {dateRange.to && ` até ${format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}`}
                   </span>
                 )}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
               <Button
                 asChild
-                className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
+                className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold w-full sm:w-auto"
               >
                 <Link href="/igreja/perfil">
                   <Pencil className="mr-2 h-4 w-4" />
-                  Editar Perfil
+                  <span className="text-xs sm:text-sm">Editar Perfil</span>
                 </Link>
               </Button>
             </div>
@@ -279,18 +337,25 @@ export default function ChurchDashboardPage() {
             <CardDescription>Contribuições recebidas nos últimos 6 meses.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-[300px] w-full">
+            <ChartContainer config={{}} className="h-[250px] sm:h-[300px] w-full">
               <BarChart
                 data={data.monthlyContributions}
-                margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tick={{ fontSize: 12 }}
+                />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
                   tickFormatter={(value) => `R$${value / 1000}k`}
+                  tick={{ fontSize: 12 }}
                 />
                 <Tooltip content={<ChartTooltipContent indicator="dot" />} />
                 <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
@@ -309,11 +374,17 @@ export default function ChurchDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-[300px] w-full">
+            <ChartContainer config={{}} className="h-[250px] sm:h-[300px] w-full">
               <PieChart>
                 <Tooltip content={<ChartTooltipContent hideLabel />} />
                 <Legend content={<ChartLegendContent nameKey="method" />} />
-                <Pie data={data.paymentMethods} dataKey="value" nameKey="method" innerRadius={60}>
+                <Pie
+                  data={data.paymentMethods}
+                  dataKey="value"
+                  nameKey="method"
+                  innerRadius={40}
+                  outerRadius={80}
+                >
                   {data.paymentMethods.map((entry) => (
                     <Cell key={entry.method} fill={entry.fill} />
                   ))}
@@ -324,27 +395,29 @@ export default function ChurchDashboardPage() {
         </Card>
 
         <Card className="lg:col-span-2 shadow-lg border-t-4 border-t-videira-purple">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <Avatar className="h-20 w-20 ring-4 ring-videira-purple/30">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 px-4 sm:px-6 pt-4 sm:pt-6">
+            <Avatar className="h-16 w-16 sm:h-20 sm:w-20 ring-4 ring-videira-purple/30 flex-shrink-0">
               <AvatarImage
                 src={profile.avatarUrl || 'https://placehold.co/80x80.png'}
                 alt={profile.nomeFantasia}
                 data-ai-hint="church building"
               />
-              <AvatarFallback className="bg-videira-purple/10 text-videira-purple font-bold text-2xl">
+              <AvatarFallback className="bg-videira-purple/10 text-videira-purple font-bold text-xl sm:text-2xl">
                 {profile.nomeFantasia?.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Building2 className="h-6 w-6 text-videira-purple" />
-                {profile.nomeFantasia}
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-xl sm:text-2xl flex items-center gap-2 break-words">
+                <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-videira-purple flex-shrink-0" />
+                <span className="break-words">{profile.nomeFantasia}</span>
               </CardTitle>
-              <CardDescription>{profile.razaoSocial}</CardDescription>
+              <CardDescription className="text-xs sm:text-sm break-words">
+                {profile.razaoSocial}
+              </CardDescription>
             </div>
           </CardHeader>
           <Separator />
-          <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6 pb-4 sm:pb-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <InfoItem icon={Building2} label="CNPJ" value={profile.cnpj} />
             <InfoItem icon={Mail} label="E-mail" value={profile.email} />
             <InfoItem icon={Phone} label="Telefone" value={profile.phone} />

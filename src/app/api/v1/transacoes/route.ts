@@ -297,11 +297,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Save transaction to database
+    // Para church_account, a igreja de origem é o próprio usuário
+    const originChurchId = user.role === 'church_account' ? user.id : null
+
     const [transaction] = await db
       .insert(transactions)
       .values({
         companyId: COMPANY_ID,
         contributorId: user.id,
+        originChurchId,
         amount: data.amount.toString(),
         status,
         paymentMethod: data.paymentMethod,

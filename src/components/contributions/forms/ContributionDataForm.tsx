@@ -40,7 +40,8 @@ export default function ContributionDataForm({
   isLoading: _isLoading = false, // eslint-disable-line @typescript-eslint/no-unused-vars
   defaultValues,
 }: ContributionDataFormProps) {
-  const [moneyInput, setMoneyInput] = React.useState('')
+  // Estado para os dígitos brutos (em centavos)
+  const [rawDigits, setRawDigits] = React.useState('')
   const [moneyError, setMoneyError] = React.useState<string | null>(null)
 
   const form = useForm<ContributionFormData>({
@@ -55,21 +56,98 @@ export default function ContributionDataForm({
   // Inicializa o campo de dinheiro com valor padrão
   React.useEffect(() => {
     if (defaultValues?.amount && defaultValues.amount > 0) {
-      setMoneyInput(formatMoneyInput((defaultValues.amount * 100).toString()))
+      // Converte reais para centavos (string de dígitos)
+      const cents = Math.round(defaultValues.amount * 100).toString()
+      setRawDigits(cents)
     }
   }, [defaultValues?.amount])
 
-  const handleMoneyInputChange = (value: string) => {
-    const formatted = formatMoneyInput(value)
-    setMoneyInput(formatted)
+  // Calcula o valor formatado a partir dos dígitos brutos
+  const moneyInput = React.useMemo(() => {
+    if (!rawDigits) return ''
+    return formatMoneyInput(rawDigits)
+  }, [rawDigits])
 
-    const numericValue = parseMoneyInput(formatted)
-    const error = validateMoneyAmount(numericValue)
-    setMoneyError(error)
+  const handleMoneyInputChange = React.useCallback(
+    (inputValue: string, isNewDigit: boolean = false) => {
+      let newRawDigits: string
 
-    // Atualiza o form com o valor numérico
-    form.setValue('amount', numericValue)
-  }
+      if (isNewDigit) {
+        // Adiciona apenas o novo dígito aos dígitos existentes
+        const newDigit = inputValue.replace(/[^\d]/g, '')
+        if (!newDigit) return
+        newRawDigits = (rawDigits + newDigit).slice(0, 9)
+      } else {
+        // Extrai apenas os dígitos do valor
+        newRawDigits = inputValue.replace(/[^\d]/g, '').slice(0, 9)
+      }
+
+      // Se não há dígitos, limpa o campo
+      if (!newRawDigits) {
+        setRawDigits('')
+        form.setValue('amount', 0)
+        setMoneyError(null)
+        return
+      }
+
+      // Calcula o valor em reais
+      const amountInReais = Number(newRawDigits) / 100
+
+      // Valida o valor
+      const error = validateMoneyAmount(amountInReais)
+
+      // Atualiza o estado
+      setRawDigits(newRawDigits)
+      form.setValue('amount', amountInReais)
+      setMoneyError(error)
+    },
+    [form, rawDigits],
+  )
+
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Permite teclas de controle
+      const allowedKeys = [
+        'Tab',
+        'Escape',
+        'Enter',
+        'ArrowLeft',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+        'Home',
+        'End',
+      ]
+
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+        return
+      }
+
+      // Backspace - remove último dígito
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault()
+        if (rawDigits.length > 0) {
+          const newRawDigits = rawDigits.slice(0, -1)
+          setRawDigits(newRawDigits)
+          const amountInReais = newRawDigits ? Number(newRawDigits) / 100 : 0
+          form.setValue('amount', amountInReais)
+          setMoneyError(newRawDigits ? validateMoneyAmount(amountInReais) : null)
+        }
+        return
+      }
+
+      // Se é um dígito, adiciona aos dígitos brutos
+      if (/^\d$/.test(e.key)) {
+        e.preventDefault()
+        handleMoneyInputChange(e.key, true)
+        return
+      }
+
+      // Bloqueia qualquer outra tecla
+      e.preventDefault()
+    },
+    [form, rawDigits, handleMoneyInputChange],
+  )
 
   const handleSubmit = (data: ContributionFormData) => {
     // Sanitiza a descrição e garante que amount é número
@@ -125,9 +203,17 @@ export default function ContributionDataForm({
                   <div className="relative group">
                     <Input
                       type="text"
+                      inputMode="numeric"
                       placeholder="R$ 0,00"
                       value={moneyInput}
-                      onChange={(e) => handleMoneyInputChange(e.target.value)}
+                      onChange={() => {
+                        // Controlado via onKeyDown para evitar problemas de formatação
+                      }}
+                      onKeyDown={handleKeyDown}
+                      onBlur={() => {
+                        // Não precisa fazer nada especial no blur
+                        // O estado rawDigits já está correto
+                      }}
                       className="text-2xl font-bold h-14 border-2 focus:border-videira-cyan focus:ring-2 focus:ring-videira-cyan/20 transition-all text-center"
                     />
                     {/* Valores sugeridos */}
@@ -136,7 +222,13 @@ export default function ContributionDataForm({
                         <button
                           key={value}
                           type="button"
-                          onClick={() => handleMoneyInputChange((value * 100).toString())}
+                          onClick={() => {
+                            // Define diretamente os dígitos brutos (valor em centavos)
+                            const cents = (value * 100).toString()
+                            setRawDigits(cents)
+                            form.setValue('amount', value)
+                            setMoneyError(validateMoneyAmount(value))
+                          }}
                           className="flex-1 px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-videira-cyan/10 hover:text-videira-cyan border border-gray-200 hover:border-videira-cyan rounded-lg transition-all"
                         >
                           R$ {value}

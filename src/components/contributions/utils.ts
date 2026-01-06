@@ -25,15 +25,38 @@ export const formatMoneyInput = (value: string): string => {
   // Se não há números, retorna vazio
   if (!numbers) return ''
 
-  // Converte para centavos
-  const amount = parseInt(numbers) / 100
+  // Limita a 9 dígitos (máximo R$ 999.999,99)
+  const limitedNumbers = numbers.slice(0, 9)
+
+  // Converte string para número de forma segura
+  const numericValue = Number(limitedNumbers)
+
+  // Valida se o número é válido
+  if (!isFinite(numericValue) || isNaN(numericValue) || numericValue < 0) {
+    return ''
+  }
+
+  // Converte centavos para reais (divide por 100)
+  const amount = numericValue / 100
+
+  // Valida novamente após divisão
+  if (!isFinite(amount) || isNaN(amount) || amount < 0) {
+    return ''
+  }
 
   // Formata como moeda brasileira
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-  }).format(amount)
+  try {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+  } catch (error) {
+    // Se houver erro na formatação, retorna vazio
+    console.error('Erro ao formatar valor monetário:', error)
+    return ''
+  }
 }
 
 /**
@@ -43,7 +66,17 @@ export const parseMoneyInput = (value: string): number => {
   // Remove formatação e converte para número
   const numbers = value.replace(/[^\d]/g, '')
   if (!numbers) return 0
-  return parseInt(numbers) / 100
+
+  // Limita a 9 dígitos para evitar overflow
+  const limitedNumbers = numbers.slice(0, 9)
+  const amount = Number(limitedNumbers) / 100
+
+  // Valida se o número é válido
+  if (!isFinite(amount) || isNaN(amount)) {
+    return 0
+  }
+
+  return amount
 }
 
 /**
