@@ -258,7 +258,7 @@ export default function ContributionForm({
         {/* Resumo Premium Sticky */}
         {formData.amount > 0 && (
           <div className="sticky bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t-2 border-videira-cyan/20 p-4 -mx-4">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-4xl mx-auto">
               <div className="relative overflow-hidden rounded-2xl">
                 <div className="absolute inset-0 bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10" />
                 <div className="relative p-6 backdrop-blur-sm">
@@ -409,7 +409,7 @@ export default function ContributionForm({
   }
 
   return (
-    <div className={cn('flex flex-col gap-6 max-w-6xl mx-auto pb-8', className)}>
+    <div className={cn('flex flex-col gap-6 max-w-4xl mx-auto pb-8 px-4', className)}>
       {/* Indicador de Progresso com Videira */}
       <div className="relative overflow-hidden rounded-2xl p-1">
         <div className="absolute inset-0 videira-gradient opacity-20" />
