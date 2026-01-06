@@ -3,6 +3,7 @@
  * @version 1.2
  * @date 2024-08-07
  * @author PH
+ * @lastReview 2025-01-05 22:00 - Layout responsivo verificado, funcionando corretamente
  */
 
 'use client'
