@@ -27,8 +27,8 @@ COPY components.json ./
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Generate Drizzle client and build
-RUN npm run db:generate
+# Generate Drizzle client (usando URL placeholder para build)
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npm run db:generate
 RUN npm run build
 
 # Production stage
