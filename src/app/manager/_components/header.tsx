@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   Search,
   User,
@@ -138,7 +137,8 @@ export function ManagerHeader({
               <Link href="/manager/dashboard" className="flex items-center gap-3 group">
                 <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-lg">
                   {companyLogo ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={companyLogo}
                       alt="Logo"
                       width={24}

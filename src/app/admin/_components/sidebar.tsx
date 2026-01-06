@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -99,7 +98,8 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
         <div className="flex h-16 items-center border-b border-border/40 px-6 videira-gradient">
           <Link href="/admin/dashboard" className="flex items-center gap-3 font-bold group">
             {companyLogo ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={companyLogo}
                 alt={companyName || 'Logo'}
                 width={32}

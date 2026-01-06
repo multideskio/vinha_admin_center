@@ -8,7 +8,6 @@
 'use client'
 
 import Link from 'next/link'
-import NextImage from 'next/image'
 import {
   Search,
   User,
@@ -321,7 +320,8 @@ export function StandardizedHeader({
             >
               {companyLogo ? (
                 <>
-                  <NextImage
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={companyLogo}
                     alt={`Logo ${companyName}`}
                     width={24}

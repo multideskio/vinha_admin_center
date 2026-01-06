@@ -8,7 +8,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   Search,
   User,
@@ -110,7 +109,8 @@ export function AdminHeader({
           <nav className="grid gap-2 text-lg font-medium">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold">
               {companyLogo ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={companyLogo}
                   alt={companyName || 'Logo'}
                   width={24}
