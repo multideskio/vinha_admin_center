@@ -95,6 +95,7 @@ type DashboardData = {
 export default function DashboardPage() {
   const [data, setData] = React.useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [transactionsLoading, setTransactionsLoading] = React.useState(false)
   const [dateRange, setDateRange] = React.useState<{
     from: Date | undefined
     to: Date | undefined
@@ -143,6 +144,44 @@ export default function DashboardPage() {
       setIsLoading(false)
     }
   }, [toast, dateRange])
+
+  const refreshTransactions = React.useCallback(async () => {
+    if (!data) return
+    
+    setTransactionsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (dateRange.from) params.append('from', dateRange.from.toISOString())
+      if (dateRange.to) params.append('to', dateRange.to.toISOString())
+
+      const response = await fetch(`/api/v1/dashboard/admin?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Falha ao carregar as transações.')
+      }
+      const dashboardData: DashboardData = await response.json()
+      
+      // Atualizar apenas as transações recentes
+      setData(prev => prev ? {
+        ...prev,
+        recentTransactions: dashboardData.recentTransactions
+      } : dashboardData)
+      
+      toast({
+        title: 'Atualizado',
+        description: 'Lista de transações atualizada com sucesso.',
+        variant: 'success',
+      })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: message,
+        variant: 'destructive',
+      })
+    } finally {
+      setTransactionsLoading(false)
+    }
+  }, [toast, dateRange, data])
 
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
@@ -299,13 +338,18 @@ export default function DashboardPage() {
 
   const kpiDisplayData = data
     ? [
-        { title: 'Arrecadação no Mês', ...data.kpis.totalRevenue, icon: DollarSign },
-        { title: 'Total de Membros', ...data.kpis.totalMembers, icon: Users },
+        { title: 'Arrecadação no Período', ...data.kpis.totalRevenue, icon: DollarSign },
+        { title: 'Total de Usuários', ...data.kpis.totalMembers, icon: Users },
         { title: 'Total de Transações', ...data.kpis.totalTransactions, icon: Activity },
-        { title: 'Total de Igrejas', ...data.kpis.totalChurches, icon: Building },
-        { title: 'Total de Pastores', ...data.kpis.totalPastors, icon: User },
-        { title: 'Total de Supervisores', ...data.kpis.totalSupervisors, icon: UserCog },
-        { title: 'Total de Gerentes', ...data.kpis.totalManagers, icon: UserCheck },
+        { title: 'Contas de Igreja (CNPJ)', ...data.kpis.totalChurches, icon: Building },
+      ]
+    : []
+
+  const secondaryKpis = data
+    ? [
+        { title: 'Pastores', ...data.kpis.totalPastors, icon: User },
+        { title: 'Supervisores', ...data.kpis.totalSupervisors, icon: UserCog },
+        { title: 'Gerentes', ...data.kpis.totalManagers, icon: UserCheck },
       ]
     : []
 
@@ -642,7 +686,7 @@ export default function DashboardPage() {
         {/* KPIs principais (4 cards) - Estilo Videira */}
         <div className="lg:col-span-12">
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-            {kpiDisplayData.slice(0, 4).map((kpi, index) => (
+            {kpiDisplayData.map((kpi, index) => (
               <Card
                 key={kpi.title}
                 className={cn(
@@ -698,6 +742,60 @@ export default function DashboardPage() {
                     {kpi.value}
                   </div>
                   <p className="text-sm text-muted-foreground font-medium">{kpi.change}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* KPIs secundários - Tipos de usuários */}
+        <div className="lg:col-span-12">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {secondaryKpis.map((kpi, index) => (
+              <Card
+                key={kpi.title}
+                className={cn(
+                  'hover:shadow-lg transition-all duration-300 h-full hover:scale-[1.02] relative overflow-hidden group',
+                  'border-l-4',
+                  index === 0 && 'border-l-green-500 bg-gradient-to-r from-green-500/5 to-background',
+                  index === 1 && 'border-l-blue-500 bg-gradient-to-r from-blue-500/5 to-background',
+                  index === 2 && 'border-l-purple-500 bg-gradient-to-r from-purple-500/5 to-background',
+                )}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    {kpi.title}
+                  </CardTitle>
+                  <div
+                    className={cn(
+                      'p-2 rounded-lg shadow-sm transition-transform group-hover:scale-110',
+                      index === 0 && 'bg-green-500/15 ring-1 ring-green-500/30',
+                      index === 1 && 'bg-blue-500/15 ring-1 ring-blue-500/30',
+                      index === 2 && 'bg-purple-500/15 ring-1 ring-purple-500/30',
+                    )}
+                  >
+                    <kpi.icon
+                      className={cn(
+                        'h-4 w-4',
+                        index === 0 && 'text-green-600 dark:text-green-400',
+                        index === 1 && 'text-blue-600 dark:text-blue-400',
+                        index === 2 && 'text-purple-600 dark:text-purple-400',
+                      )}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div
+                    className={cn(
+                      'text-2xl font-bold mb-1 tracking-tight',
+                      index === 0 && 'text-green-600 dark:text-green-400',
+                      index === 1 && 'text-blue-600 dark:text-blue-400',
+                      index === 2 && 'text-purple-600 dark:text-purple-400',
+                    )}
+                  >
+                    {kpi.value}
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium">{kpi.change}</p>
                 </CardContent>
               </Card>
             ))}
@@ -906,10 +1004,11 @@ export default function DashboardPage() {
                 <Button
                   size="icon"
                   className="h-8 w-8 bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md"
-                  onClick={fetchData}
+                  onClick={refreshTransactions}
+                  disabled={transactionsLoading}
                 >
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="sr-only">Atualizar</span>
+                  <RefreshCw className={cn("h-4 w-4", transactionsLoading && "animate-spin")} />
+                  <span className="sr-only">Atualizar transações</span>
                 </Button>
                 <Button
                   size="sm"
@@ -931,46 +1030,66 @@ export default function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.recentTransactions.map((transaction) => {
-                    const roleMap: Record<string, string> = {
-                      manager: 'gerentes',
-                      supervisor: 'supervisores',
-                      pastor: 'pastores',
-                      church_account: 'igrejas',
-                    }
-                    const profilePath = roleMap[transaction.contributorRole]
-                    return (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="font-medium">
-                          {profilePath ? (
-                            <Link
-                              href={`/admin/${profilePath}/${transaction.contributorId}`}
-                              className="flex items-center gap-1 hover:underline text-primary"
-                            >
-                              {transaction.name}
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          ) : (
-                            transaction.name
-                          )}
+                  {transactionsLoading ? (
+                    // Skeleton loading para transações
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-32" />
                         </TableCell>
                         <TableCell className="text-right">
-                          {new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          }).format(transaction.amount)}
+                          <Skeleton className="h-4 w-20 ml-auto" />
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
-                          <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                            {statusMap[transaction.status]?.text || transaction.status}
-                          </Badge>
+                          <Skeleton className="h-6 w-16 rounded-full" />
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">
-                          {transaction.date}
+                        <TableCell className="hidden md:table-cell">
+                          <Skeleton className="h-4 w-24" />
                         </TableCell>
                       </TableRow>
-                    )
-                  })}
+                    ))
+                  ) : (
+                    data.recentTransactions.map((transaction) => {
+                      const roleMap: Record<string, string> = {
+                        manager: 'gerentes',
+                        supervisor: 'supervisores',
+                        pastor: 'pastores',
+                        church_account: 'igrejas',
+                      }
+                      const profilePath = roleMap[transaction.contributorRole]
+                      return (
+                        <TableRow key={transaction.id}>
+                          <TableCell className="font-medium">
+                            {profilePath ? (
+                              <Link
+                                href={`/admin/${profilePath}/${transaction.contributorId}`}
+                                className="flex items-center gap-1 hover:underline text-primary"
+                              >
+                                {transaction.name}
+                                <ExternalLink className="h-3 w-3" />
+                              </Link>
+                            ) : (
+                              transaction.name
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {new Intl.NumberFormat('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            }).format(transaction.amount)}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                              {statusMap[transaction.status]?.text || transaction.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-muted-foreground">
+                            {transaction.date}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
