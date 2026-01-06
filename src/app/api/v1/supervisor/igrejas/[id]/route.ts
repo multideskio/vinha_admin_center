@@ -40,10 +40,14 @@ export async function GET(
 
   try {
     // Rate limiting: 60 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-igrejas-get-individual', ip, 60, 60)
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -60,16 +64,19 @@ export async function GET(
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -77,10 +84,10 @@ export async function GET(
       )
     }
 
-    console.log('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_REQUEST]', {
+      supervisorId: sessionUser.id,
       churchId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
 
     const isAuthorized = await verifyChurch(id, sessionUser.id)
@@ -133,11 +140,11 @@ export async function GET(
       website: profile?.website,
     })
   } catch (error) {
-    console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_ERROR]', { 
-      supervisorId: sessionUser?.id, 
+    console.error('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_ERROR]', {
+      supervisorId: sessionUser?.id,
       churchId: id,
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
@@ -153,10 +160,14 @@ export async function PUT(
 
   try {
     // Rate limiting: 30 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-igrejas-put-individual', ip, 30, 60)
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -173,16 +184,19 @@ export async function PUT(
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -190,10 +204,10 @@ export async function PUT(
       )
     }
 
-    console.log('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_REQUEST]', {
+      supervisorId: sessionUser.id,
       churchId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
 
     const isAuthorized = await verifyChurch(id, sessionUser.id)
@@ -254,13 +268,13 @@ export async function PUT(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_ERROR]', { 
-      supervisorId: sessionUser?.id, 
+    console.error('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_ERROR]', {
+      supervisorId: sessionUser?.id,
       churchId: id,
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
     })
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Dados inválidos.', details: error.errors },
@@ -281,10 +295,14 @@ export async function DELETE(
 
   try {
     // Rate limiting: 20 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-igrejas-delete-individual', ip, 20, 60)
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -301,16 +319,19 @@ export async function DELETE(
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -318,10 +339,10 @@ export async function DELETE(
       )
     }
 
-    console.log('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_REQUEST]', {
+      supervisorId: sessionUser.id,
       churchId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
 
     const isAuthorized = await verifyChurch(id, sessionUser.id)
@@ -339,11 +360,11 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
   } catch (error) {
-    console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_ERROR]', { 
-      supervisorId: sessionUser?.id, 
+    console.error('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_ERROR]', {
+      supervisorId: sessionUser?.id,
       churchId: id,
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }

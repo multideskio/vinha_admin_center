@@ -34,10 +34,14 @@ async function verifyPastor(pastorId: string, supervisorId: string): Promise<boo
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
     // Rate limiting: 60 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-pastor-detail', ip, 60, 60) // 60 requests per minute
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_PASTOR_DETAIL_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTOR_DETAIL_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -55,16 +59,19 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_PASTOR_DETAIL_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTOR_DETAIL_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_PASTOR_DETAIL_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_PASTOR_DETAIL_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -74,10 +81,10 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
     const { id } = params
 
-    console.log('[SUPERVISOR_PASTOR_DETAIL_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_PASTOR_DETAIL_REQUEST]', {
+      supervisorId: sessionUser.id,
       pastorId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
     const isAuthorized = await verifyPastor(id, sessionUser.id)
     if (!isAuthorized) {
@@ -130,9 +137,9 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     })
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
-    console.error('[SUPERVISOR_PASTOR_DETAIL_ERROR]', { 
-      error: errorMessage, 
-      timestamp: new Date().toISOString() 
+    console.error('[SUPERVISOR_PASTOR_DETAIL_ERROR]', {
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
@@ -141,10 +148,14 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
     // Rate limiting: 30 requests per minute for updates
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-pastor-update', ip, 30, 60) // 30 requests per minute
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_PASTOR_UPDATE_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTOR_UPDATE_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -162,16 +173,19 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_PASTOR_UPDATE_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTOR_UPDATE_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_PASTOR_UPDATE_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_PASTOR_UPDATE_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -181,10 +195,10 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
     const { id } = params
 
-    console.log('[SUPERVISOR_PASTOR_UPDATE_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_PASTOR_UPDATE_REQUEST]', {
+      supervisorId: sessionUser.id,
       pastorId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
     const isAuthorized = await verifyPastor(id, sessionUser.id)
     if (!isAuthorized) {
@@ -245,20 +259,20 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      console.error('[SUPERVISOR_PASTOR_UPDATE_VALIDATION_ERROR]', { 
-        errors: error.errors, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_PASTOR_UPDATE_VALIDATION_ERROR]', {
+        errors: error.errors,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Dados inválidos.', details: error.errors },
         { status: 400 },
       )
     }
-    
+
     const errorMessage = getErrorMessage(error)
-    console.error('[SUPERVISOR_PASTOR_UPDATE_ERROR]', { 
-      error: errorMessage, 
-      timestamp: new Date().toISOString() 
+    console.error('[SUPERVISOR_PASTOR_UPDATE_ERROR]', {
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
@@ -267,10 +281,14 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
     // Rate limiting: 20 requests per minute for deletions
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-pastor-delete', ip, 20, 60) // 20 requests per minute
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_PASTOR_DELETE_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTOR_DELETE_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -288,16 +306,19 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_PASTOR_DELETE_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTOR_DELETE_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_PASTOR_DELETE_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_PASTOR_DELETE_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -307,18 +328,15 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
 
     const { id } = params
 
-    console.log('[SUPERVISOR_PASTOR_DELETE_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_PASTOR_DELETE_REQUEST]', {
+      supervisorId: sessionUser.id,
       pastorId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
 
     const isAuthorized = await verifyPastor(id, sessionUser.id)
     if (!isAuthorized) {
-      return NextResponse.json(
-        { error: 'Não autorizado a excluir este pastor.' },
-        { status: 403 },
-      )
+      return NextResponse.json({ error: 'Não autorizado a excluir este pastor.' }, { status: 403 })
     }
 
     await db
@@ -332,9 +350,9 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
-    console.error('[SUPERVISOR_PASTOR_DELETE_ERROR]', { 
-      error: errorMessage, 
-      timestamp: new Date().toISOString() 
+    console.error('[SUPERVISOR_PASTOR_DELETE_ERROR]', {
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }

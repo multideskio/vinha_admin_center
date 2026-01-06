@@ -41,7 +41,8 @@ const pastorSchema = z.object({
 export async function GET(request: Request): Promise<NextResponse> {
   try {
     // Rate limiting: 60 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-pastores', ip, 60, 60) // 60 requests per minute
     if (!rateLimitResult.allowed) {
       console.error('[SUPERVISOR_PASTORES_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
@@ -66,10 +67,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_PASTORES_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_PASTORES_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -77,9 +78,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    console.log('[SUPERVISOR_PASTORES_REQUEST]', { 
-      supervisorId: sessionUser.id, 
-      timestamp: new Date().toISOString() 
+    console.log('[SUPERVISOR_PASTORES_REQUEST]', {
+      supervisorId: sessionUser.id,
+      timestamp: new Date().toISOString(),
     })
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
@@ -125,9 +126,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ pastors: result })
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
-    console.error('[SUPERVISOR_PASTORES_ERROR]', { 
-      error: errorMessage, 
-      timestamp: new Date().toISOString() 
+    console.error('[SUPERVISOR_PASTORES_ERROR]', {
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
@@ -136,10 +137,14 @@ export async function GET(request: Request): Promise<NextResponse> {
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     // Rate limiting: 10 requests per minute for creation
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-pastores-create', ip, 10, 60) // 10 requests per minute
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_PASTORES_CREATE_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTORES_CREATE_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -155,16 +160,19 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_PASTORES_CREATE_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_PASTORES_CREATE_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_PASTORES_CREATE_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_PASTORES_CREATE_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -172,9 +180,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       )
     }
 
-    console.log('[SUPERVISOR_PASTORES_CREATE_REQUEST]', { 
-      supervisorId: sessionUser.id, 
-      timestamp: new Date().toISOString() 
+    console.log('[SUPERVISOR_PASTORES_CREATE_REQUEST]', {
+      supervisorId: sessionUser.id,
+      timestamp: new Date().toISOString(),
     })
 
     const body = await request.json()
@@ -227,22 +235,22 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ success: true, pastor: newPastor }, { status: 201 })
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      console.error('[SUPERVISOR_PASTORES_CREATE_VALIDATION_ERROR]', { 
-        errors: error.errors, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_PASTORES_CREATE_VALIDATION_ERROR]', {
+        errors: error.errors,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Dados inválidos.', details: error.errors },
         { status: 400 },
       )
     }
-    
+
     const errorMessage = getErrorMessage(error)
-    console.error('[SUPERVISOR_PASTORES_CREATE_ERROR]', { 
-      error: errorMessage, 
-      timestamp: new Date().toISOString() 
+    console.error('[SUPERVISOR_PASTORES_CREATE_ERROR]', {
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
     })
-    
+
     if (
       error instanceof Error &&
       'constraint' in error &&

@@ -589,7 +589,8 @@ export default function PastoresPage(): JSX.Element {
                 <TableHead className="font-semibold">Nome</TableHead>
                 <TableHead className="hidden sm:table-cell font-semibold">Email</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold">Celular</TableHead>
-                <TableHead className="hidden lg:table-cell font-semibold">Status</TableHead>{/* Melhorado para lg:table-cell */}
+                <TableHead className="hidden lg:table-cell font-semibold">Status</TableHead>
+                {/* Melhorado para lg:table-cell */}
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -608,7 +609,8 @@ export default function PastoresPage(): JSX.Element {
                     <TableCell className="hidden md:table-cell">
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">{/* Melhorado para lg:table-cell */}
+                    <TableCell className="hidden lg:table-cell">
+                      {/* Melhorado para lg:table-cell */}
                       <Skeleton className="h-6 w-16 rounded-full" />
                     </TableCell>
                     <TableCell>
@@ -626,7 +628,8 @@ export default function PastoresPage(): JSX.Element {
                     <TableCell className="hidden md:table-cell text-muted-foreground">
                       {pastor.phone}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">{/* Melhorado para lg:table-cell */}
+                    <TableCell className="hidden lg:table-cell">
+                      {/* Melhorado para lg:table-cell */}
                       <Badge variant={pastor.status === 'active' ? 'success' : 'destructive'}>
                         {pastor.status === 'active' ? 'Ativo' : 'Inativo'}
                       </Badge>
@@ -673,9 +676,9 @@ export default function PastoresPage(): JSX.Element {
                 ))
               ) : (
                 <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        Nenhum pastor encontrado.
-                      </TableCell>
+                  <TableCell colSpan={5} className="text-center">
+                    Nenhum pastor encontrado.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -688,7 +691,8 @@ export default function PastoresPage(): JSX.Element {
 
   const CardView = () => (
     <>
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">{/* Melhorado para xl:grid-cols-3 */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+        {/* Melhorado para xl:grid-cols-3 */}
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i}>

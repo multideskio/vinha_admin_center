@@ -65,10 +65,14 @@ export async function POST(
 
   try {
     // Rate limiting: 10 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-transacoes-resend-receipt', ip, 10, 60)
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -85,16 +89,19 @@ export async function POST(
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -106,10 +113,10 @@ export async function POST(
       return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
     }
 
-    console.log('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_REQUEST]', {
+      supervisorId: sessionUser.id,
       transactionId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
 
     // Verificar se o supervisor tem acesso a esta transação
@@ -158,13 +165,13 @@ export async function POST(
       message: 'Comprovante reenviado com sucesso.',
     })
   } catch (error: unknown) {
-    console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_ERROR]', { 
-      supervisorId: sessionUser?.id, 
+    console.error('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_ERROR]', {
+      supervisorId: sessionUser?.id,
       transactionId: id,
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
     })
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
       { error: 'Erro interno do servidor.', details: errorMessage },

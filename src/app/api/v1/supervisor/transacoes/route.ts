@@ -25,10 +25,14 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   try {
     // Rate limiting: 60 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-transacoes', ip, 60, 60)
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_TRANSACOES_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_TRANSACOES_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -45,16 +49,19 @@ export async function GET(request: Request): Promise<NextResponse> {
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_TRANSACOES_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_TRANSACOES_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_TRANSACOES_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_TRANSACOES_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -62,9 +69,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    console.log('[SUPERVISOR_TRANSACOES_REQUEST]', { 
-      supervisorId: sessionUser.id, 
-      timestamp: new Date().toISOString() 
+    console.log('[SUPERVISOR_TRANSACOES_REQUEST]', {
+      supervisorId: sessionUser.id,
+      timestamp: new Date().toISOString(),
     })
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
@@ -130,12 +137,12 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ transactions: formattedTransactions })
   } catch (error: unknown) {
-    console.error('[SUPERVISOR_TRANSACOES_GET_ERROR]', { 
-      supervisorId: sessionUser?.id, 
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+    console.error('[SUPERVISOR_TRANSACOES_GET_ERROR]', {
+      supervisorId: sessionUser?.id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
     })
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: errorMessage },

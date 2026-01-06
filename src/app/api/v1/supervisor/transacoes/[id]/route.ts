@@ -86,10 +86,14 @@ export async function GET(
 
   try {
     // Rate limiting: 60 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-transacoes-individual', ip, 60, 60)
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -106,16 +110,19 @@ export async function GET(
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if (sessionUser.role !== 'supervisor') {
-      console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -127,10 +134,10 @@ export async function GET(
       return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
     }
 
-    console.log('[SUPERVISOR_TRANSACOES_INDIVIDUAL_REQUEST]', { 
-      supervisorId: sessionUser.id, 
+    console.log('[SUPERVISOR_TRANSACOES_INDIVIDUAL_REQUEST]', {
+      supervisorId: sessionUser.id,
       transactionId: id,
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
     const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
     if (!isAuthorized) {
@@ -222,13 +229,13 @@ export async function GET(
 
     return NextResponse.json({ success: true, transaction: cieloData })
   } catch (error: unknown) {
-    console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_ERROR]', { 
-      supervisorId: sessionUser?.id, 
+    console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_ERROR]', {
+      supervisorId: sessionUser?.id,
       transactionId: id,
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
     })
-    
+
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

@@ -161,7 +161,8 @@ export default function SupervisorDashboardPage(): JSX.Element {
             </Card>
           ))}
         </div>
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">{/* Melhorado para xl:grid-cols-2 */}
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+          {/* Melhorado para xl:grid-cols-2 */}
           <Card>
             <CardContent className="pt-6">
               <Skeleton className="h-80 w-full" />
@@ -234,7 +235,8 @@ export default function SupervisorDashboardPage(): JSX.Element {
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">{/* Melhorado para melhor responsividade */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
+        {/* Melhorado para melhor responsividade */}
         {kpiDisplayData.map((kpi, index) => {
           const colorClasses = [
             {
@@ -387,7 +389,8 @@ export default function SupervisorDashboardPage(): JSX.Element {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">{/* Melhorado para xl:grid-cols-2 */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {/* Melhorado para xl:grid-cols-2 */}
         <Card className="shadow-lg border-t-4 border-t-videira-purple">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

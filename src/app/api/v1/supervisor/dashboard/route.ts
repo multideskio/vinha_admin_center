@@ -30,10 +30,14 @@ const calculateChange = (current: number, previous: number): string => {
 export async function GET(request: Request): Promise<NextResponse> {
   try {
     // Rate limiting: 60 requests per minute
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('supervisor-dashboard', ip, 60, 60) // 60 requests per minute
     if (!rateLimitResult.allowed) {
-      console.error('[SUPERVISOR_DASHBOARD_RATE_LIMIT]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_DASHBOARD_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
         { status: 429 },
@@ -49,16 +53,19 @@ export async function GET(request: Request): Promise<NextResponse> {
       if (authResponse) return authResponse
 
       // Se nem JWT nem API Key funcionaram, retorna 401
-      console.error('[SUPERVISOR_DASHBOARD_AUTH_ERROR]', { ip, timestamp: new Date().toISOString() })
+      console.error('[SUPERVISOR_DASHBOARD_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
     // Verifica se o usuário tem a role correta
     if ((sessionUser.role as UserRole) !== 'supervisor') {
-      console.error('[SUPERVISOR_DASHBOARD_ROLE_ERROR]', { 
-        userId: sessionUser.id, 
-        role: sessionUser.role, 
-        timestamp: new Date().toISOString() 
+      console.error('[SUPERVISOR_DASHBOARD_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
       })
       return NextResponse.json(
         { error: 'Acesso negado. Role supervisor necessária.' },
@@ -67,9 +74,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
     const supervisorId = sessionUser.id
 
-    console.log('[SUPERVISOR_DASHBOARD_REQUEST]', { 
-      supervisorId, 
-      timestamp: new Date().toISOString() 
+    console.log('[SUPERVISOR_DASHBOARD_REQUEST]', {
+      supervisorId,
+      timestamp: new Date().toISOString(),
     })
 
     // Extrair parâmetros de data da URL
@@ -83,11 +90,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     const endOfCurrentMonth = endDateParam ? new Date(endDateParam) : now
     const startOfPreviousMonth = startOfMonth(subMonths(startOfCurrentMonth, 1))
 
-    console.log('[SUPERVISOR_DASHBOARD_DATE_FILTER]', { 
+    console.log('[SUPERVISOR_DASHBOARD_DATE_FILTER]', {
       supervisorId,
       startOfCurrentMonth: startOfCurrentMonth.toISOString(),
       endOfCurrentMonth: endOfCurrentMonth.toISOString(),
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString(),
     })
 
     const pastorsResult = await db
@@ -368,9 +375,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     })
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
-    console.error('[SUPERVISOR_DASHBOARD_ERROR]', { 
-      error: errorMessage, 
-      timestamp: new Date().toISOString() 
+    console.error('[SUPERVISOR_DASHBOARD_ERROR]', {
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
     })
     return NextResponse.json(
       { error: 'Erro ao buscar dados do dashboard do supervisor', details: errorMessage },
