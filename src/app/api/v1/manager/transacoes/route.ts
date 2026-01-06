@@ -121,12 +121,7 @@ export async function GET(request: Request) {
     // Get all transactions from manager + supervisors + pastors + churches
     const allContributorIds = [user.id, ...supervisorUserIds, ...pastorUserIds, ...churchUserIds]
 
-    if (allContributorIds.length === 1) {
-      return NextResponse.json({
-        transactions: [],
-        pagination: { page, limit, total: 0, totalPages: 0 },
-      })
-    }
+    // Always include manager's own transactions, even if they have no network
     const conditions = [inArray(transactions.contributorId, allContributorIds)]
     if (startDate) conditions.push(gte(transactions.createdAt, new Date(startDate)))
     if (endDate) conditions.push(lte(transactions.createdAt, new Date(endDate)))
