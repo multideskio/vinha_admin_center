@@ -89,7 +89,22 @@ export default function GerenteDashboardPage() {
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/v1/manager/dashboard')
+      // Build URL with date parameters if dateRange is set
+      let url = '/api/v1/manager/dashboard'
+      const params = new URLSearchParams()
+
+      if (dateRange.from) {
+        params.append('from', dateRange.from.toISOString())
+      }
+      if (dateRange.to) {
+        params.append('to', dateRange.to.toISOString())
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
+
+      const response = await fetch(url)
       if (!response.ok) {
         throw new Error('Falha ao carregar os dados do dashboard.')
       }
@@ -105,7 +120,7 @@ export default function GerenteDashboardPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, dateRange])
 
   React.useEffect(() => {
     const checkProfile = async () => {

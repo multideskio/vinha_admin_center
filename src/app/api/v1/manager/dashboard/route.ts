@@ -36,7 +36,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     // Rate limiting
     const ip =
       request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-    const rateLimitResult = await rateLimit('manager-dashboard', ip, 60, 60) // 60 requests per minute
+    const rateLimitResult = await rateLimit(ip, 'manager-dashboard', 60, 60000) // 60 requests per minute
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
@@ -48,8 +48,30 @@ export async function GET(request: Request): Promise<NextResponse> {
     if (!user || (user.role as UserRole) !== 'manager') {
       throw new ApiError(401, 'Não autorizado')
     }
-    const managerId = user.id
+
+    // Parse date range from query parameters
+    const url = new URL(request.url)
+    const fromParam = url.searchParams.get('from')
+    const toParam = url.searchParams.get('to')
+
+    // Default to current month if no dates provided
     const now = new Date()
+    const defaultFrom = startOfMonth(now)
+    const defaultTo = now
+
+    const dateFrom = fromParam ? new Date(fromParam) : defaultFrom
+    const dateTo = toParam ? new Date(toParam) : defaultTo
+
+    // Validate dates
+    if (isNaN(dateFrom.getTime()) || isNaN(dateTo.getTime())) {
+      throw new ApiError(400, 'Datas inválidas fornecidas')
+    }
+
+    if (dateFrom > dateTo) {
+      throw new ApiError(400, 'Data inicial não pode ser maior que data final')
+    }
+
+    const managerId = user.id
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
 
@@ -88,7 +110,21 @@ export async function GET(request: Request): Promise<NextResponse> {
     const totalChurches = churchIds.length
     const totalMembers = 1 + totalSupervisors + totalPastors + totalChurches
 
-    // KPI Calculations with previous month comparison
+    // KPI Calculations with date range filtering
+    const revenueSelectedPeriodResult =
+      networkUserIds.length > 0
+        ? await db
+            .select({ value: sum(transactions.amount) })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.status, 'approved'),
+                gte(transactions.createdAt, dateFrom),
+                lt(transactions.createdAt, dateTo),
+                inArray(transactions.contributorId, networkUserIds),
+              ),
+            )
+        : [{ value: '0' }]
     const revenueCurrentMonthResult =
       networkUserIds.length > 0
         ? await db
@@ -98,6 +134,7 @@ export async function GET(request: Request): Promise<NextResponse> {
               and(
                 eq(transactions.status, 'approved'),
                 gte(transactions.createdAt, startOfCurrentMonth),
+                lt(transactions.createdAt, now),
                 inArray(transactions.contributorId, networkUserIds),
               ),
             )
@@ -116,6 +153,7 @@ export async function GET(request: Request): Promise<NextResponse> {
               ),
             )
         : [{ value: '0' }]
+    const totalRevenueSelectedPeriod = parseFloat(revenueSelectedPeriodResult[0]?.value || '0')
     const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0]?.value || '0')
     const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0]?.value || '0')
 
@@ -130,7 +168,20 @@ export async function GET(request: Request): Promise<NextResponse> {
         : [{ value: 0 }]
     const newMembersThisMonth = newMembersThisMonthResult[0]?.value ?? 0
 
-    const newTransactionsThisMonthResult =
+    const newTransactionsSelectedPeriodResult =
+      networkUserIds.length > 0
+        ? await db
+            .select({ value: count() })
+            .from(transactions)
+            .where(
+              and(
+                gte(transactions.createdAt, dateFrom),
+                lt(transactions.createdAt, dateTo),
+                inArray(transactions.contributorId, networkUserIds),
+              ),
+            )
+        : [{ value: 0 }]
+    const newTransactionsCurrentMonthResult =
       networkUserIds.length > 0
         ? await db
             .select({ value: count() })
@@ -138,6 +189,7 @@ export async function GET(request: Request): Promise<NextResponse> {
             .where(
               and(
                 gte(transactions.createdAt, startOfCurrentMonth),
+                lt(transactions.createdAt, now),
                 inArray(transactions.contributorId, networkUserIds),
               ),
             )
@@ -155,7 +207,8 @@ export async function GET(request: Request): Promise<NextResponse> {
               ),
             )
         : [{ value: 0 }]
-    const totalTransactionsThisMonth = newTransactionsThisMonthResult[0]?.value ?? 0
+    const totalTransactionsSelectedPeriod = newTransactionsSelectedPeriodResult[0]?.value ?? 0
+    const totalTransactionsThisMonth = newTransactionsCurrentMonthResult[0]?.value ?? 0
     const totalTransactionsLastMonth = newTransactionsLastMonthResult[0]?.value ?? 0
 
     const revenueByMethod =
@@ -169,6 +222,8 @@ export async function GET(request: Request): Promise<NextResponse> {
             .where(
               and(
                 eq(transactions.status, 'approved'),
+                gte(transactions.createdAt, dateFrom),
+                lt(transactions.createdAt, dateTo),
                 inArray(transactions.contributorId, networkUserIds),
               ),
             )
@@ -189,7 +244,13 @@ export async function GET(request: Request): Promise<NextResponse> {
             })
             .from(transactions)
             .innerJoin(users, eq(transactions.contributorId, users.id))
-            .where(inArray(transactions.contributorId, networkUserIds))
+            .where(
+              and(
+                inArray(transactions.contributorId, networkUserIds),
+                gte(transactions.createdAt, dateFrom),
+                lt(transactions.createdAt, dateTo),
+              ),
+            )
             .orderBy(desc(transactions.createdAt))
             .limit(10)
         : []
@@ -252,12 +313,12 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const kpis = {
       totalRevenue: {
-        value: `R$ ${totalRevenueCurrentMonth.toFixed(2)}`,
+        value: `R$ ${totalRevenueSelectedPeriod.toFixed(2)}`,
         change: calculateChange(totalRevenueCurrentMonth, totalRevenuePreviousMonth),
       },
       totalMembers: { value: `${totalMembers}`, change: `+${newMembersThisMonth} este mês` },
       totalTransactions: {
-        value: `+${totalTransactionsThisMonth}`,
+        value: `+${totalTransactionsSelectedPeriod}`,
         change: calculateChange(totalTransactionsThisMonth, totalTransactionsLastMonth),
       },
       totalChurches: { value: `${totalChurches}`, change: '' },
@@ -333,6 +394,8 @@ export async function GET(request: Request): Promise<NextResponse> {
             .where(
               and(
                 eq(transactions.status, 'approved'),
+                gte(transactions.createdAt, dateFrom),
+                lt(transactions.createdAt, dateTo),
                 inArray(transactions.originChurchId, churchIds),
               ),
             )
@@ -366,6 +429,8 @@ export async function GET(request: Request): Promise<NextResponse> {
             .where(
               and(
                 eq(transactions.status, 'approved'),
+                gte(transactions.createdAt, dateFrom),
+                lt(transactions.createdAt, dateTo),
                 inArray(transactions.originChurchId, churchIds),
               ),
             )
