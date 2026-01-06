@@ -11,7 +11,13 @@ import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema
 import { and, eq, isNull, desc, gte } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
-import { startOfMonth, subMonths, format } from 'date-fns'
+import {
+  getBrazilDate,
+  getBrazilStartOfMonth,
+  subtractMonthsBrazil,
+  getDaysSince,
+  formatBrazilDate,
+} from '@/lib/date-utils'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { user } = await validateRequest()
@@ -33,8 +39,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const sortBy = searchParams.get('sortBy') || 'daysLate' // 'daysLate', 'name'
     const sortOrder = searchParams.get('sortOrder') || 'desc' // 'asc', 'desc'
 
-    const now = new Date()
-    const threeMonthsAgo = startOfMonth(subMonths(now, 3))
+    const now = getBrazilDate()
+    const threeMonthsAgo = getBrazilStartOfMonth(subtractMonthsBrazil(now, 3))
 
     // Buscar pastores inadimplentes
     const pastorsData: Array<{
@@ -80,9 +86,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           .limit(1)
 
         if (lastPayment.length === 0) {
-          const daysSinceThreeMonths = Math.floor(
-            (now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24),
-          )
+          const daysSinceThreeMonths = getDaysSince(threeMonthsAgo)
 
           pastorsData.push({
             id: pastor.id,
@@ -97,16 +101,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           if (!lastPaymentItem) continue
           const lastPaymentDate = new Date(lastPaymentItem.createdAt)
           if (lastPaymentDate < threeMonthsAgo) {
-            const daysSinceLastPayment = Math.floor(
-              (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24),
-            )
+            const daysSinceLastPayment = getDaysSince(lastPaymentDate)
 
             pastorsData.push({
               id: pastor.id,
               name: `${pastor.firstName} ${pastor.lastName}`,
               type: 'pastor' as const,
               titheDay: pastor.titheDay,
-              lastPayment: format(lastPaymentDate, 'dd/MM/yyyy'),
+              lastPayment: formatBrazilDate(lastPaymentDate),
               daysLate: daysSinceLastPayment,
             })
           }
@@ -156,9 +158,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           .limit(1)
 
         if (lastPayment.length === 0) {
-          const daysSinceThreeMonths = Math.floor(
-            (now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24),
-          )
+          const daysSinceThreeMonths = getDaysSince(threeMonthsAgo)
 
           churchesData.push({
             id: church.id,
@@ -173,16 +173,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           if (!lastPaymentItem) continue
           const lastPaymentDate = new Date(lastPaymentItem.createdAt)
           if (lastPaymentDate < threeMonthsAgo) {
-            const daysSinceLastPayment = Math.floor(
-              (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24),
-            )
+            const daysSinceLastPayment = getDaysSince(lastPaymentDate)
 
             churchesData.push({
               id: church.id,
               name: church.nomeFantasia,
               type: 'church' as const,
               titheDay: church.titheDay,
-              lastPayment: format(lastPaymentDate, 'dd/MM/yyyy'),
+              lastPayment: formatBrazilDate(lastPaymentDate),
               daysLate: daysSinceLastPayment,
             })
           }

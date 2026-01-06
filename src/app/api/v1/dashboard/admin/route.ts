@@ -1,10 +1,3 @@
-/**
- * @fileoverview Rota da API para buscar dados para o dashboard do administrador.
- * @version 1.2
- * @date 2024-08-07
- * @author PH
- */
-
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import {
@@ -18,11 +11,18 @@ import {
   adminProfiles,
 } from '@/db/schema'
 import { count, sum, eq, isNull, and, desc, sql, gte, lt, inArray } from 'drizzle-orm'
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 import { getCache, setCache } from '@/lib/cache'
+import {
+  getBrazilDate,
+  getBrazilStartOfMonth,
+  subtractMonthsBrazil,
+  getDaysSince,
+  formatBrazilDate,
+  toBrazilDate,
+} from '@/lib/date-utils'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -50,14 +50,12 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json(cached)
     }
 
-    const now = new Date()
-    const startDate = from ? new Date(from) : startOfMonth(now)
-    const endDate = to ? new Date(to) : now
+    const now = getBrazilDate()
+    const startDate = from ? toBrazilDate(from) : getBrazilStartOfMonth(now)
+    const endDate = to ? toBrazilDate(to) : now
 
-    const startOfCurrentMonth = startOfMonth(now)
-    const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const endOfPreviousMonth = endOfMonth(startOfPreviousMonth)
+    const startOfCurrentMonth = getBrazilStartOfMonth(now)
+    const startOfPreviousMonth = getBrazilStartOfMonth(subtractMonthsBrazil(now, 1))
 
     // --- KPI Calculations ---
     const totalManagers = await db
@@ -331,7 +329,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .orderBy(desc(users.createdAt))
       .limit(10)
 
-    const startOfSixMonthsAgo = startOfMonth(subMonths(now, 5))
+    const startOfSixMonthsAgo = getBrazilStartOfMonth(subtractMonthsBrazil(now, 5))
     const newMembersByMonthData = await db
       .select({
         month: sql<string>`TO_CHAR(${users.createdAt}, 'YYYY-MM')`,
@@ -362,7 +360,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }))
 
     // --- Inadimplentes (Pastores e Igrejas que não contribuíram nos últimos 3 meses) ---
-    const threeMonthsAgo = startOfMonth(subMonths(now, 3))
+    const threeMonthsAgo = getBrazilStartOfMonth(subtractMonthsBrazil(now, 3))
 
     // Buscar pastores inadimplentes
     const pastorsWithTitheDay = await db
@@ -425,15 +423,15 @@ export async function GET(request: Request): Promise<NextResponse> {
       // Se não tem pagamento OU o último foi antes de 3 meses atrás
       if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
         const daysSince = lastPaymentDate
-          ? Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
-          : Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
+          ? getDaysSince(lastPaymentDate)
+          : getDaysSince(threeMonthsAgo)
 
         defaulters.push({
           id: pastor.id,
           name: `${pastor.firstName} ${pastor.lastName}`,
           type: 'pastor' as const,
           titheDay: pastor.titheDay,
-          lastPayment: lastPaymentDate ? format(lastPaymentDate, 'dd/MM/yyyy') : null,
+          lastPayment: lastPaymentDate ? formatBrazilDate(lastPaymentDate) : null,
           daysLate: daysSince,
         })
       }
@@ -446,15 +444,15 @@ export async function GET(request: Request): Promise<NextResponse> {
       // Se não tem pagamento OU o último foi antes de 3 meses atrás
       if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
         const daysSince = lastPaymentDate
-          ? Math.floor((now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))
-          : Math.floor((now.getTime() - threeMonthsAgo.getTime()) / (1000 * 60 * 60 * 24))
+          ? getDaysSince(lastPaymentDate)
+          : getDaysSince(threeMonthsAgo)
 
         defaulters.push({
           id: church.id,
           name: church.nomeFantasia,
           type: 'church' as const,
           titheDay: church.titheDay,
-          lastPayment: lastPaymentDate ? format(lastPaymentDate, 'dd/MM/yyyy') : null,
+          lastPayment: lastPaymentDate ? formatBrazilDate(lastPaymentDate) : null,
           daysLate: daysSince,
         })
       }
@@ -492,13 +490,13 @@ export async function GET(request: Request): Promise<NextResponse> {
       ...t,
       name: nameMap.get(t.contributorId) || t.email,
       amount: Number(t.amount),
-      date: format(new Date(t.date), 'dd/MM/yyyy'),
+      date: formatBrazilDate(t.date),
     }))
     const recentRegistrations = recentRegistrationsData.map((u) => ({
       ...u,
       type: u.role,
       avatar: u.name.substring(0, 2).toUpperCase(),
-      date: format(new Date(u.date), 'dd/MM/yyyy'),
+      date: formatBrazilDate(u.date),
     }))
 
     const result = {

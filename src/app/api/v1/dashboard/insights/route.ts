@@ -44,12 +44,13 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       // Total de membros
       db.select({ value: count() }).from(users).where(isNull(users.deletedAt)),
-      
+
       // Total de transações
       db.select({ value: count() }).from(transactions),
-      
+
       // Receita mês atual
-      db.select({ value: sum(transactions.amount) })
+      db
+        .select({ value: sum(transactions.amount) })
         .from(transactions)
         .where(
           and(
@@ -58,9 +59,10 @@ export async function GET(request: NextRequest) {
             lt(transactions.createdAt, endDate),
           ),
         ),
-      
+
       // Receita mês anterior
-      db.select({ value: sum(transactions.amount) })
+      db
+        .select({ value: sum(transactions.amount) })
         .from(transactions)
         .where(
           and(
@@ -69,14 +71,15 @@ export async function GET(request: NextRequest) {
             lt(transactions.createdAt, startOfCurrentMonth),
           ),
         ),
-      
+
       // Transações recentes
-      db.select({
-        id: transactions.id,
-        amount: transactions.amount,
-        status: transactions.status,
-        createdAt: transactions.createdAt,
-      })
+      db
+        .select({
+          id: transactions.id,
+          amount: transactions.amount,
+          status: transactions.status,
+          createdAt: transactions.createdAt,
+        })
         .from(transactions)
         .where(and(gte(transactions.createdAt, startDate), lt(transactions.createdAt, endDate)))
         .orderBy(desc(transactions.createdAt))
