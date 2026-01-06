@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**.s3.*.amazonaws.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'evo-vinha-admin-center.vs1kre.easypanel.host',
+      },
     ],
     unoptimized: false,
   },

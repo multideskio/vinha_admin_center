@@ -95,6 +95,30 @@ npm ou yarn
 
 ### **Instalação**
 
+#### **🐳 Desenvolvimento com Docker (Recomendado)**
+
+```bash
+# 1. Clonar o repositório
+git clone https://github.com/multideskio/vinha_admin_center.git
+cd vinha_admin_center
+
+# 2. Iniciar com Docker
+docker-compose up -d
+
+# 3. Aguardar inicialização (primeira vez pode demorar)
+docker-compose logs -f app
+
+# 4. Executar migrações e seed
+docker-compose exec app npm run db:migrate
+docker-compose exec app npm run db:seed
+```
+
+🌐 **Sistema disponível em:** `http://localhost:9002`
+🗄️ **Adminer (DB Admin):** `http://localhost:8080`
+🔴 **Redis Commander:** `http://localhost:8081`
+
+#### **💻 Desenvolvimento Local**
+
 ```bash
 # 1. Clonar o repositório
 git clone https://github.com/multideskio/vinha_admin_center.git

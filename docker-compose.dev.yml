@@ -1,21 +1,24 @@
 version: '3.8'
 
-# Docker Compose para desenvolvimento
-# Inclui hot reload e volumes para desenvolvimento
+# Docker Compose específico para desenvolvimento
+# Use: docker-compose -f docker-compose.dev.yml up
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - '9002:9002'
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=${DATABASE_URL:-postgresql://vinha:vinha123@db:5432/vinha_admin}
-      - COMPANY_INIT=${COMPANY_INIT}
-      - DEFAULT_PASSWORD=${DEFAULT_PASSWORD:-123456}
-      - CRON_SECRET=${CRON_SECRET:-dev-cron-secret}
-      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-key}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:9002}
+      - DATABASE_URL=postgresql://vinha:vinha123@db:5432/vinha_admin
+      - COMPANY_INIT=${COMPANY_INIT:-550e8400-e29b-41d4-a716-446655440000}
+      - DEFAULT_PASSWORD=123456
+      - CRON_SECRET=dev-cron-secret
+      - JWT_SECRET=dev-jwt-secret-key-very-long-and-secure
+      - NEXT_PUBLIC_APP_URL=http://localhost:9002
+      - REDIS_URL=redis://redis:6379
     volumes:
       # Mount source code for hot reload
       - ./src:/app/src
@@ -27,12 +30,15 @@ services:
       - ./tailwind.config.ts:/app/tailwind.config.ts
       - ./tsconfig.json:/app/tsconfig.json
       - ./drizzle.config.ts:/app/drizzle.config.ts
-      # Exclude node_modules to avoid conflicts
+      - ./.env.example:/app/.env.example
+      # Exclude node_modules and build artifacts
       - /app/node_modules
       - /app/.next
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     develop:
       watch:
@@ -51,18 +57,18 @@ services:
       - POSTGRES_USER=vinha
       - POSTGRES_PASSWORD=vinha123
       - POSTGRES_DB=vinha_admin
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      # Mount init scripts for development
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - postgres_dev_data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
     restart: unless-stopped
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U vinha']
-      interval: 30s
+      test: ['CMD-SHELL', 'pg_isready -U vinha -d vinha_admin']
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -71,14 +77,15 @@ services:
     ports:
       - '6379:6379'
     volumes:
-      - redis_data:/data
+      - redis_dev_data:/data
+    command: redis-server --appendonly yes
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
-      interval: 30s
+      interval: 10s
       timeout: 5s
       retries: 5
 
-  # Optional: Database admin interface for development
+  # Database admin interface for development
   adminer:
     image: adminer:latest
     restart: unless-stopped
@@ -86,9 +93,25 @@ services:
       - '8080:8080'
     environment:
       - ADMINER_DEFAULT_SERVER=db
+      - ADMINER_DESIGN=pepa-linha
     depends_on:
       - db
 
+  # Redis admin interface for development
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: unless-stopped
+    ports:
+      - '8081:8081'
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  default:
+    name: vinha-dev-network
