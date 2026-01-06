@@ -10,12 +10,13 @@ import { rateLimit } from '@/lib/rate-limit'
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Rate limiting: 60 requests per minute for GET
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit('manager-transacao-get', ip, 60, 60) // 60 requests per minute
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
-        { status: 429 }
+        { status: 429 },
       )
     }
 
