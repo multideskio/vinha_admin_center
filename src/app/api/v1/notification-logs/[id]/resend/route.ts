@@ -57,65 +57,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       // Criar instância do NotificationService buscando configurações do banco
       const notificationService = await NotificationService.createFromDatabase(user.companyId)
 
-      // Extrair nome do email (como no sistema original)
-      const name = log.user_email ? log.user_email.split('@')[0] : 'Membro'
-
-      // Usar valores padrão como no sistema original com timezone correto do Brasil
-      const amount = '100,00' // Valor padrão como no sistema original
-      const dueDate = formatBrazilDate(new Date()) // Data atual no timezone do Brasil
+      // Usar o conteúdo original do log ao invés de gerar novo
+      messageContent = log.message_content || 'Conteúdo não disponível'
+      subject = log.subject || 'Lembrete de Dízimo'
 
       // Determinar o tipo de notificação baseado no log original
       let notificationResult = { whatsapp: false, email: false }
 
-      if (
-        log.notification_type.includes('payment_reminder') ||
-        log.notification_type.includes('rem_')
-      ) {
-        // Lembrete de pagamento
-        notificationResult = await notificationService.sendPaymentReminder(
-          log.user_id,
-          name,
-          amount,
-          dueDate,
-          log.channel === 'whatsapp' ? log.user_phone : undefined,
-          log.channel === 'email' ? log.user_email : undefined,
-        )
-      } else if (
-        log.notification_type.includes('payment_overdue') ||
-        log.notification_type.includes('ovr_')
-      ) {
-        // Pagamento em atraso
-        notificationResult = await notificationService.sendPaymentOverdue(
-          log.user_id,
-          name,
-          amount,
-          dueDate,
-          log.channel === 'whatsapp' ? log.user_phone : undefined,
-          log.channel === 'email' ? log.user_email : undefined,
-        )
-      } else {
-        // Fallback para lembrete de pagamento
-        notificationResult = await notificationService.sendPaymentReminder(
-          log.user_id,
-          name,
-          amount,
-          dueDate,
-          log.channel === 'whatsapp' ? log.user_phone : undefined,
-          log.channel === 'email' ? log.user_email : undefined,
-        )
-      }
-
-      // Verificar sucesso baseado no canal
       if (log.channel === 'email') {
-        success = notificationResult.email
-        subject = 'Lembrete de Dízimo'
-        messageContent = `Lembrete de dízimo para ${name} - R$ ${amount} - vence em ${dueDate}`
+        // Reenviar email usando o conteúdo original
+        const emailResult = await notificationService.sendEmail({
+          to: log.user_email,
+          subject: subject,
+          html: messageContent.replace(/\n/g, '<br>')
+        })
+        success = emailResult
         if (!success) {
           throw new Error('Falha no envio do email')
         }
       } else if (log.channel === 'whatsapp') {
-        success = notificationResult.whatsapp
-        messageContent = `Lembrete de dízimo para ${name} - R$ ${amount} - vence em ${dueDate}`
+        // Reenviar WhatsApp usando o conteúdo original
+        const whatsappResult = await notificationService.sendWhatsApp({
+          phone: log.user_phone,
+          message: messageContent
+        })
+        success = whatsappResult
         if (!success) {
           throw new Error('Falha no envio do WhatsApp')
         }
