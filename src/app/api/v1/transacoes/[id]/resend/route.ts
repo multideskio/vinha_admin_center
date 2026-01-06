@@ -34,8 +34,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     if (transaction.status !== 'approved') {
+      console.log(`[RESEND_ERROR] Transaction ${id} has status: ${transaction.status}, expected: approved`)
+      
+      let userMessage = 'O comprovante não pode ser reenviado porque a transação não foi paga.'
+      
+      switch (transaction.status) {
+        case 'pending':
+          userMessage = 'O comprovante não pode ser reenviado porque a transação ainda está pendente de pagamento.'
+          break
+        case 'refused':
+          userMessage = 'O comprovante não pode ser reenviado porque a transação foi recusada.'
+          break
+        case 'refunded':
+          userMessage = 'O comprovante não pode ser reenviado porque a transação foi reembolsada.'
+          break
+        default:
+          userMessage = `O comprovante não pode ser reenviado porque a transação está com status: ${transaction.status}.`
+      }
+      
       return NextResponse.json(
-        { error: 'Apenas transações aprovadas podem ter comprovante reenviado' },
+        { error: userMessage },
         { status: 400 },
       )
     }

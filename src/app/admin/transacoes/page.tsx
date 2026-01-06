@@ -100,6 +100,7 @@ export default function TransacoesPage() {
   const [quickProfileUserId, setQuickProfileUserId] = React.useState<string | null>(null)
   const [isQuickProfileOpen, setIsQuickProfileOpen] = React.useState(false)
   const [loadingActions, setLoadingActions] = React.useState<Set<string>>(new Set())
+  const [openDropdowns, setOpenDropdowns] = React.useState<Set<string>>(new Set())
   const itemsPerPage = 20 // Aumentado de 10 para 20
   const { toast } = useToast()
 
@@ -212,7 +213,10 @@ export default function TransacoesPage() {
         method: 'POST',
       })
 
-      if (!response.ok) throw new Error('Falha ao sincronizar')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao sincronizar')
+      }
 
       toast({
         title: 'Sucesso',
@@ -233,6 +237,12 @@ export default function TransacoesPage() {
         newSet.delete(actionKey)
         return newSet
       })
+      // Fechar dropdown após a ação
+      setOpenDropdowns((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(transactionId)
+        return newSet
+      })
     }
   }
 
@@ -245,7 +255,10 @@ export default function TransacoesPage() {
         method: 'POST',
       })
 
-      if (!response.ok) throw new Error('Falha ao reenviar comprovante')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao reenviar comprovante')
+      }
 
       toast({
         title: 'Sucesso',
@@ -262,6 +275,12 @@ export default function TransacoesPage() {
       setLoadingActions((prev) => {
         const newSet = new Set(prev)
         newSet.delete(actionKey)
+        return newSet
+      })
+      // Fechar dropdown após a ação
+      setOpenDropdowns((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(transactionId)
         return newSet
       })
     }
@@ -539,15 +558,43 @@ export default function TransacoesPage() {
 
                         {/* Coluna Ações */}
                         <TableCell className="text-center">
-                          <DropdownMenu>
+                          <DropdownMenu
+                            open={openDropdowns.has(transaction.id)}
+                            onOpenChange={(open) => {
+                              setOpenDropdowns((prev) => {
+                                const newSet = new Set(prev)
+                                if (open) {
+                                  newSet.add(transaction.id)
+                                } else {
+                                  // Só fecha se não estiver carregando
+                                  if (
+                                    !loadingActions.has(`sync-${transaction.id}`) &&
+                                    !loadingActions.has(`resend-${transaction.id}`)
+                                  ) {
+                                    newSet.delete(transaction.id)
+                                  }
+                                }
+                                return newSet
+                              })
+                            }}
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button
                                 aria-haspopup="true"
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8"
+                                disabled={
+                                  loadingActions.has(`sync-${transaction.id}`) ||
+                                  loadingActions.has(`resend-${transaction.id}`)
+                                }
                               >
-                                <MoreHorizontal className="h-4 w-4" />
+                                {loadingActions.has(`sync-${transaction.id}`) ||
+                                loadingActions.has(`resend-${transaction.id}`) ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoreHorizontal className="h-4 w-4" />
+                                )}
                                 <span className="sr-only">Menu de ações</span>
                               </Button>
                             </DropdownMenuTrigger>
@@ -559,7 +606,10 @@ export default function TransacoesPage() {
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleSyncTransaction(transaction.id)}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  handleSyncTransaction(transaction.id)
+                                }}
                                 disabled={loadingActions.has(`sync-${transaction.id}`)}
                                 className="flex items-center gap-2"
                               >
@@ -571,7 +621,10 @@ export default function TransacoesPage() {
                                 Sincronizar com Cielo
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleResendReceipt(transaction.id)}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  handleResendReceipt(transaction.id)
+                                }}
                                 disabled={loadingActions.has(`resend-${transaction.id}`)}
                                 className="flex items-center gap-2"
                               >
