@@ -14,7 +14,7 @@ RUN npm ci && npm cache clean --force
 
 # Copy source code (excluding unnecessary files)
 COPY src ./src
-COPY public ./public
+COPY public ./public/
 COPY next.config.ts ./
 COPY tailwind.config.ts ./
 COPY postcss.config.mjs ./
