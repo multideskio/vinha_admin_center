@@ -448,13 +448,12 @@ export default function ContributionForm({
           </div>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          Sistema de pagamento certificado PCI-DSS com criptografia de ponta a ponta. Seus dados
-          estão 100% protegidos.
+          Sistema de pagamento certificado PCI-DSS com criptografia de ponta a ponta. Seus dados estão 100% protegidos.
         </p>
       </div>
 
       {/* Card Principal com Videira */}
-      <Card className="shadow-2xl border-t-4 border-t-videira-cyan relative overflow-hidden">
+      <Card className="shadow-2xl border-t-4 border-t-videira-cyan relative overflow-hidden p-6">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-videira-cyan/5 to-transparent rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-videira-purple/5 to-transparent rounded-full blur-3xl" />
 
