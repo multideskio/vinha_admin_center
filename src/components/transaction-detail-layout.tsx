@@ -74,32 +74,107 @@ export function TransactionDetailLayout({
     })
   }
 
-  const downloadPDF = () => {
-    const content = `
-      COMPROVANTE DE TRANSAÇÃO
-      
-      ID: ${transaction.id}
-      Data: ${new Date(transaction.date).toLocaleDateString('pt-BR')}
-      Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transaction.amount)}
-      Status: ${statusMap[transaction.status]?.text}
-      
-      CONTRIBUINTE
-      Nome: ${transaction.contributor.name}
-      Email: ${transaction.contributor.email}
-      
-      PAGAMENTO
-      Método: ${methodMap[transaction.payment.method] || transaction.payment.method}
-    `
+  const downloadReceipt = () => {
+    // Não permitir download para transações pendentes
+    if (transaction.status === 'pending') {
+      toast({
+        title: 'Download não disponível',
+        description: 'Recibo só está disponível para transações aprovadas.',
+        variant: 'destructive',
+      })
+      return
+    }
 
-    const blob = new Blob([content], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `transacao-${transaction.id}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
-
-    toast({ title: 'Download iniciado', description: 'Comprovante baixado com sucesso.' })
+    // Gerar PDF usando jsPDF
+    import('jspdf').then((jsPDFModule) => {
+      const jsPDF = jsPDFModule.default || jsPDFModule
+      const doc = new jsPDF()
+      
+      // Header
+      doc.setFontSize(20)
+      doc.setFont('helvetica', 'bold')
+      doc.text('RECIBO DE TRANSAÇÃO', 20, 30)
+      
+      // Linha separadora
+      doc.setLineWidth(0.5)
+      doc.line(20, 35, 190, 35)
+      
+      // Informações da transação
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'normal')
+      
+      let yPos = 50
+      const lineHeight = 8
+      
+      doc.text(`ID da Transação: ${transaction.id}`, 20, yPos)
+      yPos += lineHeight
+      
+      doc.text(`Data: ${new Date(transaction.date).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`, 20, yPos)
+      yPos += lineHeight
+      
+      doc.text(`Valor: ${new Intl.NumberFormat('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL' 
+      }).format(transaction.amount)}`, 20, yPos)
+      yPos += lineHeight
+      
+      doc.text(`Status: ${statusMap[transaction.status]?.text}`, 20, yPos)
+      yPos += lineHeight * 2
+      
+      // Seção Contribuinte
+      doc.setFont('helvetica', 'bold')
+      doc.text('CONTRIBUINTE', 20, yPos)
+      yPos += lineHeight
+      
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Nome: ${transaction.contributor.name}`, 20, yPos)
+      yPos += lineHeight
+      
+      doc.text(`Email: ${transaction.contributor.email}`, 20, yPos)
+      yPos += lineHeight * 2
+      
+      // Seção Pagamento
+      doc.setFont('helvetica', 'bold')
+      doc.text('PAGAMENTO', 20, yPos)
+      yPos += lineHeight
+      
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Método: ${methodMap[transaction.payment.method] || transaction.payment.method}`, 20, yPos)
+      
+      if (transaction.payment.details) {
+        yPos += lineHeight
+        doc.text(`Detalhes: ${transaction.payment.details}`, 20, yPos)
+      }
+      
+      // Footer
+      yPos += lineHeight * 3
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'italic')
+      doc.text('Este documento foi gerado automaticamente pelo sistema.', 20, yPos)
+      yPos += lineHeight
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 20, yPos)
+      
+      // Salvar PDF
+      const fileName = `recibo-transacao-${transaction.id.slice(0, 8)}.pdf`
+      doc.save(fileName)
+      
+      toast({ 
+        title: 'Download concluído', 
+        description: 'Recibo baixado com sucesso.' 
+      })
+    }).catch(() => {
+      toast({
+        title: 'Erro no download',
+        description: 'Não foi possível gerar o recibo. Tente novamente.',
+        variant: 'destructive',
+      })
+    })
   }
 
   return (
@@ -148,11 +223,17 @@ export function TransactionDetailLayout({
                 {statusMap[transaction.status]?.text || transaction.status}
               </Badge>
               <Button
-                onClick={downloadPDF}
-                className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold"
+                onClick={downloadReceipt}
+                disabled={transaction.status === 'pending'}
+                className={cn(
+                  "shadow-lg font-semibold",
+                  transaction.status === 'pending' 
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed hover:bg-gray-400"
+                    : "bg-white text-videira-blue hover:bg-white/90"
+                )}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Baixar Comprovante
+                {transaction.status === 'pending' ? 'Recibo Indisponível' : 'Baixar Recibo'}
               </Button>
             </div>
           </div>
