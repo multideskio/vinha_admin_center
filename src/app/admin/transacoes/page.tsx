@@ -205,21 +205,21 @@ export default function TransacoesPage() {
 
   const handleSyncTransaction = async (transactionId: string) => {
     const actionKey = `sync-${transactionId}`
-    setLoadingActions(prev => new Set(prev).add(actionKey))
-    
+    setLoadingActions((prev) => new Set(prev).add(actionKey))
+
     try {
       const response = await fetch(`/api/v1/transacoes/${transactionId}/sync`, {
         method: 'POST',
       })
-      
+
       if (!response.ok) throw new Error('Falha ao sincronizar')
-      
+
       toast({
         title: 'Sucesso',
         description: 'Transação sincronizada com sucesso',
         variant: 'success',
       })
-      
+
       fetchTransactions()
     } catch (error) {
       toast({
@@ -228,7 +228,7 @@ export default function TransacoesPage() {
         variant: 'destructive',
       })
     } finally {
-      setLoadingActions(prev => {
+      setLoadingActions((prev) => {
         const newSet = new Set(prev)
         newSet.delete(actionKey)
         return newSet
@@ -238,15 +238,15 @@ export default function TransacoesPage() {
 
   const handleResendReceipt = async (transactionId: string) => {
     const actionKey = `resend-${transactionId}`
-    setLoadingActions(prev => new Set(prev).add(actionKey))
-    
+    setLoadingActions((prev) => new Set(prev).add(actionKey))
+
     try {
       const response = await fetch(`/api/v1/transacoes/${transactionId}/resend`, {
         method: 'POST',
       })
-      
+
       if (!response.ok) throw new Error('Falha ao reenviar comprovante')
-      
+
       toast({
         title: 'Sucesso',
         description: 'Comprovante reenviado com sucesso',
@@ -259,7 +259,7 @@ export default function TransacoesPage() {
         variant: 'destructive',
       })
     } finally {
-      setLoadingActions(prev => {
+      setLoadingActions((prev) => {
         const newSet = new Set(prev)
         newSet.delete(actionKey)
         return newSet
@@ -377,11 +377,19 @@ export default function TransacoesPage() {
                     <TableHead className="font-semibold min-w-[200px]">Contribuinte</TableHead>
                     <TableHead className="font-semibold text-center min-w-[80px]">Perfil</TableHead>
                     <TableHead className="font-semibold text-center min-w-[80px]">Fraude</TableHead>
-                    <TableHead className="hidden lg:table-cell font-semibold min-w-[120px]">Igreja</TableHead>
-                    <TableHead className="hidden xl:table-cell font-semibold min-w-[120px]">Data</TableHead>
-                    <TableHead className="hidden lg:table-cell font-semibold min-w-[100px]">Método</TableHead>
+                    <TableHead className="hidden lg:table-cell font-semibold min-w-[120px]">
+                      Igreja
+                    </TableHead>
+                    <TableHead className="hidden xl:table-cell font-semibold min-w-[120px]">
+                      Data
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell font-semibold min-w-[100px]">
+                      Método
+                    </TableHead>
                     <TableHead className="font-semibold text-right min-w-[100px]">Valor</TableHead>
-                    <TableHead className="hidden sm:table-cell font-semibold min-w-[100px]">Status</TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold min-w-[100px]">
+                      Status
+                    </TableHead>
                     <TableHead className="font-semibold text-center min-w-[80px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -428,13 +436,23 @@ export default function TransacoesPage() {
                         <TableCell className="font-medium">
                           <div className="space-y-1">
                             <div className="font-medium text-sm">{transaction.contributor}</div>
-                            <div className="text-xs text-muted-foreground">{transaction.contributorEmail}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {transaction.contributorEmail}
+                            </div>
                             {/* Informações extras em mobile */}
                             <div className="flex flex-wrap gap-2 sm:hidden">
-                              <Badge className={cn('text-xs border', methodMap[transaction.method]?.color)}>
+                              <Badge
+                                className={cn(
+                                  'text-xs border',
+                                  methodMap[transaction.method]?.color,
+                                )}
+                              >
                                 {methodMap[transaction.method]?.text}
                               </Badge>
-                              <Badge variant={statusMap[transaction.status]?.variant || 'default'} className="text-xs">
+                              <Badge
+                                variant={statusMap[transaction.status]?.variant || 'default'}
+                                className="text-xs"
+                              >
                                 {statusMap[transaction.status]?.text}
                               </Badge>
                             </div>
@@ -448,7 +466,9 @@ export default function TransacoesPage() {
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 hover:bg-videira-blue/10 hover:text-videira-blue"
-                              onClick={() => handleOpenQuickProfile(transaction.contributorId as string)}
+                              onClick={() =>
+                                handleOpenQuickProfile(transaction.contributorId as string)
+                              }
                               title="Ver perfil rápido"
                             >
                               <Search className="h-4 w-4" />
@@ -461,8 +481,8 @@ export default function TransacoesPage() {
                         {/* Coluna Fraude */}
                         <TableCell className="text-center">
                           {transaction.isFraud ? (
-                            <Badge 
-                              variant="destructive" 
+                            <Badge
+                              variant="destructive"
                               className="text-xs px-2 py-1 bg-red-100 text-red-800 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
                             >
                               🚨
@@ -490,7 +510,9 @@ export default function TransacoesPage() {
 
                         {/* Coluna Método */}
                         <TableCell className="hidden lg:table-cell">
-                          <Badge className={cn('text-xs border', methodMap[transaction.method]?.color)}>
+                          <Badge
+                            className={cn('text-xs border', methodMap[transaction.method]?.color)}
+                          >
                             {methodMap[transaction.method]?.text || transaction.method}
                           </Badge>
                         </TableCell>
@@ -507,7 +529,10 @@ export default function TransacoesPage() {
 
                         {/* Coluna Status */}
                         <TableCell className="hidden sm:table-cell">
-                          <Badge variant={statusMap[transaction.status]?.variant || 'default'} className="text-xs">
+                          <Badge
+                            variant={statusMap[transaction.status]?.variant || 'default'}
+                            className="text-xs"
+                          >
                             {statusMap[transaction.status]?.text || transaction.status}
                           </Badge>
                         </TableCell>
@@ -516,7 +541,12 @@ export default function TransacoesPage() {
                         <TableCell className="text-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button aria-haspopup="true" size="icon" variant="ghost" className="h-8 w-8">
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                                 <span className="sr-only">Menu de ações</span>
                               </Button>
@@ -524,7 +554,9 @@ export default function TransacoesPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Ações</DropdownMenuLabel>
                               <DropdownMenuItem asChild>
-                                <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
+                                <Link href={`/admin/transacoes/${transaction.id}`}>
+                                  Ver Detalhes
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleSyncTransaction(transaction.id)}

@@ -55,7 +55,8 @@ const roleMap: { [key: string]: { text: string; color: string; icon: React.React
   },
   manager: {
     text: 'Gerente',
-    color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/30 dark:text-purple-400',
+    color:
+      'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/30 dark:text-purple-400',
     icon: <Users className="h-3 w-3" />,
   },
   supervisor: {
@@ -70,15 +71,22 @@ const roleMap: { [key: string]: { text: string; color: string; icon: React.React
   },
   church_account: {
     text: 'Igreja',
-    color: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/30 dark:text-orange-400',
+    color:
+      'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/30 dark:text-orange-400',
     icon: <Building2 className="h-3 w-3" />,
   },
 }
 
 const methodMap: { [key: string]: { text: string; color: string } } = {
   pix: { text: 'PIX', color: 'bg-videira-cyan/15 text-videira-cyan border-videira-cyan/30' },
-  credit_card: { text: 'Cartão', color: 'bg-videira-blue/15 text-videira-blue border-videira-blue/30' },
-  boleto: { text: 'Boleto', color: 'bg-videira-purple/15 text-videira-purple border-videira-purple/30' },
+  credit_card: {
+    text: 'Cartão',
+    color: 'bg-videira-blue/15 text-videira-blue border-videira-blue/30',
+  },
+  boleto: {
+    text: 'Boleto',
+    color: 'bg-videira-purple/15 text-videira-purple border-videira-purple/30',
+  },
 }
 
 export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModalProps) {
@@ -161,8 +169,12 @@ export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModal
                       {data.user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg sm:text-xl truncate">{data.user.name}</CardTitle>
-                      <CardDescription className="text-sm sm:text-base break-all">{data.user.email}</CardDescription>
+                      <CardTitle className="text-lg sm:text-xl truncate">
+                        {data.user.name}
+                      </CardTitle>
+                      <CardDescription className="text-sm sm:text-base break-all">
+                        {data.user.email}
+                      </CardDescription>
                       <div className="flex flex-wrap items-center gap-2 mt-2">
                         <Badge className={cn('text-xs border', roleMap[data.user.role]?.color)}>
                           {roleMap[data.user.role]?.icon}
@@ -196,21 +208,28 @@ export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModal
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-sm">Gerente</p>
-                            <p className="text-sm text-muted-foreground truncate">{data.hierarchy.manager.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {data.hierarchy.manager.name}
+                            </p>
                           </div>
                         </div>
                       )}
                       {data.hierarchy.region && (
                         <div className="flex items-center gap-3 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20">
-                          <div 
+                          <div
                             className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0"
                             style={{ backgroundColor: `${data.hierarchy.region.color}20` }}
                           >
-                            <MapPin className="h-4 w-4" style={{ color: data.hierarchy.region.color }} />
+                            <MapPin
+                              className="h-4 w-4"
+                              style={{ color: data.hierarchy.region.color }}
+                            />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-sm">Região</p>
-                            <p className="text-sm text-muted-foreground truncate">{data.hierarchy.region.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {data.hierarchy.region.name}
+                            </p>
                           </div>
                         </div>
                       )}
@@ -221,7 +240,9 @@ export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModal
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-sm">Supervisor</p>
-                            <p className="text-sm text-muted-foreground truncate">{data.hierarchy.supervisor.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {data.hierarchy.supervisor.name}
+                            </p>
                           </div>
                         </div>
                       )}
@@ -232,33 +253,46 @@ export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModal
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-sm">Pastor</p>
-                            <p className="text-sm text-muted-foreground truncate">{data.hierarchy.pastor.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {data.hierarchy.pastor.name}
+                            </p>
                           </div>
                         </div>
                       )}
                       {data.hierarchy.churches && data.hierarchy.churches.length > 0 && (
                         <div className="space-y-2">
-                          <p className="font-medium text-sm text-muted-foreground">Igrejas Supervisionadas:</p>
+                          <p className="font-medium text-sm text-muted-foreground">
+                            Igrejas Supervisionadas:
+                          </p>
                           <div className="space-y-2 max-h-32 overflow-y-auto">
                             {data.hierarchy.churches.map((church) => (
-                              <div key={church.id} className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                              <div
+                                key={church.id}
+                                className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20"
+                              >
                                 <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center flex-shrink-0">
                                   <Building2 className="h-4 w-4 text-orange-600" />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="font-medium text-sm">Igreja</p>
-                                  <p className="text-sm text-muted-foreground truncate">{church.name}</p>
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {church.name}
+                                  </p>
                                 </div>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
-                      {!data.hierarchy.manager && !data.hierarchy.supervisor && !data.hierarchy.pastor && !data.hierarchy.region && (!data.hierarchy.churches || data.hierarchy.churches.length === 0) && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          Nenhuma hierarquia definida
-                        </p>
-                      )}
+                      {!data.hierarchy.manager &&
+                        !data.hierarchy.supervisor &&
+                        !data.hierarchy.pastor &&
+                        !data.hierarchy.region &&
+                        (!data.hierarchy.churches || data.hierarchy.churches.length === 0) && (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            Nenhuma hierarquia definida
+                          </p>
+                        )}
                     </CardContent>
                   </Card>
                 )}
@@ -278,14 +312,14 @@ export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModal
                         <span className="font-semibold">{data.recentTransactions.length}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Valor Total (últimas 10 pagas)</span>
+                        <span className="text-sm text-muted-foreground">
+                          Valor Total (últimas 10 pagas)
+                        </span>
                         <span className="font-semibold text-green-600 text-sm sm:text-base">
                           {new Intl.NumberFormat('pt-BR', {
                             style: 'currency',
                             currency: 'BRL',
-                          }).format(
-                            data.recentTransactions.reduce((sum, t) => sum + t.amount, 0)
-                          )}
+                          }).format(data.recentTransactions.reduce((sum, t) => sum + t.amount, 0))}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -330,7 +364,12 @@ export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModal
                                     currency: 'BRL',
                                   }).format(transaction.amount)}
                                 </span>
-                                <Badge className={cn('text-xs border w-fit', methodMap[transaction.paymentMethod]?.color)}>
+                                <Badge
+                                  className={cn(
+                                    'text-xs border w-fit',
+                                    methodMap[transaction.paymentMethod]?.color,
+                                  )}
+                                >
                                   {methodMap[transaction.paymentMethod]?.text}
                                 </Badge>
                               </div>
@@ -345,7 +384,10 @@ export function QuickProfileModal({ isOpen, onClose, userId }: QuickProfileModal
                               </p>
                             </div>
                           </div>
-                          <Badge variant="success" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-950/30 dark:text-green-400 text-xs flex-shrink-0">
+                          <Badge
+                            variant="success"
+                            className="bg-green-100 text-green-800 border-green-300 dark:bg-green-950/30 dark:text-green-400 text-xs flex-shrink-0"
+                          >
                             Paga
                           </Badge>
                         </div>

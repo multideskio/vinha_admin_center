@@ -19,10 +19,7 @@ import {
 import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { user } = await validateRequest()
     if (!user || user.role !== 'admin') {
@@ -79,7 +76,7 @@ export async function GET(
           .innerJoin(managerProfiles, eq(users.id, managerProfiles.userId))
           .where(eq(users.id, supervisorProfile.managerId))
           .limit(1)
-        
+
         // Buscar informações da região
         let regionData = null
         if (supervisorProfile.regionId) {
@@ -94,18 +91,22 @@ export async function GET(
             .limit(1)
           regionData = region
         }
-        
+
         hierarchyInfo = {
-          manager: managerData ? {
-            id: managerData.id,
-            name: `${managerData.firstName} ${managerData.lastName}`,
-            email: managerData.email,
-          } : null,
-          region: regionData ? {
-            id: regionData.id,
-            name: regionData.name,
-            color: regionData.color,
-          } : null
+          manager: managerData
+            ? {
+                id: managerData.id,
+                name: `${managerData.firstName} ${managerData.lastName}`,
+                email: managerData.email,
+              }
+            : null,
+          region: regionData
+            ? {
+                id: regionData.id,
+                name: regionData.name,
+                color: regionData.color,
+              }
+            : null,
         }
       }
     } else if (userData.role === 'pastor') {
@@ -134,7 +135,7 @@ export async function GET(
 
         let managerData = null
         let regionData = null
-        
+
         if (supervisorData?.managerId) {
           const [manager] = await db
             .select({
@@ -164,21 +165,27 @@ export async function GET(
         }
 
         hierarchyInfo = {
-          supervisor: supervisorData ? {
-            id: supervisorData.id,
-            name: `${supervisorData.firstName} ${supervisorData.lastName}`,
-            email: supervisorData.email,
-          } : null,
-          manager: managerData ? {
-            id: managerData.id,
-            name: `${managerData.firstName} ${managerData.lastName}`,
-            email: managerData.email,
-          } : null,
-          region: regionData ? {
-            id: regionData.id,
-            name: regionData.name,
-            color: regionData.color,
-          } : null
+          supervisor: supervisorData
+            ? {
+                id: supervisorData.id,
+                name: `${supervisorData.firstName} ${supervisorData.lastName}`,
+                email: supervisorData.email,
+              }
+            : null,
+          manager: managerData
+            ? {
+                id: managerData.id,
+                name: `${managerData.firstName} ${managerData.lastName}`,
+                email: managerData.email,
+              }
+            : null,
+          region: regionData
+            ? {
+                id: regionData.id,
+                name: regionData.name,
+                color: regionData.color,
+              }
+            : null,
         }
 
         // Buscar igrejas supervisionadas pelo pastor
@@ -193,7 +200,7 @@ export async function GET(
           .where(eq(churchProfiles.supervisorId, userId))
 
         if (churches.length > 0) {
-          hierarchyInfo.churches = churches.map(church => ({
+          hierarchyInfo.churches = churches.map((church) => ({
             id: church.id,
             name: church.nomeFantasia,
             email: church.email,
@@ -226,7 +233,7 @@ export async function GET(
 
         let managerData = null
         let regionData = null
-        
+
         if (supervisorData?.managerId) {
           const [manager] = await db
             .select({
@@ -256,21 +263,27 @@ export async function GET(
         }
 
         hierarchyInfo = {
-          supervisor: supervisorData ? {
-            id: supervisorData.id,
-            name: `${supervisorData.firstName} ${supervisorData.lastName}`,
-            email: supervisorData.email,
-          } : null,
-          manager: managerData ? {
-            id: managerData.id,
-            name: `${managerData.firstName} ${managerData.lastName}`,
-            email: managerData.email,
-          } : null,
-          region: regionData ? {
-            id: regionData.id,
-            name: regionData.name,
-            color: regionData.color,
-          } : null
+          supervisor: supervisorData
+            ? {
+                id: supervisorData.id,
+                name: `${supervisorData.firstName} ${supervisorData.lastName}`,
+                email: supervisorData.email,
+              }
+            : null,
+          manager: managerData
+            ? {
+                id: managerData.id,
+                name: `${managerData.firstName} ${managerData.lastName}`,
+                email: managerData.email,
+              }
+            : null,
+          region: regionData
+            ? {
+                id: regionData.id,
+                name: regionData.name,
+                color: regionData.color,
+              }
+            : null,
         }
       }
     }
@@ -291,7 +304,7 @@ export async function GET(
 
     // Filtrar apenas transações aprovadas e pegar as 10 mais recentes
     const approvedTransactions = recentTransactions
-      .filter(t => t.status === 'approved')
+      .filter((t) => t.status === 'approved')
       .slice(0, 10)
 
     // Formatar nome do usuário
@@ -314,7 +327,7 @@ export async function GET(
       },
       profile,
       hierarchy: hierarchyInfo,
-      recentTransactions: approvedTransactions.map(t => ({
+      recentTransactions: approvedTransactions.map((t) => ({
         id: t.id,
         amount: parseFloat(t.amount),
         status: t.status,
