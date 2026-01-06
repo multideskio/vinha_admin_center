@@ -11,14 +11,28 @@ import {
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
+
+// @lastReview 2025-01-05 21:45
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
   try {
+    // Rate limiting: 60 requests per minute for GET
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('transacao-get', ip, 60, 60) // 60 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    const { user } = await validateRequest()
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
     const { id } = await params
     const [transaction] = await db
       .select({
@@ -113,7 +127,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
       }
     } catch (error) {
-      console.error('Erro ao buscar nome do contribuinte:', error)
+      console.error('[TRANSACAO_CONTRIBUTOR_NAME_ERROR]', {
+        transactionId: id,
+        contributorId: transaction.contributorId,
+        contributorRole: transaction.contributorRole,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      })
     }
 
     return NextResponse.json({
@@ -152,7 +172,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       refundRequestReason: transaction.refundRequestReason,
     })
   } catch (error) {
-    console.error('Error fetching transaction:', error)
+    console.error('[TRANSACAO_GET_ERROR]', {
+      transactionId: 'unknown',
+      userId: 'unknown',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

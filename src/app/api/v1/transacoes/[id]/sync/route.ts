@@ -4,14 +4,28 @@ import { transactions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { queryPayment } from '@/lib/cielo'
+import { rateLimit } from '@/lib/rate-limit'
+
+// @lastReview 2025-01-05 21:45
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
   try {
+    // Rate limiting: 30 requests per minute for POST (sync operations)
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('transacao-sync', ip, 30, 60) // 30 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    const { user } = await validateRequest()
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
     const { id } = await params
     const [transaction] = await db
       .select()
@@ -77,7 +91,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       cieloStatus: cieloResponse.Payment?.Status,
     })
   } catch (error) {
-    console.error('Error syncing transaction:', error)
+    console.error('[TRANSACAO_SYNC_ERROR]', {
+      transactionId: 'unknown',
+      userId: 'unknown',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Erro ao sincronizar' },
       { status: 500 },

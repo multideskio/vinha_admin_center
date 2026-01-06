@@ -2,11 +2,25 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { rateLimit } from '@/lib/rate-limit'
+
+// @lastReview 2025-01-05 21:45
 
 const COMPANY_ID = process.env.COMPANY_INIT || ''
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Rate limiting: 30 requests per minute for GET
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('payment-methods-get', ip, 30, 60) // 30 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
     const [config] = await db
       .select()
       .from(gatewayConfigurations)
@@ -30,7 +44,10 @@ export async function GET() {
 
     return NextResponse.json({ methods })
   } catch (error) {
-    console.error('Error fetching payment methods:', error)
+    console.error('[PAYMENT_METHODS_GET_ERROR]', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ methods: [] })
   }
 }

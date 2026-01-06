@@ -3,7 +3,7 @@
  * @version 1.3
  * @date 2024-08-07
  * @author PH
- * @lastReview 2026-01-05 14:30 - Segurança e funcionalidades verificadas
+ * @lastReview 2025-01-05 21:45 - Rate limiting and structured logging implemented
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -19,6 +19,7 @@ import {
 import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
+import { rateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const COMPANY_ID = process.env.COMPANY_INIT || ''
@@ -41,12 +42,23 @@ const transactionSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const { user } = await validateRequest()
-  if (!user || user.role !== 'admin') {
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
   try {
+    // Rate limiting: 60 requests per minute for GET
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('transacoes-get', ip, 60, 60) // 60 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    const { user } = await validateRequest()
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const from = searchParams.get('from')
@@ -150,13 +162,28 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching transactions:', error)
+    console.error('[TRANSACOES_GET_ERROR]', {
+      userId: 'unknown',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 10 requests per minute for POST
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('transacoes-post', ip, 10, 60) // 10 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
     const { user } = await validateRequest()
     if (!user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -299,9 +326,17 @@ export async function POST(request: NextRequest) {
       errorMessage.includes('perfil completo') ||
       errorMessage.includes('Configure em')
     ) {
-      console.warn('Validation/Business error in transaction:', errorMessage)
+      console.warn('[TRANSACOES_POST_VALIDATION_ERROR]', {
+        userId: 'unknown',
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      })
     } else {
-      console.error('System error creating transaction:', error)
+      console.error('[TRANSACOES_POST_ERROR]', {
+        userId: 'unknown',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      })
     }
 
     return NextResponse.json({ error: errorMessage }, { status: 500 })
