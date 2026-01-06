@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const validatedData = uploadSchema.parse({
       folder,
       filename: sanitizedFilename,
-      subfolder,
+      subfolder: subfolder || undefined, // Converter null para undefined
     })
 
     // Converter arquivo para buffer
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     const s3Service = await createS3Service(userData.companyId)
 
     // Gerar chave única com subfolder se fornecida
-    const folderPath = validatedData.subfolder 
+    const folderPath = validatedData.subfolder
       ? `${validatedData.folder}/${validatedData.subfolder}`
       : validatedData.folder
     const key = s3Service.generateKey(folderPath, validatedData.filename)

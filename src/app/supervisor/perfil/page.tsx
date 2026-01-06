@@ -505,6 +505,7 @@ export default function SupervisorProfilePage() {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('folder', 'avatars')
+      formData.append('subfolder', 'supervisors')
       formData.append('filename', `supervisor-${supervisor.id}-${file.name}`)
 
       const uploadResponse = await fetch('/api/v1/upload', {
