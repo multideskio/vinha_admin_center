@@ -218,7 +218,7 @@ export default function DashboardPage() {
       setInsightCards([])
       const errorMessage = e instanceof Error ? e.message : 'Erro desconhecido'
       console.error('Insights generation failed:', e)
-      
+
       // Mostrar erro mais detalhado
       if (errorMessage.includes('Chave OpenAI não configurada')) {
         toast({

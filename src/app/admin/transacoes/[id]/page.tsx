@@ -660,7 +660,9 @@ export default function TransacaoDetalhePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <p className="font-bold text-lg">{transaction.contributor?.name || 'Não informado'}</p>
+                <p className="font-bold text-lg">
+                  {transaction.contributor?.name || 'Não informado'}
+                </p>
                 <p className="text-sm text-muted-foreground flex items-start gap-2">
                   <span className="text-xs bg-muted px-2 py-1 rounded">
                     {transaction.contributor?.role === 'pastor'
@@ -676,7 +678,9 @@ export default function TransacaoDetalhePage() {
                               : 'Não informado'}
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground">{transaction.contributor?.email || 'Não informado'}</p>
+                <p className="text-sm text-muted-foreground">
+                  {transaction.contributor?.email || 'Não informado'}
+                </p>
                 {transaction.contributor?.phone && (
                   <p className="text-sm text-muted-foreground">{transaction.contributor.phone}</p>
                 )}

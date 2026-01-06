@@ -236,7 +236,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Buscar nomes reais dos contribuintes das transações recentes
     const contributorIds = recentTransactionsData.map((t) => t.contributorId)
-    
+
     console.log('[DASHBOARD_DEBUG] Contributor IDs:', contributorIds)
 
     // Buscar nomes de pastores
@@ -316,7 +316,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     for (const c of churchNames) nameMap.set(c.id, c.name)
     for (const m of managerNames) nameMap.set(m.id, m.name)
     for (const a of adminNames) nameMap.set(a.id, a.name)
-    
+
     console.log('[DASHBOARD_DEBUG] Name map size:', nameMap.size)
     console.log('[DASHBOARD_DEBUG] Name map entries:', Array.from(nameMap.entries()))
 
