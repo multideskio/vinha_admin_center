@@ -204,9 +204,9 @@ export default function TransacoesPage() {
                   <span className="sr-only sm:not-sr-only">Exportar</span>
                 </Button>
               </div>
-              <DateRangePicker 
+              <DateRangePicker
                 value={{ from: dateRange.from, to: dateRange.to }}
-                onDateRangeChange={handleDateRangeChange} 
+                onDateRangeChange={handleDateRangeChange}
               />
             </div>
             <div className="rounded-md border-2">

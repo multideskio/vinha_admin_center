@@ -35,7 +35,7 @@ export function DateRangePicker({
 
   const handleDateSelect = (newDate: DateRange | undefined) => {
     setInternalDate(newDate)
-    
+
     // Não chamar callbacks até que o usuário clique em "Aplicar"
     // Isso evita chamadas automáticas à API durante a seleção
   }
@@ -103,26 +103,14 @@ export function DateRangePicker({
             locale={ptBR}
           />
           <div className="flex items-center justify-between gap-2 p-3 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClear}
-            >
+            <Button variant="outline" size="sm" onClick={handleClear}>
               Limpar
             </Button>
             <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-              >
+              <Button variant="ghost" size="sm" onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button 
-                size="sm" 
-                onClick={handleApply}
-                disabled={!internalDate?.from}
-              >
+              <Button size="sm" onClick={handleApply} disabled={!internalDate?.from}>
                 Aplicar
               </Button>
             </div>

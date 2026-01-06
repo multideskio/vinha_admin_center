@@ -281,9 +281,9 @@ export default function TransacoesPage() {
                 <span className="sr-only sm:not-sr-only">Exportar CSV</span>
               </Button>
             </div>
-            <DateRangePicker 
+            <DateRangePicker
               value={{ from: dateRange.from, to: dateRange.to }}
-              onDateRangeChange={handleDateRangeChange} 
+              onDateRangeChange={handleDateRangeChange}
             />
           </div>
 

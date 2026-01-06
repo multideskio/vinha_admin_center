@@ -474,9 +474,9 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <DateRangePicker 
+            <DateRangePicker
               value={{ from: dateRange.from, to: dateRange.to }}
-              onDateRangeChange={handleDateRangeChange} 
+              onDateRangeChange={handleDateRangeChange}
             />
             <Button
               variant="secondary"

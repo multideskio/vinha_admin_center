@@ -272,9 +272,9 @@ export default function RelatorioFinanceiroPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2 lg:col-span-2">
               <label className="text-sm font-medium">Período</label>
-              <DateRangePicker 
+              <DateRangePicker
                 value={{ from: dateRange.from, to: dateRange.to }}
-                onDateRangeChange={handleDateRangeChange} 
+                onDateRangeChange={handleDateRangeChange}
               />
             </div>
             <div className="space-y-2">

@@ -219,9 +219,9 @@ export default function GerenteDashboardPage() {
                 Visão geral da sua rede de supervisores e igrejas
               </p>
             </div>
-            <DateRangePicker 
+            <DateRangePicker
               value={{ from: dateRange.from, to: dateRange.to }}
-              onDateRangeChange={handleDateRangeChange} 
+              onDateRangeChange={handleDateRangeChange}
             />
           </div>
         </div>
