@@ -87,10 +87,6 @@ import {
 const churchUpdateSchema = churchProfileSchema
   .extend({
     newPassword: z.string().optional().or(z.literal('')),
-    // Redes sociais
-    facebook: z.string().optional(),
-    instagram: z.string().optional(),
-    website: z.string().url().optional().or(z.literal('')),
   })
   .partial()
 
@@ -372,6 +368,8 @@ export default function IgrejaProfilePage() {
   const [church, setChurch] = React.useState<ChurchProfile | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
+  const [isUploading, setIsUploading] = React.useState(false)
+  const [isDeleting, setIsDeleting] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
 
   const params = useParams()
@@ -382,6 +380,7 @@ export default function IgrejaProfilePage() {
   const form = useForm<z.infer<typeof churchUpdateSchema>>({
     resolver: zodResolver(churchUpdateSchema),
     defaultValues: {},
+    mode: 'onChange',
   })
 
   const fetchData = React.useCallback(async () => {
@@ -412,13 +411,22 @@ export default function IgrejaProfilePage() {
     fetchData()
   }, [fetchData])
 
-  const onSubmit = async (data: Partial<ChurchProfile>) => {
+  const onSubmit = async (data: any) => {
     setIsSaving(true)
     try {
+      // Transformar strings vazias em null para campos de redes sociais
+      const cleanedData = {
+        ...data,
+        facebook: data.facebook === '' ? null : data.facebook,
+        instagram: data.instagram === '' ? null : data.instagram,
+        website: data.website === '' ? null : data.website,
+        newPassword: data.newPassword === '' ? undefined : data.newPassword,
+      }
+
       const response = await fetch(`/api/v1/supervisor/igrejas/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(cleanedData),
       })
       if (!response.ok) throw new Error('Falha ao atualizar a igreja.')
       toast({ title: 'Sucesso', description: 'Igreja atualizada com sucesso.', variant: 'success' })
@@ -433,15 +441,34 @@ export default function IgrejaProfilePage() {
     }
   }
 
+  const onError = (errors: any) => {
+    console.error('Erros de validação:', errors)
+    toast({
+      title: 'Erro de validação',
+      description: 'Por favor, verifique os campos marcados.',
+      variant: 'destructive',
+    })
+  }
+
   const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja excluir esta igreja? Esta ação é irreversível.')) {
+      return
+    }
+
+    setIsDeleting(true)
     try {
       const response = await fetch(`/api/v1/supervisor/igrejas/${id}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Falha ao excluir a igreja.')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Falha ao excluir a igreja.')
+      }
       toast({ title: 'Sucesso!', description: 'Igreja excluída com sucesso.', variant: 'success' })
       router.push('/supervisor/igrejas')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -488,6 +515,7 @@ export default function IgrejaProfilePage() {
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      setIsUploading(true)
       try {
         const formData = new FormData()
         formData.append('file', file)
@@ -530,6 +558,8 @@ export default function IgrejaProfilePage() {
           description: 'Falha ao fazer upload da imagem.',
           variant: 'destructive',
         })
+      } finally {
+        setIsUploading(false)
       }
     }
   }
@@ -595,9 +625,21 @@ export default function IgrejaProfilePage() {
                   />
                   <AvatarFallback>{church.nomeFantasia?.[0]}</AvatarFallback>
                 </Avatar>
-                <Label htmlFor="photo-upload" className="absolute bottom-0 right-0 cursor-pointer">
+                {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
+                    <Loader2 className="h-6 w-6 animate-spin text-videira-cyan" />
+                  </div>
+                )}
+                <Label
+                  htmlFor="photo-upload"
+                  className={`absolute bottom-0 right-0 cursor-pointer ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
+                >
                   <div className="flex items-center justify-center h-8 w-8 rounded-full bg-background border border-border hover:bg-muted">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </div>
                   <span className="sr-only">Trocar foto</span>
                 </Label>
@@ -607,6 +649,7 @@ export default function IgrejaProfilePage() {
                   className="hidden"
                   accept="image/*"
                   onChange={handlePhotoChange}
+                  disabled={isUploading}
                 />
               </div>
               <h2 className="mt-4 text-xl font-semibold">{church.nomeFantasia}</h2>
@@ -670,7 +713,7 @@ export default function IgrejaProfilePage() {
               <Card className="shadow-lg border-t-4 border-t-videira-purple">
                 <CardContent className="pt-6">
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField
                           control={form.control}
@@ -974,9 +1017,9 @@ export default function IgrejaProfilePage() {
                       />
 
                       <div className="flex justify-end">
-                        <Button type="submit" disabled={isSaving}>
+                        <Button type="submit" disabled={isSaving || isUploading}>
                           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Alterar cadastro
+                          {isSaving ? 'Salvando...' : 'Alterar cadastro'}
                         </Button>
                       </div>
                     </form>
@@ -1003,8 +1046,9 @@ export default function IgrejaProfilePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="destructive" onClick={handleDelete}>
-                    Excluir permanentemente
+                  <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isDeleting ? 'Excluindo...' : 'Excluir permanentemente'}
                   </Button>
                 </CardContent>
               </Card>

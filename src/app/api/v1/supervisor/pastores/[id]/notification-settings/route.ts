@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { users, userNotificationSettings } from '@/db/schema'
+import { userNotificationSettings, pastorProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
+
+async function verifyPastor(pastorId: string, supervisorId: string): Promise<boolean> {
+  const [pastor] = await db
+    .select()
+    .from(pastorProfiles)
+    .where(eq(pastorProfiles.userId, pastorId))
+    .limit(1)
+  if (!pastor || pastor.supervisorId !== supervisorId) return false
+  return true
+}
 
 const notificationSettingsSchema = z.object({
   payment_notifications: z.object({
@@ -25,36 +36,73 @@ export async function GET(
   request: Request,
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const params = await props.params
-
-  // Primeiro tenta autenticação JWT (usuário logado via web)
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    // Se não há usuário logado, tenta autenticação por API Key
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-
-    // Se nem JWT nem API Key funcionaram, retorna 401
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  // Verifica se o usuário tem a role correta
-  if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json(
-      { error: 'Acesso negado. Role supervisor necessária.' },
-      { status: 403 },
-    )
-  }
-
-  const { id } = params
-
   try {
-    // Verificar se o pastor existe
-    const pastor = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1)
+    // Rate limiting: 60 requests per minute
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('supervisor-pastor-notification-settings', ip, 60, 60)
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
 
-    if (pastor.length === 0) {
-      return NextResponse.json({ error: 'Pastor não encontrado.' }, { status: 404 })
+    const params = await props.params
+
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: sessionUser } = await validateRequest()
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    // Verifica se o usuário tem a role correta
+    if (sessionUser.role !== 'supervisor') {
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+
+    const { id } = params
+
+    console.log('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_GET]', {
+      supervisorId: sessionUser.id,
+      pastorId: id,
+      timestamp: new Date().toISOString(),
+    })
+
+    // Verificar se o pastor pertence à supervisão
+    const isAuthorized = await verifyPastor(id, sessionUser.id)
+    if (!isAuthorized) {
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_UNAUTHORIZED]', {
+        supervisorId: sessionUser.id,
+        pastorId: id,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Pastor não encontrado ou não pertence a esta supervisão.' },
+        { status: 403 },
+      )
     }
 
     // Buscar configurações de notificação do pastor
@@ -92,7 +140,10 @@ export async function GET(
 
     return NextResponse.json({ ...defaultSettings, ...formattedSettings })
   } catch (error) {
-    console.error('Erro ao buscar configurações de notificação:', error)
+    console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_GET_ERROR]', {
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
@@ -101,31 +152,79 @@ export async function PUT(
   request: Request,
   props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const params = await props.params
-
-  // Primeiro tenta autenticação JWT (usuário logado via web)
-  const { user: sessionUser } = await validateRequest()
-
-  if (!sessionUser) {
-    // Se não há usuário logado, tenta autenticação por API Key
-    const authResponse = await authenticateApiKey()
-    if (authResponse) return authResponse
-
-    // Se nem JWT nem API Key funcionaram, retorna 401
-    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-  }
-
-  // Verifica se o usuário tem a role correta
-  if (sessionUser.role !== 'supervisor') {
-    return NextResponse.json(
-      { error: 'Acesso negado. Role supervisor necessária.' },
-      { status: 403 },
-    )
-  }
-
-  const { id } = params
-
   try {
+    // Rate limiting: 30 requests per minute for updates
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit(
+      'supervisor-pastor-notification-settings-update',
+      ip,
+      30,
+      60,
+    )
+    if (!rateLimitResult.allowed) {
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_UPDATE_RATE_LIMIT]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    const params = await props.params
+
+    // Primeiro tenta autenticação JWT (usuário logado via web)
+    const { user: sessionUser } = await validateRequest()
+
+    if (!sessionUser) {
+      // Se não há usuário logado, tenta autenticação por API Key
+      const authResponse = await authenticateApiKey()
+      if (authResponse) return authResponse
+
+      // Se nem JWT nem API Key funcionaram, retorna 401
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_UPDATE_AUTH_ERROR]', {
+        ip,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    }
+
+    // Verifica se o usuário tem a role correta
+    if (sessionUser.role !== 'supervisor') {
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_UPDATE_ROLE_ERROR]', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Acesso negado. Role supervisor necessária.' },
+        { status: 403 },
+      )
+    }
+
+    const { id } = params
+
+    console.log('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_PUT]', {
+      supervisorId: sessionUser.id,
+      pastorId: id,
+      timestamp: new Date().toISOString(),
+    })
+
+    // Verificar se o pastor pertence à supervisão
+    const isAuthorized = await verifyPastor(id, sessionUser.id)
+    if (!isAuthorized) {
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_UPDATE_UNAUTHORIZED]', {
+        supervisorId: sessionUser.id,
+        pastorId: id,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        { error: 'Pastor não encontrado ou não pertence a esta supervisão.' },
+        { status: 403 },
+      )
+    }
     const body = await request.json()
 
     // Validar dados de entrada
@@ -163,13 +262,20 @@ export async function PUT(
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_UPDATE_VALIDATION_ERROR]', {
+        errors: error.errors,
+        timestamp: new Date().toISOString(),
+      })
       return NextResponse.json(
         { error: 'Dados inválidos.', details: error.errors },
         { status: 400 },
       )
     }
 
-    console.error('Erro ao atualizar configurações de notificação:', error)
+    console.error('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_UPDATE_ERROR]', {
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
