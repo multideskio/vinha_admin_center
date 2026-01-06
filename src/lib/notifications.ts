@@ -3,14 +3,16 @@
  */
 
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
+import { createTransport } from 'nodemailer'
 import { EvolutionSendTextRequest, EvolutionResponse } from './evolution-api-types'
 import { TemplateEngine, TemplateVariables } from './template-engine'
 import { db } from '@/db/drizzle'
-import { messageTemplates, notificationLogs, emailBlacklist } from '@/db/schema'
+import { messageTemplates, notificationLogs, emailBlacklist, otherSettings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 // Types
 interface NotificationConfig {
+  companyId: string
   whatsappApiUrl?: string
   whatsappApiKey?: string
   whatsappApiInstance?: string
@@ -18,6 +20,12 @@ interface NotificationConfig {
   sesAccessKeyId?: string
   sesSecretAccessKey?: string
   fromEmail?: string
+  // SMTP config
+  smtpHost?: string
+  smtpPort?: number
+  smtpUser?: string
+  smtpPass?: string
+  smtpFrom?: string
 }
 
 interface WhatsAppMessage {
@@ -83,8 +91,10 @@ export class WhatsAppService {
 // Email Service
 export class EmailService {
   private sesClient?: SESClient
+  private smtpTransporter?: any
 
   constructor(private config: NotificationConfig) {
+    // Configurar SES se disponível
     if (config.sesAccessKeyId && config.sesSecretAccessKey && config.sesRegion) {
       this.sesClient = new SESClient({
         region: config.sesRegion,
@@ -94,14 +104,45 @@ export class EmailService {
         },
       })
     }
+    
+    // Configurar SMTP se disponível E se não for credenciais AWS SES
+    // AWS SES Access Keys começam com "AKIA" e têm 20 chars
+    const isAwsSesCredentials = config.smtpUser?.startsWith('AKIA') && config.smtpUser?.length === 20
+    
+    if (config.smtpHost && config.smtpPort && config.smtpUser && config.smtpPass && !isAwsSesCredentials) {
+      this.smtpTransporter = createTransport({
+        host: config.smtpHost,
+        port: config.smtpPort,
+        secure: config.smtpPort === 465, // true para 465, false para outras portas
+        auth: {
+          user: config.smtpUser,
+          pass: config.smtpPass,
+        },
+      })
+    } else if (isAwsSesCredentials) {
+      // Se as credenciais SMTP são na verdade AWS SES, configurar SES
+      this.sesClient = new SESClient({
+        region: 'us-east-1', // Região padrão para AWS SES
+        credentials: {
+          accessKeyId: config.smtpUser,
+          secretAccessKey: config.smtpPass,
+        },
+      })
+    }
   }
 
   async sendEmail(
     { to, subject, html, text }: EmailMessage,
     companyId?: string,
   ): Promise<{ success: boolean; error?: string; errorCode?: string }> {
-    if (!this.sesClient || !this.config.fromEmail) {
-      return { success: false, error: 'Email configuration missing' }
+    // Verificar se temos alguma configuração de email
+    if (!this.sesClient && !this.smtpTransporter) {
+      return { success: false, error: 'Nenhuma configuração de email disponível (SES ou SMTP)' }
+    }
+
+    const fromEmail = this.config.fromEmail || this.config.smtpFrom
+    if (!fromEmail) {
+      return { success: false, error: 'Email de origem não configurado' }
     }
 
     // Verificar blacklist
@@ -128,24 +169,61 @@ export class EmailService {
     }
 
     try {
-      const command = new SendEmailCommand({
-        Source: this.config.fromEmail,
-        Destination: { ToAddresses: [to] },
-        Message: {
-          Subject: { Data: subject },
-          Body: {
-            Html: { Data: html },
-            Text: text ? { Data: text } : undefined,
+      // Tentar SES primeiro se disponível (mais confiável)
+      if (this.sesClient) {
+        const command = new SendEmailCommand({
+          Source: fromEmail,
+          Destination: { ToAddresses: [to] },
+          Message: {
+            Subject: { Data: subject },
+            Body: {
+              Html: { Data: html },
+              Text: text ? { Data: text } : undefined,
+            },
           },
-        },
+        })
+
+        await this.sesClient.send(command)
+        return { success: true }
+      }
+      
+      // Fallback para SMTP se SES não estiver disponível
+      if (this.smtpTransporter) {
+        await this.smtpTransporter.sendMail({
+          from: fromEmail,
+          to,
+          subject,
+          html,
+          text,
+        })
+        return { success: true }
+      }
+
+      return { success: false, error: 'Nenhum método de envio disponível' }
+    } catch (error: unknown) {
+      const errorObj = error as { name?: string; Code?: string; message?: string; code?: string }
+      const errorCode = errorObj.name || errorObj.Code || errorObj.code || 'UNKNOWN'
+      const errorMessage = errorObj.message || String(error)
+
+      // Log detalhado do erro para debug
+      console.error('Erro detalhado no envio de email:', {
+        to,
+        subject,
+        errorCode,
+        errorMessage,
+        hasSmtp: !!this.smtpTransporter,
+        hasSes: !!this.sesClient,
+        fromEmail
       })
 
-      await this.sesClient.send(command)
-      return { success: true }
-    } catch (error: unknown) {
-      const errorObj = error as { name?: string; Code?: string; message?: string }
-      const errorCode = errorObj.name || errorObj.Code || 'UNKNOWN'
-      const errorMessage = errorObj.message || String(error)
+      // Se for erro de autenticação SMTP, não adicionar à blacklist
+      if (errorCode === 'EAUTH' || errorMessage.includes('Authentication Credentials Invalid')) {
+        return { 
+          success: false, 
+          error: 'Credenciais SMTP inválidas - verifique as configurações', 
+          errorCode: 'SMTP_AUTH_FAILED' 
+        }
+      }
 
       // Adicionar à blacklist se for erro permanente
       if (companyId && this.shouldBlacklist(errorCode)) {
@@ -282,6 +360,36 @@ export class NotificationService {
     this.companyId = config.companyId
   }
 
+  // Método estático para criar instância com configurações do banco
+  static async createFromDatabase(companyId: string): Promise<NotificationService> {
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, companyId))
+      .limit(1)
+
+    const config: NotificationConfig & { companyId: string } = {
+      companyId,
+      // WhatsApp config
+      whatsappApiUrl: settings?.whatsappApiUrl || undefined,
+      whatsappApiKey: settings?.whatsappApiKey || undefined,
+      whatsappApiInstance: settings?.whatsappApiInstance || undefined,
+      // SMTP config
+      smtpHost: settings?.smtpHost || undefined,
+      smtpPort: settings?.smtpPort || undefined,
+      smtpUser: settings?.smtpUser || undefined,
+      smtpPass: settings?.smtpPass || undefined,
+      smtpFrom: settings?.smtpFrom || undefined,
+      // SES config (fallback para variáveis de ambiente)
+      sesRegion: process.env.AWS_SES_REGION,
+      sesAccessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
+      sesSecretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY,
+      fromEmail: process.env.AWS_SES_FROM_EMAIL,
+    }
+
+    return new NotificationService(config)
+  }
+
   async sendWhatsApp({ phone, message }: { phone: string; message: string }): Promise<boolean> {
     return await this.whatsapp.sendMessage({ number: phone, text: message })
   }
@@ -296,6 +404,17 @@ export class NotificationService {
     html: string
   }): Promise<boolean> {
     const result = await this.email.sendEmail({ to, subject, html }, this.companyId)
+    
+    // Log detalhado para debug
+    if (!result.success) {
+      console.error('Falha no envio de email:', {
+        to,
+        subject,
+        error: result.error,
+        errorCode: result.errorCode
+      })
+    }
+    
     return result.success
   }
 
@@ -402,8 +521,17 @@ export class NotificationService {
       )
       .limit(1)
 
-    if (phone && template?.whatsappTemplate) {
-      const message = TemplateEngine.processTemplate(template.whatsappTemplate, variables)
+    // WhatsApp
+    if (phone) {
+      let message: string
+      if (template?.whatsappTemplate) {
+        // Usar template personalizado
+        message = TemplateEngine.processTemplate(template.whatsappTemplate, variables)
+      } else {
+        // Usar template padrão
+        message = templates.paymentReminder.whatsapp(name, amount, dueDate)
+      }
+      
       results.whatsapp = await this.whatsapp.sendMessage({
         number: phone,
         text: message,
@@ -412,9 +540,20 @@ export class NotificationService {
       await this.logNotification(userId, 'payment_reminder', 'whatsapp', results.whatsapp, message)
     }
 
-    if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
-      const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
-      const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
+    // Email
+    if (email) {
+      let subject: string
+      let html: string
+      
+      if (template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
+        // Usar template personalizado
+        subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
+        html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
+      } else {
+        // Usar template padrão
+        subject = templates.paymentReminder.email.subject
+        html = templates.paymentReminder.email.html(name, amount, dueDate, paymentLink)
+      }
 
       const emailResult = await this.email.sendEmail(
         {
@@ -476,8 +615,17 @@ export class NotificationService {
       )
       .limit(1)
 
-    if (phone && template?.whatsappTemplate) {
-      const message = TemplateEngine.processTemplate(template.whatsappTemplate, variables)
+    // WhatsApp
+    if (phone) {
+      let message: string
+      if (template?.whatsappTemplate) {
+        // Usar template personalizado
+        message = TemplateEngine.processTemplate(template.whatsappTemplate, variables)
+      } else {
+        // Usar template padrão (mesmo do reminder mas com texto de atraso)
+        message = `🚨 Olá ${name}!\n\nSeu dízimo de R$ ${amount} estava previsto para ${dueDate} e está em atraso.\n\nPor favor, regularize sua situação o quanto antes.\n\nObrigado pela compreensão! 🙏`
+      }
+      
       results.whatsapp = await this.whatsapp.sendMessage({
         number: phone,
         text: message,
@@ -485,9 +633,38 @@ export class NotificationService {
       await this.logNotification(userId, 'payment_overdue', 'whatsapp', results.whatsapp, message)
     }
 
-    if (email && template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
-      const subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
-      const html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
+    // Email
+    if (email) {
+      let subject: string
+      let html: string
+      
+      if (template?.emailSubjectTemplate && template?.emailHtmlTemplate) {
+        // Usar template personalizado
+        subject = TemplateEngine.processTemplate(template.emailSubjectTemplate, variables)
+        html = TemplateEngine.processTemplate(template.emailHtmlTemplate, variables)
+      } else {
+        // Usar template padrão
+        subject = 'Dízimo em Atraso'
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #e53e3e;">🚨 Dízimo em Atraso</h2>
+            <p>Olá ${name},</p>
+            <p>Seu dízimo de <strong>R$ ${amount}</strong> estava previsto para <strong>${dueDate}</strong> e está em atraso.</p>
+            ${paymentLink ? `
+              <div style="text-align: center; margin: 20px 0;">
+                <a href="${paymentLink}" style="background: #e53e3e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                  Regularizar Agora
+                </a>
+              </div>
+            ` : ''}
+            <p>Por favor, regularize sua situação o quanto antes.</p>
+            <p>Obrigado pela compreensão! 🙏</p>
+            <hr style="margin: 20px 0;">
+            <small style="color: #718096;">Esta é uma mensagem automática do sistema</small>
+          </div>
+        `
+      }
+
       const emailResult = await this.email.sendEmail({ to: email, subject, html }, this.companyId)
       results.email = emailResult.success
       await this.logNotification(

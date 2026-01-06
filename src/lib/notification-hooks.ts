@@ -179,10 +179,17 @@ export async function onUserDeleted(
     // Enviar notificação por email para o administrador que fez a exclusão
     if (deletedByUser.email) {
       const emailService = new (await import('./notifications')).EmailService({
+        companyId: user.companyId,
         sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
         sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         fromEmail: settings.smtpFrom || undefined,
+        // SMTP config
+        smtpHost: settings.smtpHost || undefined,
+        smtpPort: settings.smtpPort || undefined,
+        smtpUser: settings.smtpUser || undefined,
+        smtpPass: settings.smtpPass || undefined,
+        smtpFrom: settings.smtpFrom || undefined,
       })
 
       await emailService.sendEmail({

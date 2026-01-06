@@ -9,6 +9,7 @@ import {
   Cloud,
   CreditCard,
   KeyRound,
+  History,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -44,6 +45,12 @@ const settingsLinks = [
     icon: MessageSquareQuote,
     title: 'Mensagens Automáticas',
     description: 'Personalize os templates de comunicação.',
+  },
+  {
+    href: '/admin/configuracoes/logs-lembretes',
+    icon: History,
+    title: 'Logs de Lembretes',
+    description: 'Histórico completo de notificações enviadas.',
   },
   // {
   //   href: '/admin/configuracoes/webhooks',

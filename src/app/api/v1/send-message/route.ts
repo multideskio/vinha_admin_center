@@ -76,6 +76,7 @@ async function sendWhatsApp(to: string, message: string, companyId: string) {
   }
 
   const whatsappService = new WhatsAppService({
+    companyId: companyId,
     whatsappApiUrl: settings.whatsappApiUrl,
     whatsappApiKey: settings.whatsappApiKey,
     whatsappApiInstance: settings.whatsappApiInstance,

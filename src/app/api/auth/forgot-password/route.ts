@@ -71,10 +71,17 @@ export async function POST(request: NextRequest) {
       resetLink,
     })
     const emailService = new EmailService({
+      companyId: 'system', // Para operações do sistema
       sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
       sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
       sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
       fromEmail: settings.smtpFrom || undefined,
+      // SMTP config
+      smtpHost: settings.smtpHost || undefined,
+      smtpPort: settings.smtpPort || undefined,
+      smtpUser: settings.smtpUser || undefined,
+      smtpPass: settings.smtpPass || undefined,
+      smtpFrom: settings.smtpFrom || undefined,
     })
     await emailService.sendEmail({
       to: user.email,

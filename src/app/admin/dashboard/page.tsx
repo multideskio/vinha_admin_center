@@ -212,11 +212,27 @@ export default function DashboardPage() {
       if (!response.ok) {
         throw new Error(data?.error || 'Falha ao enviar lembretes.')
       }
-      toast({
-        title: 'Lembretes enviados',
-        description: `${data.sent} enviados, ${data.skipped} ignorados.`,
-        variant: 'success',
-      })
+      
+      // Melhor feedback baseado nos resultados
+      if (data.sent === 0 && data.skipped === 0) {
+        toast({
+          title: 'Nenhum lembrete para enviar',
+          description: 'Não há usuários elegíveis para receber lembretes hoje. Verifique as regras de notificação e se os usuários têm dia de dízimo configurado.',
+          variant: 'default',
+        })
+      } else if (data.sent === 0 && data.skipped > 0) {
+        toast({
+          title: 'Lembretes já enviados',
+          description: `${data.skipped} lembretes foram ignorados porque já foram enviados hoje.`,
+          variant: 'default',
+        })
+      } else {
+        toast({
+          title: 'Lembretes enviados com sucesso!',
+          description: `${data.sent} enviados${data.skipped > 0 ? `, ${data.skipped} ignorados (já enviados hoje)` : ''}.`,
+          variant: 'success',
+        })
+      }
     } catch (e: unknown) {
       toast({
         title: 'Erro',

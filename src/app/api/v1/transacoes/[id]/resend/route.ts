@@ -71,10 +71,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Enviar email com comprovante
     const emailService = new EmailService({
+      companyId: user.companyId,
       sesRegion: 'us-east-1',
       sesAccessKeyId: settings.smtpUser,
       sesSecretAccessKey: settings.smtpPass,
       fromEmail: settings.smtpFrom || settings.smtpUser,
+      // SMTP config
+      smtpHost: settings.smtpHost || undefined,
+      smtpPort: settings.smtpPort || undefined,
+      smtpUser: settings.smtpUser || undefined,
+      smtpPass: settings.smtpPass || undefined,
+      smtpFrom: settings.smtpFrom || undefined,
     })
 
     const emailSent = await emailService.sendEmail({
