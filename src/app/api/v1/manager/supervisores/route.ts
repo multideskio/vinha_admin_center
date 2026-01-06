@@ -7,6 +7,8 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { supervisorProfileSchema } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
+import { rateLimit } from '@/lib/rate-limit'
+import type { UserRole } from '@/lib/types'
 
 const COMPANY_ID = process.env.COMPANY_INIT
 if (!COMPANY_ID) {
@@ -17,8 +19,18 @@ const VALIDATED_COMPANY_ID = COMPANY_ID as string
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
 
 export async function GET(request: Request): Promise<NextResponse> {
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const rateLimitResult = await rateLimit(ip, 'manager-supervisores-get', 60, 60000) // 60 requests per minute
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   const { user } = await validateRequest()
-  if (!user || user.role !== 'manager') {
+  if (!user || (user.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
@@ -82,7 +94,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ supervisors: result })
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
-    console.error('Erro ao buscar supervisores:', error)
+    // Structured logging instead of console.error
+    console.error('[MANAGER_SUPERVISORES_GET_ERROR]', {
+      managerId: user.id,
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: errorMessage },
       { status: 500 },
@@ -91,8 +108,18 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const rateLimitResult = await rateLimit(ip, 'manager-supervisores-post', 10, 60000) // 10 requests per minute
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   const { user } = await validateRequest()
-  if (!user || user.role !== 'manager') {
+  if (!user || (user.role as UserRole) !== 'manager') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
@@ -150,7 +177,13 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 },
       )
     }
-    console.error('Erro ao criar supervisor:', error)
+    // Structured logging instead of console.error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[MANAGER_SUPERVISORES_POST_ERROR]', {
+      managerId: user.id,
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    })
     if (
       error instanceof Error &&
       'constraint' in error &&
