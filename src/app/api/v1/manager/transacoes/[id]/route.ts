@@ -3,9 +3,22 @@ import { db } from '@/db/drizzle'
 import { transactions, users, supervisorProfiles } from '@/db/schema'
 import { validateRequest } from '@/lib/jwt'
 import { eq } from 'drizzle-orm'
+import { rateLimit } from '@/lib/rate-limit'
+
+// @lastReview 2025-01-05 21:30
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Rate limiting: 60 requests per minute for GET
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('manager-transacao-get', ip, 60, 60) // 60 requests per minute
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 }
+      )
+    }
+
     const { id } = await params
     const { user } = await validateRequest()
 
@@ -73,7 +86,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({ transaction: formattedTransaction })
   } catch (error) {
-    console.error('Error fetching manager transaction:', error)
+    console.error('[MANAGER_TRANSACAO_GET_ERROR]', {
+      userId: 'unknown',
+      transactionId: 'unknown',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    })
     return NextResponse.json({ error: 'Erro ao buscar transação' }, { status: 500 })
   }
 }
