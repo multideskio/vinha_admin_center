@@ -13,6 +13,7 @@ import {
   gatewayConfigurations,
   pastorProfiles,
   churchProfiles,
+  users,
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
@@ -227,7 +228,21 @@ export async function GET(
       throw new Error('Resposta inválida da Cielo.')
     }
 
-    return NextResponse.json({ success: true, transaction: cieloData })
+    // Buscar email do contribuinte e informações da igreja
+    const [contributorData] = await db
+      .select({
+        email: users.email,
+      })
+      .from(users)
+      .where(eq(users.id, transaction.contributorId))
+      .limit(1)
+
+    return NextResponse.json({
+      success: true,
+      transaction: cieloData,
+      originChurchId: transaction.originChurchId,
+      contributorEmail: contributorData?.email || null,
+    })
   } catch (error: unknown) {
     console.error('[SUPERVISOR_TRANSACOES_INDIVIDUAL_ERROR]', {
       supervisorId: sessionUser?.id,

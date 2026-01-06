@@ -49,10 +49,43 @@ export default function TransacaoDetalhePage() {
     setIsLoading(true)
     try {
       const response = await fetch(`/api/v1/supervisor/transacoes/${id}`)
-      if (!response.ok) throw new Error('Falha ao carregar detalhes da transação')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Falha ao carregar detalhes da transação')
+      }
       const data = await response.json()
 
+      // Verificar se a transação está pendente
+      if (data.pending) {
+        toast({
+          title: 'Transação Pendente',
+          description: data.message || 'Transação ainda não processada pela Cielo.',
+          variant: 'default',
+        })
+        // Criar dados básicos da transação pendente
+        const pendingData: TransactionDetail = {
+          id: data.transaction.id,
+          date: new Date().toLocaleString('pt-BR'),
+          amount: data.transaction.amount,
+          status: 'pending',
+          contributor: {
+            name: 'N/A',
+            email: 'N/A',
+          },
+          church: null,
+          payment: {
+            method: 'N/A',
+            details: 'Aguardando processamento',
+          },
+        }
+        setTransaction(pendingData)
+        return
+      }
+
       const cieloData = data.transaction
+      if (!cieloData || !cieloData.Payment) {
+        throw new Error('Dados da transação inválidos')
+      }
 
       // Mapear status da Cielo: 0=Pendente, 1=Autorizado, 2=Pago, 3=Negado, 10=Cancelado, 13=Estornado
       const mapCieloStatus = (status: number): 'approved' | 'pending' | 'refused' | 'refunded' => {
@@ -82,23 +115,25 @@ export default function TransacaoDetalhePage() {
       }
 
       const formattedData: TransactionDetail = {
-        id: cieloData.Payment.PaymentId,
-        date: format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss'),
-        amount: cieloData.Payment.Amount / 100,
-        status: mapCieloStatus(cieloData.Payment.Status),
+        id: cieloData.Payment?.PaymentId || data.transaction?.id || (id as string),
+        date: cieloData.Payment?.ReceivedDate
+          ? format(parseISO(cieloData.Payment.ReceivedDate), 'dd/MM/yyyy HH:mm:ss')
+          : new Date().toLocaleString('pt-BR'),
+        amount: cieloData.Payment?.Amount ? cieloData.Payment.Amount / 100 : 0,
+        status: cieloData.Payment?.Status ? mapCieloStatus(cieloData.Payment.Status) : 'pending',
         contributor: {
           name: cieloData.Customer?.Name || 'N/A',
           email: cieloData.Customer?.Email || data.contributorEmail || 'email@naodisponivel.com',
         },
         church: churchInfo,
         payment: {
-          method: cieloData.Payment.Type,
+          method: cieloData.Payment?.Type || 'N/A',
           details:
-            cieloData.Payment.Type === 'CreditCard' && cieloData.Payment.CreditCard
+            cieloData.Payment?.Type === 'CreditCard' && cieloData.Payment.CreditCard
               ? `${cieloData.Payment.CreditCard.Brand || 'Cartão'} final ${cieloData.Payment.CreditCard.CardNumber?.slice(-4) || 'N/A'}`
-              : cieloData.Payment.ProofOfSale || 'N/A',
+              : cieloData.Payment?.ProofOfSale || 'N/A',
         },
-        refundRequestReason: cieloData.Payment.VoidReason || null,
+        refundRequestReason: cieloData.Payment?.VoidReason || null,
       }
 
       setTransaction(formattedData)
