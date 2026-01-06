@@ -3,7 +3,6 @@ import { db } from '@/db/drizzle'
 import { sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { NotificationService } from '@/lib/notifications'
-import { formatBrazilDate } from '@/lib/date-utils'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -61,15 +60,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       messageContent = log.message_content || 'Conteúdo não disponível'
       subject = log.subject || 'Lembrete de Dízimo'
 
-      // Determinar o tipo de notificação baseado no log original
-      let notificationResult = { whatsapp: false, email: false }
-
       if (log.channel === 'email') {
         // Reenviar email usando o conteúdo original
         const emailResult = await notificationService.sendEmail({
           to: log.user_email,
           subject: subject,
-          html: messageContent.replace(/\n/g, '<br>')
+          html: messageContent.replace(/\n/g, '<br>'),
         })
         success = emailResult
         if (!success) {
@@ -79,7 +75,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         // Reenviar WhatsApp usando o conteúdo original
         const whatsappResult = await notificationService.sendWhatsApp({
           phone: log.user_phone,
-          message: messageContent
+          message: messageContent,
         })
         success = whatsappResult
         if (!success) {
