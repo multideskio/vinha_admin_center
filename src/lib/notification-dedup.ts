@@ -113,6 +113,7 @@ export const DEDUPLICATION_WINDOWS: Record<string, number> = {
   account_created: 24,
   password_reset: 1,
   profile_updated: 24,
+  account_deleted_notification: 24, // Notificação de exclusão de conta
 
   // Padrão para tipos não especificados
   default: 24,

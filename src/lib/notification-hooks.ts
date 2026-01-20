@@ -13,6 +13,12 @@ import { logger } from './logger'
 // Hook para quando um novo usuário é criado
 export async function onUserCreated(userId: string): Promise<void> {
   try {
+    // Configurar contexto do logger
+    logger.setContext({
+      userId,
+      operation: 'onUserCreated',
+    })
+
     const [user] = await db
       .select({
         id: users.id,
@@ -24,7 +30,23 @@ export async function onUserCreated(userId: string): Promise<void> {
       .where(eq(users.id, userId))
       .limit(1)
 
-    if (!user) return
+    if (!user) {
+      logger.warn('Usuário não encontrado para envio de boas-vindas', { userId })
+      logger.clearContext()
+      return
+    }
+
+    // ✅ DEDUPLICAÇÃO: Verificar se notificação de boas-vindas já foi enviada
+    const shouldSend = await shouldSendNotificationWithConfig(userId, 'welcome_email')
+
+    if (!shouldSend) {
+      logger.warn('Notificação de boas-vindas duplicada bloqueada', {
+        userId,
+        notificationType: 'welcome_email',
+      })
+      logger.clearContext()
+      return
+    }
 
     const [settings] = await db
       .select()
@@ -32,7 +54,14 @@ export async function onUserCreated(userId: string): Promise<void> {
       .where(eq(otherSettings.companyId, user.companyId))
       .limit(1)
 
-    if (!settings) return
+    if (!settings) {
+      logger.warn('Configurações da empresa não encontradas', {
+        userId,
+        companyId: user.companyId,
+      })
+      logger.clearContext()
+      return
+    }
 
     const notificationService = new NotificationService({
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
@@ -55,11 +84,20 @@ export async function onUserCreated(userId: string): Promise<void> {
           user.phone || undefined,
           user.email || undefined,
         )
+
+        logger.info('Notificação de boas-vindas enviada com sucesso', {
+          userId,
+        })
       },
       5 * 60 * 1000,
     )
+
+    logger.clearContext()
   } catch (error) {
-    console.error('Error in onUserCreated hook:', error)
+    logger.error('Erro ao disparar notificação de boas-vindas', error, {
+      userId,
+    })
+    logger.clearContext()
   }
 }
 
@@ -154,8 +192,114 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
 
 // Hook para quando uma transação falha
 export async function onTransactionFailed(transactionId: string): Promise<void> {
-  // Implementar lógica para notificar sobre falha na transação
-  console.log(`Transaction failed: ${transactionId}`)
+  try {
+    // Configurar contexto do logger
+    logger.setContext({
+      transactionId,
+      operation: 'onTransactionFailed',
+    })
+
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.id, transactionId))
+      .limit(1)
+
+    if (!transaction) {
+      logger.warn('Transação não encontrada para notificação de falha', { transactionId })
+      logger.clearContext()
+      return
+    }
+
+    // Buscar usuário
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, transaction.contributorId))
+      .limit(1)
+
+    if (!user) {
+      logger.warn('Usuário não encontrado para notificação de falha', {
+        transactionId,
+        contributorId: transaction.contributorId,
+      })
+      logger.clearContext()
+      return
+    }
+
+    // ✅ DEDUPLICAÇÃO: Verificar se notificação de falha já foi enviada
+    const shouldSend = await shouldSendNotificationWithConfig(user.id, 'payment_failed')
+
+    if (!shouldSend) {
+      logger.warn('Notificação de falha de pagamento duplicada bloqueada', {
+        userId: user.id,
+        transactionId,
+        notificationType: 'payment_failed',
+      })
+      logger.clearContext()
+      return
+    }
+
+    // Buscar configurações da empresa
+    const [settings] = await db
+      .select()
+      .from(otherSettings)
+      .where(eq(otherSettings.companyId, transaction.companyId))
+      .limit(1)
+
+    if (!settings) {
+      logger.warn('Configurações da empresa não encontradas', {
+        transactionId,
+        companyId: transaction.companyId,
+      })
+      logger.clearContext()
+      return
+    }
+
+    // Preparar serviço de notificação
+    const notificationService = new NotificationService({
+      whatsappApiUrl: settings.whatsappApiUrl || undefined,
+      whatsappApiKey: settings.whatsappApiKey || undefined,
+      whatsappApiInstance: settings.whatsappApiInstance || undefined,
+      sesRegion: 'us-east-1',
+      sesAccessKeyId: settings.smtpUser || undefined,
+      sesSecretAccessKey: settings.smtpPass || undefined,
+      fromEmail: settings.smtpFrom || undefined,
+      companyId: transaction.companyId,
+    })
+
+    // Dados para notificação
+    const amount = String(transaction.amount)
+    const name = user.email.split('@')[0] || 'Membro'
+
+    // Enviar notificação de falha via email genérico
+    // TODO: Implementar método específico sendPaymentFailed no NotificationService
+    if (user.email) {
+      await notificationService.sendEmail({
+        to: user.email,
+        subject: 'Falha no Processamento do Pagamento',
+        html: `
+          <p>Olá ${name},</p>
+          <p>Infelizmente, não conseguimos processar seu pagamento de R$ ${amount}.</p>
+          <p>Por favor, verifique seus dados de pagamento e tente novamente.</p>
+          <p>Se o problema persistir, entre em contato conosco.</p>
+        `,
+      })
+    }
+
+    logger.info('Notificação de falha de pagamento enviada com sucesso', {
+      userId: user.id,
+      transactionId,
+      amount,
+    })
+
+    logger.clearContext()
+  } catch (error) {
+    logger.error('Erro ao disparar notificação de falha de transação', error, {
+      transactionId,
+    })
+    logger.clearContext()
+  }
 }
 
 // Hook para quando um usuário é excluído
@@ -165,6 +309,12 @@ export async function onUserDeleted(
   deletedByUserId: string,
 ): Promise<void> {
   try {
+    // Configurar contexto do logger
+    logger.setContext({
+      userId,
+      operation: 'onUserDeleted',
+    })
+
     const [user] = await db
       .select({
         id: users.id,
@@ -177,7 +327,11 @@ export async function onUserDeleted(
       .where(eq(users.id, userId))
       .limit(1)
 
-    if (!user) return
+    if (!user) {
+      logger.warn('Usuário não encontrado para notificação de exclusão', { userId })
+      logger.clearContext()
+      return
+    }
 
     const [deletedByUser] = await db
       .select({
@@ -193,7 +347,32 @@ export async function onUserDeleted(
       .where(eq(otherSettings.companyId, user.companyId))
       .limit(1)
 
-    if (!settings || !deletedByUser) return
+    if (!settings || !deletedByUser) {
+      logger.warn('Configurações ou usuário deletor não encontrados', {
+        userId,
+        deletedByUserId,
+        companyId: user.companyId,
+      })
+      logger.clearContext()
+      return
+    }
+
+    // ✅ DEDUPLICAÇÃO: Verificar se notificação de exclusão já foi enviada
+    // Usar deletedByUserId como chave para evitar múltiplas notificações ao admin
+    const shouldSend = await shouldSendNotificationWithConfig(
+      deletedByUserId,
+      'account_deleted_notification',
+    )
+
+    if (!shouldSend) {
+      logger.warn('Notificação de exclusão de usuário duplicada bloqueada', {
+        userId,
+        deletedByUserId,
+        notificationType: 'account_deleted_notification',
+      })
+      logger.clearContext()
+      return
+    }
 
     // Notificar administradores sobre a exclusão
     const subject = `Usuário ${user.role} excluído do sistema`
@@ -229,11 +408,21 @@ export async function onUserDeleted(
         subject,
         html: message.replace(/\n/g, '<br>'),
       })
+
+      logger.info('Notificação de exclusão de usuário enviada com sucesso', {
+        userId,
+        deletedByUserId,
+        deletedByEmail: deletedByUser.email,
+      })
     }
 
-    console.log(`User deletion notification sent for user ${userId}`)
+    logger.clearContext()
   } catch (error) {
-    console.error('Error in onUserDeleted hook:', error)
+    logger.error('Erro ao disparar notificação de exclusão de usuário', error, {
+      userId,
+      deletedByUserId,
+    })
+    logger.clearContext()
   }
 }
 
