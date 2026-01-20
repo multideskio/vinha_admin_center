@@ -124,19 +124,19 @@
 
 ## Fase 4 - Resiliência (Semana 4)
 
-- [~] 22. Criar `src/lib/webhook-reconciliation.ts` para reconciliação de webhooks
+- [x] 22. Criar `src/lib/webhook-reconciliation.ts` para reconciliação de webhooks
   - Implementar função `reconcileTransactionState(transactionId, webhookStatus)`
   - Verificar se transação existe antes de processar
   - Implementar lógica de reconciliação se estados divergirem
   - Adicionar lógica de retry com backoff exponencial
   - Adicionar logs estruturados para debug
 
-- [~] 23. Integrar reconciliação em `src/app/api/v1/webhooks/cielo/route.ts`
+- [x] 23. Integrar reconciliação em `src/app/api/v1/webhooks/cielo/route.ts`
   - Importar função de reconciliação
   - Adicionar tratamento de webhook early arrival (chegou antes da transação)
   - Implementar retry se transação não existir ainda
 
-- [~] 24. Criar `src/lib/notification-dedup.ts` para deduplicação de notificações
+- [-] 24. Criar `src/lib/notification-dedup.ts` para deduplicação de notificações
   - Implementar função `shouldSendNotification(userId, notificationType, windowHours)`
   - Verificar em `notificationLogs` se notificação já foi enviada
   - Configurar janela de deduplicação (24h padrão)
