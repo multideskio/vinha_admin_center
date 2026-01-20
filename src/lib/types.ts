@@ -187,3 +187,33 @@ export type UserNotificationSettings = {
     whatsapp: boolean
   }
 }
+
+// =============================================================================
+// INTERFACES PARA SESSÃO E SERVIÇOS
+// =============================================================================
+
+/**
+ * Interface para o objeto de usuário retornado pela validação JWT
+ * Usado em todas as rotas protegidas para type safety
+ */
+export interface SessionUser {
+  id: string
+  email: string
+  role: UserRole
+  companyId: string
+  avatarUrl: string | null
+}
+
+/**
+ * Interface para o transporter SMTP do Nodemailer
+ * Usado no sistema de notificações para envio de emails
+ */
+export interface SmtpTransporter {
+  sendMail(options: {
+    from: string
+    to: string
+    subject: string
+    html: string
+    text?: string
+  }): Promise<void>
+}
