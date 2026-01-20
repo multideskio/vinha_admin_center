@@ -20,6 +20,7 @@ import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
 import { ApiError } from '@/lib/errors'
+import { SessionUser } from '@/lib/types'
 
 async function getCieloCredentials(): Promise<{
   merchantId: string | null
@@ -83,7 +84,7 @@ export async function GET(
 ): Promise<NextResponse> {
   const params = await props.params
   const { id } = params
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 60 requests per minute

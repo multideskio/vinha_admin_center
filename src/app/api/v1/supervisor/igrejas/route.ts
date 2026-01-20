@@ -15,6 +15,7 @@ import * as bcrypt from 'bcrypt'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
+import { SessionUser } from '@/lib/types'
 
 import { getCompanyId } from '@/lib/utils'
 
@@ -41,7 +42,7 @@ const churchSchema = z.object({
 })
 
 export async function GET(request: Request): Promise<NextResponse> {
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 60 requests per minute
@@ -145,7 +146,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 10 requests per minute
@@ -205,6 +206,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10)
 
+    // Garantir que sessionUser não é null para uso na transação
+    const supervisorId = sessionUser.id
+
     const newChurch = await db.transaction(async (tx) => {
       const [newUser] = await tx
         .insert(users)
@@ -228,7 +232,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         .insert(churchProfiles)
         .values({
           userId: newUser.id,
-          supervisorId: sessionUser.id,
+          supervisorId: supervisorId,
           cnpj: validatedData.cnpj,
           razaoSocial: validatedData.razaoSocial,
           nomeFantasia: validatedData.nomeFantasia,

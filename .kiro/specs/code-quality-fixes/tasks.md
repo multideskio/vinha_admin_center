@@ -12,7 +12,7 @@
   - Integrar com `log-sanitizer.ts` (criar depois)
   - Exportar instância singleton
 
-- [-] 4. Substituir `any` em rotas de supervisor (6 arquivos)
+- [x] 4. Substituir `any` em rotas de supervisor (6 arquivos)
   - `src/app/api/v1/supervisor/transacoes/route.ts`
   - `src/app/api/v1/supervisor/transacoes/[id]/resend-receipt/route.ts`
   - `src/app/api/v1/supervisor/transacoes/[id]/route.ts`

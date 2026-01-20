@@ -18,6 +18,7 @@ import { eq } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
+import { SessionUser } from '@/lib/types'
 
 async function verifyTransactionOwnership(
   transactionId: string,
@@ -61,7 +62,7 @@ export async function POST(
 ): Promise<NextResponse> {
   const params = await props.params
   const { id } = params
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 10 requests per minute

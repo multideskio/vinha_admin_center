@@ -15,7 +15,7 @@ import * as bcrypt from 'bcrypt'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
-import { churchProfileSchema } from '@/lib/types'
+import { churchProfileSchema, SessionUser } from '@/lib/types'
 
 const churchUpdateSchema = churchProfileSchema
   .extend({
@@ -36,7 +36,7 @@ export async function GET(
 ): Promise<NextResponse> {
   const params = await props.params
   const { id } = params
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 60 requests per minute
@@ -156,7 +156,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   const params = await props.params
   const { id } = params
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 30 requests per minute
@@ -291,7 +291,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   const params = await props.params
   const { id } = params
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 20 requests per minute
