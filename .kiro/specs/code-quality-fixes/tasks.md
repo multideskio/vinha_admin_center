@@ -32,11 +32,11 @@
   - `src/app/api/v1/igreja/dashboard/route.ts`
   - `src/app/api/v1/igreja/transacoes/[id]/route.ts`
 
-- [~] 7. Substituir `any` em `src/lib/notifications.ts`
+- [x] 7. Substituir `any` em `src/lib/notifications.ts`
   - Atualizar tipo de `smtpTransporter` para `SmtpTransporter`
   - Importar tipo de `@/lib/types`
 
-- [~] 8. Substituir `process.env` por `env` em arquivos críticos
+- [-] 8. Substituir `process.env` por `env` em arquivos críticos
   - `src/lib/cielo.ts`
   - `src/lib/email.ts`
   - `src/app/api/v1/transacoes/route.ts`
