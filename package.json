@@ -128,5 +128,8 @@
     "*.md": [
       "prettier --write"
     ]
+  },
+  "overrides": {
+    "tar": "^7.5.3"
   }
 }
