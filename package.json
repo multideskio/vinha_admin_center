@@ -124,12 +124,10 @@
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,css}": [
       "prettier --write",
-      "eslint --fix",
-      "git add"
+      "eslint --fix"
     ],
     "*.md": [
-      "prettier --write",
-      "git add"
+      "prettier --write"
     ]
   },
   "overrides": {
