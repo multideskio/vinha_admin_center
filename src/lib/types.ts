@@ -205,15 +205,9 @@ export interface SessionUser {
 }
 
 /**
- * Interface para o transporter SMTP do Nodemailer
+ * Tipo para o transporter SMTP do Nodemailer
  * Usado no sistema de notificações para envio de emails
  */
-export interface SmtpTransporter {
-  sendMail(options: {
-    from: string
-    to: string
-    subject: string
-    html: string
-    text?: string
-  }): Promise<void>
-}
+export type SmtpTransporter = import('nodemailer').Transporter<
+  import('nodemailer/lib/smtp-transport').SentMessageInfo
+>
