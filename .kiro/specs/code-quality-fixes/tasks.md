@@ -51,36 +51,36 @@
 
 ## Fase 2 - Segurança (Semana 2)
 
-- [~] 10. Criar `src/lib/payment-guard.ts` para verificação de duplicação
+- [x] 10. Criar `src/lib/payment-guard.ts` para verificação de duplicação
   - Implementar função `checkDuplicatePayment(userId, amount, windowMinutes)`
   - Verificar transações pendentes/aprovadas nos últimos N minutos
   - Retornar objeto com `isDuplicate` e `existingTransaction`
 
-- [~] 11. Integrar verificação de duplicação em `POST /api/v1/transacoes`
+- [x] 11. Integrar verificação de duplicação em `POST /api/v1/transacoes`
   - Adicionar verificação antes de criar pagamento
   - Retornar erro 409 (Conflict) se duplicação detectada
   - Incluir ID da transação existente na resposta de erro
   - Adicionar logs estruturados para tentativas de duplicação
 
-- [~] 12. Criar `src/lib/log-sanitizer.ts` para sanitização de logs
+- [x] 12. Criar `src/lib/log-sanitizer.ts` para sanitização de logs
   - Implementar função `sanitizeLog(data)` que mascara dados sensíveis
   - Adicionar padrões regex para CPF, cartão, CVV, senha, token
   - Implementar função `safeLog(message, data)` como wrapper
 
-- [~] 13. Integrar sanitização em código crítico
+- [x] 13. Integrar sanitização em código crítico
   - Atualizar logs em `src/lib/cielo.ts` (nunca logar dados de cartão)
   - Atualizar logs em `src/app/api/v1/transacoes/route.ts`
   - Atualizar logs em `src/lib/notifications.ts`
   - Revisar todos os `console.log()` em rotas de API
 
-- [~] 14. Criar `src/lib/upload-validator.ts` para validação de uploads
+- [x] 14. Criar `src/lib/upload-validator.ts` para validação de uploads
   - Implementar função `validateUpload(file, filename, mimeType)`
   - Definir tipos MIME permitidos (image/jpeg, image/png, image/webp, application/pdf)
   - Definir tamanho máximo (10MB = 10 _ 1024 _ 1024 bytes)
   - Adicionar validação de extensão (jpg, jpeg, png, webp, pdf)
   - Retornar objeto com `valid` e `error` opcional
 
-- [~] 15. Integrar validação de uploads em `src/lib/s3-client.ts`
+- [x] 15. Integrar validação de uploads em `src/lib/s3-client.ts`
   - Importar `validateUpload` em método `uploadFile()`
   - Adicionar validação antes de enviar ao S3
   - Lançar erro descritivo se validação falhar

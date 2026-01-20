@@ -12,6 +12,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { db } from '@/db/drizzle'
 import { otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { validateUpload, sanitizeFilename } from './upload-validator'
 
 interface S3Config {
   endpoint: string
@@ -72,9 +73,20 @@ export class S3Service {
     file: Buffer | Uint8Array,
     key: string,
     contentType: string = 'application/octet-stream',
+    originalFilename?: string,
   ): Promise<string> {
     if (!this.client || !this.config) {
       throw new Error('S3 client not initialized')
+    }
+
+    // Validar upload se filename original for fornecido
+    if (originalFilename) {
+      const fileBuffer = Buffer.isBuffer(file) ? file : Buffer.from(file)
+      const validation = validateUpload(fileBuffer, originalFilename, contentType)
+
+      if (!validation.valid) {
+        throw new Error(validation.error)
+      }
     }
 
     const command = new PutObjectCommand({
@@ -136,8 +148,13 @@ export class S3Service {
   generateKey(folder: string, filename: string): string {
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
-    const extension = filename.split('.').pop()
-    return `${folder}/${timestamp}-${randomString}.${extension}`
+
+    // Sanitizar o filename para remover caracteres especiais
+    const sanitized = sanitizeFilename(filename)
+    const extension = sanitized.split('.').pop()
+    const nameWithoutExt = sanitized.split('.').slice(0, -1).join('.')
+
+    return `${folder}/${timestamp}-${randomString}-${nameWithoutExt}.${extension}`
   }
 }
 

@@ -20,6 +20,7 @@ import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
 import { rateLimit } from '@/lib/rate-limit'
+import { checkDuplicatePayment } from '@/lib/payment-guard'
 import { z } from 'zod'
 import { env } from '@/lib/env'
 
@@ -195,6 +196,25 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const data = transactionSchema.parse(body)
+
+    // Verificar duplicação de pagamento antes de processar
+    const duplicateCheck = await checkDuplicatePayment(user.id, data.amount, 5)
+    if (duplicateCheck.isDuplicate && duplicateCheck.existingTransaction) {
+      console.warn('[TRANSACOES_DUPLICATE_ATTEMPT]', {
+        userId: user.id,
+        amount: data.amount,
+        existingTransactionId: duplicateCheck.existingTransaction.id,
+        timestamp: new Date().toISOString(),
+      })
+      return NextResponse.json(
+        {
+          error:
+            'Já existe uma transação pendente ou aprovada com este valor nos últimos 5 minutos.',
+          existingTransactionId: duplicateCheck.existingTransaction.id,
+        },
+        { status: 409 },
+      )
+    }
 
     // Get user data with profile based on role
     let profile: Record<string, unknown> | null = null

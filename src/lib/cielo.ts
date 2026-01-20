@@ -3,6 +3,7 @@ import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { logCieloRequest, logCieloResponse } from './cielo-logger'
 import { env } from '@/lib/env'
+import { safeLog, safeError } from '@/lib/log-sanitizer'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -135,7 +136,7 @@ export async function createPixPayment(amount: number, customerName: string) {
   }
 
   const data = JSON.parse(responseText)
-  console.log('Cielo PIX Full Response:', JSON.stringify(data, null, 2))
+  safeLog('[CIELO_PIX_RESPONSE]', data)
 
   return {
     PaymentId: data.Payment.PaymentId,
@@ -353,7 +354,7 @@ export async function createBoletoPayment(
 }
 
 export async function cancelPayment(paymentId: string, amount?: number) {
-  console.log(`[CIELO] Starting cancellation for payment ID: ${paymentId}`)
+  safeLog('[CIELO_CANCEL]', { paymentId, amount })
 
   const config = await getCieloConfig()
   if (!config) {
@@ -404,27 +405,22 @@ export async function cancelPayment(paymentId: string, amount?: number) {
   }
 
   const data = JSON.parse(responseText)
-  console.log(`[CIELO] Cancellation successful:`, data)
+  safeLog('[CIELO_CANCEL_SUCCESS]', data)
 
   return data
 }
 
 export async function queryPayment(paymentId: string) {
-  console.log(`[CIELO] Starting query for payment ID: ${paymentId}`)
+  safeLog('[CIELO_QUERY_START]', { paymentId })
 
   const config = await getCieloConfig()
   if (!config) {
-    console.error('[CIELO] Configuration not found')
+    safeError('[CIELO_QUERY_ERROR]', 'Configuration not found')
     throw new Error('Configuração Cielo não encontrada')
   }
 
   const apiUrl = getCieloQueryApiUrl(config.environment)
-  console.log(`[CIELO] Using API URL: ${apiUrl}`)
-  console.log(`[CIELO] Environment: ${config.environment}`)
-  console.log(`[CIELO] MerchantId: ${config.merchantId?.substring(0, 8)}...`)
-
   const requestUrl = `${apiUrl}/1/sales/${paymentId}`
-  console.log(`[CIELO] Making request to: ${requestUrl}`)
 
   await logCieloRequest({
     operationType: 'consulta',
@@ -442,10 +438,7 @@ export async function queryPayment(paymentId: string) {
     },
   })
 
-  console.log(`[CIELO] Response status: ${response.status} ${response.statusText}`)
-
   const responseText = await response.text()
-  console.log(`[CIELO] Response body length: ${responseText.length} characters`)
 
   await logCieloResponse({
     operationType: 'consulta',
@@ -458,17 +451,19 @@ export async function queryPayment(paymentId: string) {
   })
 
   if (!response.ok) {
-    console.error(`[CIELO] Query failed for payment ${paymentId}:`, {
+    safeError('[CIELO_QUERY_FAILED]', {
+      paymentId,
       status: response.status,
       statusText: response.statusText,
-      body: responseText.substring(0, 500) + (responseText.length > 500 ? '...' : ''),
-      url: requestUrl,
     })
 
     // Se for 404, pode ser que o pagamento ainda não esteja disponível na Cielo
     // Isso é comum em PIX - o pagamento pode ter sido feito mas a API ainda não reconhece
     if (response.status === 404) {
-      console.log(`[CIELO] Payment ${paymentId} not found (404) - returning pending status`)
+      safeLog('[CIELO_QUERY_404]', {
+        paymentId,
+        message: 'Payment not found - returning pending status',
+      })
       return {
         Payment: {
           Status: 0, // Status pendente - continuará verificando
@@ -478,13 +473,12 @@ export async function queryPayment(paymentId: string) {
       }
     }
 
-    console.error(`[CIELO] Throwing error for status ${response.status}`)
+    safeError('[CIELO_QUERY_ERROR]', { status: response.status })
     throw new Error(`Erro ao consultar pagamento: ${response.status}`)
   }
 
-  console.log(`[CIELO] Successful response for payment ${paymentId}`)
+  safeLog('[CIELO_QUERY_SUCCESS]', { paymentId })
   const parsedResponse = JSON.parse(responseText)
-  console.log(`[CIELO] Parsed response:`, JSON.stringify(parsedResponse, null, 2))
 
   return parsedResponse
 }

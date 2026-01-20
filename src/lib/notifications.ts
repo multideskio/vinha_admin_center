@@ -7,6 +7,7 @@ import { createTransport } from 'nodemailer'
 import { EvolutionSendTextRequest, EvolutionResponse } from './evolution-api-types'
 import { TemplateEngine, TemplateVariables } from './template-engine'
 import { SmtpTransporter } from './types'
+import { safeError } from './log-sanitizer'
 import { db } from '@/db/drizzle'
 import { messageTemplates, notificationLogs, emailBlacklist, otherSettings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -76,14 +77,17 @@ export class WhatsAppService {
       )
 
       if (!response.ok) {
-        console.error('WhatsApp API error:', response.status, response.statusText)
+        safeError('[WHATSAPP_API_ERROR]', {
+          status: response.status,
+          statusText: response.statusText,
+        })
         return false
       }
 
       const data: EvolutionResponse = await response.json()
       return !!data.key?.id
     } catch (error) {
-      console.error('WhatsApp send error:', error)
+      safeError('[WHATSAPP_SEND_ERROR]', error)
       return false
     }
   }
@@ -215,15 +219,14 @@ export class EmailService {
       const errorCode = errorObj.name || errorObj.Code || errorObj.code || 'UNKNOWN'
       const errorMessage = errorObj.message || String(error)
 
-      // Log detalhado do erro para debug
-      console.error('Erro detalhado no envio de email:', {
+      // Log detalhado do erro para debug (sanitizado)
+      safeError('[EMAIL_SEND_ERROR]', {
         to,
         subject,
         errorCode,
         errorMessage,
         hasSmtp: !!this.smtpTransporter,
         hasSes: !!this.sesClient,
-        fromEmail,
       })
 
       // Se for erro de autenticação SMTP, não adicionar à blacklist
@@ -296,7 +299,7 @@ export class EmailService {
         })
       }
     } catch (error) {
-      console.error('Erro ao adicionar email à blacklist:', error)
+      safeError('[BLACKLIST_ADD_ERROR]', error)
     }
   }
 }
@@ -417,7 +420,7 @@ export class NotificationService {
 
     // Log detalhado para debug
     if (!result.success) {
-      console.error('Falha no envio de email:', {
+      safeError('[NOTIFICATION_EMAIL_FAILED]', {
         to,
         subject,
         error: result.error,
@@ -776,7 +779,7 @@ export class NotificationService {
         errorMessage: error,
       })
     } catch (logError) {
-      console.error('Error logging notification:', logError)
+      safeError('[NOTIFICATION_LOG_ERROR]', logError)
     }
   }
 }
