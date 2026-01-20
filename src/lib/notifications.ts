@@ -6,6 +6,7 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { createTransport } from 'nodemailer'
 import { EvolutionSendTextRequest, EvolutionResponse } from './evolution-api-types'
 import { TemplateEngine, TemplateVariables } from './template-engine'
+import { SmtpTransporter } from './types'
 import { db } from '@/db/drizzle'
 import { messageTemplates, notificationLogs, emailBlacklist, otherSettings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -91,7 +92,7 @@ export class WhatsAppService {
 // Email Service
 export class EmailService {
   private sesClient?: SESClient
-  private smtpTransporter?: any
+  private smtpTransporter?: SmtpTransporter
 
   constructor(private config: NotificationConfig) {
     // Configurar SES se disponível
