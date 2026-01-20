@@ -2,6 +2,8 @@
  * Testes unitários para o sistema de logging estruturado
  */
 
+/// <reference types="jest" />
+
 import { Logger, logger } from './logger'
 
 describe('Logger', () => {

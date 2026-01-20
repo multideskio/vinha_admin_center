@@ -7,6 +7,8 @@ import { db } from '@/db/drizzle'
 import { otherSettings, users, transactions, notificationRules } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { notificationQueue } from './queues'
+import { shouldSendNotificationWithConfig } from './notification-dedup'
+import { logger } from './logger'
 
 // Hook para quando um novo usuário é criado
 export async function onUserCreated(userId: string): Promise<void> {
@@ -91,6 +93,25 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
     // Só notifica se transação aprovada
     if (transaction.status !== 'approved') return
 
+    // ✅ DEDUPLICAÇÃO: Verificar se notificação já foi enviada
+    logger.setContext({
+      userId: user.id,
+      transactionId: transaction.id,
+      operation: 'onTransactionCreated',
+    })
+
+    const shouldSend = await shouldSendNotificationWithConfig(user.id, 'payment_confirmation')
+
+    if (!shouldSend) {
+      logger.warn('Notificação de pagamento duplicada bloqueada', {
+        userId: user.id,
+        transactionId: transaction.id,
+        notificationType: 'payment_confirmation',
+      })
+      logger.clearContext()
+      return
+    }
+
     // Prepara notification service
     const notificationService = new NotificationService({
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
@@ -115,8 +136,19 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
       user.phone || undefined,
       user.email || undefined,
     )
+
+    logger.info('Notificação de pagamento enviada com sucesso', {
+      userId: user.id,
+      transactionId: transaction.id,
+      amount,
+    })
+
+    logger.clearContext()
   } catch (e) {
-    console.error('Erro ao disparar notificação de transação:', e)
+    logger.error('Erro ao disparar notificação de transação', e, {
+      transactionId,
+    })
+    logger.clearContext()
   }
 }
 
@@ -215,15 +247,58 @@ export async function processNotificationEvent(
   try {
     const userId = data.userId
     if (!userId || typeof userId !== 'string') return
+
+    // Configurar contexto do logger
+    logger.setContext({
+      userId,
+      operation: 'processNotificationEvent',
+    })
+
     // Busca usuário e settings
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
-    if (!user) return
+    if (!user) {
+      logger.warn('Usuário não encontrado para processamento de notificação', { userId })
+      logger.clearContext()
+      return
+    }
+
     const [settings] = await db
       .select()
       .from(otherSettings)
       .where(eq(otherSettings.companyId, user.companyId))
       .limit(1)
-    if (!settings) return
+    if (!settings) {
+      logger.warn('Configurações da empresa não encontradas', {
+        userId,
+        companyId: user.companyId,
+      })
+      logger.clearContext()
+      return
+    }
+
+    // ✅ DEDUPLICAÇÃO: Verificar se notificação já foi enviada
+    // Mapear eventType para notificationType
+    const notificationTypeMap: Record<string, string> = {
+      user_registered: 'welcome_email',
+      payment_received: 'payment_confirmation',
+      payment_due_reminder: 'tithe_reminder',
+      payment_overdue: 'tithe_due_soon',
+    }
+
+    const notificationType = notificationTypeMap[eventType] || eventType
+
+    const shouldSend = await shouldSendNotificationWithConfig(userId, notificationType)
+
+    if (!shouldSend) {
+      logger.warn('Notificação de evento duplicada bloqueada', {
+        userId,
+        eventType,
+        notificationType,
+      })
+      logger.clearContext()
+      return
+    }
+
     // Busca regras ativas para o evento
     const activeRules = await db
       .select()
@@ -241,6 +316,13 @@ export async function processNotificationEvent(
           ),
         ),
       )
+
+    if (activeRules.length === 0) {
+      logger.info('Nenhuma regra ativa encontrada para o evento', { eventType })
+      logger.clearContext()
+      return
+    }
+
     for (const rule of activeRules) {
       // Monta mensagem a partir do template da regra (substitui variáveis)
       const variables: Record<string, string> = {
@@ -261,18 +343,42 @@ export async function processNotificationEvent(
         companyId: user.companyId,
       })
       // Email
-      if (rule.sendViaEmail && user.email)
+      if (rule.sendViaEmail && user.email) {
         await notificationService.sendEmail({
           to: user.email,
           subject: eventType.replace('_', ' ').toUpperCase(),
           html: `<p>${message}</p>`,
         })
+        logger.info('Email enviado via regra de notificação', {
+          userId,
+          eventType,
+          ruleId: rule.id,
+        })
+      }
       // WhatsApp
-      if (rule.sendViaWhatsapp && user.phone)
+      if (rule.sendViaWhatsapp && user.phone) {
         await notificationService.sendWhatsApp({ phone: user.phone, message })
+        logger.info('WhatsApp enviado via regra de notificação', {
+          userId,
+          eventType,
+          ruleId: rule.id,
+        })
+      }
     }
+
+    logger.info('Processamento de evento de notificação concluído', {
+      userId,
+      eventType,
+      rulesProcessed: activeRules.length,
+    })
+
+    logger.clearContext()
   } catch (err) {
-    console.error('Erro no processNotificationEvent:', err)
+    logger.error('Erro no processNotificationEvent', err, {
+      eventType,
+      data,
+    })
+    logger.clearContext()
   }
 }
 

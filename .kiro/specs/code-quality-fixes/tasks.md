@@ -136,13 +136,13 @@
   - Adicionar tratamento de webhook early arrival (chegou antes da transação)
   - Implementar retry se transação não existir ainda
 
-- [-] 24. Criar `src/lib/notification-dedup.ts` para deduplicação de notificações
+- [x] 24. Criar `src/lib/notification-dedup.ts` para deduplicação de notificações
   - Implementar função `shouldSendNotification(userId, notificationType, windowHours)`
   - Verificar em `notificationLogs` se notificação já foi enviada
   - Configurar janela de deduplicação (24h padrão)
   - Retornar boolean indicando se deve enviar
 
-- [~] 25. Integrar deduplicação em `src/lib/notification-hooks.ts`
+- [x] 25. Integrar deduplicação em `src/lib/notification-hooks.ts`
   - Adicionar verificação antes de enviar notificações
   - Aplicar em `onTransactionCreated` e `processNotificationEvent`
   - Logar tentativas de duplicação (warning level)
