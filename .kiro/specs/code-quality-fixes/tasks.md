@@ -2,239 +2,217 @@
 
 ## Fase 1 - Fundação (Semana 1)
 
-### 1. Criar Arquivos Utilitários Base
+- [x] 1. Criar `src/lib/env.ts` com validação Zod de variáveis de ambiente (CONCLUÍDO)
 
-- [ ] 1.1 Criar `src/lib/env.ts` com validação Zod de variáveis de ambiente
-  - [ ] 1.1.1 Definir schema Zod com todas as variáveis obrigatórias
-  - [ ] 1.1.2 Adicionar variáveis opcionais com defaults seguros
-  - [ ] 1.1.3 Exportar objeto `env` tipado
-  - [ ] 1.1.4 Adicionar testes unitários para validação
+- [x] 2. Criar tipos explícitos em `src/lib/types.ts` (CONCLUÍDO)
 
-- [ ] 1.2 Criar tipos explícitos em `src/lib/types.ts`
-  - [ ] 1.2.1 Adicionar interface `SessionUser`
-  - [ ] 1.2.2 Adicionar interface `SmtpTransporter`
-  - [ ] 1.2.3 Exportar tipos para uso em todo projeto
+- [x] 3. Criar `src/lib/logger.ts` com logging estruturado
+  - Implementar classe `Logger` com métodos error/warn/info
+  - Adicionar suporte a contexto (userId, operation, etc)
+  - Integrar com `log-sanitizer.ts` (criar depois)
+  - Exportar instância singleton
 
-- [ ] 1.3 Criar `src/lib/logger.ts` com logging estruturado
-  - [ ] 1.3.1 Implementar classe `Logger` com métodos error/warn/info
-  - [ ] 1.3.2 Adicionar suporte a contexto (userId, operation, etc)
-  - [ ] 1.3.3 Integrar com `log-sanitizer.ts`
-  - [ ] 1.3.4 Exportar instância singleton
+- [-] 4. Substituir `any` em rotas de supervisor (6 arquivos)
+  - `src/app/api/v1/supervisor/transacoes/route.ts`
+  - `src/app/api/v1/supervisor/transacoes/[id]/resend-receipt/route.ts`
+  - `src/app/api/v1/supervisor/transacoes/[id]/route.ts`
+  - `src/app/api/v1/supervisor/transacoes/[id]/sync/route.ts`
+  - `src/app/api/v1/supervisor/igrejas/route.ts`
+  - `src/app/api/v1/supervisor/igrejas/[id]/route.ts`
 
-### 2. Substituir Tipos `any`
+- [~] 5. Substituir `any` em rotas de pastor (4 arquivos)
+  - `src/app/api/v1/pastor/perfil/route.ts`
+  - `src/app/api/v1/pastor/transacoes/route.ts`
+  - `src/app/api/v1/pastor/dashboard/route.ts`
+  - `src/app/api/v1/pastor/transacoes/[id]/route.ts`
 
-- [ ] 2.1 Substituir `any` em rotas de supervisor
-  - [ ] 2.1.1 Atualizar `src/app/api/v1/supervisor/transacoes/route.ts`
-  - [ ] 2.1.2 Atualizar `src/app/api/v1/supervisor/transacoes/[id]/resend-receipt/route.ts`
-  - [ ] 2.1.3 Atualizar `src/app/api/v1/supervisor/transacoes/[id]/route.ts`
-  - [ ] 2.1.4 Atualizar `src/app/api/v1/supervisor/transacoes/[id]/sync/route.ts`
-  - [ ] 2.1.5 Atualizar `src/app/api/v1/supervisor/igrejas/route.ts`
-  - [ ] 2.1.6 Atualizar `src/app/api/v1/supervisor/igrejas/[id]/route.ts`
+- [~] 6. Substituir `any` em rotas de igreja (4 arquivos)
+  - `src/app/api/v1/igreja/transacoes/route.ts`
+  - `src/app/api/v1/igreja/perfil/route.ts`
+  - `src/app/api/v1/igreja/dashboard/route.ts`
+  - `src/app/api/v1/igreja/transacoes/[id]/route.ts`
 
-- [ ] 2.2 Substituir `any` em rotas de pastor
-  - [ ] 2.2.1 Atualizar `src/app/api/v1/pastor/perfil/route.ts`
-  - [ ] 2.2.2 Atualizar `src/app/api/v1/pastor/transacoes/route.ts`
-  - [ ] 2.2.3 Atualizar `src/app/api/v1/pastor/dashboard/route.ts`
-  - [ ] 2.2.4 Atualizar `src/app/api/v1/pastor/transacoes/[id]/route.ts`
+- [~] 7. Substituir `any` em `src/lib/notifications.ts`
+  - Atualizar tipo de `smtpTransporter` para `SmtpTransporter`
+  - Importar tipo de `@/lib/types`
 
-- [ ] 2.3 Substituir `any` em rotas de igreja
-  - [ ] 2.3.1 Atualizar `src/app/api/v1/igreja/transacoes/route.ts`
-  - [ ] 2.3.2 Atualizar `src/app/api/v1/igreja/perfil/route.ts`
-  - [ ] 2.3.3 Atualizar `src/app/api/v1/igreja/dashboard/route.ts`
-  - [ ] 2.3.4 Atualizar `src/app/api/v1/igreja/transacoes/[id]/route.ts`
+- [~] 8. Substituir `process.env` por `env` em arquivos críticos
+  - `src/lib/cielo.ts`
+  - `src/lib/email.ts`
+  - `src/app/api/v1/transacoes/route.ts`
+  - `src/app/api/v1/webhooks/cielo/route.ts`
+  - Buscar e atualizar todas as rotas que usam `COMPANY_INIT`
+  - Buscar e atualizar todas as rotas que usam `DEFAULT_PASSWORD`
 
-- [ ] 2.4 Substituir `any` em `src/lib/notifications.ts`
-  - [ ] 2.4.1 Atualizar tipo de `smtpTransporter`
-  - [ ] 2.4.2 Adicionar tipos para métodos do transporter
-
-### 3. Validar Variáveis de Ambiente
-
-- [ ] 3.1 Substituir `process.env` por `env` em arquivos críticos
-  - [ ] 3.1.1 Atualizar `src/lib/cielo.ts`
-  - [ ] 3.1.2 Atualizar `src/lib/email.ts`
-  - [ ] 3.1.3 Atualizar `src/app/api/v1/transacoes/route.ts`
-  - [ ] 3.1.4 Atualizar `src/app/api/v1/webhooks/cielo/route.ts`
-  - [ ] 3.1.5 Atualizar todas as rotas que usam `COMPANY_INIT`
-  - [ ] 3.1.6 Atualizar todas as rotas que usam `DEFAULT_PASSWORD`
-
-- [ ] 3.2 Adicionar validação no startup
-  - [ ] 3.2.1 Importar `env` em `src/app/layout.tsx`
-  - [ ] 3.2.2 Adicionar error boundary para erros de validação
-  - [ ] 3.2.3 Exibir mensagem clara se variável estiver faltando
+- [~] 9. Adicionar validação de env no startup
+  - Importar `env` em `src/app/layout.tsx`
+  - Adicionar error boundary para erros de validação
+  - Exibir mensagem clara se variável estiver faltando
 
 ## Fase 2 - Segurança (Semana 2)
 
-### 4. Implementar Verificação de Duplicação de Pagamentos
+- [~] 10. Criar `src/lib/payment-guard.ts` para verificação de duplicação
+  - Implementar função `checkDuplicatePayment(userId, amount, windowMinutes)`
+  - Verificar transações pendentes/aprovadas nos últimos N minutos
+  - Retornar objeto com `isDuplicate` e `existingTransaction`
 
-- [ ] 4.1 Criar `src/lib/payment-guard.ts`
-  - [ ] 4.1.1 Implementar função `checkDuplicatePayment()`
-  - [ ] 4.1.2 Adicionar configuração de janela de tempo
-  - [ ] 4.1.3 Adicionar testes unitários
+- [~] 11. Integrar verificação de duplicação em `POST /api/v1/transacoes`
+  - Adicionar verificação antes de criar pagamento
+  - Retornar erro 409 (Conflict) se duplicação detectada
+  - Incluir ID da transação existente na resposta de erro
+  - Adicionar logs estruturados para tentativas de duplicação
 
-- [ ] 4.2 Integrar em rota de transações
-  - [ ] 4.2.1 Adicionar verificação em `POST /api/v1/transacoes`
-  - [ ] 4.2.2 Retornar erro 409 se duplicação detectada
-  - [ ] 4.2.3 Incluir ID da transação existente na resposta
-  - [ ] 4.2.4 Adicionar logs estruturados
+- [~] 12. Criar `src/lib/log-sanitizer.ts` para sanitização de logs
+  - Implementar função `sanitizeLog(data)` que mascara dados sensíveis
+  - Adicionar padrões regex para CPF, cartão, CVV, senha, token
+  - Implementar função `safeLog(message, data)` como wrapper
 
-- [ ] 4.3 Adicionar testes de integração
-  - [ ] 4.3.1 Testar criação de transação duplicada
-  - [ ] 4.3.2 Testar janela de tempo
-  - [ ] 4.3.3 Testar diferentes valores e usuários
+- [~] 13. Integrar sanitização em código crítico
+  - Atualizar logs em `src/lib/cielo.ts` (nunca logar dados de cartão)
+  - Atualizar logs em `src/app/api/v1/transacoes/route.ts`
+  - Atualizar logs em `src/lib/notifications.ts`
+  - Revisar todos os `console.log()` em rotas de API
 
-### 5. Implementar Sanitização de Logs
+- [~] 14. Criar `src/lib/upload-validator.ts` para validação de uploads
+  - Implementar função `validateUpload(file, filename, mimeType)`
+  - Definir tipos MIME permitidos (image/jpeg, image/png, image/webp, application/pdf)
+  - Definir tamanho máximo (10MB = 10 _ 1024 _ 1024 bytes)
+  - Adicionar validação de extensão (jpg, jpeg, png, webp, pdf)
+  - Retornar objeto com `valid` e `error` opcional
 
-- [ ] 5.1 Criar `src/lib/log-sanitizer.ts`
-  - [ ] 5.1.1 Implementar função `sanitizeLog()`
-  - [ ] 5.1.2 Adicionar padrões para CPF, cartão, CVV, senha, token
-  - [ ] 5.1.3 Implementar função `safeLog()`
-  - [ ] 5.1.4 Adicionar testes unitários
-
-- [ ] 5.2 Integrar em código crítico
-  - [ ] 5.2.1 Atualizar logs em `src/lib/cielo.ts`
-  - [ ] 5.2.2 Atualizar logs em `src/app/api/v1/transacoes/route.ts`
-  - [ ] 5.2.3 Atualizar logs em `src/lib/notifications.ts`
-  - [ ] 5.2.4 Revisar todos os `console.log()` em rotas de API
-
-### 6. Implementar Validação de Uploads
-
-- [ ] 6.1 Criar `src/lib/upload-validator.ts`
-  - [ ] 6.1.1 Implementar função `validateUpload()`
-  - [ ] 6.1.2 Definir tipos MIME permitidos
-  - [ ] 6.1.3 Definir tamanho máximo (10MB)
-  - [ ] 6.1.4 Adicionar validação de extensão
-  - [ ] 6.1.5 Adicionar testes unitários
-
-- [ ] 6.2 Integrar em `src/lib/s3-client.ts`
-  - [ ] 6.2.1 Adicionar validação em `uploadFile()`
-  - [ ] 6.2.2 Retornar erro descritivo se validação falhar
-  - [ ] 6.2.3 Adicionar sanitização de nome de arquivo
-
-- [ ] 6.3 Atualizar rotas de upload
-  - [ ] 6.3.1 Adicionar validação em rota de upload de avatar
-  - [ ] 6.3.2 Retornar erro 400 com mensagem clara
+- [~] 15. Integrar validação de uploads em `src/lib/s3-client.ts`
+  - Importar `validateUpload` em método `uploadFile()`
+  - Adicionar validação antes de enviar ao S3
+  - Lançar erro descritivo se validação falhar
+  - Adicionar sanitização de nome de arquivo (remover caracteres especiais)
 
 ## Fase 3 - Performance (Semana 3)
 
-### 7. Adicionar `.limit()` em Queries
+- [~] 16. Refatorar queries sem `.limit()` identificadas
+  - `src/app/api/v1/supervisor/pastores/[id]/route.ts` (linha 29)
+  - `src/app/api/v1/supervisor/igrejas/[id]/route.ts` (linha 28)
+  - `src/app/api/v1/manager/igrejas/[id]/route.ts` (linha 32)
+  - `src/app/api/v1/manager/pastores/[id]/route.ts` (linha 34)
 
-- [ ] 7.1 Criar `src/lib/db-utils.ts`
-  - [ ] 7.1.1 Implementar função `findOne()`
-  - [ ] 7.1.2 Adicionar tipos genéricos
-  - [ ] 7.1.3 Adicionar testes unitários
+- [~] 17. Refatorar `GET /api/v1/transacoes` para eliminar N+1 queries
+  - Analisar query atual que busca perfis em loop (N+1)
+  - Criar query otimizada usando LEFT JOIN para todos os perfis
+  - Testar performance antes/depois com dataset grande
+  - Adicionar índices no banco se necessário (foreign keys)
 
-- [ ] 7.2 Refatorar queries sem `.limit()`
-  - [ ] 7.2.1 Atualizar `src/app/api/v1/supervisor/pastores/[id]/route.ts`
-  - [ ] 7.2.2 Atualizar `src/app/api/v1/supervisor/igrejas/[id]/route.ts`
-  - [ ] 7.2.3 Atualizar `src/app/api/v1/manager/igrejas/[id]/route.ts`
-  - [ ] 7.2.4 Atualizar `src/app/api/v1/manager/pastores/[id]/route.ts`
-  - [ ] 7.2.5 Atualizar scripts de migração
+- [~] 18. Identificar e refatorar outras rotas com N+1 queries
+  - Buscar padrões de `Promise.all` com queries em loop
+  - Analisar rotas de listagem (GET com múltiplos registros)
+  - Refatorar queries identificadas para usar JOIN
 
-### 8. Eliminar N+1 Queries
+- [~] 19. Criar `src/lib/config-cache.ts` para cache de configurações
+  - Implementar classe `ConfigCache` com Map interno
+  - Adicionar métodos `get<T>(key)`, `set<T>(key, data)`, `invalidate(key)`
+  - Configurar TTL de 5 minutos (300000ms)
+  - Exportar instância singleton `configCache`
 
-- [ ] 8.1 Refatorar `GET /api/v1/transacoes`
-  - [ ] 8.1.1 Substituir loop de queries por JOIN
-  - [ ] 8.1.2 Criar query otimizada com todos os perfis
-  - [ ] 8.1.3 Testar performance antes/depois
-  - [ ] 8.1.4 Adicionar índices se necessário
+- [~] 20. Integrar cache em `src/lib/cielo.ts`
+  - Importar `configCache` em função `getCieloConfig()`
+  - Verificar cache antes de buscar no banco
+  - Armazenar resultado no cache após busca
+  - Invalidar cache quando configuração for atualizada (rota de update)
 
-- [ ] 8.2 Identificar outras rotas com N+1
-  - [ ] 8.2.1 Analisar rotas de listagem
-  - [ ] 8.2.2 Refatorar queries identificadas
-  - [ ] 8.2.3 Adicionar testes de performance
-
-### 9. Implementar Cache de Configurações
-
-- [ ] 9.1 Criar `src/lib/config-cache.ts`
-  - [ ] 9.1.1 Implementar classe `ConfigCache`
-  - [ ] 9.1.2 Adicionar métodos get/set/invalidate
-  - [ ] 9.1.3 Configurar TTL de 5 minutos
-  - [ ] 9.1.4 Adicionar testes unitários
-
-- [ ] 9.2 Integrar em `src/lib/cielo.ts`
-  - [ ] 9.2.1 Adicionar cache em `getCieloConfig()`
-  - [ ] 9.2.2 Invalidar cache quando configuração for atualizada
-
-- [ ] 9.3 Integrar em `src/lib/notifications.ts`
-  - [ ] 9.3.1 Adicionar cache em `createFromDatabase()`
-  - [ ] 9.3.2 Invalidar cache quando configuração for atualizada
+- [~] 21. Integrar cache em `src/lib/notifications.ts`
+  - Adicionar cache em `NotificationService.createFromDatabase()`
+  - Verificar cache antes de buscar configurações SMTP/WhatsApp
+  - Invalidar cache quando configuração for atualizada
 
 ## Fase 4 - Resiliência (Semana 4)
 
-### 10. Implementar Reconciliação de Webhooks
+- [~] 22. Criar `src/lib/webhook-reconciliation.ts` para reconciliação de webhooks
+  - Implementar função `reconcileTransactionState(transactionId, webhookStatus)`
+  - Verificar se transação existe antes de processar
+  - Implementar lógica de reconciliação se estados divergirem
+  - Adicionar lógica de retry com backoff exponencial
+  - Adicionar logs estruturados para debug
 
-- [ ] 10.1 Criar `src/lib/webhook-reconciliation.ts`
-  - [ ] 10.1.1 Implementar função `reconcileTransactionState()`
-  - [ ] 10.1.2 Adicionar lógica de retry com backoff
-  - [ ] 10.1.3 Adicionar logs estruturados
-  - [ ] 10.1.4 Adicionar testes unitários
+- [~] 23. Integrar reconciliação em `src/app/api/v1/webhooks/cielo/route.ts`
+  - Importar função de reconciliação
+  - Adicionar tratamento de webhook early arrival (chegou antes da transação)
+  - Implementar retry se transação não existir ainda
 
-- [ ] 10.2 Integrar em webhook handler
-  - [ ] 10.2.1 Atualizar `src/app/api/v1/webhooks/cielo/route.ts`
-  - [ ] 10.2.2 Adicionar tratamento de webhook early arrival
-  - [ ] 10.2.3 Adicionar testes de integração
+- [~] 24. Criar `src/lib/notification-dedup.ts` para deduplicação de notificações
+  - Implementar função `shouldSendNotification(userId, notificationType, windowHours)`
+  - Verificar em `notificationLogs` se notificação já foi enviada
+  - Configurar janela de deduplicação (24h padrão)
+  - Retornar boolean indicando se deve enviar
 
-### 11. Implementar Deduplicação de Notificações
+- [~] 25. Integrar deduplicação em `src/lib/notification-hooks.ts`
+  - Adicionar verificação antes de enviar notificações
+  - Aplicar em `onTransactionCreated` e `processNotificationEvent`
+  - Logar tentativas de duplicação (warning level)
 
-- [ ] 11.1 Criar `src/lib/notification-dedup.ts`
-  - [ ] 11.1.1 Implementar função `shouldSendNotification()`
-  - [ ] 11.1.2 Configurar janela de deduplicação
-  - [ ] 11.1.3 Adicionar testes unitários
-
-- [ ] 11.2 Integrar em sistema de notificações
-  - [ ] 11.2.1 Adicionar verificação em `src/lib/notification-hooks.ts`
-  - [ ] 11.2.2 Logar tentativas de duplicação
-  - [ ] 11.2.3 Adicionar testes de integração
-
-### 12. Migrar Rate Limiting para Redis
-
-- [ ] 12.1 Criar `src/lib/rate-limit-redis.ts`
-  - [ ] 12.1.1 Implementar função `rateLimitRedis()`
-  - [ ] 12.1.2 Adicionar fallback para memória se Redis indisponível
-  - [ ] 12.1.3 Adicionar testes unitários
-
-- [ ] 12.2 Criar middleware de rate limiting
-  - [ ] 12.2.1 Criar `src/middleware/rate-limit.ts`
-  - [ ] 12.2.2 Configurar limites por tipo de rota
-  - [ ] 12.2.3 Adicionar headers de rate limit na resposta
-
-- [ ] 12.3 Aplicar em todas as rotas públicas
-  - [ ] 12.3.1 Adicionar em rotas de autenticação
-  - [ ] 12.3.2 Adicionar em rotas de transações
-  - [ ] 12.3.3 Adicionar em rotas de upload
-  - [ ] 12.3.4 Testar limites em ambiente de staging
+- [~] 26. Aplicar rate limiting em todas as rotas públicas
+  - Verificar rotas de autenticação (login, registro, reset password)
+  - Verificar rotas de transações (já tem rate limiting)
+  - Verificar rotas de upload
+  - Testar limites em ambiente de staging
 
 ## Tarefas de Validação e Deploy
 
-### 13. Testes e Validação
+- [~] 27. Executar suite de testes completa
+  - Rodar testes unitários (`npm test`)
+  - Rodar testes de integração
+  - Rodar testes de performance (comparar antes/depois)
 
-- [ ] 13.1 Executar suite de testes completa
-  - [ ] 13.1.1 Rodar testes unitários
-  - [ ] 13.1.2 Rodar testes de integração
-  - [ ] 13.1.3 Rodar testes de performance
+- [~] 28. Validar em ambiente de staging
+  - Deploy em staging
+  - Testar fluxo completo de pagamento (PIX, cartão, boleto)
+  - Testar webhooks da Cielo
+  - Testar notificações (email e WhatsApp)
+  - Validar logs estruturados (verificar se dados sensíveis estão mascarados)
 
-- [ ] 13.2 Validar em ambiente de staging
-  - [ ] 13.2.1 Deploy em staging
-  - [ ] 13.2.2 Testar fluxo completo de pagamento
-  - [ ] 13.2.3 Testar webhooks
-  - [ ] 13.2.4 Testar notificações
-  - [ ] 13.2.5 Validar logs estruturados
+- [~] 29. Revisar métricas de sucesso
+  - Verificar zero tipos `any` no código (`npm run build` sem warnings)
+  - Verificar 100% variáveis validadas (todas usando `env`)
+  - Medir tempo de resposta médio das APIs (< 200ms)
+  - Medir hit rate do cache de configurações (> 80%)
 
-- [ ] 13.3 Revisar métricas
-  - [ ] 13.3.1 Verificar zero tipos `any`
-  - [ ] 13.3.2 Verificar 100% variáveis validadas
-  - [ ] 13.3.3 Medir tempo de resposta
-  - [ ] 13.3.4 Medir hit rate do cache
+- [~] 30. Atualizar documentação
+  - Documentar novas funções utilitárias em README ou docs/
+  - Atualizar guia de desenvolvimento com novos padrões
+  - Documentar mudanças em variáveis de ambiente (.env.example)
+  - Criar CHANGELOG.md com todas as mudanças
 
-### 14. Documentação e Deploy
+- [~] 31. Deploy em produção
+  - Criar backup do banco de dados
+  - Deploy com feature flags (se aplicável)
+  - Monitorar logs por 24h após deploy
+  - Validar métricas de sucesso em produção
+  - Preparar plano de rollback se necessário
 
-- [ ] 14.1 Atualizar documentação
-  - [ ] 14.1.1 Documentar novas funções utilitárias
-  - [ ] 14.1.2 Atualizar guia de desenvolvimento
-  - [ ] 14.1.3 Documentar mudanças em variáveis de ambiente
+## Resumo de Progresso
 
-- [ ] 14.2 Deploy em produção
-  - [ ] 14.2.1 Criar backup do banco de dados
-  - [ ] 14.2.2 Deploy com feature flags
-  - [ ] 14.2.3 Monitorar logs por 24h
-  - [ ] 14.2.4 Validar métricas de sucesso
+### ✅ Concluído
+
+- Arquivo `src/lib/env.ts` com validação Zod
+- Tipos `SessionUser` e `SmtpTransporter` em `src/lib/types.ts`
+- Rate limiting com Redis em `src/lib/rate-limit.ts`
+
+### 🚧 Em Progresso
+
+- Nenhuma tarefa em progresso no momento
+
+### ⏳ Pendente
+
+- Substituir todos os tipos `any` (14 arquivos identificados)
+- Criar logger estruturado com sanitização
+- Implementar verificação de duplicação de pagamentos
+- Implementar validação de uploads
+- Otimizar queries N+1
+- Implementar cache de configurações
+- Implementar reconciliação de webhooks
+- Implementar deduplicação de notificações
+
+### 📊 Métricas de Sucesso
+
+- **Tipos `any`**: 14 ocorrências → Meta: 0
+- **Variáveis validadas**: ~30% → Meta: 100%
+- **Queries otimizadas**: 0 → Meta: 100% das queries críticas
+- **Cache hit rate**: 0% → Meta: > 80%
+- **Tempo de resposta**: ~300ms → Meta: < 200ms
