@@ -5,6 +5,7 @@ import { db } from '@/db/drizzle'
 import { users, churchProfiles } from '@/db/schema'
 import { sql } from 'drizzle-orm'
 import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
+import { env } from '@/lib/env'
 
 const registerChurchSchema = z.object({
   nomeFantasia: z.string().min(1, 'Nome fantasia é obrigatório'),
@@ -13,6 +14,8 @@ const registerChurchSchema = z.object({
   email: z.string().email('Email inválido'),
   supervisorId: z.string().uuid('Supervisor inválido'),
 })
+
+const COMPANY_ID = env.COMPANY_INIT
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,12 +44,6 @@ export async function POST(request: NextRequest) {
     // 2. Validar dados de entrada
     const body = await request.json()
     const validatedData = registerChurchSchema.parse(body)
-
-    // 2. Verificar COMPANY_INIT
-    const COMPANY_ID = process.env.COMPANY_INIT
-    if (!COMPANY_ID) {
-      return NextResponse.json({ error: 'Configuração do sistema inválida' }, { status: 500 })
-    }
 
     // 3. Verificar se email já existe
     const [existingUser] = await db

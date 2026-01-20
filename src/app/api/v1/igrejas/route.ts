@@ -12,14 +12,12 @@ import { eq, and, isNull, desc, sql, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('A variável de ambiente COMPANY_INIT não está definida.')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
+const COMPANY_ID = env.COMPANY_INIT
+const VALIDATED_COMPANY_ID = COMPANY_ID
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
+const DEFAULT_PASSWORD = env.DEFAULT_PASSWORD
 
 const churchSchema = z.object({
   supervisorId: z.string().uuid(),

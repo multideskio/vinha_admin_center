@@ -6,22 +6,11 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { env } from '@/lib/env'
 
 export async function GET() {
   try {
-    const companyId = process.env.COMPANY_INIT
-
-    if (!companyId) {
-      console.error('COMPANY_INIT environment variable not set')
-      return NextResponse.json(
-        {
-          status: 'error',
-          maintenanceMode: false, // Fail-safe: permitir acesso se não configurado
-          timestamp: new Date().toISOString(),
-        },
-        { status: 500 },
-      )
-    }
+    const companyId = env.COMPANY_INIT
 
     const [company] = await db
       .select({ maintenanceMode: companies.maintenanceMode })

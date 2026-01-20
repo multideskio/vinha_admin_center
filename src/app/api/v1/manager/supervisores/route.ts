@@ -9,14 +9,12 @@ import { supervisorProfileSchema } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
+const COMPANY_ID = env.COMPANY_INIT
+const VALIDATED_COMPANY_ID = COMPANY_ID
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
+const DEFAULT_PASSWORD = env.DEFAULT_PASSWORD
 
 export async function GET(request: Request): Promise<NextResponse> {
   // Rate limiting

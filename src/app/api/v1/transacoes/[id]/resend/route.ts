@@ -4,8 +4,9 @@ import { transactions, users, otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { EmailService } from '@/lib/notifications'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT || ''
+const COMPANY_ID = env.COMPANY_INIT
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()

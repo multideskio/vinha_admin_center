@@ -11,11 +11,9 @@ import { otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('A variável de ambiente COMPANY_INIT não está definida.')
-}
+const COMPANY_ID = env.COMPANY_INIT
 
 // Type assertion para garantir que COMPANY_ID é string
 const companyId: string = COMPANY_ID

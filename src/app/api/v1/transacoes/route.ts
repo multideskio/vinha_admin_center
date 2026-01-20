@@ -21,8 +21,9 @@ import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
 import { rateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT || ''
+const COMPANY_ID = env.COMPANY_INIT
 
 const transactionSchema = z.object({
   amount: z.number().min(1),

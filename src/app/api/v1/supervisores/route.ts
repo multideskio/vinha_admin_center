@@ -12,12 +12,13 @@ import { eq, and, isNull, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
+import { env } from '@/lib/env'
 
 import { getCompanyId } from '@/lib/utils'
 
 const COMPANY_ID = getCompanyId()
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
+const DEFAULT_PASSWORD = env.DEFAULT_PASSWORD
 
 const supervisorSchema = z.object({
   managerId: z.string().uuid(),

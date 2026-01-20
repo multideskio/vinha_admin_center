@@ -8,12 +8,10 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
+const COMPANY_ID = env.COMPANY_INIT
+const VALIDATED_COMPANY_ID = COMPANY_ID
 
 /**
  * GET - Buscar configurações públicas da empresa (sem autenticação)

@@ -2,8 +2,9 @@ import { db } from '@/db/drizzle'
 import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { logCieloRequest, logCieloResponse } from './cielo-logger'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT || ''
+const COMPANY_ID = env.COMPANY_INIT
 
 type CieloConfig = {
   merchantId: string

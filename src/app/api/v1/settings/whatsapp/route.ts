@@ -11,8 +11,9 @@ import { otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
+const COMPANY_ID = env.COMPANY_INIT
 
 const whatsappSettingsSchema = z.object({
   apiUrl: z.string().url(),

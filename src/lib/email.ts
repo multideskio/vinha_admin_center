@@ -2,8 +2,9 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { db } from '@/db/drizzle'
 import { otherSettings, emailBlacklist, notificationLogs } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT || ''
+const COMPANY_ID = env.COMPANY_INIT
 
 export async function sendEmail({
   to,

@@ -5,8 +5,9 @@ import { eq, and } from 'drizzle-orm'
 import { sendEmail } from '@/lib/email'
 import { createTransactionReceiptEmail } from '@/lib/email-templates'
 import { logCieloWebhook } from '@/lib/cielo-logger'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT || ''
+const COMPANY_ID = env.COMPANY_INIT
 
 // ✅ CORRIGIDO: Classe para erros de validação (que devem retornar 200)
 class ValidationError extends Error {

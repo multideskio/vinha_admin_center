@@ -11,12 +11,10 @@ import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('A variável de ambiente COMPANY_INIT não está definida.')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
+const COMPANY_ID = env.COMPANY_INIT
+const VALIDATED_COMPANY_ID = COMPANY_ID
 const GATEWAY_NAME = 'Cielo'
 
 const cieloGatewaySchema = z.object({

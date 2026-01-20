@@ -4,13 +4,9 @@ import { emailBlacklist } from '@/db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { z } from 'zod'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT é obrigatório')
-}
-
-// Type assertion para garantir que COMPANY_ID não é undefined após a validação
+const COMPANY_ID = env.COMPANY_INIT
 const companyId: string = COMPANY_ID
 
 const blacklistAddSchema = z.object({

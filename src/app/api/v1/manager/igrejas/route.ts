@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
+import { env } from '@/lib/env'
 
 import { getCompanyId } from '@/lib/utils'
 
@@ -14,7 +15,7 @@ import { getCompanyId } from '@/lib/utils'
 
 const COMPANY_ID = getCompanyId()
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || '123456'
+const DEFAULT_PASSWORD = env.DEFAULT_PASSWORD
 
 const churchSchema = z.object({
   supervisorId: z.string().uuid(),

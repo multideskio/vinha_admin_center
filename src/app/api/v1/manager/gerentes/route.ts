@@ -11,12 +11,10 @@ import { users, managerProfiles } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
+import { env } from '@/lib/env'
 
-const COMPANY_ID = process.env.COMPANY_INIT
-if (!COMPANY_ID) {
-  throw new Error('COMPANY_INIT environment variable is required')
-}
-const VALIDATED_COMPANY_ID = COMPANY_ID as string
+const COMPANY_ID = env.COMPANY_INIT
+const VALIDATED_COMPANY_ID = COMPANY_ID
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
