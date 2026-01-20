@@ -50,3 +50,4 @@ fix-*.sql
 
 .kiro/
 !.kiro/specs/
+!.kiro/steering/
