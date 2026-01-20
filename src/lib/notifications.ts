@@ -11,6 +11,7 @@ import { safeError } from './log-sanitizer'
 import { db } from '@/db/drizzle'
 import { messageTemplates, notificationLogs, emailBlacklist, otherSettings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { configCache, CACHE_KEYS } from './config-cache'
 
 // Types
 interface NotificationConfig {
@@ -375,24 +376,57 @@ export class NotificationService {
 
   // Método estático para criar instância com configurações do banco
   static async createFromDatabase(companyId: string): Promise<NotificationService> {
-    const [settings] = await db
-      .select()
-      .from(otherSettings)
-      .where(eq(otherSettings.companyId, companyId))
-      .limit(1)
+    // ✅ Verificar cache primeiro
+    const smtpCacheKey = CACHE_KEYS.SMTP_CONFIG(companyId)
+    const whatsappCacheKey = CACHE_KEYS.WHATSAPP_CONFIG(companyId)
+
+    let smtpConfig = configCache.get<{
+      smtpHost?: string
+      smtpPort?: number
+      smtpUser?: string
+      smtpPass?: string
+      smtpFrom?: string
+    }>(smtpCacheKey)
+
+    let whatsappConfig = configCache.get<{
+      whatsappApiUrl?: string
+      whatsappApiKey?: string
+      whatsappApiInstance?: string
+    }>(whatsappCacheKey)
+
+    // Se não estiver em cache, buscar do banco
+    if (!smtpConfig || !whatsappConfig) {
+      const [settings] = await db
+        .select()
+        .from(otherSettings)
+        .where(eq(otherSettings.companyId, companyId))
+        .limit(1)
+
+      smtpConfig = {
+        smtpHost: settings?.smtpHost || undefined,
+        smtpPort: settings?.smtpPort || undefined,
+        smtpUser: settings?.smtpUser || undefined,
+        smtpPass: settings?.smtpPass || undefined,
+        smtpFrom: settings?.smtpFrom || undefined,
+      }
+
+      whatsappConfig = {
+        whatsappApiUrl: settings?.whatsappApiUrl || undefined,
+        whatsappApiKey: settings?.whatsappApiKey || undefined,
+        whatsappApiInstance: settings?.whatsappApiInstance || undefined,
+      }
+
+      // ✅ Armazenar no cache
+      configCache.set(smtpCacheKey, smtpConfig)
+      configCache.set(whatsappCacheKey, whatsappConfig)
+    }
 
     const config: NotificationConfig & { companyId: string } = {
       companyId,
-      // WhatsApp config
-      whatsappApiUrl: settings?.whatsappApiUrl || undefined,
-      whatsappApiKey: settings?.whatsappApiKey || undefined,
-      whatsappApiInstance: settings?.whatsappApiInstance || undefined,
-      // SMTP config
-      smtpHost: settings?.smtpHost || undefined,
-      smtpPort: settings?.smtpPort || undefined,
-      smtpUser: settings?.smtpUser || undefined,
-      smtpPass: settings?.smtpPass || undefined,
-      smtpFrom: settings?.smtpFrom || undefined,
+      // WhatsApp config (do cache)
+      ...whatsappConfig,
+      // SMTP config (do cache)
+      ...smtpConfig,
       // SES config (fallback para variáveis de ambiente)
       sesRegion: process.env.AWS_SES_REGION,
       sesAccessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,

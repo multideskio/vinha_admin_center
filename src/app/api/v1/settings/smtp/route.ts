@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { env } from '@/lib/env'
+import { configCache, CACHE_KEYS } from '@/lib/config-cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -96,6 +97,9 @@ export async function PUT(request: Request): Promise<NextResponse> {
     } else {
       await db.insert(otherSettings).values(dataToUpsert)
     }
+
+    // ✅ Invalidar cache após atualização
+    configCache.invalidate(CACHE_KEYS.SMTP_CONFIG(COMPANY_ID))
 
     return NextResponse.json({ success: true })
   } catch (error) {

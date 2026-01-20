@@ -88,36 +88,36 @@
 
 ## Fase 3 - Performance (Semana 3)
 
-- [~] 16. Refatorar queries sem `.limit()` identificadas
+- [x] 16. Refatorar queries sem `.limit()` identificadas
   - `src/app/api/v1/supervisor/pastores/[id]/route.ts` (linha 29)
   - `src/app/api/v1/supervisor/igrejas/[id]/route.ts` (linha 28)
   - `src/app/api/v1/manager/igrejas/[id]/route.ts` (linha 32)
   - `src/app/api/v1/manager/pastores/[id]/route.ts` (linha 34)
 
-- [~] 17. Refatorar `GET /api/v1/transacoes` para eliminar N+1 queries
+- [x] 17. Refatorar `GET /api/v1/transacoes` para eliminar N+1 queries
   - Analisar query atual que busca perfis em loop (N+1)
   - Criar query otimizada usando LEFT JOIN para todos os perfis
   - Testar performance antes/depois com dataset grande
   - Adicionar índices no banco se necessário (foreign keys)
 
-- [~] 18. Identificar e refatorar outras rotas com N+1 queries
+- [x] 18. Identificar e refatorar outras rotas com N+1 queries
   - Buscar padrões de `Promise.all` com queries em loop
   - Analisar rotas de listagem (GET com múltiplos registros)
   - Refatorar queries identificadas para usar JOIN
 
-- [~] 19. Criar `src/lib/config-cache.ts` para cache de configurações
+- [x] 19. Criar `src/lib/config-cache.ts` para cache de configurações
   - Implementar classe `ConfigCache` com Map interno
   - Adicionar métodos `get<T>(key)`, `set<T>(key, data)`, `invalidate(key)`
   - Configurar TTL de 5 minutos (300000ms)
   - Exportar instância singleton `configCache`
 
-- [~] 20. Integrar cache em `src/lib/cielo.ts`
+- [x] 20. Integrar cache em `src/lib/cielo.ts`
   - Importar `configCache` em função `getCieloConfig()`
   - Verificar cache antes de buscar no banco
   - Armazenar resultado no cache após busca
   - Invalidar cache quando configuração for atualizada (rota de update)
 
-- [~] 21. Integrar cache em `src/lib/notifications.ts`
+- [x] 21. Integrar cache em `src/lib/notifications.ts`
   - Adicionar cache em `NotificationService.createFromDatabase()`
   - Verificar cache antes de buscar configurações SMTP/WhatsApp
   - Invalidar cache quando configuração for atualizada

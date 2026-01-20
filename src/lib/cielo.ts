@@ -4,6 +4,7 @@ import { eq, and } from 'drizzle-orm'
 import { logCieloRequest, logCieloResponse } from './cielo-logger'
 import { env } from '@/lib/env'
 import { safeLog, safeError } from '@/lib/log-sanitizer'
+import { configCache, CACHE_KEYS } from '@/lib/config-cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -14,6 +15,14 @@ type CieloConfig = {
 }
 
 async function getCieloConfig(): Promise<CieloConfig | null> {
+  // ✅ Verificar cache primeiro
+  const cacheKey = CACHE_KEYS.CIELO_CONFIG(COMPANY_ID)
+  const cached = configCache.get<CieloConfig>(cacheKey)
+  if (cached) {
+    return cached
+  }
+
+  // Buscar do banco se não estiver em cache
   const [config] = await db
     .select()
     .from(gatewayConfigurations)
@@ -43,11 +52,16 @@ async function getCieloConfig(): Promise<CieloConfig | null> {
     )
   }
 
-  return {
+  const cieloConfig: CieloConfig = {
     merchantId,
     merchantKey,
     environment: config.environment as 'production' | 'development',
   }
+
+  // ✅ Armazenar no cache
+  configCache.set(cacheKey, cieloConfig)
+
+  return cieloConfig
 }
 
 function getCieloApiUrl(environment: 'production' | 'development'): string {

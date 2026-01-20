@@ -12,6 +12,7 @@ import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { env } from '@/lib/env'
+import { configCache, CACHE_KEYS } from '@/lib/config-cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
@@ -90,6 +91,9 @@ export async function PUT(request: Request): Promise<NextResponse> {
         ),
       )
       .returning()
+
+    // ✅ Invalidar cache após atualização
+    configCache.invalidate(CACHE_KEYS.CIELO_CONFIG(VALIDATED_COMPANY_ID))
 
     return NextResponse.json({ success: true, config: updatedConfig })
   } catch (error) {

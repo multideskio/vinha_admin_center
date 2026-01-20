@@ -26,7 +26,11 @@ const pastorUpdateSchema = pastorProfileSchema
   .partial()
 
 async function verifyPastor(pastorId: string, supervisorId: string): Promise<boolean> {
-  const [pastor] = await db.select().from(pastorProfiles).where(eq(pastorProfiles.userId, pastorId))
+  const [pastor] = await db
+    .select()
+    .from(pastorProfiles)
+    .where(eq(pastorProfiles.userId, pastorId))
+    .limit(1)
   if (!pastor || pastor.supervisorId !== supervisorId) return false
   return true
 }

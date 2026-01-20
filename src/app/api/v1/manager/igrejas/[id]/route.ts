@@ -29,7 +29,11 @@ async function verifyChurch(churchId: string, managerId: string): Promise<boolea
     .where(eq(supervisorProfiles.managerId, managerId))
   if (supervisorIdsManagedByGerente.length === 0) return false
 
-  const [church] = await db.select().from(churchProfiles).where(eq(churchProfiles.userId, churchId))
+  const [church] = await db
+    .select()
+    .from(churchProfiles)
+    .where(eq(churchProfiles.userId, churchId))
+    .limit(1)
   if (!church || !church.supervisorId) return false
 
   return supervisorIdsManagedByGerente.some((s) => s.id === church.supervisorId)

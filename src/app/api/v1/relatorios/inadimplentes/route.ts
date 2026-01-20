@@ -64,6 +64,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
         .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
 
+      // ✅ OTIMIZADO: Buscar todos os últimos pagamentos de uma vez
+      const pastorIds = pastorsWithTitheDay.map((p) => p.id)
+      const lastPaymentsQuery = await db
+        .select({
+          contributorId: transactions.contributorId,
+          createdAt: transactions.createdAt,
+        })
+        .from(transactions)
+        .where(
+          and(eq(transactions.status, 'approved'), gte(transactions.createdAt, threeMonthsAgo)),
+        )
+        .orderBy(desc(transactions.createdAt))
+
+      // Criar mapa de último pagamento por pastor
+      const lastPaymentMap = new Map<string, Date>()
+      for (const payment of lastPaymentsQuery) {
+        if (pastorIds.includes(payment.contributorId)) {
+          const existing = lastPaymentMap.get(payment.contributorId)
+          const paymentDate = new Date(payment.createdAt)
+          if (!existing || paymentDate > existing) {
+            lastPaymentMap.set(payment.contributorId, paymentDate)
+          }
+        }
+      }
+
       for (const pastor of pastorsWithTitheDay) {
         // Filtro de busca
         const fullName = `${pastor.firstName} ${pastor.lastName}`.toLowerCase()
@@ -71,21 +96,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           continue
         }
 
-        // Buscar última transação aprovada nos últimos 3 meses
-        const lastPayment = await db
-          .select({ createdAt: transactions.createdAt })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.contributorId, pastor.id),
-              eq(transactions.status, 'approved'),
-              gte(transactions.createdAt, threeMonthsAgo),
-            ),
-          )
-          .orderBy(desc(transactions.createdAt))
-          .limit(1)
+        const lastPaymentDate = lastPaymentMap.get(pastor.id)
 
-        if (lastPayment.length === 0) {
+        if (!lastPaymentDate) {
           const daysSinceThreeMonths = getDaysSince(threeMonthsAgo)
 
           pastorsData.push({
@@ -96,22 +109,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             lastPayment: null,
             daysLate: daysSinceThreeMonths,
           })
-        } else {
-          const lastPaymentItem = lastPayment[0]
-          if (!lastPaymentItem) continue
-          const lastPaymentDate = new Date(lastPaymentItem.createdAt)
-          if (lastPaymentDate < threeMonthsAgo) {
-            const daysSinceLastPayment = getDaysSince(lastPaymentDate)
+        } else if (lastPaymentDate < threeMonthsAgo) {
+          const daysSinceLastPayment = getDaysSince(lastPaymentDate)
 
-            pastorsData.push({
-              id: pastor.id,
-              name: `${pastor.firstName} ${pastor.lastName}`,
-              type: 'pastor' as const,
-              titheDay: pastor.titheDay,
-              lastPayment: formatBrazilDate(lastPaymentDate),
-              daysLate: daysSinceLastPayment,
-            })
-          }
+          pastorsData.push({
+            id: pastor.id,
+            name: `${pastor.firstName} ${pastor.lastName}`,
+            type: 'pastor' as const,
+            titheDay: pastor.titheDay,
+            lastPayment: formatBrazilDate(lastPaymentDate),
+            daysLate: daysSinceLastPayment,
+          })
         }
       }
     }
@@ -137,27 +145,40 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
         .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
 
+      // ✅ OTIMIZADO: Buscar todos os últimos pagamentos de uma vez
+      const churchIds = churchesWithTitheDay.map((c) => c.id)
+      const lastPaymentsQuery = await db
+        .select({
+          contributorId: transactions.contributorId,
+          createdAt: transactions.createdAt,
+        })
+        .from(transactions)
+        .where(
+          and(eq(transactions.status, 'approved'), gte(transactions.createdAt, threeMonthsAgo)),
+        )
+        .orderBy(desc(transactions.createdAt))
+
+      // Criar mapa de último pagamento por igreja
+      const lastPaymentMap = new Map<string, Date>()
+      for (const payment of lastPaymentsQuery) {
+        if (churchIds.includes(payment.contributorId)) {
+          const existing = lastPaymentMap.get(payment.contributorId)
+          const paymentDate = new Date(payment.createdAt)
+          if (!existing || paymentDate > existing) {
+            lastPaymentMap.set(payment.contributorId, paymentDate)
+          }
+        }
+      }
+
       for (const church of churchesWithTitheDay) {
         // Filtro de busca
         if (search && !church.nomeFantasia.toLowerCase().includes(search.toLowerCase())) {
           continue
         }
 
-        // Buscar última transação aprovada nos últimos 3 meses
-        const lastPayment = await db
-          .select({ createdAt: transactions.createdAt })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.contributorId, church.id),
-              eq(transactions.status, 'approved'),
-              gte(transactions.createdAt, threeMonthsAgo),
-            ),
-          )
-          .orderBy(desc(transactions.createdAt))
-          .limit(1)
+        const lastPaymentDate = lastPaymentMap.get(church.id)
 
-        if (lastPayment.length === 0) {
+        if (!lastPaymentDate) {
           const daysSinceThreeMonths = getDaysSince(threeMonthsAgo)
 
           churchesData.push({
@@ -168,22 +189,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             lastPayment: null,
             daysLate: daysSinceThreeMonths,
           })
-        } else {
-          const lastPaymentItem = lastPayment[0]
-          if (!lastPaymentItem) continue
-          const lastPaymentDate = new Date(lastPaymentItem.createdAt)
-          if (lastPaymentDate < threeMonthsAgo) {
-            const daysSinceLastPayment = getDaysSince(lastPaymentDate)
+        } else if (lastPaymentDate < threeMonthsAgo) {
+          const daysSinceLastPayment = getDaysSince(lastPaymentDate)
 
-            churchesData.push({
-              id: church.id,
-              name: church.nomeFantasia,
-              type: 'church' as const,
-              titheDay: church.titheDay,
-              lastPayment: formatBrazilDate(lastPaymentDate),
-              daysLate: daysSinceLastPayment,
-            })
-          }
+          churchesData.push({
+            id: church.id,
+            name: church.nomeFantasia,
+            type: 'church' as const,
+            titheDay: church.titheDay,
+            lastPayment: formatBrazilDate(lastPaymentDate),
+            daysLate: daysSinceLastPayment,
+          })
         }
       }
     }

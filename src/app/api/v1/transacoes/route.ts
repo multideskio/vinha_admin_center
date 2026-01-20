@@ -82,9 +82,21 @@ export async function GET(request: NextRequest) {
         churchId: transactions.originChurchId,
         refundRequestReason: transactions.refundRequestReason,
         isFraud: transactions.isFraud,
+        // Perfis - todos em uma query
+        managerFirstName: managerProfiles.firstName,
+        managerLastName: managerProfiles.lastName,
+        supervisorFirstName: supervisorProfiles.firstName,
+        supervisorLastName: supervisorProfiles.lastName,
+        pastorFirstName: pastorProfiles.firstName,
+        pastorLastName: pastorProfiles.lastName,
+        churchNomeFantasia: churchProfiles.nomeFantasia,
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
+      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+      .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
+      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
+      .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
       .orderBy(desc(transactions.createdAt))
       .$dynamic()
 
@@ -104,59 +116,40 @@ export async function GET(request: NextRequest) {
 
     const userTransactions = await query.limit(limit).offset(offset)
 
-    const formattedTransactions = await Promise.all(
-      userTransactions.map(async (t) => {
-        let contributorName = t.contributorEmail
+    // Agora não precisa de queries adicionais - todos os dados já estão na query principal
+    const formattedTransactions = userTransactions.map((t) => {
+      let contributorName = t.contributorEmail
 
-        if (t.contributorRole === 'manager') {
-          const [profile] = await db
-            .select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
-            .from(managerProfiles)
-            .where(eq(managerProfiles.userId, t.contributorId))
-            .limit(1)
-          if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-        } else if (t.contributorRole === 'supervisor') {
-          const [profile] = await db
-            .select({
-              firstName: supervisorProfiles.firstName,
-              lastName: supervisorProfiles.lastName,
-            })
-            .from(supervisorProfiles)
-            .where(eq(supervisorProfiles.userId, t.contributorId))
-            .limit(1)
-          if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-        } else if (t.contributorRole === 'pastor') {
-          const [profile] = await db
-            .select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
-            .from(pastorProfiles)
-            .where(eq(pastorProfiles.userId, t.contributorId))
-            .limit(1)
-          if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-        } else if (t.contributorRole === 'church_account') {
-          const [profile] = await db
-            .select({ nomeFantasia: churchProfiles.nomeFantasia })
-            .from(churchProfiles)
-            .where(eq(churchProfiles.userId, t.contributorId))
-            .limit(1)
-          if (profile) contributorName = profile.nomeFantasia
-        }
+      // Determinar o nome baseado no role e nos dados já carregados
+      if (t.contributorRole === 'manager' && t.managerFirstName && t.managerLastName) {
+        contributorName = `${t.managerFirstName} ${t.managerLastName}`
+      } else if (
+        t.contributorRole === 'supervisor' &&
+        t.supervisorFirstName &&
+        t.supervisorLastName
+      ) {
+        contributorName = `${t.supervisorFirstName} ${t.supervisorLastName}`
+      } else if (t.contributorRole === 'pastor' && t.pastorFirstName && t.pastorLastName) {
+        contributorName = `${t.pastorFirstName} ${t.pastorLastName}`
+      } else if (t.contributorRole === 'church_account' && t.churchNomeFantasia) {
+        contributorName = t.churchNomeFantasia
+      }
 
-        return {
-          id: t.id,
-          contributor: contributorName,
-          contributorEmail: t.contributorEmail,
-          contributorId: t.contributorId,
-          church: t.churchId || null,
-          amount: parseFloat(t.amount),
-          method: t.paymentMethod,
-          status: t.status,
-          date: new Date(t.createdAt).toLocaleDateString('pt-BR'),
-          paidAt: new Date(t.createdAt).toISOString(),
-          refundRequestReason: t.refundRequestReason,
-          isFraud: t.isFraud,
-        }
-      }),
-    )
+      return {
+        id: t.id,
+        contributor: contributorName,
+        contributorEmail: t.contributorEmail,
+        contributorId: t.contributorId,
+        church: t.churchId || null,
+        amount: parseFloat(t.amount),
+        method: t.paymentMethod,
+        status: t.status,
+        date: new Date(t.createdAt).toLocaleDateString('pt-BR'),
+        paidAt: new Date(t.createdAt).toISOString(),
+        refundRequestReason: t.refundRequestReason,
+        isFraud: t.isFraud,
+      }
+    })
 
     return NextResponse.json({
       transactions: formattedTransactions,
