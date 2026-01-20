@@ -20,7 +20,7 @@
   - `src/app/api/v1/supervisor/igrejas/route.ts`
   - `src/app/api/v1/supervisor/igrejas/[id]/route.ts`
 
-- [~] 5. Substituir `any` em rotas de pastor (4 arquivos)
+- [x] 5. Substituir `any` em rotas de pastor (4 arquivos)
   - `src/app/api/v1/pastor/perfil/route.ts`
   - `src/app/api/v1/pastor/transacoes/route.ts`
   - `src/app/api/v1/pastor/dashboard/route.ts`

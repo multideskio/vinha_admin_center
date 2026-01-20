@@ -14,6 +14,7 @@ import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
+import { SessionUser } from '@/lib/types'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -26,7 +27,7 @@ const calculateChange = (current: number, previous: number): string => {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 60 requests per minute
@@ -270,8 +271,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     const completeProfile = {
       ...sessionUser,
       ...profileData,
-      titheDay: userData?.titheDay ?? sessionUser.titheDay ?? null,
-      phone: userData?.phone ?? sessionUser.phone,
+      titheDay: userData?.titheDay ?? null,
+      phone: userData?.phone ?? null,
       email: userData?.email ?? sessionUser.email,
       avatarUrl: userData?.avatarUrl ?? sessionUser.avatarUrl,
     }

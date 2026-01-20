@@ -6,10 +6,11 @@ import { validateRequest } from '@/lib/jwt'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
+import { SessionUser } from '@/lib/types'
 import * as bcrypt from 'bcrypt'
 
 export async function GET(request: Request): Promise<NextResponse> {
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 60 requests per minute
@@ -126,7 +127,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function PUT(request: Request): Promise<NextResponse> {
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 30 requests per minute for updates
