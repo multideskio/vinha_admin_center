@@ -44,7 +44,7 @@
   - Buscar e atualizar todas as rotas que usam `COMPANY_INIT`
   - Buscar e atualizar todas as rotas que usam `DEFAULT_PASSWORD`
 
-- [~] 9. Adicionar validação de env no startup
+- [x] 9. Adicionar validação de env no startup
   - Importar `env` em `src/app/layout.tsx`
   - Adicionar error boundary para erros de validação
   - Exibir mensagem clara se variável estiver faltando
