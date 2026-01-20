@@ -26,7 +26,7 @@
   - `src/app/api/v1/pastor/dashboard/route.ts`
   - `src/app/api/v1/pastor/transacoes/[id]/route.ts`
 
-- [~] 6. Substituir `any` em rotas de igreja (4 arquivos)
+- [x] 6. Substituir `any` em rotas de igreja (4 arquivos)
   - `src/app/api/v1/igreja/transacoes/route.ts`
   - `src/app/api/v1/igreja/perfil/route.ts`
   - `src/app/api/v1/igreja/dashboard/route.ts`

@@ -7,9 +7,10 @@ import { authenticateApiKey } from '@/lib/api-auth'
 import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
 import * as bcrypt from 'bcrypt'
+import { SessionUser } from '@/lib/types'
 
 export async function GET(request: Request): Promise<NextResponse> {
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 60 requests per minute
@@ -87,7 +88,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     console.log('[IGREJA_PERFIL_GET_SUCCESS]', {
       churchId: sessionUser.id,
       phoneFromDB: userData?.phone,
-      phoneFromJWT: sessionUser.phone,
       timestamp: new Date().toISOString(),
     })
 
@@ -114,7 +114,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function PUT(request: Request): Promise<NextResponse> {
-  let sessionUser: any = null
+  let sessionUser: SessionUser | null = null
 
   try {
     // Rate limiting: 30 requests per minute for updates
