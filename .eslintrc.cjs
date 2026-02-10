@@ -22,5 +22,8 @@ module.exports = {
     '@typescript-eslint/triple-slash-reference': 'off',
     'unused-imports/no-unused-imports': 'error',
     'react/no-unescaped-entities': 'error',
+    // Desabilitar no-extra-semi — conflita com Prettier (semi: false + destructuring com [)
+    'no-extra-semi': 'off',
+    '@typescript-eslint/no-extra-semi': 'off',
   },
 }
