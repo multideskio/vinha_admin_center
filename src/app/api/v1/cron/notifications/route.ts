@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { notificationRules, users, transactions, notificationLogs } from '@/db/schema'
-import { eq, and, gte } from 'drizzle-orm'
+import { eq, and, gte, inArray } from 'drizzle-orm'
 import { NotificationService } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -136,23 +136,22 @@ async function processPayments(rule: {
     )
     .limit(50)
 
-  for (const { transaction, user } of recentTransactions) {
-    const alreadySent = await db
-      .select()
-      .from(notificationLogs)
-      .where(
-        and(
-          eq(notificationLogs.userId, user.id),
-          eq(notificationLogs.notificationType, `payment_received_${transaction.id}`),
-        ),
-      )
-      .limit(1)
+  if (recentTransactions.length === 0) return
 
-    if (alreadySent.length > 0) continue
+  // ✅ OTIMIZADO: Buscar todos os logs de uma vez em vez de query por iteração
+  const transactionIds = recentTransactions.map((r) => r.transaction.id)
+  const notificationTypes = transactionIds.map((id) => `payment_received_${id}`)
+  const existingLogs = await db
+    .select({ notificationType: notificationLogs.notificationType })
+    .from(notificationLogs)
+    .where(inArray(notificationLogs.notificationType, notificationTypes))
+  const alreadySentSet = new Set(existingLogs.map((l) => l.notificationType))
+
+  for (const { transaction, user } of recentTransactions) {
+    if (alreadySentSet.has(`payment_received_${transaction.id}`)) continue
 
     const notificationService = new NotificationService({ companyId: user.companyId })
 
-    // ✅ CORRIGIDO: Usar template configurado da regra
     const variables: Record<string, string> = {
       nome_usuario: user.email.split('@')[0] || 'Membro',
       nome_igreja: 'Nossa Igreja',
@@ -166,7 +165,6 @@ async function processPayments(rule: {
     message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
 
     try {
-      // ✅ CORRIGIDO: Enviar via canais configurados com template
       if (rule.sendViaEmail && user.email) {
         await notificationService.sendEmail({
           to: user.email,
@@ -213,26 +211,30 @@ async function processReminders(rule: {
     .where(and(eq(users.titheDay, targetDate.getDate()), eq(users.status, 'active')))
     .limit(100)
 
-  for (const user of usersToRemind) {
-    const alreadySent = await db
-      .select()
-      .from(notificationLogs)
-      .where(
-        and(
-          eq(notificationLogs.userId, user.id),
-          eq(notificationLogs.notificationType, `reminder_${rule.id}_${today}`),
-        ),
-      )
-      .limit(1)
+  if (usersToRemind.length === 0) return
 
-    if (alreadySent.length > 0) continue
+  // ✅ OTIMIZADO: Buscar todos os logs de uma vez em vez de query por iteração
+  const userIds = usersToRemind.map((u) => u.id)
+  const notificationType = `reminder_${rule.id}_${today}`
+  const existingLogs = await db
+    .select({ userId: notificationLogs.userId })
+    .from(notificationLogs)
+    .where(
+      and(
+        inArray(notificationLogs.userId, userIds),
+        eq(notificationLogs.notificationType, notificationType),
+      ),
+    )
+  const alreadySentSet = new Set(existingLogs.map((l) => l.userId))
+
+  for (const user of usersToRemind) {
+    if (alreadySentSet.has(user.id)) continue
 
     const notificationService = new NotificationService({ companyId: user.companyId })
     const dueDate = targetDate.toLocaleDateString('pt-BR')
     const name = user.email.split('@')[0] || 'Membro'
-    const amount = '100,00' // valor default; pode ser ajustado conforme regra/consulta
+    const amount = '100,00'
 
-    // ✅ CORRIGIDO: Usar o template configurado da regra, não templates fixos
     const variables: Record<string, string> = {
       nome_usuario: name,
       valor_transacao: amount,
@@ -242,11 +244,9 @@ async function processReminders(rule: {
     }
 
     let message = rule.messageTemplate
-    // Substituir variáveis no template
     message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
 
     try {
-      // ✅ CORRIGIDO: Enviar via canais configurados na regra
       if (rule.sendViaEmail && user.email) {
         await notificationService.sendEmail({
           to: user.email,
@@ -265,7 +265,7 @@ async function processReminders(rule: {
       await db.insert(notificationLogs).values({
         companyId: user.companyId,
         userId: user.id,
-        notificationType: `reminder_${rule.id}_${today}`,
+        notificationType,
         channel: rule.sendViaWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
         messageContent: message,
@@ -293,26 +293,30 @@ async function processOverdue(rule: {
     .where(and(eq(users.titheDay, targetDate.getDate()), eq(users.status, 'active')))
     .limit(100)
 
-  for (const user of overdueUsers) {
-    const alreadySent = await db
-      .select()
-      .from(notificationLogs)
-      .where(
-        and(
-          eq(notificationLogs.userId, user.id),
-          eq(notificationLogs.notificationType, `overdue_${rule.id}_${today}`),
-        ),
-      )
-      .limit(1)
+  if (overdueUsers.length === 0) return
 
-    if (alreadySent.length > 0) continue
+  // ✅ OTIMIZADO: Buscar todos os logs de uma vez em vez de query por iteração
+  const userIds = overdueUsers.map((u) => u.id)
+  const notificationType = `overdue_${rule.id}_${today}`
+  const existingLogs = await db
+    .select({ userId: notificationLogs.userId })
+    .from(notificationLogs)
+    .where(
+      and(
+        inArray(notificationLogs.userId, userIds),
+        eq(notificationLogs.notificationType, notificationType),
+      ),
+    )
+  const alreadySentSet = new Set(existingLogs.map((l) => l.userId))
+
+  for (const user of overdueUsers) {
+    if (alreadySentSet.has(user.id)) continue
 
     const notificationService = new NotificationService({ companyId: user.companyId })
     const dueDate = targetDate.toLocaleDateString('pt-BR')
     const name = user.email.split('@')[0] || 'Membro'
-    const amount = '100,00' // valor default
+    const amount = '100,00'
 
-    // ✅ CORRIGIDO: Usar o template configurado da regra
     const variables: Record<string, string> = {
       nome_usuario: name,
       valor_transacao: amount,
@@ -325,7 +329,6 @@ async function processOverdue(rule: {
     message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
 
     try {
-      // ✅ CORRIGIDO: Enviar via canais configurados
       if (rule.sendViaEmail && user.email) {
         await notificationService.sendEmail({
           to: user.email,
@@ -344,7 +347,7 @@ async function processOverdue(rule: {
       await db.insert(notificationLogs).values({
         companyId: user.companyId,
         userId: user.id,
-        notificationType: `overdue_${rule.id}_${today}`,
+        notificationType,
         channel: rule.sendViaWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
         messageContent: message,
