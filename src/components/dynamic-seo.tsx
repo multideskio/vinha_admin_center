@@ -71,12 +71,7 @@ export function DynamicSEO({
   )
 
   useEffect(() => {
-    // Aguardar o componente estar montado
-    const timer = setTimeout(() => {
-      updateSEO(settings?.name, settings?.logoUrl)
-    }, 100)
-
-    return () => clearTimeout(timer)
+    updateSEO(settings?.name, settings?.logoUrl)
   }, [settings?.name, settings?.logoUrl, updateSEO])
 
   useEffect(() => {

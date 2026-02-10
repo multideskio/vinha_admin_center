@@ -175,7 +175,7 @@ export function GlobalSearch({ role, className }: GlobalSearchProps) {
             onClick={() => setOpen(true)}
           />
         </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0" align="start">
           <div className="p-2">
             {query.length < 3 && (
               <div className="p-4 text-sm text-muted-foreground text-center">

@@ -29,12 +29,7 @@ import PaymentSuccess from './payments/PaymentSuccess'
 import { ContributionFormProps, ContributionData } from './types'
 import { PIX_COUNTDOWN_SECONDS } from './types'
 
-export default function ContributionForm({
-  userRole: _userRole, // eslint-disable-line @typescript-eslint/no-unused-vars
-  onSuccess,
-  onError,
-  className,
-}: ContributionFormProps) {
+export default function ContributionForm({ onSuccess, onError, className }: ContributionFormProps) {
   const [availablePaymentMethods, setAvailablePaymentMethods] = React.useState<string[]>([])
   const [isLoadingMethods, setIsLoadingMethods] = React.useState(true)
 
@@ -60,9 +55,7 @@ export default function ContributionForm({
   const {
     formData,
     paymentState,
-    cardState: _cardState, // eslint-disable-line @typescript-eslint/no-unused-vars
     updateFormData,
-    updateCardState: _updateCardState, // eslint-disable-line @typescript-eslint/no-unused-vars
     setCurrentStep,
     setPixStatus,
     handleFormSubmit,
