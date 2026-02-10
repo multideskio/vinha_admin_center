@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // HTTPS enforcement DISABLED for development
-  // Uncomment only when deploying to production with proper SSL certificate
-  /*
+  // HTTPS enforcement em produção
   if (process.env.NODE_ENV === 'production' && !request.nextUrl.hostname.includes('localhost')) {
     const proto = request.headers.get('x-forwarded-proto')
     if (proto && proto !== 'https') {
@@ -13,7 +11,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url, 301)
     }
   }
-  */
 
   // Skip maintenance check for admin, manager, pastor, supervisor routes, API, and static files
   if (
@@ -55,7 +52,12 @@ export async function middleware(request: NextRequest) {
     }
   } catch (error) {
     clearTimeout(timeoutId)
-    // Silently fail - allow request to continue if maintenance check fails
+    // Logar falha do maintenance check para visibilidade
+    console.error(
+      '[MIDDLEWARE_MAINTENANCE_CHECK_FAILED]',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+    )
+    // Permitir request continuar se check falhar
   }
 
   const res = NextResponse.next()
