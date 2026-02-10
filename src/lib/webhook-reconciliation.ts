@@ -105,7 +105,7 @@ async function findTransactionWithRetry(
 
       // Fallback: buscar por ID direto
       if (!transaction) {
-        [transaction] = await db
+        ;[transaction] = await db
           .select({
             id: transactions.id,
             status: transactions.status,
@@ -324,7 +324,7 @@ export async function transactionExists(transactionId: string): Promise<boolean>
 
     // Fallback: buscar por ID direto
     if (!transaction) {
-      [transaction] = await db
+      ;[transaction] = await db
         .select({ id: transactions.id })
         .from(transactions)
         .where(eq(transactions.id, transactionId))
@@ -357,7 +357,7 @@ export async function getTransactionStatus(
 
     // Fallback: buscar por ID direto
     if (!transaction) {
-      [transaction] = await db
+      ;[transaction] = await db
         .select({ status: transactions.status })
         .from(transactions)
         .where(eq(transactions.id, transactionId))
