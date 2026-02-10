@@ -70,11 +70,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    console.log('[SUPERVISOR_TRANSACOES_REQUEST]', {
-      supervisorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
-
     // Extrair parâmetros da URL
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')

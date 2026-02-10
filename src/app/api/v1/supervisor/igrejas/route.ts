@@ -85,10 +85,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    console.log('[SUPERVISOR_IGREJAS_REQUEST]', {
-      supervisorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
@@ -195,10 +191,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       )
     }
 
-    console.log('[SUPERVISOR_IGREJAS_POST_REQUEST]', {
-      supervisorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
     const body = await request.json()
     const validatedData = churchSchema.parse({
       ...body,

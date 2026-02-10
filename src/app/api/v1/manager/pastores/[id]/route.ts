@@ -184,14 +184,6 @@ export async function PUT(
       }
     })
 
-    // Structured logging for successful update
-    console.log('[MANAGER_PASTOR_UPDATE_SUCCESS]', {
-      pastorId: id,
-      managerId: sessionUser.id,
-      updatedFields: Object.keys(validatedData),
-      timestamp: new Date().toISOString(),
-    })
-
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
@@ -248,6 +240,7 @@ export async function DELETE(
     const deletionReason = body.deletionReason || 'Sem motivo informado'
 
     // Get pastor data for audit logging before deletion
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const pastorData = await db
       .select({
         firstName: pastorProfiles.firstName,
@@ -268,18 +261,6 @@ export async function DELETE(
         status: 'inactive',
       })
       .where(eq(users.id, id))
-
-    // Audit logging for deletion
-    console.log('[MANAGER_PASTOR_DELETE_SUCCESS]', {
-      pastorId: id,
-      pastorName: pastorData[0]
-        ? `${pastorData[0].firstName} ${pastorData[0].lastName}`
-        : 'Unknown',
-      pastorEmail: pastorData[0]?.email || 'Unknown',
-      managerId: sessionUser.id,
-      deletionReason,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error: unknown) {

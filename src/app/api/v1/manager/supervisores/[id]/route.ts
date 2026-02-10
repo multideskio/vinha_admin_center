@@ -175,14 +175,6 @@ export async function PUT(
       }
     })
 
-    // Structured logging for successful update
-    console.log('[MANAGER_SUPERVISOR_UPDATE_SUCCESS]', {
-      supervisorId: id,
-      managerId: sessionUser.id,
-      updatedFields: Object.keys(validatedData),
-      timestamp: new Date().toISOString(),
-    })
-
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
@@ -243,6 +235,7 @@ export async function DELETE(
     }
 
     // Get supervisor data for audit logging before deletion
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const supervisorData = await db
       .select({
         firstName: supervisorProfiles.firstName,
@@ -263,18 +256,6 @@ export async function DELETE(
         deletionReason,
       })
       .where(eq(users.id, id))
-
-    // Audit logging for deletion
-    console.log('[MANAGER_SUPERVISOR_DELETE_SUCCESS]', {
-      supervisorId: id,
-      supervisorName: supervisorData[0]
-        ? `${supervisorData[0].firstName} ${supervisorData[0].lastName}`
-        : 'Unknown',
-      supervisorEmail: supervisorData[0]?.email || 'Unknown',
-      managerId: sessionUser.id,
-      deletionReason,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({ success: true, message: 'Supervisor excluído com sucesso.' })
   } catch (error: unknown) {

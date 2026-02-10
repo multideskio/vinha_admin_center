@@ -88,12 +88,6 @@ export async function GET(
       )
     }
 
-    console.log('[SUPERVISOR_IGREJAS_GET_INDIVIDUAL_REQUEST]', {
-      supervisorId: sessionUser.id,
-      churchId: id,
-      timestamp: new Date().toISOString(),
-    })
-
     const isAuthorized = await verifyChurch(id, sessionUser.id)
     if (!isAuthorized) {
       return NextResponse.json(
@@ -207,12 +201,6 @@ export async function PUT(
         { status: 403 },
       )
     }
-
-    console.log('[SUPERVISOR_IGREJAS_PUT_INDIVIDUAL_REQUEST]', {
-      supervisorId: sessionUser.id,
-      churchId: id,
-      timestamp: new Date().toISOString(),
-    })
 
     const isAuthorized = await verifyChurch(id, sessionUser.id)
     if (!isAuthorized) {
@@ -342,12 +330,6 @@ export async function DELETE(
         { status: 403 },
       )
     }
-
-    console.log('[SUPERVISOR_IGREJAS_DELETE_INDIVIDUAL_REQUEST]', {
-      supervisorId: sessionUser.id,
-      churchId: id,
-      timestamp: new Date().toISOString(),
-    })
 
     const isAuthorized = await verifyChurch(id, sessionUser.id)
     if (!isAuthorized) {

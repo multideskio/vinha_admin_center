@@ -74,13 +74,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startDateParam = searchParams.get('startDate')
     const endDateParam = searchParams.get('endDate')
 
-    console.log('[IGREJA_DASHBOARD_REQUEST]', {
-      churchId,
-      startDate: startDateParam,
-      endDate: endDateParam,
-      timestamp: new Date().toISOString(),
-    })
-
     const now = new Date()
 
     // Se há parâmetros de data, usar eles; senão usar mês atual

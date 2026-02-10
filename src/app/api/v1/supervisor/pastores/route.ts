@@ -79,10 +79,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    console.log('[SUPERVISOR_PASTORES_REQUEST]', {
-      supervisorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
@@ -180,11 +176,6 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 403 },
       )
     }
-
-    console.log('[SUPERVISOR_PASTORES_CREATE_REQUEST]', {
-      supervisorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
 
     const body = await request.json()
     const validatedData = pastorSchema.parse({

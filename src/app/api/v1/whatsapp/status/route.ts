@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
     }
 
     const instances = await response.json()
-    console.log('Instances response:', JSON.stringify(instances, null, 2))
 
     // A nova estrutura da Evolution API retorna os dados diretamente no nível raiz
     let instance = null

@@ -85,11 +85,6 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
     const { id } = params
 
-    console.log('[SUPERVISOR_PASTOR_DETAIL_REQUEST]', {
-      supervisorId: sessionUser.id,
-      pastorId: id,
-      timestamp: new Date().toISOString(),
-    })
     const isAuthorized = await verifyPastor(id, sessionUser.id)
     if (!isAuthorized) {
       return NextResponse.json(
@@ -199,11 +194,6 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
     const { id } = params
 
-    console.log('[SUPERVISOR_PASTOR_UPDATE_REQUEST]', {
-      supervisorId: sessionUser.id,
-      pastorId: id,
-      timestamp: new Date().toISOString(),
-    })
     const isAuthorized = await verifyPastor(id, sessionUser.id)
     if (!isAuthorized) {
       return NextResponse.json(
@@ -331,12 +321,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     }
 
     const { id } = params
-
-    console.log('[SUPERVISOR_PASTOR_DELETE_REQUEST]', {
-      supervisorId: sessionUser.id,
-      pastorId: id,
-      timestamp: new Date().toISOString(),
-    })
 
     const isAuthorized = await verifyPastor(id, sessionUser.id)
     if (!isAuthorized) {

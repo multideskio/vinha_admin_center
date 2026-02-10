@@ -84,13 +84,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
 
-    console.log('[PASTOR_DASHBOARD_REQUEST]', {
-      pastorId,
-      startDate: startDateParam,
-      endDate: endDateParam,
-      timestamp: new Date().toISOString(),
-    })
-
     // Buscar dados do perfil do pastor com JOIN na tabela users para pegar titheDay
     const [profileResult] = await db
       .select({

@@ -9,13 +9,6 @@ export async function POST(request: NextRequest) {
   try {
     const data: EvolutionWebhookData = await request.json()
 
-    console.log('Evolution webhook received:', {
-      event: data.event,
-      instance: data.instance,
-      messageId: data.data?.key?.id,
-      status: data.data?.status,
-    })
-
     // Processar diferentes tipos de eventos
     switch (data.event) {
       case 'messages.upsert':
@@ -31,27 +24,26 @@ export async function POST(request: NextRequest) {
         break
 
       default:
-        console.log('Unhandled event:', data.event)
+        console.warn('[EVOLUTION_WEBHOOK] Evento não tratado:', data.event)
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Evolution webhook error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('[EVOLUTION_WEBHOOK] Erro ao processar webhook:', error)
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
 
-async function handleMessageReceived(data: EvolutionWebhookData) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleMessageReceived(_data: EvolutionWebhookData) {
   // Processar mensagem recebida
-  console.log('Message received:', data.data.key.id)
 }
 
-async function handleMessageUpdate(data: EvolutionWebhookData) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleMessageUpdate(_data: EvolutionWebhookData) {
   // Processar atualização de status da mensagem
-  console.log('Message status updated:', data.data.status)
 }
 
 async function handleConnectionUpdate() {
   // Processar mudança de status da conexão
-  console.log('Connection status updated')
 }

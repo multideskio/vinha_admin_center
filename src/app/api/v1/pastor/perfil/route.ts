@@ -50,11 +50,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
     }
 
-    console.log('[PASTOR_PERFIL_GET_REQUEST]', {
-      pastorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
-
     // Buscar dados do usuário e perfil com join
     const [result] = await db
       .select({
@@ -167,11 +162,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
     }
 
-    console.log('[PASTOR_PERFIL_PUT_REQUEST]', {
-      pastorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
-
     const body = await request.json()
     const {
       newPassword,
@@ -247,11 +237,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
         .set(profileUpdate)
         .where(eq(pastorProfiles.userId, sessionUser.id))
     }
-
-    console.log('[PASTOR_PERFIL_PUT_SUCCESS]', {
-      pastorId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

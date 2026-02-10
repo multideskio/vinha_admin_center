@@ -43,7 +43,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Restart response:', data)
 
     return NextResponse.json({
       success: true,

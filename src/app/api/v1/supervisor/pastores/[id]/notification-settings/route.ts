@@ -85,12 +85,6 @@ export async function GET(
 
     const { id } = params
 
-    console.log('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_GET]', {
-      supervisorId: sessionUser.id,
-      pastorId: id,
-      timestamp: new Date().toISOString(),
-    })
-
     // Verificar se o pastor pertence à supervisão
     const isAuthorized = await verifyPastor(id, sessionUser.id)
     if (!isAuthorized) {
@@ -205,12 +199,6 @@ export async function PUT(
     }
 
     const { id } = params
-
-    console.log('[SUPERVISOR_PASTOR_NOTIFICATION_SETTINGS_PUT]', {
-      supervisorId: sessionUser.id,
-      pastorId: id,
-      timestamp: new Date().toISOString(),
-    })
 
     // Verificar se o pastor pertence à supervisão
     const isAuthorized = await verifyPastor(id, sessionUser.id)

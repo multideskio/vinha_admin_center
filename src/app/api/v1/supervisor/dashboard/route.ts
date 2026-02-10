@@ -74,11 +74,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
     const supervisorId = sessionUser.id
 
-    console.log('[SUPERVISOR_DASHBOARD_REQUEST]', {
-      supervisorId,
-      timestamp: new Date().toISOString(),
-    })
-
     // Extrair parâmetros de data da URL
     const { searchParams } = new URL(request.url)
     const startDateParam = searchParams.get('startDate')
@@ -89,13 +84,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startOfCurrentMonth = startDateParam ? new Date(startDateParam) : startOfMonth(now)
     const endOfCurrentMonth = endDateParam ? new Date(endDateParam) : now
     const startOfPreviousMonth = startOfMonth(subMonths(startOfCurrentMonth, 1))
-
-    console.log('[SUPERVISOR_DASHBOARD_DATE_FILTER]', {
-      supervisorId,
-      startOfCurrentMonth: startOfCurrentMonth.toISOString(),
-      endOfCurrentMonth: endOfCurrentMonth.toISOString(),
-      timestamp: new Date().toISOString(),
-    })
 
     const pastorsResult = await db
       .select({ id: pastorProfiles.userId })

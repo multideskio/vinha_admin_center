@@ -63,14 +63,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
-    console.log('[PASTOR_TRANSACOES_LIST_REQUEST]', {
-      pastorId: sessionUser.id,
-      search,
-      startDate,
-      endDate,
-      timestamp: new Date().toISOString(),
-    })
-
     // Construir condições de filtro
     const conditions = [
       eq(transactionsTable.contributorId, sessionUser.id), // SEMPRE filtrar por pastor logado
@@ -130,12 +122,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       date: format(new Date(t.date), 'dd/MM/yyyy'),
       refundRequestReason: t.refundRequestReason,
     }))
-
-    console.log('[PASTOR_TRANSACOES_LIST_SUCCESS]', {
-      pastorId: sessionUser.id,
-      count: formattedTransactions.length,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({ transactions: formattedTransactions })
   } catch (error: unknown) {

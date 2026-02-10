@@ -70,6 +70,7 @@ async function sendWhatsApp(to: string, message: string, companyId: string) {
     .select()
     .from(otherSettings)
     .where(eq(otherSettings.companyId, companyId))
+    .limit(1)
 
   if (!settings?.whatsappApiUrl || !settings?.whatsappApiKey || !settings?.whatsappApiInstance) {
     throw new Error('Configurações do WhatsApp não encontradas')

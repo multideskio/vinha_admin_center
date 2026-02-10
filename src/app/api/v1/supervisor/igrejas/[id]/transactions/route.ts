@@ -69,12 +69,6 @@ export async function GET(
 
     const { id } = params
 
-    console.log('[SUPERVISOR_CHURCH_TRANSACTIONS_REQUEST]', {
-      supervisorId: sessionUser.id,
-      churchId: id,
-      timestamp: new Date().toISOString(),
-    })
-
     // Verificar se a igreja pertence à supervisão
     const isAuthorized = await verifyChurch(id, sessionUser.id)
     if (!isAuthorized) {

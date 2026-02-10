@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         profileInfo = await profileResponse.json()
       }
     } catch (error) {
-      console.log('Erro ao obter perfil adicional:', error)
+      console.warn('Erro ao obter perfil adicional:', error)
     }
 
     return NextResponse.json({

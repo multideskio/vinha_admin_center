@@ -11,8 +11,6 @@ export async function GET() {
   }
 
   try {
-    console.log('[OPENAI_TEST] Testing OpenAI configuration for company:', user.companyId)
-
     // 1. Verificar se a chave existe no banco
     const [settings] = await db
       .select({ openaiApiKey: otherSettings.openaiApiKey })
@@ -21,7 +19,6 @@ export async function GET() {
       .limit(1)
 
     const apiKey = settings?.openaiApiKey
-    console.log('[OPENAI_TEST] API key found:', !!apiKey, 'length:', apiKey?.length || 0)
 
     if (!apiKey) {
       return NextResponse.json({
@@ -36,8 +33,6 @@ export async function GET() {
     }
 
     // 2. Testar a chave com uma chamada simples
-    console.log('[OPENAI_TEST] Testing API key with simple call')
-
     const testRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -57,11 +52,9 @@ export async function GET() {
       }),
     })
 
-    console.log('[OPENAI_TEST] OpenAI response status:', testRes.status)
-
     if (!testRes.ok) {
       const errorText = await testRes.text()
-      console.error('[OPENAI_TEST] OpenAI API error:', errorText)
+      console.error('[OPENAI_TEST] Falha na API OpenAI:', testRes.status, errorText)
 
       return NextResponse.json({
         success: false,
@@ -80,8 +73,6 @@ export async function GET() {
     const testJson = await testRes.json()
     const response = testJson.choices?.[0]?.message?.content || ''
 
-    console.log('[OPENAI_TEST] OpenAI response:', response)
-
     return NextResponse.json({
       success: true,
       message: 'Chave OpenAI funcionando corretamente',
@@ -95,14 +86,13 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('[OPENAI_TEST] Unexpected error:', error)
+    console.error('[OPENAI_TEST] Erro inesperado:', error)
 
     return NextResponse.json({
       success: false,
       error: 'Erro interno no teste',
       details: {
         message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined,
       },
     })
   }

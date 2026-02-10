@@ -50,11 +50,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
     }
 
-    console.log('[IGREJA_PERFIL_GET_REQUEST]', {
-      churchId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
-
     // Buscar usuário atualizado do banco (não usar apenas sessionUser do JWT)
     const [userData] = await db
       .select({
@@ -84,12 +79,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       const year = date.getFullYear()
       foundationDate = `${day}/${month}/${year}`
     }
-
-    console.log('[IGREJA_PERFIL_GET_SUCCESS]', {
-      churchId: sessionUser.id,
-      phoneFromDB: userData?.phone,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({
       ...sessionUser,
@@ -155,11 +144,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
     }
 
     const body = await request.json()
-    console.log('[IGREJA_PERFIL_PUT_REQUEST]', {
-      churchId: sessionUser.id,
-      phone: body.phone,
-      timestamp: new Date().toISOString(),
-    })
     const {
       newPassword,
       email,
@@ -186,12 +170,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
       // Converter para string e salvar telefone (será undefined se vazio)
       const phoneStr = String(phone || '').trim()
       userUpdate.phone = phoneStr !== '' ? phoneStr : undefined
-      console.log('[IGREJA_PERFIL_PUT_PHONE_PROCESSING]', {
-        phoneOriginal: phone,
-        phoneType: typeof phone,
-        phoneStr,
-        willSave: phoneStr !== '' ? phoneStr : undefined,
-      })
     }
     if (titheDay !== undefined) userUpdate.titheDay = titheDay
     if (avatarUrl !== undefined) userUpdate.avatarUrl = avatarUrl
@@ -200,11 +178,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
     }
 
     if (Object.keys(userUpdate).length > 0) {
-      console.log('[IGREJA_PERFIL_PUT_USER_UPDATE]', {
-        churchId: sessionUser.id,
-        userUpdate,
-        timestamp: new Date().toISOString(),
-      })
       await db.update(users).set(userUpdate).where(eq(users.id, sessionUser.id))
     }
 
@@ -237,11 +210,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
         .set(profileUpdate)
         .where(eq(churchProfiles.userId, sessionUser.id))
     }
-
-    console.log('[IGREJA_PERFIL_PUT_SUCCESS]', {
-      churchId: sessionUser.id,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

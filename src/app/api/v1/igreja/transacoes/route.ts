@@ -8,7 +8,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions as transactionsTable, users, churchProfiles } from '@/db/schema'
-import { eq, desc, and, isNull, or, like, gte, lte } from 'drizzle-orm'
+import { eq, desc, and, isNull, or, like, gte, lte, type SQL } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
@@ -63,14 +63,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
-    console.log('[IGREJA_TRANSACOES_LIST_REQUEST]', {
-      churchId: sessionUser.id,
-      search,
-      startDate,
-      endDate,
-      timestamp: new Date().toISOString(),
-    })
-
     // Construir condições de filtro
     const conditions = [
       eq(transactionsTable.originChurchId, sessionUser.id), // SEMPRE filtrar por igreja logada
@@ -84,7 +76,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         like(transactionsTable.gatewayTransactionId, `%${search}%`),
       )
       if (searchCondition) {
-        conditions.push(searchCondition as any)
+        conditions.push(searchCondition as SQL)
       }
     }
 
@@ -129,12 +121,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       date: format(new Date(t.date), 'dd/MM/yyyy'),
       refundRequestReason: t.refundRequestReason,
     }))
-
-    console.log('[IGREJA_TRANSACOES_LIST_SUCCESS]', {
-      churchId: sessionUser.id,
-      count: formattedTransactions.length,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({ transactions: formattedTransactions })
   } catch (error: unknown) {

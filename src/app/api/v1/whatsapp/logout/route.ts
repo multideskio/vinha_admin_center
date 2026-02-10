@@ -43,7 +43,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Logout response:', data)
 
     return NextResponse.json({
       success: true,

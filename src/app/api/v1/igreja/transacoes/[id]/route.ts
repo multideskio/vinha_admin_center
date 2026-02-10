@@ -110,11 +110,6 @@ export async function GET(
       return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
     }
 
-    console.log('[IGREJA_TRANSACOES_DETAIL_REQUEST]', {
-      churchId: sessionUser.id,
-      transactionId,
-      timestamp: new Date().toISOString(),
-    })
     // Verificar propriedade da transação ANTES de buscar dados
     const isAuthorized = await verifyTransactionOwnership(transactionId, sessionUser.id)
     if (!isAuthorized) {
@@ -153,11 +148,6 @@ export async function GET(
 
     if (!transaction.gatewayTransactionId) {
       // Se não tem gatewayTransactionId, retornar dados básicos do banco
-      console.log('[IGREJA_TRANSACOES_DETAIL_NO_GATEWAY_ID]', {
-        churchId: sessionUser.id,
-        transactionId,
-        timestamp: new Date().toISOString(),
-      })
       return NextResponse.json({
         success: true,
         pending: true,
@@ -199,12 +189,6 @@ export async function GET(
     }
 
     const cieloData = await response.json()
-
-    console.log('[IGREJA_TRANSACOES_DETAIL_SUCCESS]', {
-      churchId: sessionUser.id,
-      transactionId,
-      timestamp: new Date().toISOString(),
-    })
 
     // Retornar dados da Cielo junto com email do contribuinte e dados locais
     return NextResponse.json({

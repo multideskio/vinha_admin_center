@@ -176,14 +176,6 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       }
     })
 
-    // Structured logging for successful update
-    console.log('[MANAGER_CHURCH_UPDATE_SUCCESS]', {
-      churchId: id,
-      managerId: sessionUser.id,
-      updatedFields: Object.keys(validatedData),
-      timestamp: new Date().toISOString(),
-    })
-
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -234,6 +226,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     const deletionReason = body.deletionReason || 'Sem motivo informado'
 
     // Get church data for audit logging before deletion
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const churchData = await db
       .select({
         nomeFantasia: churchProfiles.nomeFantasia,
@@ -254,16 +247,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         status: 'inactive',
       })
       .where(eq(users.id, id))
-
-    // Audit logging for deletion
-    console.log('[MANAGER_CHURCH_DELETE_SUCCESS]', {
-      churchId: id,
-      churchName: churchData[0]?.nomeFantasia || churchData[0]?.razaoSocial || 'Unknown',
-      churchEmail: churchData[0]?.email || 'Unknown',
-      managerId: sessionUser.id,
-      deletionReason,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
   } catch (error) {

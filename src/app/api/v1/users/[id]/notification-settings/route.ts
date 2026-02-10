@@ -65,12 +65,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
     }
 
-    console.log('[USER_NOTIFICATION_SETTINGS_GET_REQUEST]', {
-      userId: user.id,
-      requestedId: id,
-      timestamp: new Date().toISOString(),
-    })
-
     const settings = await db
       .select()
       .from(userNotificationSettings)
@@ -137,12 +131,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
     }
 
-    console.log('[USER_NOTIFICATION_SETTINGS_PUT_REQUEST]', {
-      userId: user.id,
-      requestedId: id,
-      timestamp: new Date().toISOString(),
-    })
-
     const body = await request.json()
     const data = notificationSettingsSchema.parse(body)
 
@@ -164,12 +152,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (insertData.length > 0) {
         await tx.insert(userNotificationSettings).values(insertData)
       }
-    })
-
-    console.log('[USER_NOTIFICATION_SETTINGS_PUT_SUCCESS]', {
-      userId: user.id,
-      requestedId: id,
-      timestamp: new Date().toISOString(),
     })
 
     return NextResponse.json({ success: true })

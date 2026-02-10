@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
     }
 
     const instances = await instancesResponse.json()
-    console.log('Connect - Instances response:', JSON.stringify(instances, null, 2))
 
     // A estrutura pode variar, vamos verificar diferentes possibilidades
     let existingInstance = null

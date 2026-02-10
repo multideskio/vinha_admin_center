@@ -136,11 +136,6 @@ export async function GET(
       return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
     }
 
-    console.log('[SUPERVISOR_TRANSACOES_INDIVIDUAL_REQUEST]', {
-      supervisorId: sessionUser.id,
-      transactionId: id,
-      timestamp: new Date().toISOString(),
-    })
     const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
     if (!isAuthorized) {
       throw new ApiError(
@@ -153,6 +148,7 @@ export async function GET(
       .select()
       .from(transactionsTable)
       .where(eq(transactionsTable.id, id))
+      .limit(1)
     if (!transaction || !transaction.gatewayTransactionId) {
       throw new ApiError(
         404,
@@ -161,12 +157,6 @@ export async function GET(
     }
 
     const credentials = await getCieloCredentials()
-
-    console.log('[SUPERVISOR] Consultando transação na Cielo:', {
-      transactionId: transaction.id,
-      gatewayTransactionId: transaction.gatewayTransactionId,
-      url: `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
-    })
 
     const response = await fetch(
       `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,

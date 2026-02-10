@@ -114,12 +114,6 @@ export async function POST(
       return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
     }
 
-    console.log('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_REQUEST]', {
-      supervisorId: sessionUser.id,
-      transactionId: id,
-      timestamp: new Date().toISOString(),
-    })
-
     // Verificar se o supervisor tem acesso a esta transação
     const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
     if (!isAuthorized) {
@@ -154,12 +148,6 @@ export async function POST(
 
     // TODO: Implementar envio de email com comprovante
     // Por enquanto, simular o envio
-    console.log('[SUPERVISOR_TRANSACOES_RESEND_RECEIPT_SUCCESS]', {
-      supervisorId: sessionUser.id,
-      transactionId: id,
-      contributorEmail: transactionData.contributorEmail,
-      timestamp: new Date().toISOString(),
-    })
 
     return NextResponse.json({
       success: true,

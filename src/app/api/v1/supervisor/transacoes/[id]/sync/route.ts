@@ -145,12 +145,6 @@ export async function POST(
       return NextResponse.json({ error: 'ID da transação não fornecido.' }, { status: 400 })
     }
 
-    console.log('[SUPERVISOR_TRANSACOES_SYNC_REQUEST]', {
-      supervisorId: sessionUser.id,
-      transactionId: id,
-      timestamp: new Date().toISOString(),
-    })
-
     // Verificar se o supervisor tem acesso a esta transação
     const isAuthorized = await verifyTransactionOwnership(id, sessionUser.id)
     if (!isAuthorized) {
@@ -176,14 +170,6 @@ export async function POST(
 
     // Buscar credenciais da Cielo
     const credentials = await getCieloCredentials()
-
-    console.log('[SUPERVISOR_TRANSACOES_SYNC_CIELO_REQUEST]', {
-      supervisorId: sessionUser.id,
-      transactionId: id,
-      gatewayTransactionId: transaction.gatewayTransactionId,
-      url: `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
-      timestamp: new Date().toISOString(),
-    })
 
     // Consultar status na Cielo
     const response = await fetch(
@@ -228,14 +214,6 @@ export async function POST(
           status: newStatus,
         })
         .where(eq(transactionsTable.id, id))
-
-      console.log('[SUPERVISOR_TRANSACOES_SYNC_STATUS_UPDATED]', {
-        supervisorId: sessionUser.id,
-        transactionId: id,
-        oldStatus: transaction.status,
-        newStatus: newStatus,
-        timestamp: new Date().toISOString(),
-      })
 
       return NextResponse.json({
         success: true,
