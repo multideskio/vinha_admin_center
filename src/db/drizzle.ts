@@ -21,12 +21,4 @@ pool.on('error', (err) => {
   console.error('Unexpected database pool error:', err.message)
 })
 
-pool.on('connect', () => {
-  console.warn('Database connection established')
-})
-
-pool.on('remove', () => {
-  console.warn('Database connection removed from pool')
-})
-
 export const db = drizzle(pool, { schema })

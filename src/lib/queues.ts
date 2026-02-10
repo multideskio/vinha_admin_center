@@ -24,18 +24,6 @@ function createRedis(): IORedis | null {
       console.error('[QUEUES_REDIS_ERROR]', error instanceof Error ? error.message : error)
     })
 
-    client.on('connect', () => {
-      console.warn('[QUEUES_REDIS] Conectado com sucesso')
-    })
-
-    client.on('ready', () => {
-      console.warn('[QUEUES_REDIS] Pronto para receber comandos')
-    })
-
-    client.on('reconnecting', () => {
-      console.warn('[QUEUES_REDIS] Reconectando...')
-    })
-
     return client
   } catch (error) {
     console.error('[QUEUES_REDIS_INIT_ERROR]', error instanceof Error ? error.message : error)
