@@ -230,10 +230,7 @@ export async function PUT(
     // Validar dados de entrada
     const validatedSettings = notificationSettingsSchema.parse(body)
 
-    // Primeiro, deletar configurações existentes
-    await db.delete(userNotificationSettings).where(eq(userNotificationSettings.userId, id))
-
-    // Inserir novas configurações
+    // Atualizar configurações em transação atômica (delete + insert)
     type NotificationType = 'payment_notifications' | 'due_date_reminders' | 'network_reports'
     type ChannelSettings = { email: boolean; whatsapp: boolean }
     const settingsToInsert: Array<{
@@ -252,9 +249,12 @@ export async function PUT(
       })
     }
 
-    if (settingsToInsert.length > 0) {
-      await db.insert(userNotificationSettings).values(settingsToInsert)
-    }
+    await db.transaction(async (tx) => {
+      await tx.delete(userNotificationSettings).where(eq(userNotificationSettings.userId, id))
+      if (settingsToInsert.length > 0) {
+        await tx.insert(userNotificationSettings).values(settingsToInsert)
+      }
+    })
 
     return NextResponse.json({
       message: 'Configurações de notificação atualizadas com sucesso.',
