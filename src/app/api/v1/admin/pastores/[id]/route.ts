@@ -15,6 +15,9 @@ import { pastorProfileSchema } from '@/lib/types'
 import { validateRequest } from '@/lib/jwt'
 import { onUserDeleted } from '@/lib/notification-hooks'
 import { invalidateCache } from '@/lib/cache'
+import { env } from '@/lib/env'
+
+const VALIDATED_COMPANY_ID = env.COMPANY_INIT
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
@@ -146,6 +149,9 @@ export async function PUT(
       }
     })
 
+    // Invalidar cache de pastores após atualização
+    await invalidateCache(`pastores:${VALIDATED_COMPANY_ID}:*`)
+
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -188,7 +194,8 @@ export async function DELETE(
     // Enviar notificação de exclusão
     await onUserDeleted(id, deletionReason, user.id)
 
-    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    // Invalidar caches após exclusão de pastor
+    await invalidateCache(`pastores:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })

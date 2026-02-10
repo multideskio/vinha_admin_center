@@ -15,6 +15,9 @@ import { validateRequest } from '@/lib/jwt'
 import { managerProfileSchema } from '@/lib/types'
 import { onUserDeleted } from '@/lib/notification-hooks'
 import { invalidateCache } from '@/lib/cache'
+import { env } from '@/lib/env'
+
+const VALIDATED_COMPANY_ID = env.COMPANY_INIT
 
 const managerUpdateSchema = managerProfileSchema
   .extend({
@@ -139,6 +142,9 @@ export async function PUT(
     const { password: _password, ...userWithoutPassword } = result[0].user
     const updatedManager = { ...userWithoutPassword, ...result[0].profile }
 
+    // Invalidar cache de gerentes após atualização
+    await invalidateCache(`gerentes:${VALIDATED_COMPANY_ID}:*`)
+
     return NextResponse.json({ success: true, manager: updatedManager })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -189,7 +195,8 @@ export async function DELETE(
     // Enviar notificação de exclusão
     await onUserDeleted(id, deletionReason, user.id)
 
-    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    // Invalidar caches após exclusão de gerente
+    await invalidateCache(`gerentes:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Gerente excluído com sucesso.' })

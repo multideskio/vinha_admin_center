@@ -5,6 +5,8 @@ import { eq, and, isNull, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
+import { invalidateCache } from '@/lib/cache'
+import { env } from '@/lib/env'
 
 const regionSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório.'),
@@ -15,6 +17,8 @@ const regionSchema = z.object({
       message: 'Cor inválida. Use o formato #RRGGBB.',
     }),
 })
+
+const VALIDATED_COMPANY_ID = env.COMPANY_INIT
 
 export async function PUT(
   request: Request,
@@ -57,6 +61,9 @@ export async function PUT(
     if (updatedRegion.length === 0) {
       return NextResponse.json({ error: 'Região não encontrada.' }, { status: 404 })
     }
+
+    // Invalidar cache de regiões após atualização
+    await invalidateCache(`regioes:${VALIDATED_COMPANY_ID}:*`)
 
     return NextResponse.json({ success: true, region: updatedRegion[0] })
   } catch (error: unknown) {
@@ -120,6 +127,9 @@ export async function DELETE(
     if (deletedRegion.length === 0) {
       return NextResponse.json({ error: 'Região não encontrada.' }, { status: 404 })
     }
+
+    // Invalidar cache de regiões após exclusão
+    await invalidateCache(`regioes:${VALIDATED_COMPANY_ID}:*`)
 
     return NextResponse.json({ success: true, message: 'Região excluída com sucesso.' })
   } catch (error: unknown) {
