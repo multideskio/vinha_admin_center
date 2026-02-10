@@ -8,6 +8,22 @@ import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
 import * as bcrypt from 'bcrypt'
 import { SessionUser } from '@/lib/types'
+import { z } from 'zod'
+
+// Schema Zod para validação do perfil da igreja (PUT)
+const churchProfileUpdateSchema = z
+  .object({
+    newPassword: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres').optional(),
+    email: z.string().email('E-mail inválido').optional(),
+    phone: z.union([z.string(), z.number()]).optional(),
+    titheDay: z.number().int().min(1).max(31).optional(),
+    avatarUrl: z.string().url('URL do avatar inválida').optional().nullable(),
+    facebook: z.string().optional().nullable(),
+    instagram: z.string().optional().nullable(),
+    website: z.string().optional().nullable(),
+    foundationDate: z.string().optional().nullable(),
+  })
+  .passthrough() // Permitir campos extras do perfil da igreja
 
 export async function GET(request: Request): Promise<NextResponse> {
   let sessionUser: SessionUser | null = null
@@ -144,6 +160,17 @@ export async function PUT(request: Request): Promise<NextResponse> {
     }
 
     const body = await request.json()
+
+    // ✅ Validação Zod do payload
+    const parseResult = churchProfileUpdateSchema.safeParse(body)
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parseResult.error.errors },
+        { status: 400 },
+      )
+    }
+
+    const validatedBody = parseResult.data
     const {
       newPassword,
       email,
@@ -155,7 +182,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       website,
       foundationDate,
       ...profileData
-    } = body
+    } = validatedBody
 
     // Atualizar tabela users
     const userUpdate: {
@@ -172,13 +199,9 @@ export async function PUT(request: Request): Promise<NextResponse> {
       userUpdate.phone = phoneStr !== '' ? phoneStr : undefined
     }
     if (titheDay !== undefined) userUpdate.titheDay = titheDay
-    if (avatarUrl !== undefined) userUpdate.avatarUrl = avatarUrl
+    if (avatarUrl !== undefined) userUpdate.avatarUrl = avatarUrl ?? undefined
     if (newPassword) {
       userUpdate.password = await bcrypt.hash(newPassword, 10)
-    }
-
-    if (Object.keys(userUpdate).length > 0) {
-      await db.update(users).set(userUpdate).where(eq(users.id, sessionUser.id))
     }
 
     // Atualizar tabela church_profiles
@@ -204,12 +227,17 @@ export async function PUT(request: Request): Promise<NextResponse> {
     if (instagram !== undefined) profileUpdate.instagram = instagram === '' ? null : instagram
     if (website !== undefined) profileUpdate.website = website === '' ? null : website
 
-    if (Object.keys(profileUpdate).length > 0) {
-      await db
-        .update(churchProfiles)
-        .set(profileUpdate)
-        .where(eq(churchProfiles.userId, sessionUser.id))
-    }
+    // ✅ CORRIGIDO: Transação atômica para atualizar users + churchProfiles
+    const userId = sessionUser.id
+    await db.transaction(async (tx) => {
+      if (Object.keys(userUpdate).length > 0) {
+        await tx.update(users).set(userUpdate).where(eq(users.id, userId))
+      }
+
+      if (Object.keys(profileUpdate).length > 0) {
+        await tx.update(churchProfiles).set(profileUpdate).where(eq(churchProfiles.userId, userId))
+      }
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

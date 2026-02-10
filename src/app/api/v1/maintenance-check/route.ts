@@ -2,14 +2,26 @@
  * @fileoverview API para verificar modo de manutenção do sistema
  * ✅ CORRIGIDO: Agora retorna campo maintenanceMode do banco de dados
  */
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { env } from '@/lib/env'
+import { rateLimit } from '@/lib/rate-limit'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Rate limiting: 60 req/min por IP
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('maintenance-check', ip, 60, 60)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
     const companyId = env.COMPANY_INIT
 
     const [company] = await db

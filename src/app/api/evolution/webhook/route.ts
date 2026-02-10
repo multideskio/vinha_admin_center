@@ -4,10 +4,53 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { EvolutionWebhookData } from '@/lib/evolution-api-types'
+import { z } from 'zod'
+import { rateLimit } from '@/lib/rate-limit'
+
+// Schema Zod para validação do webhook da Evolution API
+const evolutionWebhookSchema = z.object({
+  event: z.string().min(1),
+  instance: z.string().min(1),
+  data: z
+    .object({
+      key: z.object({
+        id: z.string(),
+        remoteJid: z.string(),
+        fromMe: z.boolean(),
+      }),
+      message: z.record(z.unknown()).optional(),
+      messageTimestamp: z.number(),
+      status: z.enum(['ERROR', 'PENDING', 'SERVER_ACK', 'DELIVERY_ACK', 'READ']).optional(),
+    })
+    .optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
-    const data: EvolutionWebhookData = await request.json()
+    // Rate limiting: 60 req/min por IP
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('evolution-webhook', ip, 60, 60)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
+    const body = await request.json()
+
+    // ✅ Validação Zod do payload do webhook
+    const parseResult = evolutionWebhookSchema.safeParse(body)
+    if (!parseResult.success) {
+      console.warn('[EVOLUTION_WEBHOOK] Payload inválido:', parseResult.error.errors)
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parseResult.error.errors },
+        { status: 400 },
+      )
+    }
+
+    const data = parseResult.data as EvolutionWebhookData
 
     // Processar diferentes tipos de eventos
     switch (data.event) {

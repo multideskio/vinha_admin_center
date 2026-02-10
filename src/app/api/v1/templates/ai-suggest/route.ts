@@ -3,6 +3,20 @@ import { db } from '@/db/drizzle'
 import { otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
+import { z } from 'zod'
+
+// Schema Zod para validação da sugestão de template por IA
+const aiSuggestSchema = z.object({
+  eventTrigger: z.enum([
+    'user_registered',
+    'payment_received',
+    'payment_due_reminder',
+    'payment_overdue',
+  ]),
+  daysOffset: z.number().int().optional(),
+  variables: z.array(z.string()).optional(),
+  tone: z.string().optional(),
+})
 
 export async function POST(request: NextRequest) {
   const { user } = await validateRequest()
@@ -12,16 +26,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { eventTrigger, daysOffset, variables, tone } = body as {
-      eventTrigger:
-        | 'user_registered'
-        | 'payment_received'
-        | 'payment_due_reminder'
-        | 'payment_overdue'
-      daysOffset?: number
-      variables?: string[]
-      tone?: string
+
+    // ✅ Validação Zod do payload
+    const parseResult = aiSuggestSchema.safeParse(body)
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parseResult.error.errors },
+        { status: 400 },
+      )
     }
+
+    const { eventTrigger, daysOffset, variables, tone } = parseResult.data
 
     const [settings] = await db
       .select()
@@ -55,22 +70,39 @@ Regras:
 - Não inclua HTML; texto puro.
 Retorne apenas o texto final.`
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 180,
-      }),
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30_000)
+    let response: Response
+    try {
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 180,
+        }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[OPENAI_TIMEOUT] Timeout ao gerar sugestão de template')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com a API da OpenAI' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!response.ok) {
       const errText = await response.text()
@@ -82,6 +114,7 @@ Retorne apenas o texto final.`
 
     return NextResponse.json({ suggestion })
   } catch (e) {
+    console.error('[AI_SUGGEST] Erro ao gerar sugestão de template:', e)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }

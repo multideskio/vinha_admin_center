@@ -3,6 +3,12 @@ import { db } from '@/db/drizzle'
 import { otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
+import { z } from 'zod'
+
+// Schema Zod para validação da chave OpenAI
+const openaiSettingsSchema = z.object({
+  openaiApiKey: z.string().min(1, 'Chave da OpenAI é obrigatória'),
+})
 
 export async function GET() {
   const { user } = await validateRequest()
@@ -22,6 +28,7 @@ export async function GET() {
       updatedAt: null,
     })
   } catch (e) {
+    console.error('[OPENAI_SETTINGS_GET] Erro ao buscar configurações:', e)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }
@@ -32,10 +39,19 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
   try {
-    const { openaiApiKey } = await request.json()
-    if (typeof openaiApiKey !== 'string') {
-      return NextResponse.json({ error: 'openaiApiKey inválida' }, { status: 400 })
+    const body = await request.json()
+
+    // ✅ Validação Zod do payload
+    const parseResult = openaiSettingsSchema.safeParse(body)
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parseResult.error.errors },
+        { status: 400 },
+      )
     }
+
+    const { openaiApiKey } = parseResult.data
+
     const [existing] = await db
       .select()
       .from(otherSettings)
@@ -51,6 +67,7 @@ export async function PUT(request: NextRequest) {
     }
     return NextResponse.json({ success: true })
   } catch (e) {
+    console.error('[OPENAI_SETTINGS_PUT] Erro ao atualizar configurações:', e)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }

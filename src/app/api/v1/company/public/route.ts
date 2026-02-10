@@ -4,11 +4,12 @@
  * @author Kiro
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { env } from '@/lib/env'
+import { rateLimit } from '@/lib/rate-limit'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
@@ -17,8 +18,19 @@ const VALIDATED_COMPANY_ID = COMPANY_ID
  * GET - Buscar configurações públicas da empresa (sem autenticação)
  * Retorna apenas dados seguros para exibição pública (nome, logo)
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    // Rate limiting: 60 req/min por IP
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('company-public', ip, 60, 60)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
     const [company] = await db
       .select({
         id: companies.id,

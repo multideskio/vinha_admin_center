@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
-import { transactions, users, userNotificationSettings, companies } from '@/db/schema'
+import {
+  transactions,
+  users,
+  userNotificationSettings,
+  companies,
+  notificationLogs,
+} from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { sendEmail } from '@/lib/email'
 import { createTransactionReceiptEmail } from '@/lib/email-templates'
@@ -9,6 +15,13 @@ import { env } from '@/lib/env'
 import { reconcileTransactionState } from '@/lib/webhook-reconciliation'
 import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
+import { z } from 'zod'
+
+// Schema Zod para validação do webhook da Cielo
+const cieloWebhookSchema = z.object({
+  PaymentId: z.string().uuid(),
+  ChangeType: z.number().int().min(1).max(6),
+})
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -41,13 +54,16 @@ export async function POST(request: NextRequest) {
       requestBody: body,
     })
 
-    const { PaymentId, ChangeType } = body
-
-    // ✅ CORRIGIDO: Validação da Cielo - throw ValidationError para retornar 200
-    if (!PaymentId) {
-      logger.warn('Validation request - no PaymentId')
-      throw new ValidationError('Validation request - no PaymentId')
+    // ✅ Validação Zod do payload do webhook
+    const parseResult = cieloWebhookSchema.safeParse(body)
+    if (!parseResult.success) {
+      logger.warn('Webhook validation failed', {
+        errors: parseResult.error.errors,
+      })
+      throw new ValidationError('Dados do webhook inválidos')
     }
+
+    const { PaymentId, ChangeType } = parseResult.data
 
     // Determinar o novo status baseado no ChangeType
     let newStatus: 'approved' | 'pending' | 'refused' | 'refunded' = 'pending'
@@ -185,37 +201,69 @@ export async function POST(request: NextRequest) {
           .limit(1)
 
         if (notificationSettings?.email) {
-          const [user] = await db
-            .select({ email: users.email })
-            .from(users)
-            .where(eq(users.id, transaction.contributorId))
+          // ✅ CORRIGIDO: Deduplicação — verificar se recibo já foi enviado para esta transação
+          const dedupType = `receipt_${transaction.id}`
+          const [alreadySent] = await db
+            .select({ id: notificationLogs.id })
+            .from(notificationLogs)
+            .where(
+              and(
+                eq(notificationLogs.userId, transaction.contributorId),
+                eq(notificationLogs.notificationType, dedupType),
+                eq(notificationLogs.status, 'sent'),
+              ),
+            )
             .limit(1)
 
-          const [company] = await db
-            .select()
-            .from(companies)
-            .where(eq(companies.id, COMPANY_ID))
-            .limit(1)
-
-          if (user?.email) {
-            const emailHtml = createTransactionReceiptEmail({
-              companyName: company?.name || 'Vinha Ministérios',
-              amount: Number(transaction.amount),
-              transactionId: transaction.gatewayTransactionId || transaction.id,
-              status: 'Aprovado',
-              date: new Date(),
-            })
-
-            await sendEmail({
-              to: user.email,
-              subject: `✅ Pagamento Aprovado - ${company?.name || 'Vinha Ministérios'}`,
-              html: emailHtml,
-            })
-
-            logger.info('Receipt email sent successfully', {
-              recipientEmail: user.email,
+          if (alreadySent) {
+            logger.info('Receipt email already sent, skipping duplicate', {
               transactionId: transaction.id,
             })
+          } else {
+            const [user] = await db
+              .select({ email: users.email })
+              .from(users)
+              .where(eq(users.id, transaction.contributorId))
+              .limit(1)
+
+            const [company] = await db
+              .select()
+              .from(companies)
+              .where(eq(companies.id, COMPANY_ID))
+              .limit(1)
+
+            if (user?.email) {
+              const emailHtml = createTransactionReceiptEmail({
+                companyName: company?.name || 'Vinha Ministérios',
+                amount: Number(transaction.amount),
+                transactionId: transaction.gatewayTransactionId || transaction.id,
+                status: 'Aprovado',
+                date: new Date(),
+              })
+
+              await sendEmail({
+                to: user.email,
+                subject: `✅ Pagamento Aprovado - ${company?.name || 'Vinha Ministérios'}`,
+                html: emailHtml,
+              })
+
+              // Registrar envio para deduplicação
+              await db.insert(notificationLogs).values({
+                companyId: COMPANY_ID,
+                userId: transaction.contributorId,
+                notificationType: dedupType,
+                channel: 'email',
+                status: 'sent',
+                recipient: user.email,
+                subject: `Pagamento Aprovado - ${company?.name || 'Vinha Ministérios'}`,
+                messageContent: 'Receipt email',
+              })
+
+              logger.info('Receipt email sent successfully', {
+                recipientEmail: user.email,
+                transactionId: transaction.id,
+              })
+            }
           }
         }
       } catch (emailError) {
