@@ -76,41 +76,42 @@ export async function POST(request: NextRequest) {
       Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase()
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
-    // 7. Criar usuário
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        companyId: COMPANY_ID,
-        email: validatedData.email.toLowerCase(),
-        password: hashedPassword,
-        role: 'pastor',
-        status: 'active',
-        welcomeSent: false,
-      })
-      .returning()
+    // 7. Criar usuário e perfil em transação atômica
+    const { newUser } = await db.transaction(async (tx) => {
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          companyId: COMPANY_ID,
+          email: validatedData.email.toLowerCase(),
+          password: hashedPassword,
+          role: 'pastor',
+          status: 'active',
+          welcomeSent: false,
+        })
+        .returning()
 
-    if (!newUser) {
-      throw new Error('Falha ao criar usuário')
-    }
+      if (!createdUser) {
+        throw new Error('Falha ao criar usuário')
+      }
 
-    // 8. Criar perfil de pastor
-    const [pastorProfile] = await db
-      .insert(pastorProfiles)
-      .values({
-        userId: newUser.id,
-        supervisorId: validatedData.supervisorId,
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
-        cpf: validatedData.cpf,
-        birthDate: validatedData.birthDate,
-      })
-      .returning()
+      const [createdProfile] = await tx
+        .insert(pastorProfiles)
+        .values({
+          userId: createdUser.id,
+          supervisorId: validatedData.supervisorId,
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+          cpf: validatedData.cpf,
+          birthDate: validatedData.birthDate,
+        })
+        .returning()
 
-    if (!pastorProfile) {
-      // Rollback: deletar usuário se falhar ao criar perfil
-      await db.delete(users).where(sql`${users.id} = ${newUser.id}`)
-      throw new Error('Falha ao criar perfil de pastor')
-    }
+      if (!createdProfile) {
+        throw new Error('Falha ao criar perfil de pastor')
+      }
+
+      return { newUser: createdUser, pastorProfile: createdProfile }
+    })
 
     // 9. TODO: Enviar email com senha temporária
     // await sendWelcomeEmail(newUser.email, tempPassword)

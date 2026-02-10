@@ -72,40 +72,41 @@ export async function POST(request: NextRequest) {
       Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase()
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
-    // 6. Criar usuário
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        companyId: COMPANY_ID,
-        email: validatedData.email.toLowerCase(),
-        password: hashedPassword,
-        role: 'church_account',
-        status: 'active',
-        welcomeSent: false,
-      })
-      .returning()
+    // 6. Criar usuário e perfil em transação atômica
+    const { newUser } = await db.transaction(async (tx) => {
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          companyId: COMPANY_ID,
+          email: validatedData.email.toLowerCase(),
+          password: hashedPassword,
+          role: 'church_account',
+          status: 'active',
+          welcomeSent: false,
+        })
+        .returning()
 
-    if (!newUser) {
-      throw new Error('Falha ao criar usuário')
-    }
+      if (!createdUser) {
+        throw new Error('Falha ao criar usuário')
+      }
 
-    // 7. Criar perfil de igreja
-    const [churchProfile] = await db
-      .insert(churchProfiles)
-      .values({
-        userId: newUser.id,
-        supervisorId: validatedData.supervisorId,
-        cnpj: validatedData.cnpj,
-        razaoSocial: validatedData.razaoSocial,
-        nomeFantasia: validatedData.nomeFantasia,
-      })
-      .returning()
+      const [createdProfile] = await tx
+        .insert(churchProfiles)
+        .values({
+          userId: createdUser.id,
+          supervisorId: validatedData.supervisorId,
+          cnpj: validatedData.cnpj,
+          razaoSocial: validatedData.razaoSocial,
+          nomeFantasia: validatedData.nomeFantasia,
+        })
+        .returning()
 
-    if (!churchProfile) {
-      // Rollback: deletar usuário se falhar ao criar perfil
-      await db.delete(users).where(sql`${users.id} = ${newUser.id}`)
-      throw new Error('Falha ao criar perfil de igreja')
-    }
+      if (!createdProfile) {
+        throw new Error('Falha ao criar perfil de igreja')
+      }
+
+      return { newUser: createdUser, churchProfile: createdProfile }
+    })
 
     // 8. TODO: Enviar email com senha temporária
     // await sendWelcomeEmail(newUser.email, tempPassword)
