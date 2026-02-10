@@ -6,7 +6,14 @@
 import { db } from '@/db/drizzle'
 import { companies, otherSettings } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { getCompanyId } from './utils'
+import { env } from '@/lib/env'
+
+/**
+ * Retorna o ID da empresa principal (COMPANY_INIT)
+ */
+export function getCompanyId(): string {
+  return env.COMPANY_INIT
+}
 
 export interface CompanySettings {
   id: string

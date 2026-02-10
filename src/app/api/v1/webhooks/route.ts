@@ -13,7 +13,7 @@ import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 
-import { getCompanyId } from '@/lib/utils'
+import { getCompanyId } from '@/lib/company'
 
 const COMPANY_ID = getCompanyId()
 

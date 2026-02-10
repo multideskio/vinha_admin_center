@@ -14,7 +14,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { env } from '@/lib/env'
 
-import { getCompanyId } from '@/lib/utils'
+import { getCompanyId } from '@/lib/company'
 import { invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = getCompanyId()

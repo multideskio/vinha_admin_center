@@ -9,7 +9,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
 import { env } from '@/lib/env'
 
-import { getCompanyId } from '@/lib/utils'
+import { getCompanyId } from '@/lib/company'
 import { invalidateCache } from '@/lib/cache'
 
 // @lastReview 2025-01-05 21:30 - Rate limiting and structured logging implemented

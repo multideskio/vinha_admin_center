@@ -18,7 +18,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { getErrorMessage } from '@/lib/error-types'
 import { env } from '@/lib/env'
 
-import { getCompanyId } from '@/lib/utils'
+import { getCompanyId } from '@/lib/company'
 import { invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = getCompanyId()
