@@ -12,12 +12,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { getErrorMessage } from '@/lib/error-types'
-
-const GERENTE_INIT_ID = process.env.GERENTE_INIT
-if (!GERENTE_INIT_ID) {
-  throw new Error('GERENTE_INIT environment variable is required')
-}
-const VALIDATED_GERENTE_ID = GERENTE_INIT_ID as string
+import { validateRequest } from '@/lib/jwt'
 
 const managerUpdateSchema = z
   .object({
@@ -40,9 +35,12 @@ const managerUpdateSchema = z
   .partial()
 
 export async function GET(): Promise<NextResponse> {
-  if (!GERENTE_INIT_ID) {
-    return NextResponse.json({ error: 'Usuário gerente não configurado.' }, { status: 500 })
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
+
+  const managerId = user.id
 
   try {
     const result = await db
@@ -52,7 +50,7 @@ export async function GET(): Promise<NextResponse> {
       })
       .from(users)
       .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-      .where(eq(users.id, VALIDATED_GERENTE_ID))
+      .where(eq(users.id, managerId))
       .limit(1)
 
     if (result.length === 0) {
@@ -97,9 +95,12 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function PUT(request: Request): Promise<NextResponse> {
-  if (!GERENTE_INIT_ID) {
-    return NextResponse.json({ error: 'Usuário gerente não configurado.' }, { status: 500 })
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
+
+  const managerId = user.id
 
   try {
     const body = await request.json()
@@ -117,7 +118,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
       if (Object.keys(userUpdateData).length > 0) {
         userUpdateData.updatedAt = new Date()
-        await tx.update(users).set(userUpdateData).where(eq(users.id, VALIDATED_GERENTE_ID))
+        await tx.update(users).set(userUpdateData).where(eq(users.id, managerId))
       }
 
       const profileUpdateData: Partial<typeof managerProfiles.$inferInsert> = {}
@@ -139,7 +140,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
         await tx
           .update(managerProfiles)
           .set(profileUpdateData)
-          .where(eq(managerProfiles.userId, GERENTE_INIT_ID))
+          .where(eq(managerProfiles.userId, managerId))
       }
     })
 

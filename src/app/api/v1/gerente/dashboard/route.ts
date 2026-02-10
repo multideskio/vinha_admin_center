@@ -17,24 +17,21 @@ import {
 import { count, sum, eq, and, desc, inArray } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { getErrorMessage } from '@/lib/error-types'
-
-const GERENTE_INIT_ID = process.env.GERENTE_INIT
+import { validateRequest } from '@/lib/jwt'
 
 export async function GET(): Promise<NextResponse> {
-  if (!GERENTE_INIT_ID) {
-    return NextResponse.json(
-      { error: 'ID do Gerente não configurado no ambiente.' },
-      { status: 500 },
-    )
+  const { user } = await validateRequest()
+  if (!user || user.role !== 'manager') {
+    return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const VALIDATED_GERENTE_ID = GERENTE_INIT_ID as string
+
+  const managerId = user.id
 
   try {
     const supervisorsResult = await db
       .select({ id: supervisorProfiles.userId })
       .from(supervisorProfiles)
-      .where(eq(supervisorProfiles.managerId, GERENTE_INIT_ID))
+      .where(eq(supervisorProfiles.managerId, managerId))
 
     const supervisorIds = supervisorsResult.map((s) => s.id)
 
@@ -56,8 +53,8 @@ export async function GET(): Promise<NextResponse> {
       churchIds = churchesResult.map((c) => c.id)
     }
 
-    const networkUserIds = [GERENTE_INIT_ID, ...supervisorIds, ...pastorIds, ...churchIds]
-    if (networkUserIds.length === 1 && networkUserIds[0] === GERENTE_INIT_ID) {
+    const networkUserIds = [managerId, ...supervisorIds, ...pastorIds, ...churchIds]
+    if (networkUserIds.length === 1 && networkUserIds[0] === managerId) {
       networkUserIds.push('00000000-0000-0000-0000-000000000000')
     }
 

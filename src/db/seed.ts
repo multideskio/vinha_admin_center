@@ -34,80 +34,83 @@ const db = drizzle(pool, { schema })
 async function main(): Promise<void> {
   console.log('Seeding database...')
 
-  // Limpa as tabelas na ordem correta para evitar erros de chave estrangeira
-  console.log('Cleaning existing data...')
+  // ✅ CORRIGIDO: Transação atômica para seed completo
+  await db.transaction(async (tx) => {
+    // Limpa as tabelas na ordem correta para evitar erros de chave estrangeira
+    console.log('Cleaning existing data...')
 
-  // Primeiro deletar todas as tabelas dependentes
-  await db.delete(schema.apiKeys)
-  await db.delete(schema.notificationLogs)
-  await db.delete(schema.messageTemplates)
-  await db.delete(schema.userNotificationSettings)
-  await db.delete(schema.webhooks)
-  await db.delete(schema.notificationRules)
-  await db.delete(schema.otherSettings)
-  await db.delete(schema.gatewayConfigurations)
-  await db.delete(schema.transactions)
-  await db.delete(schema.sessions)
-  await db.delete(schema.passwordResetTokens)
+    // Primeiro deletar todas as tabelas dependentes
+    await tx.delete(schema.apiKeys)
+    await tx.delete(schema.notificationLogs)
+    await tx.delete(schema.messageTemplates)
+    await tx.delete(schema.userNotificationSettings)
+    await tx.delete(schema.webhooks)
+    await tx.delete(schema.notificationRules)
+    await tx.delete(schema.otherSettings)
+    await tx.delete(schema.gatewayConfigurations)
+    await tx.delete(schema.transactions)
+    await tx.delete(schema.sessions)
+    await tx.delete(schema.passwordResetTokens)
 
-  // Depois deletar perfis
-  await db.delete(schema.adminProfiles)
-  await db.delete(schema.pastorProfiles)
-  await db.delete(schema.churchProfiles)
-  await db.delete(schema.supervisorProfiles)
-  await db.delete(schema.managerProfiles)
+    // Depois deletar perfis
+    await tx.delete(schema.adminProfiles)
+    await tx.delete(schema.pastorProfiles)
+    await tx.delete(schema.churchProfiles)
+    await tx.delete(schema.supervisorProfiles)
+    await tx.delete(schema.managerProfiles)
 
-  // Por último, usuários, regiões e empresas
-  await db.delete(users)
-  await db.delete(schema.regions)
-  await db.delete(companies)
+    // Por último, usuários, regiões e empresas
+    await tx.delete(users)
+    await tx.delete(schema.regions)
+    await tx.delete(companies)
 
-  // Criar Empresa
-  console.log('Seeding company...')
-  const companyId = process.env.COMPANY_INIT
-  if (!companyId) {
-    throw new Error('COMPANY_INIT environment variable is required')
-  }
+    // Criar Empresa
+    console.log('Seeding company...')
+    const companyId = process.env.COMPANY_INIT
+    if (!companyId) {
+      throw new Error('COMPANY_INIT environment variable is required')
+    }
 
-  const [company] = await db
-    .insert(companies)
-    .values({
-      id: companyId,
-      name: 'Vinha Ministérios',
-      supportEmail: 'suporte@vinha.com',
+    const [company] = await tx
+      .insert(companies)
+      .values({
+        id: companyId,
+        name: 'Vinha Ministérios',
+        supportEmail: 'suporte@vinha.com',
+      })
+      .returning()
+    if (!company) {
+      throw new Error('Failed to create company')
+    }
+
+    const password = process.env.DEFAULT_PASSWORD
+    if (!password) {
+      throw new Error('DEFAULT_PASSWORD environment variable is required')
+    }
+
+    // Criar Admin
+    console.log('Seeding admin...')
+    const [adminUser] = await tx
+      .insert(users)
+      .values({
+        id: ADMIN_INIT,
+        companyId: company.id,
+        email: 'admin@vinha.com',
+        password: await bcrypt.hash(password, 10),
+        role: 'admin',
+        status: 'active',
+      })
+      .returning()
+    if (!adminUser) {
+      throw new Error('Failed to create admin user')
+    }
+    await tx.insert(adminProfiles).values({
+      userId: adminUser.id,
+      firstName: 'Admin',
+      lastName: 'Vinha',
+      cpf: '111.111.111-11',
+      permission: 'superadmin',
     })
-    .returning()
-  if (!company) {
-    throw new Error('Failed to create company')
-  }
-
-  const password = process.env.DEFAULT_PASSWORD
-  if (!password) {
-    throw new Error('DEFAULT_PASSWORD environment variable is required')
-  }
-
-  // Criar Admin
-  console.log('Seeding admin...')
-  const [adminUser] = await db
-    .insert(users)
-    .values({
-      id: ADMIN_INIT,
-      companyId: company.id,
-      email: 'admin@vinha.com',
-      password: await bcrypt.hash(password, 10),
-      role: 'admin',
-      status: 'active',
-    })
-    .returning()
-  if (!adminUser) {
-    throw new Error('Failed to create admin user')
-  }
-  await db.insert(adminProfiles).values({
-    userId: adminUser.id,
-    firstName: 'Admin',
-    lastName: 'Vinha',
-    cpf: '111.111.111-11',
-    permission: 'superadmin',
   })
 
   console.log('Database seeding complete.')

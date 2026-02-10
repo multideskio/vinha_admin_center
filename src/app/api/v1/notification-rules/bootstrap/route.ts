@@ -16,96 +16,100 @@ export async function POST() {
       return NextResponse.json({ error: 'companyId ausente' }, { status: 400 })
     }
 
-    // Criar templates padrão (idempotente)
-    const defaultTemplates = [
-      {
-        templateType: 'payment_reminder',
-        name: 'Lembrete de Pagamento',
-        whatsappTemplate: 'Olá {name}! Lembramos que seu dízimo de R$ {amount} vence em {dueDate}.',
-        emailSubjectTemplate: 'Lembrete de Pagamento - vence em {dueDate}',
-        emailHtmlTemplate:
-          '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> vence em <strong>{dueDate}</strong>.</p>',
-      },
-      {
-        templateType: 'payment_overdue',
-        name: 'Pagamento em Atraso',
-        whatsappTemplate: 'Olá {name}! Seu dízimo de R$ {amount} está em atraso desde {dueDate}.',
-        emailSubjectTemplate: 'Pagamento em atraso desde {dueDate}',
-        emailHtmlTemplate:
-          '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> está em atraso desde <strong>{dueDate}</strong>.</p>',
-      },
-    ] as const
+    // ✅ CORRIGIDO: Transação atômica para criar templates + regras
+    await db.transaction(async (tx) => {
+      // Criar templates padrão (idempotente)
+      const defaultTemplates = [
+        {
+          templateType: 'payment_reminder',
+          name: 'Lembrete de Pagamento',
+          whatsappTemplate:
+            'Olá {name}! Lembramos que seu dízimo de R$ {amount} vence em {dueDate}.',
+          emailSubjectTemplate: 'Lembrete de Pagamento - vence em {dueDate}',
+          emailHtmlTemplate:
+            '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> vence em <strong>{dueDate}</strong>.</p>',
+        },
+        {
+          templateType: 'payment_overdue',
+          name: 'Pagamento em Atraso',
+          whatsappTemplate: 'Olá {name}! Seu dízimo de R$ {amount} está em atraso desde {dueDate}.',
+          emailSubjectTemplate: 'Pagamento em atraso desde {dueDate}',
+          emailHtmlTemplate:
+            '<p>Olá {name},</p><p>Seu dízimo de <strong>R$ {amount}</strong> está em atraso desde <strong>{dueDate}</strong>.</p>',
+        },
+      ] as const
 
-    for (const tpl of defaultTemplates) {
-      const exists = await db
-        .select({ id: messageTemplates.id })
-        .from(messageTemplates)
-        .where(
-          and(
-            eq(messageTemplates.companyId, companyId),
-            eq(messageTemplates.templateType, tpl.templateType),
-          ),
-        )
-        .limit(1)
-      if (exists.length === 0) {
-        await db.insert(messageTemplates).values({
-          companyId,
-          templateType: tpl.templateType,
-          name: tpl.name,
-          whatsappTemplate: tpl.whatsappTemplate,
-          emailSubjectTemplate: tpl.emailSubjectTemplate,
-          emailHtmlTemplate: tpl.emailHtmlTemplate,
-          isActive: true,
-        })
+      for (const tpl of defaultTemplates) {
+        const exists = await tx
+          .select({ id: messageTemplates.id })
+          .from(messageTemplates)
+          .where(
+            and(
+              eq(messageTemplates.companyId, companyId),
+              eq(messageTemplates.templateType, tpl.templateType),
+            ),
+          )
+          .limit(1)
+        if (exists.length === 0) {
+          await tx.insert(messageTemplates).values({
+            companyId,
+            templateType: tpl.templateType,
+            name: tpl.name,
+            whatsappTemplate: tpl.whatsappTemplate,
+            emailSubjectTemplate: tpl.emailSubjectTemplate,
+            emailHtmlTemplate: tpl.emailHtmlTemplate,
+            isActive: true,
+          })
+        }
       }
-    }
 
-    // Criar regras padrão (idempotente)
-    const defaultRules = [
-      {
-        name: 'Lembrete 5 dias antes',
-        eventTrigger: 'payment_due_reminder',
-        daysOffset: 5,
-        sendViaEmail: true,
-        sendViaWhatsapp: true,
-      },
-      {
-        name: 'Lembrete no dia',
-        eventTrigger: 'payment_due_reminder',
-        daysOffset: 0,
-        sendViaEmail: true,
-        sendViaWhatsapp: true,
-      },
-      {
-        name: 'Aviso atraso 1 dia',
-        eventTrigger: 'payment_overdue',
-        daysOffset: 1,
-        sendViaEmail: true,
-        sendViaWhatsapp: true,
-      },
-    ] as const
+      // Criar regras padrão (idempotente)
+      const defaultRules = [
+        {
+          name: 'Lembrete 5 dias antes',
+          eventTrigger: 'payment_due_reminder',
+          daysOffset: 5,
+          sendViaEmail: true,
+          sendViaWhatsapp: true,
+        },
+        {
+          name: 'Lembrete no dia',
+          eventTrigger: 'payment_due_reminder',
+          daysOffset: 0,
+          sendViaEmail: true,
+          sendViaWhatsapp: true,
+        },
+        {
+          name: 'Aviso atraso 1 dia',
+          eventTrigger: 'payment_overdue',
+          daysOffset: 1,
+          sendViaEmail: true,
+          sendViaWhatsapp: true,
+        },
+      ] as const
 
-    for (const rule of defaultRules) {
-      const exists = await db
-        .select({ id: notificationRules.id })
-        .from(notificationRules)
-        .where(
-          and(eq(notificationRules.companyId, companyId), eq(notificationRules.name, rule.name)),
-        )
-        .limit(1)
-      if (exists.length === 0) {
-        await db.insert(notificationRules).values({
-          companyId,
-          name: rule.name,
-          eventTrigger: rule.eventTrigger as 'payment_due_reminder' | 'payment_overdue',
-          daysOffset: rule.daysOffset,
-          messageTemplate: '{nome_usuario}',
-          sendViaEmail: rule.sendViaEmail,
-          sendViaWhatsapp: rule.sendViaWhatsapp,
-          isActive: true,
-        })
+      for (const rule of defaultRules) {
+        const exists = await tx
+          .select({ id: notificationRules.id })
+          .from(notificationRules)
+          .where(
+            and(eq(notificationRules.companyId, companyId), eq(notificationRules.name, rule.name)),
+          )
+          .limit(1)
+        if (exists.length === 0) {
+          await tx.insert(notificationRules).values({
+            companyId,
+            name: rule.name,
+            eventTrigger: rule.eventTrigger as 'payment_due_reminder' | 'payment_overdue',
+            daysOffset: rule.daysOffset,
+            messageTemplate: '{nome_usuario}',
+            sendViaEmail: rule.sendViaEmail,
+            sendViaWhatsapp: rule.sendViaWhatsapp,
+            isActive: true,
+          })
+        }
       }
-    }
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {
