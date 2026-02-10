@@ -4,6 +4,7 @@ import { otherSettings, users, transactions } from '@/db/schema'
 import { eq, count, sum, and, isNull, gte, lt, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { startOfMonth, subMonths } from 'date-fns'
+import { getCache, setCache } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   const { user } = await validateRequest()
@@ -11,28 +12,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
-  console.log(
-    '[INSIGHTS_DEBUG] Starting insights generation for user:',
-    user.id,
-    'company:',
-    user.companyId,
-  )
-
   try {
     const url = new URL(request.url)
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
 
-    console.log('[INSIGHTS_DEBUG] Date range:', { from, to })
+    // ✅ Cache de 10 minutos para insights (chamada OpenAI é cara)
+    const cacheKey = `insights:${user.companyId}:from:${from || 'null'}:to:${to || 'null'}`
+    const cached = await getCache(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
-    // Em vez de fazer fetch interno, vamos buscar os dados diretamente do banco
     const now = new Date()
     const startDate = from ? new Date(from) : startOfMonth(now)
     const endDate = to ? new Date(to) : now
     const startOfCurrentMonth = startOfMonth(now)
     const startOfPreviousMonth = startOfMonth(subMonths(now, 1))
-
-    console.log('[INSIGHTS_DEBUG] Fetching dashboard data directly from database')
 
     // Buscar dados básicos para insights
     const [
@@ -95,11 +91,6 @@ export async function GET(request: NextRequest) {
       dateRange: { from: startDate.toISOString(), to: endDate.toISOString() },
     }
 
-    console.log('[INSIGHTS_DEBUG] Dashboard data loaded successfully:', dashboard)
-
-    // Chave OpenAI
-    console.log('[INSIGHTS_DEBUG] Fetching OpenAI settings for company:', user.companyId)
-
     const [settings] = await db
       .select({ openaiApiKey: otherSettings.openaiApiKey })
       .from(otherSettings)
@@ -107,10 +98,8 @@ export async function GET(request: NextRequest) {
       .limit(1)
 
     const apiKey = settings?.openaiApiKey
-    console.log('[INSIGHTS_DEBUG] OpenAI key found:', !!apiKey, 'length:', apiKey?.length || 0)
 
     if (!apiKey) {
-      console.error('[INSIGHTS_DEBUG] No OpenAI API key configured for company:', user.companyId)
       return NextResponse.json({ error: 'Chave OpenAI não configurada.' }, { status: 400 })
     }
 
@@ -138,8 +127,6 @@ Dados do sistema:
 - Transações recentes: ${dashboard.recentTransactions}
 - Período analisado: ${dashboard.dateRange.from} até ${dashboard.dateRange.to}`
 
-    console.log('[INSIGHTS_DEBUG] Calling OpenAI API with model: gpt-4o-mini')
-
     const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -154,31 +141,30 @@ Dados do sistema:
       }),
     })
 
-    console.log('[INSIGHTS_DEBUG] OpenAI response status:', aiRes.status)
-
     if (!aiRes.ok) {
       const errText = await aiRes.text()
-      console.error('[INSIGHTS_DEBUG] OpenAI API failed:', aiRes.status, errText)
+      console.error('Falha na API OpenAI:', aiRes.status, errText)
       return NextResponse.json({ error: 'Falha na OpenAI', details: errText }, { status: 500 })
     }
 
     const aiJson = await aiRes.json()
     const content = aiJson.choices?.[0]?.message?.content?.trim() || ''
 
-    console.log('[INSIGHTS_DEBUG] OpenAI response content length:', content.length)
-    console.log('[INSIGHTS_DEBUG] OpenAI response preview:', content.substring(0, 200))
-
     // Parse JSON response
     let summary = ''
-    let cards
+    let cards: Array<{
+      type: string
+      title: string
+      description: string
+      metric?: string | null
+      text?: string
+    }> = []
     try {
       const parsed = JSON.parse(content)
       summary = parsed.summary || ''
       cards = parsed.cards || []
-      console.log('[INSIGHTS_DEBUG] Successfully parsed JSON response, cards count:', cards.length)
     } catch (parseError) {
-      console.error('[INSIGHTS_DEBUG] Failed to parse OpenAI JSON response:', parseError)
-      console.log('[INSIGHTS_DEBUG] Raw content:', content)
+      console.error('Erro ao parsear resposta da OpenAI:', parseError)
 
       // Fallback se OpenAI retornar texto ao invés de JSON
       summary = content.substring(0, 300)
@@ -193,10 +179,11 @@ Dados do sistema:
       ]
     }
 
-    console.log('[INSIGHTS_DEBUG] Returning insights successfully')
-    return NextResponse.json({ summary, cards })
+    const result = { summary, cards }
+    await setCache(cacheKey, result, 600) // 10 minutos
+    return NextResponse.json(result)
   } catch (error) {
-    console.error('[INSIGHTS_DEBUG] Unexpected error:', error)
+    console.error('Erro ao gerar insights:', error)
     return NextResponse.json(
       {
         error: 'Erro interno',

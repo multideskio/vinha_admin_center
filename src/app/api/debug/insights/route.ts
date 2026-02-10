@@ -40,8 +40,6 @@ export async function GET() {
       },
     }
 
-    console.log('[DEBUG_INSIGHTS] Debug info:', JSON.stringify(debugInfo, null, 2))
-
     return NextResponse.json(debugInfo)
   } catch (error) {
     console.error('[DEBUG_INSIGHTS] Error:', error)
