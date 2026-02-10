@@ -46,7 +46,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Log não encontrado' }, { status: 404 })
     }
 
-    const log = logResult.rows[0] as any
+    interface NotificationLogRow {
+      user_id: string
+      user_email: string
+      user_phone: string
+      channel: string
+      subject: string
+      message_content: string
+      recipient: string
+    }
+
+    const log = logResult.rows[0] as unknown as NotificationLogRow
     let success = false
     let errorMessage = ''
     let messageContent = ''

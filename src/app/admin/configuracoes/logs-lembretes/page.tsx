@@ -143,7 +143,7 @@ export default function LogsLembretesPage() {
       const data = await response.json()
       setLogs(data.logs || [])
       setTotalLogs(data.total || 0)
-      setStats(data.stats || stats)
+      setStats(data.stats || { total: 0, sent: 0, failed: 0, email: 0, whatsapp: 0 })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({

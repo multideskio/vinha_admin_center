@@ -128,13 +128,15 @@ export default function RelatorioIgrejasPage() {
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, []) // Removido fetchData da dependência
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Só recarregar quando o filtro de região mudar (não quando dateRange mudar)
   React.useEffect(() => {
     if (regionFilter !== 'all') {
       fetchData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionFilter])
 
   const handleDateRangeChange = React.useCallback(

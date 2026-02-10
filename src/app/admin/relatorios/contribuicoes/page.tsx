@@ -118,13 +118,15 @@ export default function RelatorioContribuicoesPage() {
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, []) // Removido fetchData da dependência
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Só recarregar quando o filtro de tipo mudar (não quando dateRange mudar)
   React.useEffect(() => {
     if (typeFilter !== 'all') {
       fetchData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeFilter])
 
   const handleDateRangeChange = React.useCallback(

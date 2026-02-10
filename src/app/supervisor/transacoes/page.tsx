@@ -103,7 +103,8 @@ export default function TransacoesPage() {
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchTransactions()
-  }, []) // Removido fetchTransactions da dependência
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter((prev) =>

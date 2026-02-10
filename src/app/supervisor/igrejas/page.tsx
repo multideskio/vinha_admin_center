@@ -646,7 +646,8 @@ export default function IgrejasPage() {
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, []) // Removido fetchData da dependência
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleDelete = async (churchId: string) => {
     try {

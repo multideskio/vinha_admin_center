@@ -30,9 +30,7 @@ export function DateRangePicker({
 
   // Sincronizar com prop value apenas quando ela mudar externamente
   React.useEffect(() => {
-    if (value !== internalDate) {
-      setInternalDate(value)
-    }
+    setInternalDate(value)
   }, [value])
 
   const handleDateSelect = (newDate: DateRange | undefined) => {

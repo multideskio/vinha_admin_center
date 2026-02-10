@@ -128,7 +128,8 @@ export default function SupervisorDashboardPage(): JSX.Element {
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, []) // Removido fetchData da dependência
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const kpiDisplayData = data
     ? [

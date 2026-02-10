@@ -119,13 +119,15 @@ export default function RelatorioFinanceiroPage() {
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
     fetchData()
-  }, []) // Removido fetchData da dependência
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Só recarregar quando os filtros mudarem (não quando dateRange mudar)
   React.useEffect(() => {
     if (methodFilter !== 'all' || statusFilter !== 'all') {
       fetchData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [methodFilter, statusFilter])
 
   const handleDateRangeChange = React.useCallback(
