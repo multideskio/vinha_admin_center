@@ -8,7 +8,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, transactions, churchProfiles, pastorProfiles } from '@/db/schema'
-import { eq, and, between, isNull, desc } from 'drizzle-orm'
+import { eq, and, between, isNull, desc, inArray } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 
@@ -285,7 +285,6 @@ async function generateDefaultersReport(companyId: string, filters: Filters) {
     : new Date(now.getFullYear(), 0, 1)
   const endDate = filters.endDate ? new Date(filters.endDate) : now
 
-  const rows: string[][] = []
   const months: string[] = []
 
   // Gerar lista de meses no período
@@ -295,33 +294,44 @@ async function generateDefaultersReport(companyId: string, filters: Filters) {
     current.setMonth(current.getMonth() + 1)
   }
 
+  // ✅ OTIMIZADO: Buscar TODOS os pagamentos aprovados do período de uma vez
+  const allContributorIds = [...pastors.map((p) => p.id), ...churches.map((c) => c.id)]
+
+  const allPayments =
+    allContributorIds.length > 0
+      ? await db
+          .select({
+            contributorId: transactions.contributorId,
+            createdAt: transactions.createdAt,
+          })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.status, 'approved'),
+              between(transactions.createdAt, startDate, endDate),
+              inArray(transactions.contributorId, allContributorIds),
+            ),
+          )
+      : []
+
+  // Agrupar pagamentos por contributorId + mês (YYYY-MM)
+  const paymentsByContributorMonth = new Map<string, boolean>()
+  for (const payment of allPayments) {
+    const date = new Date(payment.createdAt)
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    paymentsByContributorMonth.set(`${payment.contributorId}:${monthKey}`, true)
+  }
+
+  const rows: string[][] = []
+
   // Verificar pastores
   for (const pastor of pastors) {
     const name = `${pastor.firstName} ${pastor.lastName}`
     const monthlyStatus: string[] = []
 
     for (const month of months) {
-      const parts = month.split('-').map(Number)
-      const year = parts[0]
-      const monthNum = parts[1]
-      if (!year || !monthNum) continue
-      const monthStart = new Date(year, monthNum - 1, 1)
-      const monthEnd = new Date(year, monthNum, 0, 23, 59, 59)
-
-      // Verificar se pagou neste mês
-      const payment = await db
-        .select({ id: transactions.id })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.contributorId, pastor.id),
-            eq(transactions.status, 'approved'),
-            between(transactions.createdAt, monthStart, monthEnd),
-          ),
-        )
-        .limit(1)
-
-      monthlyStatus.push(payment.length > 0 ? '✓ Pago' : '✗ Não pago')
+      const hasPaid = paymentsByContributorMonth.has(`${pastor.id}:${month}`)
+      monthlyStatus.push(hasPaid ? '✓ Pago' : '✗ Não pago')
     }
 
     rows.push([name, 'Pastor', pastor.titheDay?.toString() || 'N/A', ...monthlyStatus])
@@ -332,26 +342,8 @@ async function generateDefaultersReport(companyId: string, filters: Filters) {
     const monthlyStatus: string[] = []
 
     for (const month of months) {
-      const parts = month.split('-').map(Number)
-      const year = parts[0]
-      const monthNum = parts[1]
-      if (!year || !monthNum) continue
-      const monthStart = new Date(year, monthNum - 1, 1)
-      const monthEnd = new Date(year, monthNum, 0, 23, 59, 59)
-
-      const payment = await db
-        .select({ id: transactions.id })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.contributorId, church.id),
-            eq(transactions.status, 'approved'),
-            between(transactions.createdAt, monthStart, monthEnd),
-          ),
-        )
-        .limit(1)
-
-      monthlyStatus.push(payment.length > 0 ? '✓ Pago' : '✗ Não pago')
+      const hasPaid = paymentsByContributorMonth.has(`${church.id}:${month}`)
+      monthlyStatus.push(hasPaid ? '✓ Pago' : '✗ Não pago')
     }
 
     rows.push([
