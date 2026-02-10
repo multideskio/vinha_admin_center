@@ -192,8 +192,8 @@ export default function DashboardPage() {
           setUserName(data.displayName)
         }
       })
-      .catch(() => {
-        // Silenciar erro, não é crítico
+      .catch((error) => {
+        console.warn('Falha ao buscar dados do usuário:', error)
       })
   }, [])
 
@@ -456,11 +456,14 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="overflow-hidden">
             {data ? (
-              <div className="w-full overflow-x-auto">
-                <ChartContainer config={{}} className="h-[280px] sm:h-[320px] min-w-[400px]">
+              <div className="w-full overflow-x-auto -mx-2 px-2">
+                <ChartContainer
+                  config={{}}
+                  className="h-[250px] sm:h-[280px] lg:h-[320px] min-w-[350px]"
+                >
                   <ComposedChart
                     data={dumbbellData}
-                    margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                    margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                   >
                     <CartesianGrid
                       strokeDasharray="3 3"
@@ -496,7 +499,7 @@ export default function DashboardPage() {
                 </ChartContainer>
               </div>
             ) : (
-              <div className="h-[280px] sm:h-[320px] w-full flex items-center justify-center">
+              <div className="h-[250px] sm:h-[280px] lg:h-[320px] w-full flex items-center justify-center">
                 <div className="space-y-4 w-full">
                   <Skeleton className="h-4 w-32 mx-auto" />
                   <Skeleton className="h-48 sm:h-64 w-full" />
@@ -527,13 +530,6 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2 sm:gap-3">
-              <Button
-                onClick={handleSendReminders}
-                disabled={sending}
-                className="bg-videira-blue hover:bg-videira-blue/90 text-white shadow-md hover:shadow-lg transition-all font-semibold text-sm"
-              >
-                {sending ? 'Enviando...' : 'Enviar lembretes'}
-              </Button>
               <Link href="/admin/configuracoes/mensagens">
                 <Button className="bg-white dark:bg-background border-2 border-videira-purple text-videira-purple hover:bg-videira-purple hover:text-white transition-all shadow-sm hover:shadow-md font-semibold text-sm">
                   Configurar mensagens
@@ -682,17 +678,20 @@ export default function DashboardPage() {
         </div>
 
         {/* Gráficos de arrecadação - Layout responsivo */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-6">
-          {/* Arrecadação por método - 2 colunas no xl */}
-          <div className="xl:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+          {/* Arrecadação por método - 2 colunas no lg */}
+          <div className="lg:col-span-2">
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl">Arrecadação por Método</CardTitle>
               </CardHeader>
               <CardContent className="overflow-hidden">
                 {data ? (
-                  <div className="w-full overflow-x-auto">
-                    <ChartContainer className="h-[280px] sm:h-[300px] min-w-[280px]" config={{}}>
+                  <div className="w-full">
+                    <ChartContainer
+                      className="h-[240px] sm:h-[280px] lg:h-[300px] w-full"
+                      config={{}}
+                    >
                       <PieChart>
                         <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
                         <Legend content={<ChartLegendContent nameKey="method" />} />
@@ -700,7 +699,8 @@ export default function DashboardPage() {
                           data={data.revenueByMethod}
                           dataKey="value"
                           nameKey="method"
-                          innerRadius={60}
+                          innerRadius={40}
+                          outerRadius="70%"
                         >
                           {data.revenueByMethod.map((entry) => (
                             <Cell key={entry.method} fill={entry.fill} />
@@ -710,7 +710,7 @@ export default function DashboardPage() {
                     </ChartContainer>
                   </div>
                 ) : (
-                  <div className="h-[280px] sm:h-[300px] w-full flex items-center justify-center">
+                  <div className="h-[240px] sm:h-[280px] lg:h-[300px] w-full flex items-center justify-center">
                     <div className="space-y-4">
                       <Skeleton className="h-4 w-32 mx-auto" />
                       <Skeleton className="h-40 sm:h-48 w-40 sm:w-48 rounded-full mx-auto" />
@@ -726,8 +726,8 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Distribuição por região - 3 colunas no xl */}
-          <div className="xl:col-span-3">
+          {/* Distribuição por região - 3 colunas no lg */}
+          <div className="lg:col-span-3">
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl">Distribuição por Região</CardTitle>
@@ -735,12 +735,12 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="overflow-hidden">
                 {data ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {data.revenueByRegion && data.revenueByRegion.length > 0 ? (
-                      <div className="w-full overflow-x-auto">
+                      <div className="w-full">
                         <ChartContainer
                           config={{}}
-                          className="h-[240px] sm:h-[260px] min-w-[240px]"
+                          className="h-[220px] sm:h-[240px] lg:h-[260px] w-full"
                         >
                           <PieChart>
                             <Tooltip content={<ChartTooltipContent hideLabel />} />
@@ -749,7 +749,8 @@ export default function DashboardPage() {
                               data={data.revenueByRegion}
                               dataKey="revenue"
                               nameKey="name"
-                              innerRadius={50}
+                              innerRadius={35}
+                              outerRadius="65%"
                             >
                               {data.revenueByRegion.map((entry, index) => (
                                 <Cell
@@ -762,13 +763,13 @@ export default function DashboardPage() {
                         </ChartContainer>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-[240px] sm:h-[260px] w-full border rounded-md text-sm text-muted-foreground">
+                      <div className="flex items-center justify-center h-[220px] sm:h-[240px] lg:h-[260px] w-full border rounded-md text-sm text-muted-foreground">
                         Sem dados de arrecadação por região
                       </div>
                     )}
                     <div className="space-y-3 min-w-0">
                       <h4 className="text-sm font-medium">Regiões (lista)</h4>
-                      <div className="divide-y max-h-[200px] sm:max-h-[220px] overflow-y-auto">
+                      <div className="divide-y max-h-[180px] sm:max-h-[200px] lg:max-h-[220px] overflow-y-auto">
                         {(data.revenueByRegion || []).map((r) => (
                           <div
                             key={r.name}
@@ -800,8 +801,8 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="h-[240px] sm:h-[260px] w-full flex items-center justify-center">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="h-[220px] sm:h-[240px] lg:h-[260px] w-full flex items-center justify-center">
                       <div className="space-y-4">
                         <Skeleton className="h-4 w-24 mx-auto" />
                         <Skeleton className="h-32 sm:h-40 w-32 sm:w-40 rounded-full mx-auto" />

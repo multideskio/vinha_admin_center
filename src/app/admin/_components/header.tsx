@@ -121,7 +121,9 @@ export function AdminHeader({
         ) : (
           <PanelLeftClose className="h-5 w-5" />
         )}
-        <span className="sr-only">Toggle sidebar</span>
+        <span className="sr-only">
+          {isCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+        </span>
       </Button>
 
       {/* Mobile Menu */}
@@ -129,7 +131,7 @@ export function AdminHeader({
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="shrink-0 md:hidden">
             <PanelLeft className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
+            <span className="sr-only">Abrir menu de navegação</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="flex flex-col">
@@ -193,7 +195,7 @@ export function AdminHeader({
                 />
                 <AvatarFallback>{userFallback}</AvatarFallback>
               </Avatar>
-              <span className="sr-only">Toggle user menu</span>
+              <span className="sr-only">Abrir menu do usuário</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

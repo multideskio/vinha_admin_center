@@ -150,6 +150,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                   key={item.href}
                   href={item.href}
                   data-active={isActive}
+                  aria-current={isActive ? 'page' : undefined}
                   title={isCollapsed ? item.label : undefined}
                   className={cn(
                     'group flex items-center gap-3 rounded-xl transition-all duration-200',
@@ -202,6 +203,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
             <Link
               href="/admin/perfil"
               data-active={pathname === '/admin/perfil'}
+              aria-current={pathname === '/admin/perfil' ? 'page' : undefined}
               title={isCollapsed ? 'Meu Perfil' : undefined}
               className={cn(
                 'group flex items-center gap-3 rounded-xl transition-all duration-200',
@@ -226,6 +228,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
             <Link
               href={settingsItem.href}
               data-active={pathname.startsWith(settingsItem.href)}
+              aria-current={pathname.startsWith(settingsItem.href) ? 'page' : undefined}
               title={isCollapsed ? settingsItem.label : undefined}
               className={cn(
                 'group flex items-center gap-3 rounded-xl transition-all duration-200',
