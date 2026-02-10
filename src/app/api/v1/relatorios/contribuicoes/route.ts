@@ -11,6 +11,7 @@ import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema
 import { eq, and, between, isNull, desc, sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
+import { getCache, setCache } from '@/lib/cache'
 
 export async function GET(request: Request) {
   const { user } = await validateRequest()
@@ -23,6 +24,13 @@ export async function GET(request: Request) {
     const from = searchParams.get('from')
     const to = searchParams.get('to')
     const contributorType = searchParams.get('contributorType')
+
+    // ✅ Cache de 5 minutos para relatório de contribuições
+    const cacheKey = `relatorio:contribuicoes:${user.companyId}:${from}:${to}:${contributorType}`
+    const cached = await getCache(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
     // Definir período padrão (últimos 30 dias)
     const endDate = to ? new Date(to) : new Date()
@@ -148,7 +156,7 @@ export async function GET(request: Request) {
     const totalContributors = formattedContributors.filter((c) => c.totalAmount > 0).length
     const averagePerContributor = totalContributors > 0 ? totalAmount / totalContributors : 0
 
-    return NextResponse.json({
+    const result = {
       contributors: formattedContributors,
       topContributors,
       summary: {
@@ -171,7 +179,10 @@ export async function GET(request: Request) {
         from: startDate.toLocaleDateString('pt-BR'),
         to: endDate.toLocaleDateString('pt-BR'),
       },
-    })
+    }
+
+    await setCache(cacheKey, result, 300) // 5 minutos
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Erro ao gerar relatório de contribuições:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })

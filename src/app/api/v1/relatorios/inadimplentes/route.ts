@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema'
-import { and, eq, isNull, desc, gte } from 'drizzle-orm'
+import { and, eq, isNull, sql, inArray } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import {
@@ -18,6 +18,7 @@ import {
   getDaysSince,
   formatBrazilDate,
 } from '@/lib/date-utils'
+import { getCache, setCache } from '@/lib/cache'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { user } = await validateRequest()
@@ -42,6 +43,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const now = getBrazilDate()
     const threeMonthsAgo = getBrazilStartOfMonth(subtractMonthsBrazil(now, 3))
 
+    // ✅ Cache de 5 minutos para relatório de inadimplentes
+    const cacheKey = `relatorio:inadimplentes:${type}:${search}:${sortBy}:${sortOrder}:${page}:${limit}`
+    const cached = await getCache(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
     // Buscar pastores inadimplentes
     const pastorsData: Array<{
       id: string
@@ -64,29 +72,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
         .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
 
-      // ✅ OTIMIZADO: Buscar todos os últimos pagamentos de uma vez
+      // ✅ OTIMIZADO: Buscar últimos pagamentos apenas dos pastores (filtrado por inArray + GROUP BY)
       const pastorIds = pastorsWithTitheDay.map((p) => p.id)
-      const lastPaymentsQuery = await db
-        .select({
-          contributorId: transactions.contributorId,
-          createdAt: transactions.createdAt,
-        })
-        .from(transactions)
-        .where(
-          and(eq(transactions.status, 'approved'), gte(transactions.createdAt, threeMonthsAgo)),
-        )
-        .orderBy(desc(transactions.createdAt))
+      const lastPaymentsData =
+        pastorIds.length > 0
+          ? await db
+              .select({
+                contributorId: transactions.contributorId,
+                lastPayment: sql<Date>`MAX(${transactions.createdAt})`.mapWith(
+                  (val) => new Date(val),
+                ),
+              })
+              .from(transactions)
+              .where(
+                and(
+                  eq(transactions.status, 'approved'),
+                  inArray(transactions.contributorId, pastorIds),
+                ),
+              )
+              .groupBy(transactions.contributorId)
+          : []
 
       // Criar mapa de último pagamento por pastor
       const lastPaymentMap = new Map<string, Date>()
-      for (const payment of lastPaymentsQuery) {
-        if (pastorIds.includes(payment.contributorId)) {
-          const existing = lastPaymentMap.get(payment.contributorId)
-          const paymentDate = new Date(payment.createdAt)
-          if (!existing || paymentDate > existing) {
-            lastPaymentMap.set(payment.contributorId, paymentDate)
-          }
-        }
+      for (const payment of lastPaymentsData) {
+        lastPaymentMap.set(payment.contributorId, payment.lastPayment)
       }
 
       for (const pastor of pastorsWithTitheDay) {
@@ -145,29 +155,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
         .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
 
-      // ✅ OTIMIZADO: Buscar todos os últimos pagamentos de uma vez
+      // ✅ OTIMIZADO: Buscar últimos pagamentos apenas das igrejas (filtrado por inArray + GROUP BY)
       const churchIds = churchesWithTitheDay.map((c) => c.id)
-      const lastPaymentsQuery = await db
-        .select({
-          contributorId: transactions.contributorId,
-          createdAt: transactions.createdAt,
-        })
-        .from(transactions)
-        .where(
-          and(eq(transactions.status, 'approved'), gte(transactions.createdAt, threeMonthsAgo)),
-        )
-        .orderBy(desc(transactions.createdAt))
+      const lastChurchPaymentsData =
+        churchIds.length > 0
+          ? await db
+              .select({
+                contributorId: transactions.contributorId,
+                lastPayment: sql<Date>`MAX(${transactions.createdAt})`.mapWith(
+                  (val) => new Date(val),
+                ),
+              })
+              .from(transactions)
+              .where(
+                and(
+                  eq(transactions.status, 'approved'),
+                  inArray(transactions.contributorId, churchIds),
+                ),
+              )
+              .groupBy(transactions.contributorId)
+          : []
 
       // Criar mapa de último pagamento por igreja
       const lastPaymentMap = new Map<string, Date>()
-      for (const payment of lastPaymentsQuery) {
-        if (churchIds.includes(payment.contributorId)) {
-          const existing = lastPaymentMap.get(payment.contributorId)
-          const paymentDate = new Date(payment.createdAt)
-          if (!existing || paymentDate > existing) {
-            lastPaymentMap.set(payment.contributorId, paymentDate)
-          }
-        }
+      for (const payment of lastChurchPaymentsData) {
+        lastPaymentMap.set(payment.contributorId, payment.lastPayment)
       }
 
       for (const church of churchesWithTitheDay) {
@@ -222,7 +234,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const paginatedData = allDefaulters.slice(offset, offset + limit)
     const totalPages = Math.ceil(total / limit)
 
-    return NextResponse.json({
+    const result = {
       data: paginatedData,
       pagination: {
         page,
@@ -232,7 +244,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         hasNext: page < totalPages,
         hasPrev: page > 1,
       },
-    })
+    }
+
+    await setCache(cacheKey, result, 300) // 5 minutos
+    return NextResponse.json(result)
   } catch (error: unknown) {
     console.error('Erro ao buscar inadimplentes:', error)
     return NextResponse.json(

@@ -11,6 +11,7 @@ import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema
 import { eq, and, between, desc, sql } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
+import { getCache, setCache } from '@/lib/cache'
 
 export async function GET(request: Request) {
   const { user } = await validateRequest()
@@ -24,6 +25,13 @@ export async function GET(request: Request) {
     const to = searchParams.get('to')
     const method = searchParams.get('method')
     const status = searchParams.get('status')
+
+    // ✅ Cache de 5 minutos para relatório financeiro
+    const cacheKey = `relatorio:financeiro:${user.companyId}:${from}:${to}:${method}:${status}`
+    const cached = await getCache(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
     // Definir período padrão (últimos 30 dias)
     const endDate = to ? new Date(to) : new Date()
@@ -122,7 +130,7 @@ export async function GET(request: Request) {
       {} as Record<string, { count: number; total: number }>,
     )
 
-    return NextResponse.json({
+    const result = {
       transactions: formattedTransactions,
       summary: {
         totalTransactions: formattedTransactions.length,
@@ -136,7 +144,10 @@ export async function GET(request: Request) {
         from: startDate.toLocaleDateString('pt-BR'),
         to: endDate.toLocaleDateString('pt-BR'),
       },
-    })
+    }
+
+    await setCache(cacheKey, result, 300) // 5 minutos
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Erro ao gerar relatório financeiro:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })

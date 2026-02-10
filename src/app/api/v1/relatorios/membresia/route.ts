@@ -17,6 +17,7 @@ import {
 import { eq, and, isNull, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
+import { getCache, setCache } from '@/lib/cache'
 
 export async function GET(request: Request) {
   const { user } = await validateRequest()
@@ -27,6 +28,13 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const role = searchParams.get('role')
+
+    // ✅ Cache de 5 minutos para relatório de membresia
+    const cacheKey = `relatorio:membresia:${user.companyId}:${role}`
+    const cached = await getCache(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
     // Condições base
     const conditions = [eq(users.companyId, user.companyId), isNull(users.deletedAt)]
@@ -158,7 +166,7 @@ export async function GET(request: Request) {
       })
     }
 
-    return NextResponse.json({
+    const result = {
       members: formattedMembers,
       summary: {
         totalMembers: allMembers.length,
@@ -166,7 +174,10 @@ export async function GET(request: Request) {
         byRole,
       },
       growthData,
-    })
+    }
+
+    await setCache(cacheKey, result, 300) // 5 minutos
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Erro ao gerar relatório de membresia:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
