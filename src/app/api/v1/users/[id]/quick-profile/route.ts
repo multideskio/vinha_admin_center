@@ -54,8 +54,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           userId: managerProfiles.userId,
           firstName: managerProfiles.firstName,
           lastName: managerProfiles.lastName,
-          phone: managerProfiles.phone,
-          avatarUrl: managerProfiles.avatarUrl,
         })
         .from(managerProfiles)
         .where(eq(managerProfiles.userId, userId))
@@ -67,8 +65,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           userId: supervisorProfiles.userId,
           firstName: supervisorProfiles.firstName,
           lastName: supervisorProfiles.lastName,
-          phone: supervisorProfiles.phone,
-          avatarUrl: supervisorProfiles.avatarUrl,
           managerId: supervisorProfiles.managerId,
           regionId: supervisorProfiles.regionId,
         })
@@ -131,8 +127,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           userId: pastorProfiles.userId,
           firstName: pastorProfiles.firstName,
           lastName: pastorProfiles.lastName,
-          phone: pastorProfiles.phone,
-          avatarUrl: pastorProfiles.avatarUrl,
           supervisorId: pastorProfiles.supervisorId,
         })
         .from(pastorProfiles)
@@ -231,8 +225,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .select({
           userId: churchProfiles.userId,
           nomeFantasia: churchProfiles.nomeFantasia,
-          phone: churchProfiles.phone,
-          avatarUrl: churchProfiles.avatarUrl,
           supervisorId: churchProfiles.supervisorId,
         })
         .from(churchProfiles)
