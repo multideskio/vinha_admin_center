@@ -27,7 +27,14 @@ export default function RootLayout({
 }>) {
   return (
     <EnvErrorBoundary>
-      <html lang="pt-BR" className={`${inter.variable} font-sans`}>
+      <html lang="pt-BR" className={`${inter.variable} font-sans`} suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem('vinha-theme');if(t==='dark')document.documentElement.classList.add('dark')}catch(e){}})()`,
+            }}
+          />
+        </head>
         <body>
           <DynamicSEO />
           {children}
