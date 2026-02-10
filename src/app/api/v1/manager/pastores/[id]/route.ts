@@ -17,6 +17,7 @@ import { pastorProfileSchema } from '@/lib/types'
 import { ApiError } from '@/lib/errors'
 import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
+import { invalidateCache } from '@/lib/cache'
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
@@ -261,6 +262,9 @@ export async function DELETE(
         status: 'inactive',
       })
       .where(eq(users.id, id))
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error: unknown) {

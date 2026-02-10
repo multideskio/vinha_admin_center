@@ -15,6 +15,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { churchProfileSchema, type UserRole } from '@/lib/types'
 import { rateLimit } from '@/lib/rate-limit'
+import { invalidateCache } from '@/lib/cache'
 
 const churchUpdateSchema = churchProfileSchema
   .extend({
@@ -247,6 +248,9 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         status: 'inactive',
       })
       .where(eq(users.id, id))
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
   } catch (error) {

@@ -17,6 +17,7 @@ import { supervisorProfileSchema } from '@/lib/types'
 import { ApiError } from '@/lib/errors'
 import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
+import { invalidateCache } from '@/lib/cache'
 
 const supervisorUpdateSchema = supervisorProfileSchema
   .extend({
@@ -256,6 +257,9 @@ export async function DELETE(
         deletionReason,
       })
       .where(eq(users.id, id))
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Supervisor excluído com sucesso.' })
   } catch (error: unknown) {

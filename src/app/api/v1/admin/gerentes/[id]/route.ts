@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { managerProfileSchema } from '@/lib/types'
 import { onUserDeleted } from '@/lib/notification-hooks'
+import { invalidateCache } from '@/lib/cache'
 
 const managerUpdateSchema = managerProfileSchema
   .extend({
@@ -187,6 +188,9 @@ export async function DELETE(
 
     // Enviar notificação de exclusão
     await onUserDeleted(id, deletionReason, user.id)
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Gerente excluído com sucesso.' })
   } catch (error) {

@@ -16,6 +16,7 @@ import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
 import { churchProfileSchema, SessionUser } from '@/lib/types'
+import { invalidateCache } from '@/lib/cache'
 
 const churchUpdateSchema = churchProfileSchema
   .extend({
@@ -343,6 +344,9 @@ export async function DELETE(
         status: 'inactive',
       })
       .where(eq(users.id, id))
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
   } catch (error) {

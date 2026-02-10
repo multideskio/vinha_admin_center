@@ -17,6 +17,7 @@ import { validateRequest } from '@/lib/jwt'
 import { pastorProfileSchema } from '@/lib/types'
 import { rateLimit } from '@/lib/rate-limit'
 import { getErrorMessage } from '@/lib/error-types'
+import { invalidateCache } from '@/lib/cache'
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
@@ -334,6 +335,9 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         status: 'inactive',
       })
       .where(eq(users.id, id))
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error: unknown) {

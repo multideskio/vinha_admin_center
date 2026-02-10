@@ -15,6 +15,7 @@ import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 import { onUserDeleted } from '@/lib/notification-hooks'
+import { invalidateCache } from '@/lib/cache'
 
 const adminUpdateSchema = z
   .object({
@@ -193,6 +194,9 @@ export async function DELETE(
 
     // Enviar notificação de exclusão
     await onUserDeleted(id, deletionReason, user.id)
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Administrador excluído com sucesso.' })
   } catch (error) {

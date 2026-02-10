@@ -15,6 +15,7 @@ import { validateRequest } from '@/lib/jwt'
 import { churchProfileSchema, type UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 import { onUserDeleted } from '@/lib/notification-hooks'
+import { invalidateCache } from '@/lib/cache'
 
 const churchUpdateSchema = churchProfileSchema
   .extend({
@@ -191,6 +192,9 @@ export async function DELETE(
 
     // Enviar notificação de exclusão
     await onUserDeleted(id, deletionReason, user.id)
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
   } catch (error: unknown) {

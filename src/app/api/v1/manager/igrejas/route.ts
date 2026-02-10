@@ -10,6 +10,7 @@ import type { UserRole } from '@/lib/types'
 import { env } from '@/lib/env'
 
 import { getCompanyId } from '@/lib/utils'
+import { invalidateCache } from '@/lib/cache'
 
 // @lastReview 2025-01-05 21:30 - Rate limiting and structured logging implemented
 
@@ -186,6 +187,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       return { ...newUser, ...newProfile }
     })
+
+    // ✅ Invalidar cache de relatórios de membresia após criação de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, church: newChurch }, { status: 201 })
   } catch (error) {

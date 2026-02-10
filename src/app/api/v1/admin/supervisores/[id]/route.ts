@@ -15,6 +15,7 @@ import { validateRequest } from '@/lib/jwt'
 import { supervisorProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { onUserDeleted } from '@/lib/notification-hooks'
+import { invalidateCache } from '@/lib/cache'
 
 const supervisorUpdateSchema = supervisorProfileSchema
   .extend({
@@ -227,6 +228,9 @@ export async function DELETE(
 
     // Enviar notificação de exclusão
     await onUserDeleted(id, deletionReason, user.id)
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Supervisor excluído com sucesso.' })
   } catch (error) {

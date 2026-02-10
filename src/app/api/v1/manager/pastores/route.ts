@@ -17,6 +17,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { pastorProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { env } from '@/lib/env'
+import { invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
@@ -173,6 +174,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       return { ...newUser, ...newProfile }
     })
+
+    // ✅ Invalidar cache de relatórios de membresia após criação de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, pastor: newPastor }, { status: 201 })
   } catch (error) {

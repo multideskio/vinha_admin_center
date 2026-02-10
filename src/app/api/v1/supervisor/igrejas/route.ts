@@ -19,6 +19,7 @@ import { SessionUser } from '@/lib/types'
 import { env } from '@/lib/env'
 
 import { getCompanyId } from '@/lib/utils'
+import { invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = getCompanyId()
 
@@ -245,6 +246,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       return { ...newUser, ...newProfile }
     })
+
+    // ✅ Invalidar cache de relatórios de membresia após criação de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, church: newChurch }, { status: 201 })
   } catch (error) {

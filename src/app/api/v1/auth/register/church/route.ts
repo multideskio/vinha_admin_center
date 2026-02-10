@@ -6,6 +6,7 @@ import { users, churchProfiles } from '@/db/schema'
 import { sql } from 'drizzle-orm'
 import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
 import { env } from '@/lib/env'
+import { invalidateCache } from '@/lib/cache'
 
 const registerChurchSchema = z.object({
   nomeFantasia: z.string().min(1, 'Nome fantasia é obrigatório'),
@@ -110,6 +111,9 @@ export async function POST(request: NextRequest) {
 
     // 8. TODO: Enviar email com senha temporária
     // await sendWelcomeEmail(newUser.email, tempPassword)
+
+    // ✅ Invalidar cache de relatórios de membresia após criação de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json(
       {

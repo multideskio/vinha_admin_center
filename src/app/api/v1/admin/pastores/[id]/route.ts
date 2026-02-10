@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt'
 import { pastorProfileSchema } from '@/lib/types'
 import { validateRequest } from '@/lib/jwt'
 import { onUserDeleted } from '@/lib/notification-hooks'
+import { invalidateCache } from '@/lib/cache'
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
@@ -186,6 +187,9 @@ export async function DELETE(
 
     // Enviar notificação de exclusão
     await onUserDeleted(id, deletionReason, user.id)
+
+    // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
+    await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error) {
