@@ -183,17 +183,17 @@ const SupervisorFormModal = ({
   const formatCPF = (value: string) => {
     return value
       .replace(/\D/g, '')
+      .slice(0, 11)
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .slice(0, 14)
   }
 
   const formatCEP = (value: string) => {
     return value
       .replace(/\D/g, '')
+      .slice(0, 8)
       .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 9)
   }
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
