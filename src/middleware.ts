@@ -1,6 +1,34 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+/**
+ * Adiciona headers de segurança a uma resposta do middleware.
+ * Centralizado para evitar duplicação e garantir consistência.
+ */
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://*.cloudfront.net https://*.s3.amazonaws.com https://placehold.co",
+      "font-src 'self'",
+      "connect-src 'self' https://api.cieloecommerce.cielo.com.br https://apiquery.cieloecommerce.cielo.com.br https://transactionsandbox.cieloecommerce.cielo.com.br https://apisandbox.cieloecommerce.cielo.com.br",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
+  )
+  return response
+}
+
 export async function middleware(request: NextRequest) {
   // HTTPS enforcement em produção
   if (process.env.NODE_ENV === 'production' && !request.nextUrl.hostname.includes('localhost')) {
@@ -22,13 +50,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname === '/maintenance'
   ) {
-    const res = NextResponse.next()
-    // Security headers
-    res.headers.set('X-Content-Type-Options', 'nosniff')
-    res.headers.set('X-Frame-Options', 'SAMEORIGIN')
-    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-    res.headers.set('X-XSS-Protection', '1; mode=block')
-    return res
+    return addSecurityHeaders(NextResponse.next())
   }
 
   // Check maintenance mode via API call
@@ -52,21 +74,13 @@ export async function middleware(request: NextRequest) {
     }
   } catch (error) {
     clearTimeout(timeoutId)
-    // Logar falha do maintenance check para visibilidade
     console.error(
       '[MIDDLEWARE_MAINTENANCE_CHECK_FAILED]',
       error instanceof Error ? error.message : 'Erro desconhecido',
     )
-    // Permitir request continuar se check falhar
   }
 
-  const res = NextResponse.next()
-  // Security headers
-  res.headers.set('X-Content-Type-Options', 'nosniff')
-  res.headers.set('X-Frame-Options', 'SAMEORIGIN')
-  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  res.headers.set('X-XSS-Protection', '1; mode=block')
-  return res
+  return addSecurityHeaders(NextResponse.next())
 }
 
 export const config = {
