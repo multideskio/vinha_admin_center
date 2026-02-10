@@ -1,31 +1,16 @@
-import IORedis from 'ioredis'
+/**
+ * @fileoverview Cache Redis para dados de aplicação
+ * @description Usa instância Redis singleton de @/lib/redis
+ */
 
-function createRedis(): IORedis | null {
-  try {
-    const url = process.env.REDIS_URL || 'redis://localhost:6379'
-    const isTLS = url.startsWith('rediss://')
-    const client = new IORedis(url, {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: false,
-      connectTimeout: 5000,
-      retryStrategy: (times: number) => Math.min(5000, times * 200),
-      tls: isTLS ? { rejectUnauthorized: false } : undefined,
-    } as Record<string, unknown>)
-    client.on('error', () => {})
-    return client
-  } catch {
-    return null
-  }
-}
-
-const redis: IORedis | null = createRedis()
+import { redis } from '@/lib/redis'
 
 export async function setCache(key: string, value: unknown, ttlSeconds = 60) {
   if (!redis) return
   try {
     await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds)
-  } catch {
-    // ignora erro de cache
+  } catch (error) {
+    console.error('[CACHE_SET_ERROR]', key, error)
   }
 }
 
@@ -35,7 +20,8 @@ export async function getCache<T = unknown>(key: string): Promise<T | null> {
     const data = await redis.get(key)
     if (!data) return null
     return JSON.parse(data) as T
-  } catch {
+  } catch (error) {
+    console.error('[CACHE_GET_ERROR]', key, error)
     return null
   }
 }
@@ -44,19 +30,27 @@ export async function delCache(key: string) {
   if (!redis) return
   try {
     await redis.del(key)
-  } catch {
-    // ignora
+  } catch (error) {
+    console.error('[CACHE_DEL_ERROR]', key, error)
   }
 }
 
+/**
+ * Invalida chaves por padrão usando SCAN (não-bloqueante)
+ * Substitui redis.keys() que é O(N) e bloqueia o Redis inteiro
+ */
 export async function invalidateCache(pattern: string) {
   if (!redis) return
   try {
-    const keys = await redis.keys(pattern)
-    if (keys && keys.length > 0) {
-      await redis.del(...keys)
-    }
-  } catch {
-    // ignora
+    let cursor = '0'
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100)
+      cursor = nextCursor
+      if (keys.length > 0) {
+        await redis.del(...keys)
+      }
+    } while (cursor !== '0')
+  } catch (error) {
+    console.error('[CACHE_INVALIDATE_ERROR]', pattern, error)
   }
 }

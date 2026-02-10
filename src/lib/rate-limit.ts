@@ -1,24 +1,9 @@
-import IORedis from 'ioredis'
+/**
+ * @fileoverview Rate limiting via Redis
+ * @description Usa instância Redis singleton de @/lib/redis
+ */
 
-function createRedis(): IORedis | null {
-  try {
-    const url = process.env.REDIS_URL || 'redis://localhost:6379'
-    const isTLS = url.startsWith('rediss://')
-    const client = new IORedis(url, {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: false,
-      connectTimeout: 5000,
-      retryStrategy: (times: number) => Math.min(5000, times * 200),
-      tls: isTLS ? { rejectUnauthorized: false } : undefined,
-    } as Record<string, unknown>)
-    client.on('error', () => {})
-    return client
-  } catch {
-    return null
-  }
-}
-
-const redis: IORedis | null = createRedis()
+import { redis } from '@/lib/redis'
 
 export async function rateLimit(
   routeKey: string,
@@ -34,7 +19,8 @@ export async function rateLimit(
     const allowed = current <= limit
     const remaining = Math.max(0, limit - current)
     return { allowed, remaining }
-  } catch {
+  } catch (error) {
+    console.error('[RATE_LIMIT_ERROR]', routeKey, error)
     return { allowed: true, remaining: limit }
   }
 }
