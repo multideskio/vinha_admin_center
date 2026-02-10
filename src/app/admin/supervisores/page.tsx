@@ -21,10 +21,6 @@ import {
   User,
   Map,
   Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   UserCheck,
   RefreshCw,
   Users,
@@ -102,8 +98,76 @@ import {
   type ManagerProfile,
 } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { PaginationControls } from '../_components/PaginationControls'
+import { PageHeader } from '../_components/PageHeader'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 type Region = RegionType
+
+const DeleteSupervisorDialog = ({
+  supervisorId,
+  onConfirm,
+}: {
+  supervisorId: string
+  onConfirm: (id: string, reason: string) => void
+}) => {
+  const [reason, setReason] = React.useState('')
+  const [isOpen, setIsOpen] = React.useState(false)
+
+  const handleConfirm = () => {
+    onConfirm(supervisorId, reason)
+    setIsOpen(false)
+    setReason('')
+  }
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
+        Excluir
+      </AlertDialogTrigger>
+      <AlertDialogContent className="border-2 border-destructive/30">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+            <div className="p-2 rounded-lg bg-destructive/15 ring-2 ring-destructive/30">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+            </div>
+            Confirmar Exclusão do Supervisor
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação é irreversível e será registrada para auditoria. Por favor, forneça um motivo
+            detalhado para a exclusão deste supervisor.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-3">
+          <Label htmlFor="deletion-reason" className="font-semibold">
+            Motivo da Exclusão *
+          </Label>
+          <Textarea
+            id="deletion-reason"
+            placeholder="Ex: Duplicidade de cadastro, solicitação do usuário, desligamento da organização, etc."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="min-h-[100px] border-destructive/30 focus:border-destructive"
+          />
+          <p className="text-xs text-muted-foreground">
+            Este motivo será armazenado permanentemente no sistema.
+          </p>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleConfirm}
+            disabled={!reason.trim()}
+            className="bg-destructive hover:bg-destructive/90 font-semibold"
+          >
+            Confirmar Exclusão
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 
 type Supervisor = z.infer<typeof supervisorProfileSchema> & {
   id: string
@@ -544,10 +608,12 @@ export default function SupervisoresPage() {
     fetchData()
   }, [fetchData])
 
-  const handleDelete = async (supervisorId: string) => {
+  const handleDelete = async (supervisorId: string, reason: string) => {
     try {
       const response = await fetch(`/api/v1/admin/supervisores/${supervisorId}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletionReason: reason }),
       })
       if (!response.ok) throw new Error('Falha ao excluir o supervisor.')
       toast({
@@ -666,29 +732,10 @@ export default function SupervisoresPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <AlertDialog>
-                              <AlertDialogTrigger className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-red-600">
-                                Excluir
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Essa ação não pode ser desfeita. Isso excluirá permanentemente o
-                                    supervisor.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => supervisor.id && handleDelete(supervisor.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                  >
-                                    Continuar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <DeleteSupervisorDialog
+                              supervisorId={supervisor.id}
+                              onConfirm={handleDelete}
+                            />
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -710,7 +757,14 @@ export default function SupervisoresPage() {
             </TableBody>
           </Table>
         </div>
-        <PaginationControls />
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredSupervisors.length}
+          itemsPerPage={itemsPerPage}
+          isLoading={isLoading}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
   )
@@ -747,9 +801,9 @@ export default function SupervisoresPage() {
                     className="rounded-lg object-cover w-24 h-24 ring-2 ring-offset-2 ring-offset-background ring-muted"
                     unoptimized
                   />
-                  <div className="flex-1 space-y-2 min-w-[200px]">
-                    <div className="flex items-start justify-between">
-                      <h3 className="text-lg font-bold">
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-lg font-bold truncate">
                         {supervisor.firstName} {supervisor.lastName}
                       </h3>
                       <Badge variant={supervisor.status === 'active' ? 'success' : 'destructive'}>
@@ -798,99 +852,37 @@ export default function SupervisoresPage() {
           </div>
         )}
       </div>
-      <PaginationControls />
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredSupervisors.length}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
+        onPageChange={setCurrentPage}
+      />
     </>
-  )
-
-  const PaginationControls = () => (
-    <div className="flex items-center justify-between mt-6">
-      <div className="text-sm text-muted-foreground">
-        Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
-        {Math.min(currentPage * itemsPerPage, filteredSupervisors.length)} de{' '}
-        {filteredSupervisors.length} resultados
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage(1)}
-          disabled={currentPage === 1 || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronsLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1 || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2 px-4">
-          <span className="text-sm font-medium">
-            Página {currentPage} de {totalPages || 1}
-          </span>
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage(totalPages)}
-          disabled={currentPage === totalPages || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronsRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
   )
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header Moderno com Gradiente */}
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 videira-gradient opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-
-        <div className="relative z-10 p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
-                <UserCheck className="h-8 w-8" />
-                Supervisores
-              </h1>
-              <p className="text-base text-white/90 mt-2 font-medium">
-                Gerencie os supervisores da organização
-              </p>
-              <p className="text-sm text-white/70 mt-1">
-                {supervisors.length}{' '}
-                {supervisors.length === 1 ? 'supervisor cadastrado' : 'supervisores cadastrados'}
-              </p>
-            </div>
-            <SupervisorFormModal onSave={fetchData} managers={managers} regions={regions}>
-              <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
-                <PlusCircle className="h-5 w-5" />
-                <span>Novo Supervisor</span>
-              </Button>
-            </SupervisorFormModal>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Supervisores"
+        description="Gerencie os supervisores da organização"
+        subtitle={`${supervisors.length} ${supervisors.length === 1 ? 'supervisor cadastrado' : 'supervisores cadastrados'}`}
+        icon={UserCheck}
+        actions={
+          <SupervisorFormModal onSave={fetchData} managers={managers} regions={regions}>
+            <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
+              <PlusCircle className="h-5 w-5" />
+              <span>Novo Supervisor</span>
+            </Button>
+          </SupervisorFormModal>
+        }
+        onRefresh={fetchData}
+      />
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
         <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -954,8 +946,8 @@ export default function SupervisoresPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome ou email..."

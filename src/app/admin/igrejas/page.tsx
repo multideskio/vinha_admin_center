@@ -14,10 +14,6 @@ import {
   User,
   Calendar as CalendarIcon,
   Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   Building2,
   RefreshCw,
   AlertTriangle,
@@ -95,6 +91,8 @@ import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
+import { PaginationControls } from '../_components/PaginationControls'
+import { PageHeader } from '../_components/PageHeader'
 
 const churchSchema = z.object({
   supervisorId: z.string({ required_error: 'Selecione um supervisor.' }),
@@ -871,7 +869,14 @@ export default function IgrejasPage() {
             </TableBody>
           </Table>
         </div>
-        <PaginationControls />
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredChurches.length}
+          itemsPerPage={itemsPerPage}
+          isLoading={isLoading}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
   )
@@ -909,9 +914,9 @@ export default function IgrejasPage() {
                       className="rounded-lg object-cover w-24 h-24 ring-2 ring-offset-2 ring-offset-background ring-muted"
                       unoptimized
                     />
-                    <div className="flex-1 space-y-2 min-w-[200px]">
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-lg font-bold">{church.nomeFantasia}</h3>
+                    <div className="flex-1 space-y-2 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-lg font-bold truncate">{church.nomeFantasia}</h3>
                         <Badge variant={church.status === 'active' ? 'success' : 'destructive'}>
                           {church.status === 'active' ? 'Ativo' : 'Inativo'}
                         </Badge>
@@ -974,99 +979,37 @@ export default function IgrejasPage() {
           </div>
         )}
       </div>
-      <PaginationControls />
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredChurches.length}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
+        onPageChange={setCurrentPage}
+      />
     </>
-  )
-
-  const PaginationControls = () => (
-    <div className="flex items-center justify-between mt-6">
-      <div className="text-sm text-muted-foreground">
-        Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
-        {Math.min(currentPage * itemsPerPage, filteredChurches.length)} de {filteredChurches.length}{' '}
-        resultados
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage(1)}
-          disabled={currentPage === 1 || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronsLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1 || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2 px-4">
-          <span className="text-sm font-medium">
-            Página {currentPage} de {totalPages || 1}
-          </span>
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage(totalPages)}
-          disabled={currentPage === totalPages || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronsRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
   )
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header Moderno com Gradiente */}
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 videira-gradient opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-
-        <div className="relative z-10 p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
-                <Building2 className="h-8 w-8" />
-                Igrejas
-              </h1>
-              <p className="text-base text-white/90 mt-2 font-medium">
-                Gerencie as igrejas da organização
-              </p>
-              <p className="text-sm text-white/70 mt-1">
-                {churches.length}{' '}
-                {churches.length === 1 ? 'igreja cadastrada' : 'igrejas cadastradas'}
-              </p>
-            </div>
-            <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
-              <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
-                <PlusCircle className="h-5 w-5" />
-                <span>Nova Igreja</span>
-              </Button>
-            </ChurchFormModal>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Igrejas"
+        description="Gerencie as igrejas da organização"
+        subtitle={`${churches.length} ${churches.length === 1 ? 'igreja cadastrada' : 'igrejas cadastradas'}`}
+        icon={Building2}
+        actions={
+          <ChurchFormModal onSave={fetchData} supervisors={supervisors}>
+            <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
+              <PlusCircle className="h-5 w-5" />
+              <span>Nova Igreja</span>
+            </Button>
+          </ChurchFormModal>
+        }
+        onRefresh={fetchData}
+      />
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
         <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -1132,8 +1075,8 @@ export default function IgrejasPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome fantasia ou email..."

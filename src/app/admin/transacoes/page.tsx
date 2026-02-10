@@ -9,10 +9,6 @@ import {
   ListFilter,
   MoreHorizontal,
   Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   ArrowRightLeft,
   RefreshCw,
   Loader2,
@@ -45,6 +41,8 @@ import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { QuickProfileModal } from '@/components/ui/quick-profile-modal'
+import { PaginationControls } from '../_components/PaginationControls'
+import { PageHeader } from '../_components/PageHeader'
 
 type Transaction = {
   id: string
@@ -289,23 +287,11 @@ export default function TransacoesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header Moderno com Gradiente */}
-      <div className="relative overflow-hidden rounded-2xl p-8">
-        <div className="absolute inset-0 videira-gradient opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-
-        <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
-            <ArrowRightLeft className="h-8 w-8" />
-            Transações
-          </h1>
-          <p className="text-base text-white/90 mt-2 font-medium">
-            Gerencie todas as transações financeiras da plataforma
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Transações"
+        description="Gerencie todas as transações financeiras da plataforma"
+        icon={ArrowRightLeft}
+      />
 
       {/* Filtros e Tabela */}
       <Card className="shadow-lg border-l-4 border-l-videira-blue">
@@ -395,8 +381,12 @@ export default function TransacoesPage() {
                 <TableHeader>
                   <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
                     <TableHead className="font-semibold min-w-[200px]">Contribuinte</TableHead>
-                    <TableHead className="font-semibold text-center min-w-[80px]">Perfil</TableHead>
-                    <TableHead className="font-semibold text-center min-w-[80px]">Fraude</TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold text-center min-w-[80px]">
+                      Perfil
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell font-semibold text-center min-w-[80px]">
+                      Fraude
+                    </TableHead>
                     <TableHead className="hidden lg:table-cell font-semibold min-w-[120px]">
                       Igreja
                     </TableHead>
@@ -423,10 +413,10 @@ export default function TransacoesPage() {
                             <Skeleton className="h-3 w-40" />
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="hidden sm:table-cell text-center">
                           <Skeleton className="h-6 w-6 mx-auto" />
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="hidden sm:table-cell text-center">
                           <Skeleton className="h-6 w-16 mx-auto" />
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
@@ -480,7 +470,7 @@ export default function TransacoesPage() {
                         </TableCell>
 
                         {/* Coluna Perfil Rápido */}
-                        <TableCell className="text-center">
+                        <TableCell className="hidden sm:table-cell text-center">
                           {transaction.contributorId ? (
                             <Button
                               size="icon"
@@ -499,13 +489,13 @@ export default function TransacoesPage() {
                         </TableCell>
 
                         {/* Coluna Fraude */}
-                        <TableCell className="text-center">
+                        <TableCell className="hidden sm:table-cell text-center">
                           {transaction.isFraud ? (
                             <Badge
                               variant="destructive"
                               className="text-xs px-2 py-1 bg-red-100 text-red-800 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
                             >
-                              🚨
+                              🚨<span className="sr-only">Alerta de fraude</span>
                             </Badge>
                           ) : (
                             <span className="text-muted-foreground">-</span>
@@ -658,59 +648,15 @@ export default function TransacoesPage() {
             </div>
           </div>
 
-          {/* Paginação Melhorada */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-muted-foreground">
-                Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
-                {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} de{' '}
-                {filteredTransactions.length} resultados
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1 || isLoading}
-                  className="h-8 w-8"
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1 || isLoading}
-                  className="h-8 w-8"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="flex items-center gap-2 px-4">
-                  <span className="text-sm font-medium">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages || isLoading}
-                  className="h-8 w-8"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages || isLoading}
-                  className="h-8 w-8"
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Paginação */}
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredTransactions.length}
+            itemsPerPage={itemsPerPage}
+            isLoading={isLoading}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
 

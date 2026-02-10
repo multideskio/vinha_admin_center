@@ -50,6 +50,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '../_components/PageHeader'
 
 const SUGGESTED_COLORS = [
   { name: 'Azul Oceano', color: '#0077BE' },
@@ -235,7 +236,7 @@ const RegionFormModal = ({
                     {/* Cores Sugeridas */}
                     <div>
                       <p className="text-sm text-muted-foreground mb-3">Cores sugeridas:</p>
-                      <div className="grid grid-cols-5 gap-2">
+                      <div className="grid grid-cols-5 sm:grid-cols-5 gap-2">
                         {SUGGESTED_COLORS.map((suggestedColor) => {
                           const isUsed = usedColors.includes(suggestedColor.color.toLowerCase())
                           const isSelected =
@@ -390,49 +391,24 @@ export default function RegioesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header Moderno com Gradiente */}
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 videira-gradient opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-
-        <div className="relative z-10 p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
-                <Map className="h-8 w-8" />
-                Regiões
-              </h1>
-              <p className="text-base text-white/90 mt-2 font-medium">
-                Gerencie as regiões e suas respectivas cores para organização
-              </p>
-              <p className="text-sm text-white/70 mt-1">
-                {regions.length}{' '}
-                {regions.length === 1 ? 'região cadastrada' : 'regiões cadastradas'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                size="icon"
-                onClick={fetchRegions}
-                className="h-10 w-10 bg-white/20 hover:bg-white/30 text-white border-white/30 shadow-lg"
-              >
-                <RefreshCw className="h-5 w-5" />
-              </Button>
-              <RegionFormModal existingRegions={regions} onSave={fetchRegions}>
-                <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
-                  <PlusCircle className="h-5 w-5" />
-                  <span>Nova Região</span>
-                </Button>
-              </RegionFormModal>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Regiões"
+        description="Gerencie as regiões e suas respectivas cores para organização"
+        subtitle={`${regions.length} ${regions.length === 1 ? 'região cadastrada' : 'regiões cadastradas'}`}
+        icon={Map}
+        actions={
+          <RegionFormModal existingRegions={regions} onSave={fetchRegions}>
+            <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
+              <PlusCircle className="h-5 w-5" />
+              <span>Nova Região</span>
+            </Button>
+          </RegionFormModal>
+        }
+        onRefresh={fetchRegions}
+      />
 
       {/* Cards de Estatísticas */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
         <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -501,11 +477,11 @@ export default function RegioesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-videira-cyan/5 via-videira-blue/5 to-videira-purple/5">
-                  <TableHead className="w-[80px] font-semibold">Cor</TableHead>
+                  <TableHead className="w-[60px] sm:w-[80px] font-semibold">Cor</TableHead>
                   <TableHead className="font-semibold">Nome da Região</TableHead>
                   <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
@@ -529,22 +505,24 @@ export default function RegioesPage() {
                   regions.map((region) => (
                     <TableRow key={region.id} className="hover:bg-muted/50">
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           <div
-                            className="h-10 w-10 rounded-full border-2 border-white shadow-md ring-2 ring-offset-2 ring-offset-background"
+                            className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border-2 border-white shadow-md ring-2 ring-offset-2 ring-offset-background flex-shrink-0"
                             style={{
                               backgroundColor: region.color,
                               boxShadow: `0 0 20px ${region.color}40`,
                             }}
                           />
-                          <code className="text-xs font-mono text-muted-foreground">
+                          <code className="text-xs font-mono text-muted-foreground hidden sm:inline">
                             {region.color}
                           </code>
                         </div>
                       </TableCell>
-                      <TableCell className="font-semibold text-lg">{region.name}</TableCell>
+                      <TableCell className="font-semibold text-base sm:text-lg">
+                        {region.name}
+                      </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1 sm:gap-2">
                           <RegionFormModal
                             region={region}
                             existingRegions={regions}
@@ -554,8 +532,8 @@ export default function RegioesPage() {
                               size="sm"
                               className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                             >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Editar
+                              <Edit className="h-4 w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Editar</span>
                             </Button>
                           </RegionFormModal>
 
@@ -565,8 +543,8 @@ export default function RegioesPage() {
                                 size="sm"
                                 className="bg-white dark:bg-background border-2 border-destructive text-destructive hover:bg-destructive hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                               >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Excluir
+                                <Trash2 className="h-4 w-4 sm:mr-1" />
+                                <span className="hidden sm:inline">Excluir</span>
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>

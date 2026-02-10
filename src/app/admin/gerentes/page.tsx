@@ -13,10 +13,6 @@ import {
   MapPin,
   Pencil,
   Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   UserCheck,
   RefreshCw,
   Users,
@@ -81,6 +77,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { PaginationControls } from '../_components/PaginationControls'
+import { PageHeader } from '../_components/PageHeader'
 import { cn } from '@/lib/utils'
 
 const DeleteManagerDialog = ({
@@ -648,7 +646,14 @@ export default function GerentesPage() {
             </TableBody>
           </Table>
         </div>
-        <PaginationControls />
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredManagers.length}
+          itemsPerPage={itemsPerPage}
+          isLoading={isLoading}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
   )
@@ -682,12 +687,12 @@ export default function GerentesPage() {
                     alt={`Foto de ${manager.firstName}`}
                     width={128}
                     height={128}
-                    className="rounded-lg object-cover w-full h-auto sm:w-32 sm:h-32 ring-2 ring-offset-2 ring-offset-background ring-muted"
+                    className="rounded-lg object-cover w-24 h-24 sm:w-32 sm:h-32 ring-2 ring-offset-2 ring-offset-background ring-muted"
                     unoptimized
                   />
-                  <div className="flex-1 space-y-2 min-w-[200px]">
-                    <div className="flex items-start justify-between">
-                      <h3 className="text-lg font-bold">
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-lg font-bold truncate">
                         {manager.firstName} {manager.lastName}
                       </h3>
                       <Badge variant={manager.status === 'active' ? 'success' : 'destructive'}>
@@ -734,99 +739,37 @@ export default function GerentesPage() {
           </div>
         )}
       </div>
-      <PaginationControls />
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredManagers.length}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
+        onPageChange={setCurrentPage}
+      />
     </>
-  )
-
-  const PaginationControls = () => (
-    <div className="flex items-center justify-between mt-6">
-      <div className="text-sm text-muted-foreground">
-        Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
-        {Math.min(currentPage * itemsPerPage, filteredManagers.length)} de {filteredManagers.length}{' '}
-        resultados
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage(1)}
-          disabled={currentPage === 1 || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronsLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1 || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2 px-4">
-          <span className="text-sm font-medium">
-            Página {currentPage} de {totalPages || 1}
-          </span>
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setCurrentPage(totalPages)}
-          disabled={currentPage === totalPages || isLoading}
-          className="h-8 w-8"
-        >
-          <ChevronsRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
   )
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header Moderno com Gradiente */}
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 videira-gradient opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
-
-        <div className="relative z-10 p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
-                <UserCheck className="h-8 w-8" />
-                Gerentes
-              </h1>
-              <p className="text-base text-white/90 mt-2 font-medium">
-                Gerencie os gerentes da organização
-              </p>
-              <p className="text-sm text-white/70 mt-1">
-                {managers.length}{' '}
-                {managers.length === 1 ? 'gerente cadastrado' : 'gerentes cadastrados'}
-              </p>
-            </div>
-            <GerenteFormModal onSave={fetchManagers}>
-              <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
-                <PlusCircle className="h-5 w-5" />
-                <span>Novo Gerente</span>
-              </Button>
-            </GerenteFormModal>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Gerentes"
+        description="Gerencie os gerentes da organização"
+        subtitle={`${managers.length} ${managers.length === 1 ? 'gerente cadastrado' : 'gerentes cadastrados'}`}
+        icon={UserCheck}
+        actions={
+          <GerenteFormModal onSave={fetchManagers}>
+            <Button className="bg-white text-videira-blue hover:bg-white/90 shadow-lg font-semibold gap-2">
+              <PlusCircle className="h-5 w-5" />
+              <span>Novo Gerente</span>
+            </Button>
+          </GerenteFormModal>
+        }
+        onRefresh={fetchManagers}
+      />
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
         <Card className="shadow-lg border-t-4 border-t-videira-cyan hover:shadow-xl transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -892,8 +835,8 @@ export default function GerentesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome ou email..."
