@@ -57,75 +57,79 @@ export async function GET(request: Request): Promise<NextResponse> {
     const startOfCurrentMonth = getBrazilStartOfMonth(now)
     const startOfPreviousMonth = getBrazilStartOfMonth(subtractMonthsBrazil(now, 1))
 
-    // --- KPI Calculations ---
-    const totalManagers = await db
-      .select({ value: count() })
-      .from(users)
-      .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
-    const totalSupervisors = await db
-      .select({ value: count() })
-      .from(users)
-      .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
-    const totalPastors = await db
-      .select({ value: count() })
-      .from(users)
-      .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
-    const totalChurches = await db
-      .select({ value: count() })
-      .from(users)
-      .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
+    // --- KPI Calculations (parallelized) ---
+    const [
+      roleCountsData,
+      revenueCurrentMonthResult,
+      revenuePreviousMonthResult,
+      totalMembersResult,
+      newMembersThisMonthResult,
+      totalTransactionsResult,
+      newTransactionsThisMonthResult,
+      newTransactionsLastMonthResult,
+    ] = await Promise.all([
+      // 1. Contagem por role em uma única query com GROUP BY
+      db
+        .select({ role: users.role, value: count() })
+        .from(users)
+        .where(isNull(users.deletedAt))
+        .groupBy(users.role),
+      // 2. Receita período atual
+      db
+        .select({ value: sum(transactions.amount) })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.status, 'approved'),
+            gte(transactions.createdAt, startDate),
+            lt(transactions.createdAt, endDate),
+          ),
+        ),
+      // 3. Receita mês anterior
+      db
+        .select({ value: sum(transactions.amount) })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.status, 'approved'),
+            gte(transactions.createdAt, startOfPreviousMonth),
+            lt(transactions.createdAt, startOfCurrentMonth),
+          ),
+        ),
+      // 4. Total membros (já incluso no GROUP BY acima, mas precisamos do total geral)
+      db.select({ value: count() }).from(users).where(isNull(users.deletedAt)),
+      // 5. Novos membros este mês
+      db.select({ value: count() }).from(users).where(gte(users.createdAt, startOfCurrentMonth)),
+      // 6. Total transações
+      db.select({ value: count() }).from(transactions),
+      // 7. Transações este mês
+      db
+        .select({ value: count() })
+        .from(transactions)
+        .where(gte(transactions.createdAt, startOfCurrentMonth)),
+      // 8. Transações mês passado
+      db
+        .select({ value: count() })
+        .from(transactions)
+        .where(
+          and(
+            gte(transactions.createdAt, startOfPreviousMonth),
+            lt(transactions.createdAt, startOfCurrentMonth),
+          ),
+        ),
+    ])
 
-    // Revenue (filtered by date range)
-    const revenueCurrentMonthResult = await db
-      .select({ value: sum(transactions.amount) })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.status, 'approved'),
-          gte(transactions.createdAt, startDate),
-          lt(transactions.createdAt, endDate),
-        ),
-      )
-    const revenuePreviousMonthResult = await db
-      .select({ value: sum(transactions.amount) })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.status, 'approved'),
-          gte(transactions.createdAt, startOfPreviousMonth),
-          lt(transactions.createdAt, startOfCurrentMonth),
-        ),
-      )
+    // Extrair contagens por role do GROUP BY
+    const roleCountsMap = new Map(roleCountsData.map((r) => [r.role, r.value]))
+    const totalManagers = roleCountsMap.get('manager') || 0
+    const totalSupervisors = roleCountsMap.get('supervisor') || 0
+    const totalPastors = roleCountsMap.get('pastor') || 0
+    const totalChurches = roleCountsMap.get('church_account') || 0
+
     const totalRevenueCurrentMonth = parseFloat(revenueCurrentMonthResult[0]?.value || '0')
     const totalRevenuePreviousMonth = parseFloat(revenuePreviousMonthResult[0]?.value || '0')
-
-    // Members
-    const totalMembersResult = await db
-      .select({ value: count() })
-      .from(users)
-      .where(isNull(users.deletedAt))
-    const newMembersThisMonthResult = await db
-      .select({ value: count() })
-      .from(users)
-      .where(gte(users.createdAt, startOfCurrentMonth))
     const totalMembers = totalMembersResult[0]?.value || 0
     const newMembersThisMonth = newMembersThisMonthResult[0]?.value || 0
-
-    // Transactions
-    const totalTransactionsResult = await db.select({ value: count() }).from(transactions)
-    const newTransactionsThisMonthResult = await db
-      .select({ value: count() })
-      .from(transactions)
-      .where(gte(transactions.createdAt, startOfCurrentMonth))
-    const newTransactionsLastMonthResult = await db
-      .select({ value: count() })
-      .from(transactions)
-      .where(
-        and(
-          gte(transactions.createdAt, startOfPreviousMonth),
-          lt(transactions.createdAt, startOfCurrentMonth),
-        ),
-      )
     const totalTransactions = totalTransactionsResult[0]?.value || 0
     const newTransactionsThisMonth = newTransactionsThisMonthResult[0]?.value || 0
     const newTransactionsLastMonth = newTransactionsLastMonthResult[0]?.value || 0
@@ -235,77 +239,47 @@ export async function GET(request: Request): Promise<NextResponse> {
     // Buscar nomes reais dos contribuintes das transações recentes
     const contributorIds = recentTransactionsData.map((t) => t.contributorId)
 
-    console.log('[DASHBOARD_DEBUG] Contributor IDs:', contributorIds)
-
-    // Buscar nomes de pastores
-    const pastorNames =
+    // ✅ OTIMIZADO: Buscar nomes de todos os perfis em paralelo
+    const [pastorNames, supervisorNames, churchNames, managerNames, adminNames] =
       contributorIds.length > 0
-        ? await db
-            .select({
-              id: pastorProfiles.userId,
-              name: sql<string>`${pastorProfiles.firstName} || ' ' || ${pastorProfiles.lastName}`,
-            })
-            .from(pastorProfiles)
-            .where(inArray(pastorProfiles.userId, contributorIds))
-        : []
-
-    console.log('[DASHBOARD_DEBUG] Pastor names found:', pastorNames.length)
-
-    // Buscar nomes de supervisores
-    const supervisorNames =
-      contributorIds.length > 0
-        ? await db
-            .select({
-              id: supervisorProfiles.userId,
-              name: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
-            })
-            .from(supervisorProfiles)
-            .where(inArray(supervisorProfiles.userId, contributorIds))
-        : []
-
-    console.log('[DASHBOARD_DEBUG] Supervisor names found:', supervisorNames.length)
-
-    // Buscar nomes de igrejas
-    const churchNames =
-      contributorIds.length > 0
-        ? await db
-            .select({
-              id: churchProfiles.userId,
-              name: churchProfiles.nomeFantasia,
-            })
-            .from(churchProfiles)
-            .where(inArray(churchProfiles.userId, contributorIds))
-        : []
-
-    console.log('[DASHBOARD_DEBUG] Church names found:', churchNames.length)
-
-    // Buscar nomes de managers
-    const managerNames =
-      contributorIds.length > 0
-        ? await db
-            .select({
-              id: managerProfiles.userId,
-              name: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
-            })
-            .from(managerProfiles)
-            .where(inArray(managerProfiles.userId, contributorIds))
-        : []
-
-    console.log('[DASHBOARD_DEBUG] Manager names found:', managerNames.length)
-
-    // Buscar nomes de admins
-    const adminNames =
-      contributorIds.length > 0
-        ? await db
-            .select({
-              id: adminProfiles.userId,
-              name: sql<string>`${adminProfiles.firstName} || ' ' || ${adminProfiles.lastName}`,
-            })
-            .from(adminProfiles)
-            .where(inArray(adminProfiles.userId, contributorIds))
-        : []
-
-    console.log('[DASHBOARD_DEBUG] Admin names found:', adminNames.length)
+        ? await Promise.all([
+            db
+              .select({
+                id: pastorProfiles.userId,
+                name: sql<string>`${pastorProfiles.firstName} || ' ' || ${pastorProfiles.lastName}`,
+              })
+              .from(pastorProfiles)
+              .where(inArray(pastorProfiles.userId, contributorIds)),
+            db
+              .select({
+                id: supervisorProfiles.userId,
+                name: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+              })
+              .from(supervisorProfiles)
+              .where(inArray(supervisorProfiles.userId, contributorIds)),
+            db
+              .select({
+                id: churchProfiles.userId,
+                name: churchProfiles.nomeFantasia,
+              })
+              .from(churchProfiles)
+              .where(inArray(churchProfiles.userId, contributorIds)),
+            db
+              .select({
+                id: managerProfiles.userId,
+                name: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
+              })
+              .from(managerProfiles)
+              .where(inArray(managerProfiles.userId, contributorIds)),
+            db
+              .select({
+                id: adminProfiles.userId,
+                name: sql<string>`${adminProfiles.firstName} || ' ' || ${adminProfiles.lastName}`,
+              })
+              .from(adminProfiles)
+              .where(inArray(adminProfiles.userId, contributorIds)),
+          ])
+        : [[], [], [], [], []]
 
     // Criar mapa de nomes
     const nameMap = new Map<string, string>()
@@ -314,9 +288,6 @@ export async function GET(request: Request): Promise<NextResponse> {
     for (const c of churchNames) nameMap.set(c.id, c.name)
     for (const m of managerNames) nameMap.set(m.id, m.name)
     for (const a of adminNames) nameMap.set(a.id, a.name)
-
-    console.log('[DASHBOARD_DEBUG] Name map size:', nameMap.size)
-    console.log('[DASHBOARD_DEBUG] Name map entries:', Array.from(nameMap.entries()))
 
     const recentRegistrationsData = await db
       .select({
@@ -480,10 +451,10 @@ export async function GET(request: Request): Promise<NextResponse> {
         value: `+${totalTransactions}`,
         change: calculateChange(newTransactionsThisMonth, newTransactionsLastMonth),
       },
-      totalChurches: { value: `${totalChurches[0]?.value || 0}`, change: '' },
-      totalPastors: { value: `${totalPastors[0]?.value || 0}`, change: '' },
-      totalSupervisors: { value: `${totalSupervisors[0]?.value || 0}`, change: '' },
-      totalManagers: { value: `${totalManagers[0]?.value || 0}`, change: '' },
+      totalChurches: { value: `${totalChurches}`, change: '' },
+      totalPastors: { value: `${totalPastors}`, change: '' },
+      totalSupervisors: { value: `${totalSupervisors}`, change: '' },
+      totalManagers: { value: `${totalManagers}`, change: '' },
     }
 
     const recentTransactions = recentTransactionsData.map((t) => ({

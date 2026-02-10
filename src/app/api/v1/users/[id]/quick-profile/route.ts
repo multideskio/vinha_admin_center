@@ -16,7 +16,7 @@ import {
   churchProfiles,
   regions,
 } from '@/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, and } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -50,47 +50,63 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (userData.role === 'manager') {
       const [managerProfile] = await db
-        .select()
+        .select({
+          userId: managerProfiles.userId,
+          firstName: managerProfiles.firstName,
+          lastName: managerProfiles.lastName,
+          phone: managerProfiles.phone,
+          avatarUrl: managerProfiles.avatarUrl,
+        })
         .from(managerProfiles)
         .where(eq(managerProfiles.userId, userId))
         .limit(1)
       profile = managerProfile || null
     } else if (userData.role === 'supervisor') {
       const [supervisorProfile] = await db
-        .select()
+        .select({
+          userId: supervisorProfiles.userId,
+          firstName: supervisorProfiles.firstName,
+          lastName: supervisorProfiles.lastName,
+          phone: supervisorProfiles.phone,
+          avatarUrl: supervisorProfiles.avatarUrl,
+          managerId: supervisorProfiles.managerId,
+          regionId: supervisorProfiles.regionId,
+        })
         .from(supervisorProfiles)
         .where(eq(supervisorProfiles.userId, userId))
         .limit(1)
       profile = supervisorProfile || null
 
-      // Buscar informações do gerente
-      if (supervisorProfile?.managerId) {
-        const [managerData] = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            firstName: managerProfiles.firstName,
-            lastName: managerProfiles.lastName,
-          })
-          .from(users)
-          .innerJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-          .where(eq(users.id, supervisorProfile.managerId))
-          .limit(1)
-
-        // Buscar informações da região
-        let regionData = null
-        if (supervisorProfile.regionId) {
-          const [region] = await db
-            .select({
-              id: regions.id,
-              name: regions.name,
-              color: regions.color,
-            })
-            .from(regions)
-            .where(eq(regions.id, supervisorProfile.regionId))
-            .limit(1)
-          regionData = region
-        }
+      // ✅ OTIMIZADO: Buscar gerente e região em paralelo
+      if (supervisorProfile?.managerId || supervisorProfile?.regionId) {
+        const [managerData, regionData] = await Promise.all([
+          supervisorProfile.managerId
+            ? db
+                .select({
+                  id: users.id,
+                  email: users.email,
+                  firstName: managerProfiles.firstName,
+                  lastName: managerProfiles.lastName,
+                })
+                .from(users)
+                .innerJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+                .where(eq(users.id, supervisorProfile.managerId))
+                .limit(1)
+                .then((r) => r[0] || null)
+            : Promise.resolve(null),
+          supervisorProfile.regionId
+            ? db
+                .select({
+                  id: regions.id,
+                  name: regions.name,
+                  color: regions.color,
+                })
+                .from(regions)
+                .where(eq(regions.id, supervisorProfile.regionId))
+                .limit(1)
+                .then((r) => r[0] || null)
+            : Promise.resolve(null),
+        ])
 
         hierarchyInfo = {
           manager: managerData
@@ -111,13 +127,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     } else if (userData.role === 'pastor') {
       const [pastorProfile] = await db
-        .select()
+        .select({
+          userId: pastorProfiles.userId,
+          firstName: pastorProfiles.firstName,
+          lastName: pastorProfiles.lastName,
+          phone: pastorProfiles.phone,
+          avatarUrl: pastorProfiles.avatarUrl,
+          supervisorId: pastorProfiles.supervisorId,
+        })
         .from(pastorProfiles)
         .where(eq(pastorProfiles.userId, userId))
         .limit(1)
       profile = pastorProfile || null
 
-      // Buscar informações do supervisor e gerente
       if (pastorProfile?.supervisorId) {
         const [supervisorData] = await db
           .select({
@@ -133,36 +155,44 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .where(eq(users.id, pastorProfile.supervisorId))
           .limit(1)
 
-        let managerData = null
-        let regionData = null
-
-        if (supervisorData?.managerId) {
-          const [manager] = await db
+        // ✅ OTIMIZADO: Buscar gerente, região e igrejas em paralelo
+        const [managerData, regionData, churches] = await Promise.all([
+          supervisorData?.managerId
+            ? db
+                .select({
+                  id: users.id,
+                  email: users.email,
+                  firstName: managerProfiles.firstName,
+                  lastName: managerProfiles.lastName,
+                })
+                .from(users)
+                .innerJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+                .where(eq(users.id, supervisorData.managerId))
+                .limit(1)
+                .then((r) => r[0] || null)
+            : Promise.resolve(null),
+          supervisorData?.regionId
+            ? db
+                .select({
+                  id: regions.id,
+                  name: regions.name,
+                  color: regions.color,
+                })
+                .from(regions)
+                .where(eq(regions.id, supervisorData.regionId))
+                .limit(1)
+                .then((r) => r[0] || null)
+            : Promise.resolve(null),
+          db
             .select({
               id: users.id,
               email: users.email,
-              firstName: managerProfiles.firstName,
-              lastName: managerProfiles.lastName,
+              nomeFantasia: churchProfiles.nomeFantasia,
             })
             .from(users)
-            .innerJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-            .where(eq(users.id, supervisorData.managerId))
-            .limit(1)
-          managerData = manager
-        }
-
-        if (supervisorData?.regionId) {
-          const [region] = await db
-            .select({
-              id: regions.id,
-              name: regions.name,
-              color: regions.color,
-            })
-            .from(regions)
-            .where(eq(regions.id, supervisorData.regionId))
-            .limit(1)
-          regionData = region
-        }
+            .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
+            .where(eq(churchProfiles.supervisorId, userId)),
+        ])
 
         hierarchyInfo = {
           supervisor: supervisorData
@@ -188,17 +218,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             : null,
         }
 
-        // Buscar igrejas supervisionadas pelo pastor
-        const churches = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            nomeFantasia: churchProfiles.nomeFantasia,
-          })
-          .from(users)
-          .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-          .where(eq(churchProfiles.supervisorId, userId))
-
         if (churches.length > 0) {
           hierarchyInfo.churches = churches.map((church) => ({
             id: church.id,
@@ -209,13 +228,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     } else if (userData.role === 'church_account') {
       const [churchProfile] = await db
-        .select()
+        .select({
+          userId: churchProfiles.userId,
+          nomeFantasia: churchProfiles.nomeFantasia,
+          phone: churchProfiles.phone,
+          avatarUrl: churchProfiles.avatarUrl,
+          supervisorId: churchProfiles.supervisorId,
+        })
         .from(churchProfiles)
         .where(eq(churchProfiles.userId, userId))
         .limit(1)
       profile = churchProfile || null
 
-      // Buscar informações do supervisor e gerente através do supervisorId
       if (churchProfile?.supervisorId) {
         const [supervisorData] = await db
           .select({
@@ -231,36 +255,35 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .where(eq(users.id, churchProfile.supervisorId))
           .limit(1)
 
-        let managerData = null
-        let regionData = null
-
-        if (supervisorData?.managerId) {
-          const [manager] = await db
-            .select({
-              id: users.id,
-              email: users.email,
-              firstName: managerProfiles.firstName,
-              lastName: managerProfiles.lastName,
-            })
-            .from(users)
-            .innerJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-            .where(eq(users.id, supervisorData.managerId))
-            .limit(1)
-          managerData = manager
-        }
-
-        if (supervisorData?.regionId) {
-          const [region] = await db
-            .select({
-              id: regions.id,
-              name: regions.name,
-              color: regions.color,
-            })
-            .from(regions)
-            .where(eq(regions.id, supervisorData.regionId))
-            .limit(1)
-          regionData = region
-        }
+        // ✅ OTIMIZADO: Buscar gerente e região em paralelo
+        const [managerData, regionData] = await Promise.all([
+          supervisorData?.managerId
+            ? db
+                .select({
+                  id: users.id,
+                  email: users.email,
+                  firstName: managerProfiles.firstName,
+                  lastName: managerProfiles.lastName,
+                })
+                .from(users)
+                .innerJoin(managerProfiles, eq(users.id, managerProfiles.userId))
+                .where(eq(users.id, supervisorData.managerId))
+                .limit(1)
+                .then((r) => r[0] || null)
+            : Promise.resolve(null),
+          supervisorData?.regionId
+            ? db
+                .select({
+                  id: regions.id,
+                  name: regions.name,
+                  color: regions.color,
+                })
+                .from(regions)
+                .where(eq(regions.id, supervisorData.regionId))
+                .limit(1)
+                .then((r) => r[0] || null)
+            : Promise.resolve(null),
+        ])
 
         hierarchyInfo = {
           supervisor: supervisorData
@@ -288,8 +311,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    // Buscar últimas 10 transações aprovadas (pagas)
-    const recentTransactions = await db
+    // ✅ OTIMIZADO: Buscar apenas transações aprovadas diretamente no SQL
+    const approvedTransactions = await db
       .select({
         id: transactions.id,
         amount: transactions.amount,
@@ -298,14 +321,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         createdAt: transactions.createdAt,
       })
       .from(transactions)
-      .where(eq(transactions.contributorId, userId))
+      .where(and(eq(transactions.contributorId, userId), eq(transactions.status, 'approved')))
       .orderBy(desc(transactions.createdAt))
-      .limit(50) // Buscar mais para filtrar apenas as aprovadas
-
-    // Filtrar apenas transações aprovadas e pegar as 10 mais recentes
-    const approvedTransactions = recentTransactions
-      .filter((t) => t.status === 'approved')
-      .slice(0, 10)
+      .limit(10)
 
     // Formatar nome do usuário
     let userName = userData.email
