@@ -94,11 +94,10 @@ export async function createPixPayment(amount: number, customerName: string) {
     },
   }
 
-  console.log('Cielo PIX Request:', {
+  safeLog('[CIELO_PIX_REQUEST]', {
     url: `${apiUrl}/1/sales/`,
     environment: config.environment,
-    merchantId: config.merchantId,
-    payload,
+    amount: payload.Payment.Amount,
   })
 
   await logCieloRequest({

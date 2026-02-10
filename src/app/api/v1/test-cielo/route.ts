@@ -3,11 +3,17 @@ import { db } from '@/db/drizzle'
 import { gatewayConfigurations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { env } from '@/lib/env'
+import { validateRequest } from '@/lib/jwt'
 
 const COMPANY_ID = env.COMPANY_INIT
 
 export async function GET() {
   try {
+    const { user } = await validateRequest()
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
     const [config] = await db
       .select()
       .from(gatewayConfigurations)
@@ -22,7 +28,6 @@ export async function GET() {
     if (!config) {
       return NextResponse.json({
         error: 'Cielo não configurada no banco',
-        companyId: COMPANY_ID,
       })
     }
 
@@ -37,15 +42,16 @@ export async function GET() {
       environment: config.environment,
       hasMerchantId: !!merchantId,
       hasMerchantKey: !!merchantKey,
-      merchantIdLength: merchantId?.length || 0,
-      merchantKeyLength: merchantKey?.length || 0,
-      merchantIdPreview: merchantId?.substring(0, 8) + '...',
       acceptedMethods: config.acceptedPaymentMethods,
     })
   } catch (error) {
+    console.error(
+      '[TEST_CIELO_ERROR]',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+    )
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        error: 'Erro ao verificar configuração Cielo',
       },
       { status: 500 },
     )
