@@ -20,6 +20,7 @@ const envSchema = z.object({
   // Autenticação
   JWT_SECRET: z.string().min(32, 'JWT_SECRET deve ter no mínimo 32 caracteres'),
   DEFAULT_PASSWORD: z.string().min(6, 'DEFAULT_PASSWORD deve ter no mínimo 6 caracteres'),
+  CRON_SECRET: z.string().min(16, 'CRON_SECRET deve ter no mínimo 16 caracteres').optional(),
 
   // ===== Variáveis Opcionais =====
 
@@ -44,6 +45,9 @@ const envSchema = z.object({
   AWS_S3_ACCESS_KEY_ID: z.string().optional(),
   AWS_S3_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_S3_BUCKET_NAME: z.string().optional(),
+
+  // URL pública da aplicação (opcional - usada em links de emails/notificações)
+  NEXT_PUBLIC_APP_URL: z.string().url('NEXT_PUBLIC_APP_URL deve ser uma URL válida').optional(),
 })
 
 /**

@@ -2,6 +2,7 @@
  * Centralized API error handling utilities
  */
 import { NextResponse } from 'next/server'
+import { safeError } from '@/lib/log-sanitizer'
 
 export class ApiError extends Error {
   constructor(
@@ -15,7 +16,7 @@ export class ApiError extends Error {
 }
 
 export function handleApiError(error: unknown) {
-  console.error('API Error:', error)
+  safeError('API Error:', error)
 
   if (error instanceof ApiError) {
     return NextResponse.json(

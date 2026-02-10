@@ -1,5 +1,6 @@
 import { db } from '@/db/drizzle'
 import { cieloLogs } from '@/db/schema'
+import { sanitizeLog } from '@/lib/log-sanitizer'
 
 export async function logCieloRequest(data: {
   operationType: 'pix' | 'cartao' | 'boleto' | 'consulta' | 'cancelamento'
@@ -15,10 +16,13 @@ export async function logCieloRequest(data: {
       method: data.method,
       endpoint: data.endpoint,
       paymentId: data.paymentId || null,
-      requestBody: data.requestBody ? JSON.stringify(data.requestBody) : null,
+      requestBody: data.requestBody ? JSON.stringify(sanitizeLog(data.requestBody)) : null,
     })
   } catch (error) {
-    console.error('[CIELO_LOGGER] Error logging request:', error)
+    console.error(
+      '[CIELO_LOGGER] Error logging request:',
+      error instanceof Error ? error.message : error,
+    )
   }
 }
 
@@ -38,12 +42,15 @@ export async function logCieloResponse(data: {
       method: data.method,
       endpoint: data.endpoint,
       paymentId: data.paymentId || null,
-      responseBody: data.responseBody ? JSON.stringify(data.responseBody) : null,
+      responseBody: data.responseBody ? JSON.stringify(sanitizeLog(data.responseBody)) : null,
       statusCode: data.statusCode,
       errorMessage: data.errorMessage || null,
     })
   } catch (error) {
-    console.error('[CIELO_LOGGER] Error logging response:', error)
+    console.error(
+      '[CIELO_LOGGER] Error logging response:',
+      error instanceof Error ? error.message : error,
+    )
   }
 }
 
@@ -55,9 +62,12 @@ export async function logCieloWebhook(data: { paymentId?: string; requestBody: u
       method: 'POST',
       endpoint: '/webhooks/cielo',
       paymentId: data.paymentId || null,
-      requestBody: JSON.stringify(data.requestBody),
+      requestBody: JSON.stringify(sanitizeLog(data.requestBody)),
     })
   } catch (error) {
-    console.error('[CIELO_LOGGER] Error logging webhook:', error)
+    console.error(
+      '[CIELO_LOGGER] Error logging webhook:',
+      error instanceof Error ? error.message : error,
+    )
   }
 }

@@ -20,7 +20,7 @@ export async function rateLimit(
     const remaining = Math.max(0, limit - current)
     return { allowed, remaining }
   } catch (error) {
-    console.error('[RATE_LIMIT_ERROR]', routeKey, error)
+    console.error('[RATE_LIMIT_ERROR]', routeKey, error instanceof Error ? error.message : error)
     return { allowed: true, remaining: limit }
   }
 }

@@ -4,6 +4,7 @@
  */
 
 import { PaymentMethod, ContributionType } from './types'
+import { sanitizeLog } from '@/lib/log-sanitizer'
 
 /**
  * Formata valor monetário para exibição
@@ -268,6 +269,7 @@ export const isDevelopment = (): boolean => {
  */
 export const devLog = (message: string, ...args: unknown[]): void => {
   if (isDevelopment()) {
-    console.log(`[CONTRIBUTIONS] ${message}`, ...args)
+    const sanitizedArgs = args.map((arg) => sanitizeLog(arg))
+    console.log(`[CONTRIBUTIONS] ${message}`, ...sanitizedArgs)
   }
 }

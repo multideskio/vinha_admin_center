@@ -56,7 +56,7 @@ export default function useContribution(
   // Ações de atualização de estado
   const updateFormData = useCallback((data: Partial<ContributionFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }))
-    devLog('Form data updated:', data)
+    devLog('Form data updated:', { fields: Object.keys(data) })
   }, [])
 
   const updateCardState = useCallback((state: Partial<CardState>) => {
@@ -98,7 +98,11 @@ export default function useContribution(
   // Submissão do formulário principal
   const handleFormSubmit = useCallback(
     async (data: ContributionData) => {
-      devLog('Form submission started:', data)
+      devLog('Form submission started:', {
+        paymentMethod: data.paymentMethod,
+        contributionType: data.contributionType,
+        amount: data.amount,
+      })
 
       // Atualiza dados do formulário
       updateFormData(data)
@@ -174,7 +178,7 @@ export default function useContribution(
   // Pagamento com cartão
   const handleCardPayment = useCallback(
     async (cardData: CardData, installments?: number) => {
-      devLog('Card payment started:', { holder: cardData.holder, installments })
+      devLog('Card payment started:', { installments })
 
       const payload = {
         ...formData,

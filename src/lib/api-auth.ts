@@ -39,7 +39,10 @@ export async function authenticateApiKey(): Promise<NextResponse | null> {
 
     return null
   } catch (error) {
-    console.error('API Key authentication error:', error)
+    console.error(
+      'API Key authentication error:',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+    )
     return NextResponse.json(
       { error: 'Internal Server Error during authentication' },
       { status: 500 },

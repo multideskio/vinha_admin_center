@@ -18,15 +18,15 @@ const pool = new Pool({
 })
 
 pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err)
+  console.error('Unexpected database pool error:', err.message)
 })
 
 pool.on('connect', () => {
-  console.log('Database connection established')
+  console.warn('Database connection established')
 })
 
 pool.on('remove', () => {
-  console.log('Database connection removed from pool')
+  console.warn('Database connection removed from pool')
 })
 
 export const db = drizzle(pool, { schema })

@@ -36,7 +36,7 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
       const res = await fetch(`/api/v1/transacoes/${transactionId}`)
       const data = await res.json()
 
-      devLog('Payment status response:', data)
+      devLog('Payment status response:', { status: data.transaction?.Payment?.Status })
 
       if (data.transaction?.Payment?.Status === 2) {
         devLog('Payment confirmed!')
@@ -46,7 +46,10 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
 
       return false
     } catch (error) {
-      devLog('Payment status check failed:', error)
+      devLog(
+        'Payment status check failed:',
+        error instanceof Error ? error.message : 'Erro desconhecido',
+      )
       const errorMessage = error instanceof Error ? error.message : 'Erro ao verificar pagamento'
       onError(errorMessage)
       return false
@@ -100,7 +103,10 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
               scheduleNextCheck()
             }
           } catch (error) {
-            devLog('Error in automatic sync:', error)
+            devLog(
+              'Error in automatic sync:',
+              error instanceof Error ? error.message : 'Erro desconhecido',
+            )
 
             // Em caso de erro, usa delay maior
             const errorDelay = calculateErrorDelay(attempt, PIX_ERROR_DELAY, PIX_ERROR_MAX_DELAY)
@@ -181,7 +187,7 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
         variant: 'default',
       })
     } catch (error) {
-      devLog('Manual check failed:', error)
+      devLog('Manual check failed:', error instanceof Error ? error.message : 'Erro desconhecido')
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
 
       toast({

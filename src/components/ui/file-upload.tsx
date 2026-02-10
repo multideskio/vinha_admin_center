@@ -73,6 +73,7 @@ export function FileUpload({
         onError?.(result.error || 'Upload failed')
       }
     } catch (error) {
+      console.error('[FILE_UPLOAD_ERROR]', error)
       onError?.(error instanceof Error ? error.message : 'Upload failed')
     }
   }

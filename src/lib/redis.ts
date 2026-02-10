@@ -5,10 +5,11 @@
  */
 
 import IORedis from 'ioredis'
+import { env } from '@/lib/env'
 
 function createRedis(): IORedis | null {
   try {
-    const url = process.env.REDIS_URL || 'redis://localhost:6379'
+    const url = env.REDIS_URL
     const isTLS = url.startsWith('rediss://')
     const client = new IORedis(url, {
       maxRetriesPerRequest: 3,

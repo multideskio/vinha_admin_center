@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ ok: true, received, reminder })
   } catch (e) {
+    console.error('[SMOKE_TEST_ERROR]', e)
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }

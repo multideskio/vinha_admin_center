@@ -39,7 +39,8 @@ export async function POST(request: Request) {
     let body: unknown
     try {
       body = await request.json()
-    } catch {
+    } catch (error) {
+      console.warn('[RELATORIOS_JSON_PARSE] Corpo da requisição não é JSON válido')
       return NextResponse.json(
         { error: 'Corpo da requisição deve ser um JSON válido.' },
         { status: 400 },

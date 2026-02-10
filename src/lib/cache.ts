@@ -10,7 +10,7 @@ export async function setCache(key: string, value: unknown, ttlSeconds = 60) {
   try {
     await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds)
   } catch (error) {
-    console.error('[CACHE_SET_ERROR]', key, error)
+    console.error('[CACHE_SET_ERROR]', key, error instanceof Error ? error.message : error)
   }
 }
 
@@ -21,7 +21,7 @@ export async function getCache<T = unknown>(key: string): Promise<T | null> {
     if (!data) return null
     return JSON.parse(data) as T
   } catch (error) {
-    console.error('[CACHE_GET_ERROR]', key, error)
+    console.error('[CACHE_GET_ERROR]', key, error instanceof Error ? error.message : error)
     return null
   }
 }
@@ -31,7 +31,7 @@ export async function delCache(key: string) {
   try {
     await redis.del(key)
   } catch (error) {
-    console.error('[CACHE_DEL_ERROR]', key, error)
+    console.error('[CACHE_DEL_ERROR]', key, error instanceof Error ? error.message : error)
   }
 }
 
@@ -51,6 +51,10 @@ export async function invalidateCache(pattern: string) {
       }
     } while (cursor !== '0')
   } catch (error) {
-    console.error('[CACHE_INVALIDATE_ERROR]', pattern, error)
+    console.error(
+      '[CACHE_INVALIDATE_ERROR]',
+      pattern,
+      error instanceof Error ? error.message : error,
+    )
   }
 }

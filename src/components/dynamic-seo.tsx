@@ -141,7 +141,7 @@ function updateMetaTagSafe(attribute: 'name' | 'property', value: string, conten
       metaTag.content = content
     }
   } catch (error) {
-    console.debug(`Aviso: não foi possível atualizar meta tag ${attribute}="${value}"`)
+    console.warn(`[SEO_META_TAG] Não foi possível atualizar meta tag ${attribute}="${value}"`)
   }
 }
 
@@ -199,6 +199,6 @@ function updateFaviconSafe(logoUrl: string) {
       appleIcon.href = logoUrl
     }
   } catch (error) {
-    console.debug('Aviso: não foi possível atualizar favicon')
+    console.warn('[SEO_FAVICON] Não foi possível atualizar favicon')
   }
 }
