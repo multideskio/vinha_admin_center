@@ -5,8 +5,8 @@ Este guia explica como usar Docker para desenvolvimento do Vinha Admin Center.
 ## Arquivos Docker
 
 - `Dockerfile` - Configurado para desenvolvimento com hot reload
-- `docker-compose.yml` - Configuração padrão (desenvolvimento)
-- `docker-compose.dev.yml` - Configuração específica para desenvolvimento
+- `docker-compose.dev.yml` - Configuração para desenvolvimento
+- `docker-compose.prod.yml` - Configuração para produção
 - `.dockerignore` - Arquivos excluídos do contexto Docker
 
 ## Comandos Rápidos
@@ -15,9 +15,6 @@ Este guia explica como usar Docker para desenvolvimento do Vinha Admin Center.
 
 ```bash
 # Iniciar todos os serviços em desenvolvimento
-docker-compose up -d
-
-# Ou usar o arquivo específico de desenvolvimento
 docker-compose -f docker-compose.dev.yml up -d
 
 # Ver logs em tempo real
@@ -140,9 +137,6 @@ docker-compose logs -f app
 # Ver logs do banco
 docker-compose logs -f db
 
-# Ver logs de todos os serviços
-docker-compose logs -f
-
 # Entrar no container da aplicação
 docker-compose exec app sh
 
@@ -170,82 +164,32 @@ docker system prune -a
 
 ### Problema: Aplicação não inicia
 
-1. Verifique se as portas estão livres:
-
-   ```bash
-   netstat -tulpn | grep :9002
-   ```
-
-2. Verifique os logs:
-
-   ```bash
-   docker-compose logs app
-   ```
-
-3. Rebuild a imagem:
-   ```bash
-   docker-compose build --no-cache app
-   ```
+1. Verifique se as portas estão livres
+2. Verifique os logs: `docker-compose logs app`
+3. Rebuild a imagem: `docker-compose build --no-cache app`
 
 ### Problema: Banco não conecta
 
-1. Verifique se o PostgreSQL está rodando:
-
-   ```bash
-   docker-compose ps db
-   ```
-
-2. Teste a conexão:
-
-   ```bash
-   docker-compose exec db pg_isready -U vinha
-   ```
-
-3. Verifique a URL de conexão no container:
-   ```bash
-   docker-compose exec app env | grep DATABASE_URL
-   ```
+1. Verifique se o PostgreSQL está rodando: `docker-compose ps db`
+2. Teste a conexão: `docker-compose exec db pg_isready -U vinha`
+3. Verifique a URL: `docker-compose exec app env | grep DATABASE_URL`
 
 ### Problema: Hot reload não funciona
 
-1. Verifique se os volumes estão montados:
-
-   ```bash
-   docker-compose exec app ls -la /app/src
-   ```
-
-2. Reinicie apenas a aplicação:
-   ```bash
-   docker-compose restart app
-   ```
+1. Verifique volumes: `docker-compose exec app ls -la /app/src`
+2. Reinicie: `docker-compose restart app`
 
 ### Problema: Permissões no Windows
 
-Se estiver usando Windows, certifique-se de que:
+1. Docker Desktop configurado para usar WSL2
+2. Arquivos no sistema de arquivos do WSL2
 
-1. O Docker Desktop está configurado para usar WSL2
-2. Os arquivos estão no sistema de arquivos do WSL2
-3. As permissões estão corretas:
-   ```bash
-   docker-compose exec app whoami
-   # Deve retornar: nextjs
-   ```
-
-## Performance
-
-### Otimizações para Desenvolvimento
-
-1. **Exclude node_modules**: O volume exclui `node_modules` para evitar conflitos
-2. **Exclude .next**: Build artifacts são excluídos dos volumes
-3. **Multi-stage build**: Não usado em desenvolvimento para velocidade
-4. **Health checks**: Configurados para garantir que serviços estejam prontos
-
-### Monitoramento
+## Monitoramento
 
 - **Aplicação**: http://localhost:9002
 - **Database Admin**: http://localhost:8080
 - **Redis Admin**: http://localhost:8081
-- **Health Check**: http://localhost:9002/api/v1/maintenance-check
+- **Health Check**: http://localhost:9002/api/health
 
 ## Próximos Passos
 

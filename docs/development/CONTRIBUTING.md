@@ -49,7 +49,7 @@ chore: tarefas de manutenção
 - Testes para novas funcionalidades
 - Documentação atualizada
 
-## 🧪 Executando Testes
+## 🧪 Verificação de Qualidade
 
 ```bash
 # Instalar dependências
@@ -60,9 +60,6 @@ npm run lint
 
 # Verificar tipos
 npm run typecheck
-
-# Executar testes
-npm test
 
 # Build do projeto
 npm run build
@@ -103,7 +100,6 @@ Veja nosso [ROADMAP.md](docs/ROADMAP.md) para funcionalidades planejadas.
 ## 💬 Comunicação Interna
 
 - **Issues:** Para bugs e funcionalidades (equipe interna)
-- **Slack:** Canal #vinha-admin-center
 - **Email:** dev-team@multidesk.io
 - **Segurança:** security@multidesk.io
 
