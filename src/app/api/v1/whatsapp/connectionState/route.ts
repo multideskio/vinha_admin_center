@@ -27,12 +27,29 @@ export async function POST(request: NextRequest) {
     const baseUrl = apiUrl.replace(/\/$/, '')
 
     // Verificar estado de conexão usando Evolution API v2
-    const response = await fetch(`${baseUrl}/instance/connectionState/${instanceName}`, {
-      method: 'GET',
-      headers: {
-        apikey: apiKey,
-      },
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10_000)
+    let response: Response
+    try {
+      response = await fetch(`${baseUrl}/instance/connectionState/${instanceName}`, {
+        method: 'GET',
+        headers: {
+          apikey: apiKey,
+        },
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao verificar estado de conexão')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!response.ok) {
       return NextResponse.json(

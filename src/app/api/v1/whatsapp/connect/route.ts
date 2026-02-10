@@ -24,13 +24,30 @@ export async function POST(request: NextRequest) {
     const baseUrl = apiUrl.replace(/\/$/, '')
 
     // First, check if instance exists, if not create it
-    const instancesResponse = await fetch(`${baseUrl}/instance/fetchInstances`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: apiKey,
-      },
-    })
+    const listController = new AbortController()
+    const listTimeoutId = setTimeout(() => listController.abort(), 10_000)
+    let instancesResponse: Response
+    try {
+      instancesResponse = await fetch(`${baseUrl}/instance/fetchInstances`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: apiKey,
+        },
+        signal: listController.signal,
+      })
+      clearTimeout(listTimeoutId)
+    } catch (fetchError) {
+      clearTimeout(listTimeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao listar instâncias')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!instancesResponse.ok) {
       return NextResponse.json(
@@ -67,17 +84,34 @@ export async function POST(request: NextRequest) {
 
     // Create instance if it doesn't exist
     if (!existingInstance) {
-      const createResponse = await fetch(`${baseUrl}/instance/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: apiKey,
-        },
-        body: JSON.stringify({
-          instanceName: instanceName,
-          integration: 'WHATSAPP-BAILEYS',
-        }),
-      })
+      const createController = new AbortController()
+      const createTimeoutId = setTimeout(() => createController.abort(), 10_000)
+      let createResponse: Response
+      try {
+        createResponse = await fetch(`${baseUrl}/instance/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: apiKey,
+          },
+          body: JSON.stringify({
+            instanceName: instanceName,
+            integration: 'WHATSAPP-BAILEYS',
+          }),
+          signal: createController.signal,
+        })
+        clearTimeout(createTimeoutId)
+      } catch (fetchError) {
+        clearTimeout(createTimeoutId)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.error('[WHATSAPP_TIMEOUT] Timeout ao criar instância')
+          return NextResponse.json(
+            { error: 'Timeout ao comunicar com Evolution API' },
+            { status: 504 },
+          )
+        }
+        throw fetchError
+      }
 
       if (!createResponse.ok) {
         const errorData = await createResponse.json().catch(() => ({}))
@@ -89,13 +123,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Connect to WhatsApp and get QR code
-    const connectResponse = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: apiKey,
-      },
-    })
+    const connectController = new AbortController()
+    const connectTimeoutId = setTimeout(() => connectController.abort(), 10_000)
+    let connectResponse: Response
+    try {
+      connectResponse = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: apiKey,
+        },
+        signal: connectController.signal,
+      })
+      clearTimeout(connectTimeoutId)
+    } catch (fetchError) {
+      clearTimeout(connectTimeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao conectar instância')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!connectResponse.ok) {
       const errorData = await connectResponse.json().catch(() => ({}))

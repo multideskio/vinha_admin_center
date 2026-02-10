@@ -127,19 +127,36 @@ Dados do sistema:
 - Transações recentes: ${dashboard.recentTransactions}
 - Período analisado: ${dashboard.dateRange.from} até ${dashboard.dateRange.to}`
 
-    const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.5,
-        max_tokens: 600,
-      }),
-    })
+    const aiController = new AbortController()
+    const aiTimeoutId = setTimeout(() => aiController.abort(), 30_000)
+    let aiRes: Response
+    try {
+      aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.5,
+          max_tokens: 600,
+        }),
+        signal: aiController.signal,
+      })
+      clearTimeout(aiTimeoutId)
+    } catch (fetchError) {
+      clearTimeout(aiTimeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[OPENAI_TIMEOUT] Timeout ao gerar insights do dashboard')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com a API da OpenAI' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!aiRes.ok) {
       const errText = await aiRes.text()

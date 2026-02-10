@@ -8,6 +8,33 @@ import { configCache, CACHE_KEYS } from '@/lib/config-cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 
+/** Timeout padrão para chamadas à Cielo API (15 segundos) */
+const CIELO_TIMEOUT_MS = 15_000
+
+/**
+ * Wrapper para fetch com AbortController e timeout.
+ * Compatível com Edge Runtime (não usa AbortSignal.timeout).
+ */
+async function cieloFetch(url: string, options: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), CIELO_TIMEOUT_MS)
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[CIELO_TIMEOUT] Timeout ao comunicar com Cielo API', { url })
+      throw new Error('Timeout ao comunicar com a Cielo API. Tente novamente.')
+    }
+    throw error
+  }
+}
+
 type CieloConfig = {
   merchantId: string
   merchantKey: string
@@ -107,7 +134,7 @@ export async function createPixPayment(amount: number, customerName: string) {
     requestBody: payload,
   })
 
-  const response = await fetch(`${apiUrl}/1/sales/`, {
+  const response = await cieloFetch(`${apiUrl}/1/sales/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -123,8 +150,11 @@ export async function createPixPayment(amount: number, customerName: string) {
   try {
     const parsed = JSON.parse(responseText)
     paymentId = parsed.Payment?.PaymentId
-  } catch {
-    // Ignore JSON parse errors for logging
+  } catch (error) {
+    console.warn(
+      '[CIELO_PARSE] Não foi possível extrair paymentId da resposta PIX:',
+      responseText?.substring(0, 200),
+    )
   }
 
   await logCieloResponse({
@@ -142,7 +172,11 @@ export async function createPixPayment(amount: number, customerName: string) {
     try {
       const error = JSON.parse(responseText)
       errorMessage = error.Message || error[0]?.Message || errorMessage
-    } catch {
+    } catch (error) {
+      console.warn(
+        '[CIELO_ERROR_PARSE] Não foi possível parsear erro da Cielo (PIX):',
+        responseText?.substring(0, 200),
+      )
       errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
     }
     throw new Error(errorMessage)
@@ -206,7 +240,7 @@ export async function createCreditCardPayment(
     requestBody: payload,
   })
 
-  const response = await fetch(`${apiUrl}/1/sales`, {
+  const response = await cieloFetch(`${apiUrl}/1/sales`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -222,8 +256,11 @@ export async function createCreditCardPayment(
   try {
     const parsed = JSON.parse(responseText)
     paymentId = parsed.Payment?.PaymentId
-  } catch {
-    // Ignore JSON parse errors for logging
+  } catch (error) {
+    console.warn(
+      '[CIELO_PARSE] Não foi possível extrair paymentId da resposta cartão:',
+      responseText?.substring(0, 200),
+    )
   }
 
   await logCieloResponse({
@@ -241,7 +278,11 @@ export async function createCreditCardPayment(
     try {
       const error = JSON.parse(responseText)
       errorMessage = error.Message || error[0]?.Message || errorMessage
-    } catch {
+    } catch (error) {
+      console.warn(
+        '[CIELO_ERROR_PARSE] Não foi possível parsear erro da Cielo (cartão):',
+        responseText?.substring(0, 200),
+      )
       errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
     }
     throw new Error(errorMessage)
@@ -308,7 +349,7 @@ export async function createBoletoPayment(
     requestBody: payload,
   })
 
-  const response = await fetch(`${apiUrl}/1/sales`, {
+  const response = await cieloFetch(`${apiUrl}/1/sales`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -324,8 +365,11 @@ export async function createBoletoPayment(
   try {
     const parsed = JSON.parse(responseText)
     paymentId = parsed.Payment?.PaymentId
-  } catch {
-    // Ignore JSON parse errors for logging
+  } catch (error) {
+    console.warn(
+      '[CIELO_PARSE] Não foi possível extrair paymentId da resposta boleto:',
+      responseText?.substring(0, 200),
+    )
   }
 
   await logCieloResponse({
@@ -343,7 +387,11 @@ export async function createBoletoPayment(
     try {
       const error = JSON.parse(responseText)
       errorMessage = error.Message || error[0]?.Message || errorMessage
-    } catch {
+    } catch (error) {
+      console.warn(
+        '[CIELO_ERROR_PARSE] Não foi possível parsear erro da Cielo (boleto):',
+        responseText?.substring(0, 200),
+      )
       errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
     }
 
@@ -385,7 +433,7 @@ export async function cancelPayment(paymentId: string, amount?: number) {
     paymentId,
   })
 
-  const response = await fetch(requestUrl, {
+  const response = await cieloFetch(requestUrl, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -411,7 +459,11 @@ export async function cancelPayment(paymentId: string, amount?: number) {
     try {
       const error = JSON.parse(responseText)
       errorMessage = error.Message || error[0]?.Message || errorMessage
-    } catch {
+    } catch (error) {
+      console.warn(
+        '[CIELO_ERROR_PARSE] Não foi possível parsear erro da Cielo (cancelamento):',
+        responseText?.substring(0, 200),
+      )
       errorMessage = `Erro ${response.status}: ${responseText || 'Resposta vazia'}`
     }
     throw new Error(errorMessage)
@@ -442,7 +494,7 @@ export async function queryPayment(paymentId: string) {
     paymentId,
   })
 
-  const response = await fetch(requestUrl, {
+  const response = await cieloFetch(requestUrl, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

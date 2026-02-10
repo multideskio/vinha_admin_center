@@ -33,24 +33,41 @@ export async function GET() {
     }
 
     // 2. Testar a chave com uma chamada simples
-    const testRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'user',
-            content: 'Responda apenas "OK" se você conseguir me ouvir.',
-          },
-        ],
-        max_tokens: 10,
-        temperature: 0,
-      }),
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30_000)
+    let testRes: Response
+    try {
+      testRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'user',
+              content: 'Responda apenas "OK" se você conseguir me ouvir.',
+            },
+          ],
+          max_tokens: 10,
+          temperature: 0,
+        }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[OPENAI_TIMEOUT] Timeout ao testar chave OpenAI')
+        return NextResponse.json({
+          success: false,
+          error: 'Timeout ao comunicar com a API da OpenAI',
+        })
+      }
+      throw fetchError
+    }
 
     if (!testRes.ok) {
       const errorText = await testRes.text()

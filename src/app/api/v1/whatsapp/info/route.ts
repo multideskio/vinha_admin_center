@@ -23,16 +23,30 @@ export async function POST(request: NextRequest) {
     const baseUrl = apiUrl.replace(/\/$/, '')
 
     // Get instance information using Evolution API v2
-    const response = await fetch(
-      `${baseUrl}/instance/fetchInstances?instanceName=${instanceName}`,
-      {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10_000)
+    let response: Response
+    try {
+      response = await fetch(`${baseUrl}/instance/fetchInstances?instanceName=${instanceName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           apikey: apiKey,
         },
-      },
-    )
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao obter informações da instância')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!response.ok) {
       return NextResponse.json(
@@ -67,15 +81,30 @@ export async function POST(request: NextRequest) {
     // Get additional profile information if available
     let profileInfo = null
     try {
-      const profileResponse = await fetch(`${baseUrl}/chat/whatsappProfile/${instanceName}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: apiKey,
-        },
-      })
+      const profileController = new AbortController()
+      const profileTimeoutId = setTimeout(() => profileController.abort(), 10_000)
+      let profileResponse: Response
+      try {
+        profileResponse = await fetch(`${baseUrl}/chat/whatsappProfile/${instanceName}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: apiKey,
+          },
+          signal: profileController.signal,
+        })
+        clearTimeout(profileTimeoutId)
+      } catch (fetchError) {
+        clearTimeout(profileTimeoutId)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.warn('[WHATSAPP_TIMEOUT] Timeout ao obter perfil adicional')
+          profileResponse = null as unknown as Response
+        } else {
+          throw fetchError
+        }
+      }
 
-      if (profileResponse.ok) {
+      if (profileResponse && profileResponse.ok) {
         profileInfo = await profileResponse.json()
       }
     } catch (error) {

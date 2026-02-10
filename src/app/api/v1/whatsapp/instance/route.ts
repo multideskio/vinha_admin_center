@@ -35,12 +35,27 @@ export async function GET(request: NextRequest) {
 
     // Buscar todas as instâncias
     const url = `${serverUrl}/instance/fetchInstances`
-    const options = {
-      method: 'GET',
-      headers: { apikey: apiKey },
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10_000)
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: { apikey: apiKey },
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao buscar instâncias')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
     }
-
-    const response = await fetch(url, options)
 
     if (!response.ok) {
       return NextResponse.json(
@@ -93,12 +108,27 @@ export async function POST(request: NextRequest) {
 
     // Primeiro verificar se já existe
     const checkUrl = `${serverUrl}/instance/fetchInstances`
-    const checkOptions = {
-      method: 'GET',
-      headers: { apikey: apiKey },
+    const checkController = new AbortController()
+    const checkTimeoutId = setTimeout(() => checkController.abort(), 10_000)
+    let checkResponse: Response
+    try {
+      checkResponse = await fetch(checkUrl, {
+        method: 'GET',
+        headers: { apikey: apiKey },
+        signal: checkController.signal,
+      })
+      clearTimeout(checkTimeoutId)
+    } catch (fetchError) {
+      clearTimeout(checkTimeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao verificar instâncias existentes')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
     }
-
-    const checkResponse = await fetch(checkUrl, checkOptions)
 
     if (checkResponse.ok) {
       const data = await checkResponse.json()
@@ -130,19 +160,34 @@ export async function POST(request: NextRequest) {
 
     // Criar nova instância
     const createUrl = `${serverUrl}/instance/create`
-    const createOptions = {
-      method: 'POST',
-      headers: {
-        apikey: apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        instanceName,
-        integration: 'WHATSAPP-BAILEYS',
-      }),
+    const createController = new AbortController()
+    const createTimeoutId = setTimeout(() => createController.abort(), 10_000)
+    let createResponse: Response
+    try {
+      createResponse = await fetch(createUrl, {
+        method: 'POST',
+        headers: {
+          apikey: apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          instanceName,
+          integration: 'WHATSAPP-BAILEYS',
+        }),
+        signal: createController.signal,
+      })
+      clearTimeout(createTimeoutId)
+    } catch (fetchError) {
+      clearTimeout(createTimeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao criar instância')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
     }
-
-    const createResponse = await fetch(createUrl, createOptions)
 
     if (!createResponse.ok) {
       const errorText = await createResponse.text()

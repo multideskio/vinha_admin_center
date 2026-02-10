@@ -86,7 +86,22 @@ export async function POST(request: NextRequest) {
     // Confirmar subscrição SNS
     if (body.Type === 'SubscriptionConfirmation') {
       if (body.SubscribeURL) {
-        await fetch(body.SubscribeURL)
+        const snsController = new AbortController()
+        const snsTimeoutId = setTimeout(() => snsController.abort(), 5_000)
+        try {
+          await fetch(body.SubscribeURL, { signal: snsController.signal })
+          clearTimeout(snsTimeoutId)
+        } catch (fetchError) {
+          clearTimeout(snsTimeoutId)
+          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+            console.error('[SNS_TIMEOUT] Timeout ao confirmar subscrição SNS')
+            return NextResponse.json(
+              { error: 'Timeout ao confirmar subscrição SNS' },
+              { status: 504 },
+            )
+          }
+          throw fetchError
+        }
         return NextResponse.json({ message: 'Subscription confirmed' })
       }
       return NextResponse.json({ error: 'No SubscribeURL' }, { status: 400 })
@@ -129,51 +144,54 @@ async function handleBounce(bounce: SESBounce, messageId: string) {
     for (const recipient of bounce.bouncedRecipients) {
       const email = recipient.emailAddress.toLowerCase()
 
-      // Apenas bounces permanentes vão para blacklist
-      if (bounce.bounceType === 'Permanent') {
-        const existing = await db
-          .select()
-          .from(emailBlacklist)
-          .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
-          .limit(1)
+      // ✅ CORRIGIDO: Transação atômica por recipient (blacklist + log)
+      await db.transaction(async (tx) => {
+        // Apenas bounces permanentes vão para blacklist
+        if (bounce.bounceType === 'Permanent') {
+          const [existing] = await tx
+            .select()
+            .from(emailBlacklist)
+            .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
+            .limit(1)
 
-        if (existing.length > 0 && existing[0]) {
-          await db
-            .update(emailBlacklist)
-            .set({
+          if (existing) {
+            await tx
+              .update(emailBlacklist)
+              .set({
+                lastAttemptAt: new Date(),
+                attemptCount: existing.attemptCount + 1,
+                errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
+                isActive: true,
+              })
+              .where(eq(emailBlacklist.id, existing.id))
+          } else {
+            await tx.insert(emailBlacklist).values({
+              companyId: companyId,
+              email,
+              reason: 'bounce',
+              errorCode: bounce.bounceSubType,
+              errorMessage: recipient.diagnosticCode || `Permanent bounce: ${bounce.bounceSubType}`,
+              firstFailedAt: new Date(),
               lastAttemptAt: new Date(),
-              attemptCount: existing[0].attemptCount + 1,
-              errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
+              attemptCount: 1,
               isActive: true,
             })
-            .where(eq(emailBlacklist.id, existing[0].id))
-        } else {
-          await db.insert(emailBlacklist).values({
-            companyId: companyId,
-            email,
-            reason: 'bounce',
-            errorCode: bounce.bounceSubType,
-            errorMessage: recipient.diagnosticCode || `Permanent bounce: ${bounce.bounceSubType}`,
-            firstFailedAt: new Date(),
-            lastAttemptAt: new Date(),
-            attemptCount: 1,
-            isActive: true,
-          })
+          }
         }
-      }
 
-      // Log da notificação
-      await db.insert(notificationLogs).values({
-        companyId: companyId,
-        userId: companyId, // Sistema
-        notificationType: 'sns_bounce',
-        channel: 'email',
-        status: 'failed',
-        recipient: email,
-        subject: `Bounce: ${bounce.bounceType}`,
-        messageContent: JSON.stringify({ bounce, messageId }),
-        errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
-        errorCode: bounce.bounceSubType,
+        // Log da notificação
+        await tx.insert(notificationLogs).values({
+          companyId: companyId,
+          userId: companyId, // Sistema
+          notificationType: 'sns_bounce',
+          channel: 'email',
+          status: 'failed',
+          recipient: email,
+          subject: `Bounce: ${bounce.bounceType}`,
+          messageContent: JSON.stringify({ bounce, messageId }),
+          errorMessage: recipient.diagnosticCode || bounce.bounceSubType,
+          errorCode: bounce.bounceSubType,
+        })
       })
     }
   } catch (error) {
@@ -191,49 +209,52 @@ async function handleComplaint(complaint: SESComplaint, messageId: string) {
     for (const recipient of complaint.complainedRecipients) {
       const email = recipient.emailAddress.toLowerCase()
 
-      const existing = await db
-        .select()
-        .from(emailBlacklist)
-        .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
-        .limit(1)
+      // ✅ CORRIGIDO: Transação atômica por recipient (blacklist + log)
+      await db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(emailBlacklist)
+          .where(and(eq(emailBlacklist.companyId, companyId), eq(emailBlacklist.email, email)))
+          .limit(1)
 
-      if (existing.length > 0 && existing[0]) {
-        await db
-          .update(emailBlacklist)
-          .set({
-            lastAttemptAt: new Date(),
-            attemptCount: existing[0].attemptCount + 1,
+        if (existing) {
+          await tx
+            .update(emailBlacklist)
+            .set({
+              lastAttemptAt: new Date(),
+              attemptCount: existing.attemptCount + 1,
+              reason: 'complaint',
+              errorMessage: complaint.complaintFeedbackType || 'User complaint',
+              isActive: true,
+            })
+            .where(eq(emailBlacklist.id, existing.id))
+        } else {
+          await tx.insert(emailBlacklist).values({
+            companyId: companyId,
+            email,
             reason: 'complaint',
-            errorMessage: complaint.complaintFeedbackType || 'User complaint',
+            errorCode: complaint.complaintFeedbackType || 'abuse',
+            errorMessage: `User marked as spam: ${complaint.complaintFeedbackType || 'unknown'}`,
+            firstFailedAt: new Date(),
+            lastAttemptAt: new Date(),
+            attemptCount: 1,
             isActive: true,
           })
-          .where(eq(emailBlacklist.id, existing[0].id))
-      } else {
-        await db.insert(emailBlacklist).values({
-          companyId: companyId,
-          email,
-          reason: 'complaint',
-          errorCode: complaint.complaintFeedbackType || 'abuse',
-          errorMessage: `User marked as spam: ${complaint.complaintFeedbackType || 'unknown'}`,
-          firstFailedAt: new Date(),
-          lastAttemptAt: new Date(),
-          attemptCount: 1,
-          isActive: true,
-        })
-      }
+        }
 
-      // Log da notificação
-      await db.insert(notificationLogs).values({
-        companyId: companyId,
-        userId: companyId, // Sistema
-        notificationType: 'sns_complaint',
-        channel: 'email',
-        status: 'failed',
-        recipient: email,
-        subject: 'Complaint received',
-        messageContent: JSON.stringify({ complaint, messageId }),
-        errorMessage: complaint.complaintFeedbackType || 'User complaint',
-        errorCode: complaint.complaintFeedbackType || 'abuse',
+        // Log da notificação
+        await tx.insert(notificationLogs).values({
+          companyId: companyId,
+          userId: companyId, // Sistema
+          notificationType: 'sns_complaint',
+          channel: 'email',
+          status: 'failed',
+          recipient: email,
+          subject: 'Complaint received',
+          messageContent: JSON.stringify({ complaint, messageId }),
+          errorMessage: complaint.complaintFeedbackType || 'User complaint',
+          errorCode: complaint.complaintFeedbackType || 'abuse',
+        })
       })
     }
   } catch (error) {

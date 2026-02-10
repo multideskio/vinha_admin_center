@@ -172,17 +172,33 @@ export async function POST(
     const credentials = await getCieloCredentials()
 
     // Consultar status na Cielo
-    const response = await fetch(
-      `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
-      {
+    const cieloController = new AbortController()
+    const cieloTimeoutId = setTimeout(() => cieloController.abort(), 15_000)
+    let response: Response
+    try {
+      response = await fetch(`${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           MerchantId: credentials.merchantId || '',
           MerchantKey: credentials.merchantKey || '',
         },
-      },
-    )
+        signal: cieloController.signal,
+      })
+      clearTimeout(cieloTimeoutId)
+    } catch (fetchError) {
+      clearTimeout(cieloTimeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[CIELO_TIMEOUT] Timeout ao sincronizar transação com Cielo', {
+          transactionId: id,
+        })
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com a Cielo. Tente novamente.' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!response.ok) {
       console.error('[SUPERVISOR_TRANSACOES_SYNC_CIELO_ERROR]', {

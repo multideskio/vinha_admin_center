@@ -33,21 +33,41 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const url = `${config.apiUrl.replace(/\/$/, '')}/message/sendText/${config.apiInstance}`
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: config.apiKey,
-      },
-      body: JSON.stringify({
-        number: phone,
-        text: message,
-      }),
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10_000)
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: config.apiKey,
+        },
+        body: JSON.stringify({
+          number: phone,
+          text: message,
+        }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('[WHATSAPP_TIMEOUT] Timeout ao enviar mensagem de teste')
+        return NextResponse.json(
+          { error: 'Timeout ao comunicar com Evolution API' },
+          { status: 504 },
+        )
+      }
+      throw fetchError
+    }
 
     if (!response.ok) {
       const errorBody = await response.json()
-      console.error('Erro da Evolution API:', errorBody)
+      console.error('Erro da Evolution API:', {
+        status: response.status,
+        message: errorBody?.message,
+      })
       throw new Error(errorBody.message || 'Falha ao enviar mensagem pela API do WhatsApp.')
     }
 

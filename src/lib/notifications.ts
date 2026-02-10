@@ -12,6 +12,7 @@ import { db } from '@/db/drizzle'
 import { messageTemplates, notificationLogs, emailBlacklist, otherSettings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { configCache, CACHE_KEYS } from './config-cache'
+import { env } from '@/lib/env'
 
 // Types
 interface NotificationConfig {
@@ -65,17 +66,33 @@ export class WhatsAppService {
         linkPreview: false,
       }
 
-      const response = await fetch(
-        `${this.config.whatsappApiUrl}/message/sendText/${this.config.whatsappApiInstance}`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: this.config.whatsappApiKey,
-            'Content-Type': 'application/json',
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10_000)
+      let response: Response
+      try {
+        response = await fetch(
+          `${this.config.whatsappApiUrl}/message/sendText/${this.config.whatsappApiInstance}`,
+          {
+            method: 'POST',
+            headers: {
+              apikey: this.config.whatsappApiKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
           },
-          body: JSON.stringify(payload),
-        },
-      )
+        )
+        clearTimeout(timeoutId)
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          safeError('[WHATSAPP_TIMEOUT] Timeout ao comunicar com Evolution API', {
+            instance: this.config.whatsappApiInstance,
+          })
+          return false
+        }
+        throw fetchError
+      }
 
       if (!response.ok) {
         safeError('[WHATSAPP_API_ERROR]', {
@@ -427,11 +444,11 @@ export class NotificationService {
       ...whatsappConfig,
       // SMTP config (do cache)
       ...smtpConfig,
-      // SES config (fallback para variáveis de ambiente)
-      sesRegion: process.env.AWS_SES_REGION,
-      sesAccessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
-      sesSecretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY,
-      fromEmail: process.env.AWS_SES_FROM_EMAIL,
+      // SES config (fallback para variáveis de ambiente — validadas via env.ts)
+      sesRegion: env.AWS_SES_REGION,
+      sesAccessKeyId: env.AWS_SES_ACCESS_KEY_ID,
+      sesSecretAccessKey: env.AWS_SES_SECRET_ACCESS_KEY,
+      fromEmail: env.AWS_SES_FROM_EMAIL,
     }
 
     return new NotificationService(config)
