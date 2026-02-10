@@ -7,6 +7,7 @@ import { users, otherSettings, userNotificationSettings } from '@/db/schema'
 import { NotificationService } from './notifications'
 import { eq, and, isNull, gte } from 'drizzle-orm'
 import { addDays, format } from 'date-fns'
+import { shouldSendNotificationWithConfig } from './notification-dedup'
 
 export class NotificationScheduler {
   async processWelcomeNotifications(): Promise<void> {
@@ -31,6 +32,10 @@ export class NotificationScheduler {
         )
 
       for (const user of newUsers) {
+        // ✅ CORRIGIDO: Deduplicação via módulo centralizado
+        const shouldSend = await shouldSendNotificationWithConfig(user.id, 'welcome_email')
+        if (!shouldSend) continue
+
         await this.sendWelcomeNotification(user)
 
         // ✅ CORRIGIDO: Marcar como enviado após sucesso
@@ -60,6 +65,10 @@ export class NotificationScheduler {
 
       for (const user of usersToRemind) {
         if (user.titheDay) {
+          // ✅ CORRIGIDO: Deduplicação via módulo centralizado
+          const shouldSend = await shouldSendNotificationWithConfig(user.id, 'tithe_reminder')
+          if (!shouldSend) continue
+
           await this.sendPaymentReminder(user)
         }
       }
@@ -101,7 +110,10 @@ export class NotificationScheduler {
         user.email,
       )
     } catch (error) {
-      console.error(`Error sending welcome notification to user ${user.id}:`, error)
+      console.error(
+        `Error sending welcome notification to user ${user.id}:`,
+        error instanceof Error ? error.message : error,
+      )
     }
   }
 
@@ -142,7 +154,10 @@ export class NotificationScheduler {
         user.email,
       )
     } catch (error) {
-      console.error(`Error sending payment reminder to user ${user.id}:`, error)
+      console.error(
+        `Error sending payment reminder to user ${user.id}:`,
+        error instanceof Error ? error.message : error,
+      )
     }
   }
 
@@ -190,9 +205,9 @@ export class NotificationScheduler {
 export async function runNotificationScheduler(): Promise<void> {
   const scheduler = new NotificationScheduler()
 
-  console.log('Running notification scheduler...')
+  console.warn('Running notification scheduler...')
 
   await Promise.all([scheduler.processWelcomeNotifications(), scheduler.processPaymentReminders()])
 
-  console.log('Notification scheduler completed')
+  console.warn('Notification scheduler completed')
 }

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users, notificationRules, notificationLogs } from '@/db/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { NotificationService } from '@/lib/notifications'
 import { formatBrazilDate, getBrazilDate } from '@/lib/date-utils'
+import { env } from '@/lib/env'
 
 export async function POST() {
   try {
@@ -30,6 +31,9 @@ export async function POST() {
     // Helper para dia formatado (dedupe diária) - usando timezone do Brasil
     const todayStr = formatBrazilDate(getBrazilDate()).split('/').reverse().join('-') // YYYY-MM-DD
 
+    // ✅ OTIMIZADO: Criar NotificationService uma vez (mesmo companyId para todos os usuários)
+    const svc = await NotificationService.createFromDatabase(companyId)
+
     // Lembretes (antes e no dia)
     for (const rule of reminderRules) {
       const targetDate = getBrazilDate()
@@ -47,28 +51,32 @@ export async function POST() {
         )
         .limit(500)
 
+      if (dueUsers.length === 0) continue
+
+      // ✅ OTIMIZADO: Buscar todos os logs de dedup de uma vez com inArray
+      const dedupType = `rem_${rule.id.slice(0, 8)}_${todayStr}`
+      const userIds = dueUsers.map((u) => u.id)
+      const existingLogs = await db
+        .select({ userId: notificationLogs.userId })
+        .from(notificationLogs)
+        .where(
+          and(
+            inArray(notificationLogs.userId, userIds),
+            eq(notificationLogs.notificationType, dedupType),
+          ),
+        )
+      const alreadySentSet = new Set(existingLogs.map((l) => l.userId))
+
       for (const u of dueUsers) {
-        const already = await db
-          .select({ id: notificationLogs.id })
-          .from(notificationLogs)
-          .where(
-            and(
-              eq(notificationLogs.userId, u.id),
-              eq(notificationLogs.notificationType, `rem_${rule.id.slice(0, 8)}_${todayStr}`), // Mesmo formato encurtado
-            ),
-          )
-          .limit(1)
-        if (already.length > 0) {
+        if (alreadySentSet.has(u.id)) {
           skipped++
           continue
         }
 
-        const svc = await NotificationService.createFromDatabase(companyId)
         const name = u.email.split('@')[0] || 'Membro'
-        const dueDate = formatBrazilDate(targetDate) // Usar timezone do Brasil
+        const dueDate = formatBrazilDate(targetDate)
         const amount = '100,00'
 
-        // Processar template da regra com variáveis
         const processedMessage = rule.messageTemplate
           .replace(/{nome_usuario}/g, name)
           .replace(/{name}/g, name)
@@ -77,9 +85,8 @@ export async function POST() {
           .replace(/{valor_transacao}/g, amount)
           .replace(/{amount}/g, amount)
           .replace(/{nome_igreja}/g, 'Igreja')
-          .replace(/{link_pagamento}/g, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002/')
+          .replace(/{link_pagamento}/g, env.NEXT_PUBLIC_APP_URL || '')
 
-        // Enviar usando os canais configurados na regra
         let emailSent = false
         let whatsappSent = false
 
@@ -95,11 +102,10 @@ export async function POST() {
             emailSent = false
           }
 
-          // Log específico para email com erro detalhado
           await db.insert(notificationLogs).values({
             companyId,
             userId: u.id,
-            notificationType: `rem_${rule.id.slice(0, 8)}_${todayStr}`,
+            notificationType: dedupType,
             channel: 'email',
             status: emailSent ? 'sent' : 'failed',
             recipient: u.email,
@@ -117,11 +123,10 @@ export async function POST() {
             message: processedMessage,
           })
 
-          // Log específico para WhatsApp
           await db.insert(notificationLogs).values({
             companyId,
             userId: u.id,
-            notificationType: `rem_${rule.id.slice(0, 8)}_${todayStr}`,
+            notificationType: dedupType,
             channel: 'whatsapp',
             status: whatsappSent ? 'sent' : 'failed',
             recipient: u.phone,
@@ -129,7 +134,6 @@ export async function POST() {
           })
         }
 
-        // Contar apenas se pelo menos um canal foi enviado com sucesso
         if (emailSent || whatsappSent) {
           sent++
         }
@@ -153,28 +157,32 @@ export async function POST() {
         )
         .limit(500)
 
+      if (overdueUsers.length === 0) continue
+
+      // ✅ OTIMIZADO: Buscar todos os logs de dedup de uma vez com inArray
+      const dedupType = `ovr_${rule.id.slice(0, 8)}_${todayStr}`
+      const userIds = overdueUsers.map((u) => u.id)
+      const existingLogs = await db
+        .select({ userId: notificationLogs.userId })
+        .from(notificationLogs)
+        .where(
+          and(
+            inArray(notificationLogs.userId, userIds),
+            eq(notificationLogs.notificationType, dedupType),
+          ),
+        )
+      const alreadySentSet = new Set(existingLogs.map((l) => l.userId))
+
       for (const u of overdueUsers) {
-        const already = await db
-          .select({ id: notificationLogs.id })
-          .from(notificationLogs)
-          .where(
-            and(
-              eq(notificationLogs.userId, u.id),
-              eq(notificationLogs.notificationType, `ovr_${rule.id.slice(0, 8)}_${todayStr}`), // Encurtado
-            ),
-          )
-          .limit(1)
-        if (already.length > 0) {
+        if (alreadySentSet.has(u.id)) {
           skipped++
           continue
         }
 
-        const svc = await NotificationService.createFromDatabase(companyId)
         const name = u.email.split('@')[0] || 'Membro'
-        const dueDate = formatBrazilDate(targetDate) // Usar timezone do Brasil
+        const dueDate = formatBrazilDate(targetDate)
         const amount = '100,00'
 
-        // Processar template da regra com variáveis
         const processedMessage = rule.messageTemplate
           .replace(/{nome_usuario}/g, name)
           .replace(/{name}/g, name)
@@ -183,9 +191,8 @@ export async function POST() {
           .replace(/{valor_transacao}/g, amount)
           .replace(/{amount}/g, amount)
           .replace(/{nome_igreja}/g, 'Igreja')
-          .replace(/{link_pagamento}/g, process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002/')
+          .replace(/{link_pagamento}/g, env.NEXT_PUBLIC_APP_URL || '')
 
-        // Enviar usando os canais configurados na regra
         let emailSent = false
         let whatsappSent = false
 
@@ -201,11 +208,10 @@ export async function POST() {
             emailSent = false
           }
 
-          // Log específico para email com erro detalhado
           await db.insert(notificationLogs).values({
             companyId,
             userId: u.id,
-            notificationType: `ovr_${rule.id.slice(0, 8)}_${todayStr}`,
+            notificationType: dedupType,
             channel: 'email',
             status: emailSent ? 'sent' : 'failed',
             recipient: u.email,
@@ -223,11 +229,10 @@ export async function POST() {
             message: processedMessage,
           })
 
-          // Log específico para WhatsApp
           await db.insert(notificationLogs).values({
             companyId,
             userId: u.id,
-            notificationType: `ovr_${rule.id.slice(0, 8)}_${todayStr}`,
+            notificationType: dedupType,
             channel: 'whatsapp',
             status: whatsappSent ? 'sent' : 'failed',
             recipient: u.phone,
@@ -235,7 +240,6 @@ export async function POST() {
           })
         }
 
-        // Contar apenas se pelo menos um canal foi enviado com sucesso
         if (emailSent || whatsappSent) {
           sent++
         }

@@ -4,10 +4,19 @@ import { notificationRules, users, transactions, notificationLogs } from '@/db/s
 import { eq, and, gte, inArray } from 'drizzle-orm'
 import { NotificationService } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
+import { env } from '@/lib/env'
+import { redis } from '@/lib/redis'
 
-const CRON_SECRET = process.env.CRON_SECRET || 'change-me-in-production'
+const CRON_SECRET = env.CRON_SECRET
+const LOCK_KEY = 'cron:v1:notifications:lock'
+const LOCK_TTL_SECONDS = 120
 
 export async function GET(request: Request) {
+  if (!CRON_SECRET) {
+    console.error('[CRON] CRON_SECRET não configurado')
+    return NextResponse.json({ error: 'Cron não configurado' }, { status: 503 })
+  }
+
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -21,6 +30,24 @@ export async function GET(request: Request) {
       { error: 'Cron executado muitas vezes. Aguarde um minuto.' },
       { status: 429 },
     )
+  }
+
+  // ✅ CORRIGIDO: Distributed lock via Redis para prevenir execução paralela
+  if (redis) {
+    const lockAcquired = await redis.set(
+      LOCK_KEY,
+      Date.now().toString(),
+      'EX',
+      LOCK_TTL_SECONDS,
+      'NX',
+    )
+    if (!lockAcquired) {
+      return NextResponse.json({
+        success: true,
+        message: 'Cron já em execução por outra instância',
+        skipped: true,
+      })
+    }
   }
 
   const results = { processed: 0, sent: 0, failed: 0, errors: [] as string[] }
@@ -61,6 +88,13 @@ export async function GET(request: Request) {
       { error: 'Cron failed', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 },
     )
+  } finally {
+    // Liberar lock após execução (mesmo em caso de erro)
+    if (redis) {
+      await redis.del(LOCK_KEY).catch((err: Error) => {
+        console.error('[CRON] Erro ao liberar lock:', err.message)
+      })
+    }
   }
 }
 
@@ -89,7 +123,7 @@ async function processNewUsers(rule: {
       nome_igreja: 'Nossa Igreja',
       valor_transacao: '0,00',
       data_vencimento: new Date().toLocaleDateString('pt-BR'),
-      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
     }
 
     let message = rule.messageTemplate
@@ -158,7 +192,7 @@ async function processPayments(rule: {
       valor_transacao: String(transaction.amount),
       data_pagamento: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
       data_vencimento: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
-      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
     }
 
     let message = rule.messageTemplate
@@ -239,7 +273,7 @@ async function processReminders(rule: {
       nome_usuario: name,
       valor_transacao: amount,
       data_vencimento: dueDate,
-      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
       nome_igreja: 'Nossa Igreja',
     }
 
@@ -321,7 +355,7 @@ async function processOverdue(rule: {
       nome_usuario: name,
       valor_transacao: amount,
       data_vencimento: dueDate,
-      link_pagamento: `${process.env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
       nome_igreja: 'Nossa Igreja',
     }
 

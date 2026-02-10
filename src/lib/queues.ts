@@ -1,37 +1,50 @@
 import { Queue } from 'bullmq'
 import IORedis from 'ioredis'
+import { env } from '@/lib/env'
 
-function createRedis() {
-  const url = process.env.REDIS_URL || 'redis://localhost:6379'
-  const isTLS = url.startsWith('rediss://')
-  const client = new IORedis(url, {
-    maxRetriesPerRequest: null as unknown as undefined,
-    enableReadyCheck: false,
-    connectTimeout: 5000,
-    retryStrategy: (times: number) => Math.min(5000, times * 200),
-    tls: isTLS ? { rejectUnauthorized: false } : undefined,
-  } as Record<string, unknown>)
+// ✅ CORRIGIDO: Fallback gracioso — se Redis falhar, notificationQueue será null
+function createRedis(): IORedis | null {
+  try {
+    const url = env.REDIS_URL
+    if (!url) {
+      console.error('[QUEUES_REDIS_INIT] REDIS_URL não configurada')
+      return null
+    }
 
-  // ✅ CORRIGIDO: Logging de erros Redis (Bug #1)
-  client.on('error', (error) => {
-    console.error('Redis connection error:', error)
-  })
+    const isTLS = url.startsWith('rediss://')
+    const client = new IORedis(url, {
+      maxRetriesPerRequest: null as unknown as undefined,
+      enableReadyCheck: false,
+      connectTimeout: 5000,
+      retryStrategy: (times: number) => Math.min(5000, times * 200),
+      tls: isTLS ? { rejectUnauthorized: false } : undefined,
+    } as Record<string, unknown>)
 
-  client.on('connect', () => {
-    console.log('Redis connected successfully')
-  })
+    client.on('error', (error) => {
+      console.error('[QUEUES_REDIS_ERROR]', error instanceof Error ? error.message : error)
+    })
 
-  client.on('ready', () => {
-    console.log('Redis ready to accept commands')
-  })
+    client.on('connect', () => {
+      console.warn('[QUEUES_REDIS] Conectado com sucesso')
+    })
 
-  client.on('reconnecting', () => {
-    console.warn('Redis reconnecting...')
-  })
+    client.on('ready', () => {
+      console.warn('[QUEUES_REDIS] Pronto para receber comandos')
+    })
 
-  return client
+    client.on('reconnecting', () => {
+      console.warn('[QUEUES_REDIS] Reconectando...')
+    })
+
+    return client
+  } catch (error) {
+    console.error('[QUEUES_REDIS_INIT_ERROR]', error instanceof Error ? error.message : error)
+    return null
+  }
 }
 
 const connection = createRedis()
 
-export const notificationQueue = new Queue('notifications', { connection })
+export const notificationQueue: Queue | null = connection
+  ? new Queue('notifications', { connection })
+  : null

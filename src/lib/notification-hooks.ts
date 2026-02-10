@@ -512,6 +512,18 @@ export async function processNotificationEvent(
       return
     }
 
+    // ✅ OTIMIZADO: Criar NotificationService uma vez fora do loop (mesmos params para todas as regras)
+    const notificationService = new NotificationService({
+      whatsappApiUrl: settings.whatsappApiUrl || undefined,
+      whatsappApiKey: settings.whatsappApiKey || undefined,
+      whatsappApiInstance: settings.whatsappApiInstance || undefined,
+      sesRegion: 'us-east-1',
+      sesAccessKeyId: settings.smtpUser || undefined,
+      sesSecretAccessKey: settings.smtpPass || undefined,
+      fromEmail: settings.smtpFrom || undefined,
+      companyId: user.companyId,
+    })
+
     for (const rule of activeRules) {
       // Monta mensagem a partir do template da regra (substitui variáveis)
       const variables: Record<string, string> = {
@@ -520,17 +532,7 @@ export async function processNotificationEvent(
       }
       let message = rule.messageTemplate
       message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
-      // Usa serviço central (envia preferencial/dos dados)
-      const notificationService = new NotificationService({
-        whatsappApiUrl: settings.whatsappApiUrl || undefined,
-        whatsappApiKey: settings.whatsappApiKey || undefined,
-        whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
-        sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
-        sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
-        fromEmail: settings.smtpFrom || undefined,
-        companyId: user.companyId,
-      })
+
       // Email
       if (rule.sendViaEmail && user.email) {
         await notificationService.sendEmail({
@@ -573,11 +575,23 @@ export async function processNotificationEvent(
 
 // Producer: Enfileira job de notificação
 export async function addNotificationJob(eventType: string, data: Record<string, unknown>) {
+  if (!notificationQueue) {
+    console.error(
+      '[NOTIFICATION_QUEUE] Fila indisponível — Redis não conectado. Job descartado:',
+      eventType,
+    )
+    return
+  }
   await notificationQueue.add('send', { eventType, data })
 }
 
-// Função utilitária para testar notificações
+// Função utilitária para testar notificações (apenas em desenvolvimento)
 export async function testNotifications(companyId: string): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('testNotifications não deve ser chamada em produção')
+    return
+  }
+
   const [settings] = await db
     .select()
     .from(otherSettings)
@@ -585,7 +599,7 @@ export async function testNotifications(companyId: string): Promise<void> {
     .limit(1)
 
   if (!settings) {
-    console.error('Company settings not found')
+    logger.error('Company settings not found', undefined, { companyId })
     return
   }
 
@@ -601,17 +615,17 @@ export async function testNotifications(companyId: string): Promise<void> {
   })
 
   // Teste de boas-vindas
-  console.log('Testing welcome notification...')
+  logger.info('Testing welcome notification...', { companyId })
   const welcomeResult = await notificationService.sendWelcome(
     'Teste Usuario',
     'Igreja Teste',
     '5511999999999', // Número de teste
     'teste@exemplo.com',
   )
-  console.log('Welcome result:', welcomeResult)
+  logger.info('Welcome result:', { success: !!welcomeResult })
 
   // Teste de lembrete de pagamento
-  console.log('Testing payment reminder...')
+  logger.info('Testing payment reminder...', { companyId })
   const reminderResult = await notificationService.sendPaymentReminder(
     'Teste Usuario',
     '100,00',
@@ -619,5 +633,5 @@ export async function testNotifications(companyId: string): Promise<void> {
     '5511999999999',
     'teste@exemplo.com',
   )
-  console.log('Reminder result:', reminderResult)
+  logger.info('Reminder result:', { success: !!reminderResult })
 }
