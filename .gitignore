@@ -39,6 +39,7 @@ next-env.d.ts
 
 .genkit/*
 .env*
+.playwright-mcp/
 
 # firebase
 firebase-debug.log
