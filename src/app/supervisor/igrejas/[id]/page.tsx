@@ -411,7 +411,7 @@ export default function IgrejaProfilePage() {
     fetchData()
   }, [fetchData])
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: z.infer<typeof churchUpdateSchema>) => {
     setIsSaving(true)
     try {
       // Transformar strings vazias em null para campos de redes sociais
@@ -441,8 +441,8 @@ export default function IgrejaProfilePage() {
     }
   }
 
-  const onError = (errors: any) => {
-    console.error('Erros de validação:', errors)
+  const onError = (errors: Record<string, unknown>) => {
+    console.error('[CHURCH_VALIDATION_ERRORS]', errors)
     toast({
       title: 'Erro de validação',
       description: 'Por favor, verifique os campos marcados.',
