@@ -8,12 +8,12 @@ inclusion: always
 
 **CRÍTICO:** SEMPRE responda ao usuário em português brasileiro (pt-BR).
 
-| Contexto | Idioma |
-|----------|--------|
-| Respostas ao usuário | pt-BR |
-| Código (variáveis/funções) | inglês |
-| Strings visíveis ao usuário | pt-BR |
-| Mensagens de erro/validação | pt-BR |
+| Contexto                    | Idioma |
+| --------------------------- | ------ |
+| Respostas ao usuário        | pt-BR  |
+| Código (variáveis/funções)  | inglês |
+| Strings visíveis ao usuário | pt-BR  |
+| Mensagens de erro/validação | pt-BR  |
 
 ## Nomenclatura
 
@@ -30,23 +30,23 @@ SCREAMING_SNAKE_CASE → Constantes
 ## Regras Críticas
 
 ### TypeScript
+
 ```typescript
 // ❌ PROIBIDO
 const data: any = await fetch()
 
 // ✅ OBRIGATÓRIO
-interface UserData { id: string }
+interface UserData {
+  id: string
+}
 const data: UserData = await fetch()
 ```
 
 ### Queries Drizzle
+
 ```typescript
 // ✅ SEMPRE use .limit(1) para registro único
-const [user] = await db
-  .select()
-  .from(users)
-  .where(eq(users.id, userId))
-  .limit(1)
+const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
 
 if (!user) {
   return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
@@ -54,9 +54,12 @@ if (!user) {
 ```
 
 ### Tratamento de Erros
+
 ```typescript
 // ❌ PROIBIDO - catch vazio
-try { await op() } catch {}
+try {
+  await op()
+} catch {}
 
 // ✅ OBRIGATÓRIO - sempre logar
 try {
@@ -68,6 +71,7 @@ try {
 ```
 
 ### Variáveis de Ambiente
+
 ```typescript
 // ✅ SEMPRE validar
 const key = process.env.API_KEY

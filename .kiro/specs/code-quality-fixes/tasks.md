@@ -147,7 +147,7 @@
   - Aplicar em `onTransactionCreated` e `processNotificationEvent`
   - Logar tentativas de duplicação (warning level)
 
-- [-] 26. Aplicar rate limiting em todas as rotas públicas
+- [x] 26. Aplicar rate limiting em todas as rotas públicas
   - Verificar rotas de autenticação (login, registro, reset password)
   - Verificar rotas de transações (já tem rate limiting)
   - Verificar rotas de upload

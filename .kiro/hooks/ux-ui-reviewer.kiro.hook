@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Revisor UX/UI",
+  "description": "Revisa automaticamente componentes React editados quanto a boas práticas de UX/UI: acessibilidade (ARIA, contraste, foco), responsividade, consistência com shadcn/ui e Tailwind, e usabilidade geral.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Revise o arquivo editado como um especialista em UX/UI. Analise e reporte problemas encontrados nas seguintes categorias:\n\n1. **Acessibilidade (a11y):** Verifique se há atributos ARIA adequados, labels em inputs/botões, alt em imagens, navegação por teclado (tabIndex, onKeyDown), e contraste de cores suficiente.\n\n2. **Responsividade:** Confirme que o layout usa classes responsivas do Tailwind (sm:, md:, lg:), evita larguras fixas em pixels, e se adapta bem a mobile.\n\n3. **Consistência visual:** Verifique se o componente usa os componentes shadcn/ui disponíveis no projeto (Button, Input, Card, Dialog, etc.) ao invés de elementos HTML puros, e se segue o design system existente.\n\n4. **Usabilidade:** Avalie estados de loading, estados vazios, feedback visual para ações do usuário (toasts, disabled states), e mensagens de erro claras em pt-BR.\n\n5. **Performance de UI:** Identifique re-renders desnecessários, imagens sem lazy loading, listas grandes sem virtualização, e animações que possam causar jank.\n\nResponda em pt-BR. Seja conciso e objetivo. Liste apenas os problemas encontrados com sugestões de correção. Se o componente estiver bem, diga apenas \"Nenhum problema de UX/UI encontrado.\""
+  },
+  "workspaceFolderName": "vinha_admin_center",
+  "shortName": "ux-ui-reviewer"
+}
