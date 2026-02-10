@@ -14,12 +14,15 @@ import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
 import { pastorProfileSchema } from '@/lib/types'
 import { env } from '@/lib/env'
-import { invalidateCache } from '@/lib/cache'
+import { getCache, setCache, invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
 
 const DEFAULT_PASSWORD = env.DEFAULT_PASSWORD
+
+/** TTL de 10 minutos — pastores mudam raramente */
+const PASTORS_CACHE_TTL = 600
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
@@ -30,6 +33,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   try {
     const url = new URL(request.url)
     const minimal = url.searchParams.get('minimal') === 'true'
+
+    const cacheKey = `pastores:${VALIDATED_COMPANY_ID}:minimal:${minimal}`
+    const cached = await getCache<{ pastors: unknown[] }>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
     if (minimal) {
       const result = await db
@@ -42,7 +51,10 @@ export async function GET(request: Request): Promise<NextResponse> {
         .leftJoin(users, eq(users.id, pastorProfiles.userId))
         .where(isNull(users.deletedAt))
         .orderBy(desc(users.createdAt))
-      return NextResponse.json({ pastors: result })
+
+      const response = { pastors: result }
+      await setCache(cacheKey, response, PASTORS_CACHE_TTL)
+      return NextResponse.json(response)
     }
 
     const result = await db
@@ -63,7 +75,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt))
 
-    return NextResponse.json({ pastors: result })
+    const response = { pastors: result }
+    await setCache(cacheKey, response, PASTORS_CACHE_TTL)
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Erro ao buscar pastores:', error)
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
@@ -124,7 +138,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       return { ...newUser, ...newProfile }
     })
 
-    // ✅ Invalidar cache de relatórios de membresia após criação de usuário
+    // Invalidar caches após criação de pastor
+    await invalidateCache(`pastores:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, pastor: newPastor }, { status: 201 })

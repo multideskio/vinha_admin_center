@@ -1,9 +1,9 @@
 /**
  * @fileoverview Rota da API para gerenciar regiões.
- * @version 1.3
+ * @version 1.4
  * @date 2024-08-07
  * @author PH
- * @lastReview 2026-01-05 14:30 - Segurança e funcionalidades verificadas
+ * @lastReview 2026-02-10 - Cache Redis implementado para GET e invalidação em POST
  */
 
 import { NextResponse } from 'next/server'
@@ -14,9 +14,13 @@ import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 import { env } from '@/lib/env'
+import { getCache, setCache, invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
+
+/** TTL de 10 minutos — regiões mudam raramente */
+const REGIONS_CACHE_TTL = 600
 
 const regionSchema = z.object({
   name: z.string().min(1),
@@ -33,6 +37,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     const url = new URL(request.url)
     const minimal = url.searchParams.get('minimal') === 'true'
 
+    const cacheKey = `regioes:${VALIDATED_COMPANY_ID}:minimal:${minimal}`
+    const cached = await getCache<{ regions: unknown[] }>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
     if (minimal) {
       const allRegions = await db
         .select({ id: regions.id, name: regions.name })
@@ -40,7 +50,10 @@ export async function GET(request: Request): Promise<NextResponse> {
         .where(and(eq(regions.companyId, VALIDATED_COMPANY_ID), isNull(regions.deletedAt)))
         .orderBy(desc(regions.updatedAt))
         .limit(100)
-      return NextResponse.json({ regions: allRegions })
+
+      const response = { regions: allRegions }
+      await setCache(cacheKey, response, REGIONS_CACHE_TTL)
+      return NextResponse.json(response)
     }
 
     const allRegions = await db
@@ -50,7 +63,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       .orderBy(desc(regions.updatedAt))
       .limit(100)
 
-    return NextResponse.json({ regions: allRegions })
+    const response = { regions: allRegions }
+    await setCache(cacheKey, response, REGIONS_CACHE_TTL)
+    return NextResponse.json(response)
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error)
     console.error('Erro ao buscar regiões:', error)
@@ -76,7 +91,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // Validação de unicidade de nome
     const existingRegion = await db
-      .select()
+      .select({ id: regions.id })
       .from(regions)
       .where(
         and(
@@ -98,6 +113,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         companyId: VALIDATED_COMPANY_ID,
       })
       .returning()
+
+    // Invalidar cache de regiões após inserção
+    await invalidateCache(`regioes:${VALIDATED_COMPANY_ID}:*`)
 
     return NextResponse.json({ success: true, region: newRegion }, { status: 201 })
   } catch (error: unknown) {

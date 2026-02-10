@@ -15,12 +15,15 @@ import { validateRequest } from '@/lib/jwt'
 import { supervisorProfileSchema } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { env } from '@/lib/env'
-import { invalidateCache } from '@/lib/cache'
+import { getCache, setCache, invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
 
 const DEFAULT_PASSWORD = env.DEFAULT_PASSWORD
+
+/** TTL de 10 minutos — supervisores mudam raramente */
+const SUPERVISORS_CACHE_TTL = 600
 
 export async function GET(request: Request): Promise<NextResponse> {
   const { user } = await validateRequest()
@@ -31,6 +34,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   try {
     const url = new URL(request.url)
     const minimal = url.searchParams.get('minimal') === 'true'
+
+    const cacheKey = `supervisores:${VALIDATED_COMPANY_ID}:minimal:${minimal}`
+    const cached = await getCache<{ supervisors: unknown[] }>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
 
     if (minimal) {
       const result = await db
@@ -43,7 +52,10 @@ export async function GET(request: Request): Promise<NextResponse> {
         .innerJoin(users, eq(users.id, supervisorProfiles.userId))
         .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
         .orderBy(desc(users.createdAt))
-      return NextResponse.json({ supervisors: result })
+
+      const response = { supervisors: result }
+      await setCache(cacheKey, response, SUPERVISORS_CACHE_TTL)
+      return NextResponse.json(response)
     }
 
     const result = await db
@@ -66,7 +78,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt))
 
-    return NextResponse.json({ supervisors: result })
+    const response = { supervisors: result }
+    await setCache(cacheKey, response, SUPERVISORS_CACHE_TTL)
+    return NextResponse.json(response)
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     console.error('Erro ao buscar supervisores:', error)
@@ -128,7 +142,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       return { ...newUser, ...newProfile }
     })
 
-    // ✅ Invalidar cache de relatórios de membresia após criação de usuário
+    // Invalidar caches após criação de supervisor
+    await invalidateCache(`supervisores:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, supervisor: newSupervisor }, { status: 201 })

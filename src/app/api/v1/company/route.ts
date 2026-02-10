@@ -14,9 +14,13 @@ import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 import { env } from '@/lib/env'
+import { getCache, setCache, invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
+
+/** TTL de 15 minutos — dados da empresa mudam quase nunca */
+const COMPANY_CACHE_TTL = 900
 
 const companyUpdateSchema = z.object({
   name: z.string().min(1, 'O nome da aplicação é obrigatório.').optional(),
@@ -32,6 +36,12 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
+    const cacheKey = `company:${VALIDATED_COMPANY_ID}`
+    const cached = await getCache<{ company: unknown }>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
     const [company] = await db
       .select()
       .from(companies)
@@ -42,7 +52,9 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: 'Empresa não encontrada.' }, { status: 404 })
     }
 
-    return NextResponse.json({ company })
+    const response = { company }
+    await setCache(cacheKey, response, COMPANY_CACHE_TTL)
+    return NextResponse.json(response)
   } catch (error: unknown) {
     console.error('Erro ao buscar dados da empresa:', error)
     return NextResponse.json(
@@ -67,6 +79,9 @@ export async function PUT(request: Request): Promise<NextResponse> {
       .set({ ...validatedData, updatedAt: new Date() })
       .where(eq(companies.id, VALIDATED_COMPANY_ID))
       .returning()
+
+    // Invalidar cache da empresa após atualização
+    await invalidateCache(`company:${VALIDATED_COMPANY_ID}`)
 
     return NextResponse.json({ success: true, company: updatedCompany })
   } catch (error) {
