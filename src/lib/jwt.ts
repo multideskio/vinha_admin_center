@@ -3,12 +3,11 @@ import { cookies } from 'next/headers'
 import { db } from '@/db/drizzle'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { env } from '@/lib/env'
 import type { UserRole } from './types'
 
-// Chave secreta para assinar os JWTs
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
-)
+// Chave secreta para assinar os JWTs — validada via env.ts (mínimo 32 caracteres)
+const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET)
 
 const JWT_COOKIE_NAME = 'auth_token'
 const JWT_EXPIRES_IN = '30d' // 30 dias
@@ -68,7 +67,16 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
 
     return null
   } catch (error) {
-    // Silenciar erro de verificação - token inválido/expirado
+    // Token expirado/inválido é esperado, mas erros de infraestrutura devem ser logados
+    if (
+      error instanceof Error &&
+      !error.message.includes('expired') &&
+      !error.message.includes('invalid') &&
+      !error.message.includes('JWS') &&
+      !error.message.includes('JWT')
+    ) {
+      console.error('[JWT_VERIFY_ERROR] Erro inesperado na verificação JWT:', error)
+    }
     return null
   }
 }
@@ -81,7 +89,7 @@ export async function setJWTCookie(token: string): Promise<void> {
 
   cookieStore.set(JWT_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 30 * 24 * 60 * 60, // 30 dias em segundos
@@ -96,7 +104,7 @@ export async function clearJWTCookie(): Promise<void> {
 
   cookieStore.set(JWT_COOKIE_NAME, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 0,
@@ -156,7 +164,10 @@ export async function validateJWTRequest(): Promise<{
       token,
     }
   } catch (error) {
-    console.error('Erro ao validar usuário no banco:', error)
+    console.error(
+      'Erro ao validar usuário no banco:',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+    )
     return { user: null, token: null }
   }
 }
@@ -217,7 +228,10 @@ export async function validateRequest(): Promise<{
       session: { id: token },
     }
   } catch (error) {
-    console.error('Erro ao validar usuário no banco:', error)
+    console.error(
+      'Erro ao validar usuário no banco:',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+    )
     return { user: null, session: null }
   }
 }

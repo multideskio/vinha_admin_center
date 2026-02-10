@@ -4,6 +4,13 @@ import { users, passwordResetTokens } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
 import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
+import { z } from 'zod'
+
+// Schema Zod para validação do reset-password
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token é obrigatório'),
+  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,11 +26,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { token, password } = await request.json()
-    if (!token || !password)
-      return NextResponse.json({ error: 'Token e senha obrigatórios' }, { status: 400 })
-    if (password.length < 8)
-      return NextResponse.json({ error: 'Senha muito curta' }, { status: 400 })
+    const body = await request.json()
+
+    // ✅ Validação Zod do payload
+    const parseResult = resetPasswordSchema.safeParse(body)
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parseResult.error.errors },
+        { status: 400 },
+      )
+    }
+
+    const { token, password } = parseResult.data
 
     const [reset] = await db
       .select()

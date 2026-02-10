@@ -8,6 +8,13 @@ import { createPasswordResetEmail } from '@/lib/email-templates'
 import { EmailService } from '@/lib/notifications'
 import { otherSettings } from '@/db/schema'
 import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
+import { z } from 'zod'
+import { env } from '@/lib/env'
+
+// Schema Zod para validação do forgot-password
+const forgotPasswordSchema = z.object({
+  email: z.string().email('E-mail inválido'),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,8 +33,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email } = await request.json()
-    if (!email) return NextResponse.json({ error: 'E-mail é obrigatório' }, { status: 400 })
+    const body = await request.json()
+
+    // ✅ Validação Zod do payload
+    const parseResult = forgotPasswordSchema.safeParse(body)
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parseResult.error.errors },
+        { status: 400 },
+      )
+    }
+
+    const { email } = parseResult.data
 
     // Busca usuário
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
@@ -56,8 +73,8 @@ export async function POST(request: NextRequest) {
     if (!settings)
       return NextResponse.json({ error: 'Configuração não encontrada' }, { status: 500 })
 
-    // ✅ CORRIGIDO: Usar URL do .env
-    const host = process.env.NEXT_PUBLIC_APP_URL
+    // ✅ CORRIGIDO: Usar URL validada via env.ts
+    const host = env.NEXT_PUBLIC_APP_URL
 
     if (!host) {
       console.error('[FORGOT_PASSWORD] NEXT_PUBLIC_APP_URL não configurada no .env')

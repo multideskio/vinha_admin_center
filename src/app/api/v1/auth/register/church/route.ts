@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
+import { randomBytes } from 'crypto'
 import { db } from '@/db/drizzle'
 import { users, churchProfiles } from '@/db/schema'
 import { sql } from 'drizzle-orm'
@@ -68,9 +69,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Este CNPJ já está cadastrado' }, { status: 400 })
     }
 
-    // 5. Gerar senha temporária (8 caracteres aleatórios)
-    const tempPassword =
-      Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase()
+    // 5. Gerar senha temporária criptograficamente segura
+    const tempPassword = randomBytes(12).toString('base64url')
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
     // 6. Criar usuário e perfil em transação atômica

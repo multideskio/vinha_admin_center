@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { passwordResetTokens } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting: 10 req/min por IP
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit('verify-token', ip, 10, 60)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
+        { status: 429 },
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
     if (!token) return NextResponse.json({ error: 'Token obrigatório' }, { status: 400 })
