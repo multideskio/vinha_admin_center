@@ -1,185 +1,70 @@
 /**
- * @lastReview 2026-01-05 15:40 - API de relatório de igrejas implementada
- * @fileoverview API para relatório de performance de igrejas por região
- * Segurança: ✅ Validação admin obrigatória
- * Funcionalidades: ✅ Filtros por período/região, ✅ Agrupamento por região, ✅ Performance individual
+ * @fileoverview API de relatório de igrejas (rota fina)
+ * @description Valida JWT, aplica rate limit, valida input com Zod,
+ * delega ao serviço e registra audit log. Toda lógica de negócio
+ * está em @/lib/report-services/churches-report.ts
+ *
+ * Segurança: ✅ JWT + role admin, ✅ Rate limiting, ✅ Validação Zod
+ * Auditoria: ✅ Audit log assíncrono
  */
 
-import { NextResponse } from 'next/server'
-import { db } from '@/db/drizzle'
-import { users, transactions, churchProfiles, supervisorProfiles } from '@/db/schema'
-import { eq, and, isNull, desc, sql } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
+import { logUserAction } from '@/lib/action-logger'
+import { churchesReportSchema } from '@/lib/schemas/report-schemas'
+import { generateChurchesReport } from '@/lib/report-services/churches-report'
 import type { UserRole } from '@/lib/types'
-import { getCache, setCache } from '@/lib/cache'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  // 1. Autenticação
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
+  // 2. Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const rl = await rateLimit('relatorio-igrejas', ip, 30, 60)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    )
+  }
+
   try {
-    const { searchParams } = new URL(request.url)
-    const from = searchParams.get('from')
-    const to = searchParams.get('to')
-    const supervisorId = searchParams.get('supervisorId')
+    // 3. Validação Zod dos parâmetros de query
+    const params = Object.fromEntries(new URL(request.url).searchParams)
+    const validated = churchesReportSchema.parse(params)
 
-    // ✅ Cache de 5 minutos para relatório de igrejas
-    const cacheKey = `relatorio:igrejas:${user.companyId}:${from}:${to}:${supervisorId}`
-    const cached = await getCache(cacheKey)
-    if (cached) {
-      return NextResponse.json(cached)
-    }
+    // 4. Delegar ao serviço
+    const result = await generateChurchesReport(user.companyId, validated)
 
-    // Definir período padrão (últimos 30 dias)
-    const endDate = to ? new Date(to) : new Date()
-    const startDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-
-    // Buscar todos os supervisores para filtro
-    const allSupervisors = await db
-      .select({
-        id: users.id,
-        firstName: supervisorProfiles.firstName,
-        lastName: supervisorProfiles.lastName,
-      })
-      .from(users)
-      .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-      .where(
-        and(
-          eq(users.companyId, user.companyId),
-          eq(users.role, 'supervisor'),
-          isNull(users.deletedAt),
-        ),
-      )
-
-    // Condições para igrejas
-    const churchConditions = [
-      eq(users.companyId, user.companyId),
-      eq(users.role, 'church_account'),
-      isNull(users.deletedAt),
-    ]
-
-    // Filtro por supervisor se especificado
-    if (supervisorId && supervisorId !== 'all') {
-      churchConditions.push(eq(churchProfiles.supervisorId, supervisorId))
-    }
-
-    // Buscar igrejas com dados de arrecadação
-    const churchesQuery = db
-      .select({
-        id: users.id,
-        nomeFantasia: churchProfiles.nomeFantasia,
-        cnpj: churchProfiles.cnpj,
-        city: churchProfiles.city,
-        state: churchProfiles.state,
-        supervisorId: churchProfiles.supervisorId,
-        supervisorName: sql<string>`CONCAT(${supervisorProfiles.firstName}, ' ', ${supervisorProfiles.lastName})`,
-        createdAt: users.createdAt,
-        totalRevenue: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.status} = 'approved' AND ${transactions.createdAt} BETWEEN ${startDate} AND ${endDate} THEN ${transactions.amount} ELSE 0 END), 0)`,
-        transactionCount: sql<number>`COUNT(CASE WHEN ${transactions.status} = 'approved' AND ${transactions.createdAt} BETWEEN ${startDate} AND ${endDate} THEN ${transactions.id} END)`,
-        lastTransactionDate: sql<string>`MAX(CASE WHEN ${transactions.status} = 'approved' THEN ${transactions.createdAt} END)`,
-        lastTransactionAmount: sql<number>`(
-          SELECT ${transactions.amount} 
-          FROM ${transactions} 
-          WHERE ${transactions.contributorId} = ${users.id} 
-            AND ${transactions.status} = 'approved' 
-          ORDER BY ${transactions.createdAt} DESC 
-          LIMIT 1
-        )`,
-      })
-      .from(users)
-      .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-      .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
-      .leftJoin(transactions, eq(users.id, transactions.contributorId))
-      .where(and(...churchConditions))
-      .groupBy(
-        users.id,
-        churchProfiles.nomeFantasia,
-        churchProfiles.cnpj,
-        churchProfiles.city,
-        churchProfiles.state,
-        churchProfiles.supervisorId,
-        supervisorProfiles.firstName,
-        supervisorProfiles.lastName,
-        users.createdAt,
-      )
-      .orderBy(
-        desc(
-          sql`COALESCE(SUM(CASE WHEN ${transactions.status} = 'approved' AND ${transactions.createdAt} BETWEEN ${startDate} AND ${endDate} THEN ${transactions.amount} ELSE 0 END), 0)`,
-        ),
-      )
-
-    const churches = await churchesQuery
-
-    // Formatar dados das igrejas
-    const formattedChurches = churches.map((c) => ({
-      id: c.id,
-      nomeFantasia: c.nomeFantasia || 'N/A',
-      cnpj: c.cnpj || 'N/A',
-      cidade: c.city || 'N/A',
-      estado: c.state || 'N/A',
-      supervisorName: c.supervisorName || 'Sem Supervisor',
-      totalRevenue: Number(c.totalRevenue) || 0,
-      transactionCount: Number(c.transactionCount) || 0,
-      lastTransaction: c.lastTransactionDate
-        ? {
-            date: new Date(c.lastTransactionDate).toLocaleDateString('pt-BR'),
-            amount: Number(c.lastTransactionAmount) || 0,
-          }
-        : null,
-      createdAt: new Date(c.createdAt).toLocaleDateString('pt-BR'),
-    }))
-
-    // Agrupar por supervisor
-    const bySupervisor = formattedChurches.reduce(
-      (acc, church) => {
-        const supervisorName = church.supervisorName
-        if (!acc[supervisorName]) {
-          acc[supervisorName] = {
-            count: 0,
-            totalRevenue: 0,
-            churches: [],
-          }
-        }
-        acc[supervisorName].count++
-        acc[supervisorName].totalRevenue += church.totalRevenue
-        acc[supervisorName].churches.push(church)
-        return acc
-      },
-      {} as Record<
-        string,
-        { count: number; totalRevenue: number; churches: typeof formattedChurches }
-      >,
+    // 5. Audit log assíncrono (fire-and-forget)
+    logUserAction(user.id, 'generate_report', 'report', 'igrejas', JSON.stringify(validated)).catch(
+      (err) => console.error('[AUDIT_LOG_ERROR]', err),
     )
 
-    // Calcular totais gerais
-    const totalChurches = formattedChurches.length
-    const totalRevenue = formattedChurches.reduce((sum, c) => sum + c.totalRevenue, 0)
-    const totalTransactions = formattedChurches.reduce((sum, c) => sum + c.transactionCount, 0)
-
-    const result = {
-      churches: formattedChurches,
-      bySupervisor,
-      supervisors: allSupervisors.map((s) => ({
-        id: s.id,
-        name: `${s.firstName} ${s.lastName}`,
-      })),
-      summary: {
-        totalChurches,
-        totalRevenue,
-        totalTransactions,
-      },
-      period: {
-        from: startDate.toLocaleDateString('pt-BR'),
-        to: endDate.toLocaleDateString('pt-BR'),
-      },
-    }
-
-    await setCache(cacheKey, result, 300) // 5 minutos
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Erro ao gerar relatório de igrejas:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    // Erros de validação Zod → 400
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Parâmetros inválidos',
+          detalhes: error.errors.map((e) => e.message),
+        },
+        { status: 400 },
+      )
+    }
+
+    // Erros internos → 500
+    console.error('[RELATORIO_IGREJAS_ERROR]', error)
+    return NextResponse.json(
+      { error: 'Erro ao gerar relatório de igrejas. Tente novamente.' },
+      { status: 500 },
+    )
   }
 }

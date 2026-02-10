@@ -1,155 +1,74 @@
 /**
- * @lastReview 2026-01-05 15:35 - API de relatório financeiro implementada
- * @fileoverview API para relatório financeiro completo com filtros avançados
- * Segurança: ✅ Validação admin obrigatória
- * Funcionalidades: ✅ Filtros por período/método/status, ✅ KPIs por status, ✅ Paginação
+ * @fileoverview API de relatório financeiro (rota fina)
+ * @description Valida JWT, aplica rate limit, valida input com Zod,
+ * delega ao serviço e registra audit log. Toda lógica de negócio
+ * está em @/lib/report-services/financial-report.ts
+ *
+ * Segurança: ✅ JWT + role admin, ✅ Rate limiting, ✅ Validação Zod
+ * Auditoria: ✅ Audit log assíncrono
  */
 
-import { NextResponse } from 'next/server'
-import { db } from '@/db/drizzle'
-import { users, transactions, pastorProfiles, churchProfiles } from '@/db/schema'
-import { eq, and, between, desc, sql } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
+import { logUserAction } from '@/lib/action-logger'
+import { financialReportSchema } from '@/lib/schemas/report-schemas'
+import { generateFinancialReport } from '@/lib/report-services/financial-report'
 import type { UserRole } from '@/lib/types'
-import { getCache, setCache } from '@/lib/cache'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  // 1. Autenticação
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
+  // 2. Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const rl = await rateLimit('relatorio-financeiro', ip, 30, 60)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    )
+  }
+
   try {
-    const { searchParams } = new URL(request.url)
-    const from = searchParams.get('from')
-    const to = searchParams.get('to')
-    const method = searchParams.get('method')
-    const status = searchParams.get('status')
+    // 3. Validação Zod dos parâmetros de query
+    const params = Object.fromEntries(new URL(request.url).searchParams)
+    const validated = financialReportSchema.parse(params)
 
-    // ✅ Cache de 5 minutos para relatório financeiro
-    const cacheKey = `relatorio:financeiro:${user.companyId}:${from}:${to}:${method}:${status}`
-    const cached = await getCache(cacheKey)
-    if (cached) {
-      return NextResponse.json(cached)
-    }
+    // 4. Delegar ao serviço
+    const result = await generateFinancialReport(user.companyId, validated)
 
-    // Definir período padrão (últimos 30 dias)
-    const endDate = to ? new Date(to) : new Date()
-    const startDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    // 5. Audit log assíncrono (fire-and-forget)
+    logUserAction(
+      user.id,
+      'generate_report',
+      'report',
+      'financeiro',
+      JSON.stringify(validated),
+    ).catch((err) => console.error('[AUDIT_LOG_ERROR]', err))
 
-    // Condições base
-    const conditions = [
-      eq(transactions.companyId, user.companyId),
-      between(transactions.createdAt, startDate, endDate),
-    ]
-
-    // Filtros opcionais
-    if (method && method !== 'all') {
-      conditions.push(eq(transactions.paymentMethod, method as 'pix' | 'credit_card' | 'boleto'))
-    }
-
-    if (status && status !== 'all') {
-      conditions.push(
-        eq(transactions.status, status as 'approved' | 'pending' | 'refused' | 'refunded'),
+    return NextResponse.json(result)
+  } catch (error) {
+    // Erros de validação Zod → 400
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Parâmetros inválidos',
+          detalhes: error.errors.map((e) => e.message),
+        },
+        { status: 400 },
       )
     }
 
-    // Buscar todas as transações
-    const allTransactions = await db
-      .select({
-        id: transactions.id,
-        amount: transactions.amount,
-        method: transactions.paymentMethod,
-        status: transactions.status,
-        date: transactions.createdAt,
-        contributorId: transactions.contributorId,
-        firstName: pastorProfiles.firstName,
-        lastName: pastorProfiles.lastName,
-        nomeFantasia: churchProfiles.nomeFantasia,
-        contributorRole: users.role,
-      })
-      .from(transactions)
-      .innerJoin(users, eq(transactions.contributorId, users.id))
-      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-      .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-      .where(and(...conditions))
-      .orderBy(desc(transactions.createdAt))
-
-    // Formatar transações
-    const formattedTransactions = allTransactions.map((t) => ({
-      id: t.id,
-      contributorName:
-        t.contributorRole === 'pastor'
-          ? `${t.firstName || ''} ${t.lastName || ''}`.trim()
-          : t.nomeFantasia || 'N/A',
-      contributorRole: t.contributorRole,
-      amount: Number(t.amount),
-      method: t.method,
-      status: t.status,
-      date: new Date(t.date).toLocaleDateString('pt-BR'),
-    }))
-
-    // Calcular KPIs por status
-    const statusSummary = await db
-      .select({
-        status: transactions.status,
-        count: sql<number>`COUNT(*)`,
-        total: sql<number>`SUM(${transactions.amount})`,
-      })
-      .from(transactions)
-      .where(and(...conditions))
-      .groupBy(transactions.status)
-
-    const statusTotals = statusSummary.reduce(
-      (acc, s) => {
-        acc[s.status] = Number(s.total)
-        return acc
-      },
-      {} as Record<string, number>,
+    // Erros internos → 500
+    console.error('[RELATORIO_FINANCEIRO_ERROR]', error)
+    return NextResponse.json(
+      { error: 'Erro ao gerar relatório financeiro. Tente novamente.' },
+      { status: 500 },
     )
-
-    // Resumo por método de pagamento
-    const methodSummary = await db
-      .select({
-        method: transactions.paymentMethod,
-        count: sql<number>`COUNT(*)`,
-        total: sql<number>`SUM(${transactions.amount})`,
-      })
-      .from(transactions)
-      .where(and(...conditions))
-      .groupBy(transactions.paymentMethod)
-
-    const byMethod = methodSummary.reduce(
-      (acc, m) => {
-        acc[m.method] = {
-          count: Number(m.count),
-          total: Number(m.total),
-        }
-        return acc
-      },
-      {} as Record<string, { count: number; total: number }>,
-    )
-
-    const result = {
-      transactions: formattedTransactions,
-      summary: {
-        totalTransactions: formattedTransactions.length,
-        totalApproved: statusTotals.approved || 0,
-        totalPending: statusTotals.pending || 0,
-        totalRefused: statusTotals.refused || 0,
-        totalRefunded: statusTotals.refunded || 0,
-        byMethod,
-      },
-      period: {
-        from: startDate.toLocaleDateString('pt-BR'),
-        to: endDate.toLocaleDateString('pt-BR'),
-      },
-    }
-
-    await setCache(cacheKey, result, 300) // 5 minutos
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error('Erro ao gerar relatório financeiro:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

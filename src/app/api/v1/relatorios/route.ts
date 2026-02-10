@@ -1,391 +1,83 @@
 /**
- * @lastReview 2026-01-05 14:45 - API de relatórios geral revisada
- * @fileoverview API para geração de relatórios
- * Segurança: ✅ Validação admin obrigatória
- * Funcionalidades: ✅ 5 tipos de relatórios, ✅ Filtros avançados, ✅ Dados estruturados
+ * @fileoverview API de relatório geral (rota fina)
+ * @description Valida JWT, aplica rate limit, valida input com Zod,
+ * delega ao serviço e registra audit log. Toda lógica de negócio
+ * está em @/lib/report-services/general-report.ts
+ *
+ * Segurança: ✅ JWT + role admin, ✅ Rate limiting, ✅ Validação Zod
+ * Auditoria: ✅ Audit log assíncrono
  */
 
 import { NextResponse } from 'next/server'
-import { db } from '@/db/drizzle'
-import { users, transactions, churchProfiles, pastorProfiles } from '@/db/schema'
-import { eq, and, between, isNull, desc, inArray } from 'drizzle-orm'
+import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
+import { logUserAction } from '@/lib/action-logger'
+import { generalReportSchema } from '@/lib/schemas/report-schemas'
+import { generateGeneralReport } from '@/lib/report-services/general-report'
 import type { UserRole } from '@/lib/types'
 
 export async function POST(request: Request) {
+  // 1. Autenticação
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
+  // 2. Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const rl = await rateLimit('relatorio-geral', ip, 30, 60)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    )
+  }
+
   try {
-    const { reportType, startDate, endDate, paymentMethod, paymentStatus } = await request.json()
-
-    let data: Record<string, unknown> = {}
-
-    const filters = { startDate, endDate, paymentMethod, paymentStatus }
-
-    switch (reportType) {
-      case 'fin-01':
-        data = await generateFinancialReport(user.companyId, filters)
-        break
-      case 'mem-01':
-        data = await generateMembershipReport(user.companyId)
-        break
-      case 'ch-01':
-        data = await generateChurchesReport(user.companyId)
-        break
-      case 'con-01':
-        data = await generateContributionsReport(user.companyId, filters)
-        break
-      case 'def-01':
-        data = await generateDefaultersReport(user.companyId, filters)
-        break
-      default:
-        return NextResponse.json({ error: 'Tipo de relatório inválido' }, { status: 400 })
+    // 3. Parse do body e validação Zod
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'Corpo da requisição deve ser um JSON válido.' },
+        { status: 400 },
+      )
     }
 
-    return NextResponse.json(data)
+    const validated = generalReportSchema.parse(body)
+
+    // 4. Delegar ao serviço
+    const result = await generateGeneralReport(user.companyId, validated)
+
+    // 5. Audit log assíncrono (fire-and-forget)
+    logUserAction(
+      user.id,
+      'generate_report',
+      'report',
+      validated.reportType,
+      JSON.stringify(validated),
+    ).catch((err) => console.error('[AUDIT_LOG_ERROR]', err))
+
+    return NextResponse.json(result)
   } catch (error) {
-    console.error('Erro ao gerar relatório:', error)
-    return NextResponse.json({ error: 'Erro ao gerar relatório' }, { status: 500 })
-  }
-}
-
-type Filters = {
-  startDate?: string
-  endDate?: string
-  paymentMethod?: string
-  paymentStatus?: string
-}
-
-async function generateFinancialReport(companyId: string, filters: Filters) {
-  const conditions = [eq(transactions.companyId, companyId)]
-
-  if (filters.startDate && filters.endDate) {
-    conditions.push(
-      between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)),
-    )
-  }
-  if (filters.paymentMethod) {
-    conditions.push(
-      eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'),
-    )
-  }
-  if (filters.paymentStatus) {
-    conditions.push(
-      eq(
-        transactions.status,
-        filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded',
-      ),
-    )
-  }
-
-  const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0]
-
-  const txs = await db
-    .select({
-      id: transactions.id,
-      amount: transactions.amount,
-      status: transactions.status,
-      paymentMethod: transactions.paymentMethod,
-      createdAt: transactions.createdAt,
-    })
-    .from(transactions)
-    .where(whereClause)
-    .orderBy(desc(transactions.createdAt))
-
-  const total = txs.reduce((sum, tx) => sum + parseFloat(tx.amount), 0)
-  const approved = txs.filter((tx) => tx.status === 'approved').length
-  const pending = txs.filter((tx) => tx.status === 'pending').length
-  const refused = txs.filter((tx) => tx.status === 'refused').length
-
-  return {
-    title: 'Relatório Financeiro Completo',
-    headers: ['ID', 'Valor', 'Status', 'Método', 'Data'],
-    rows: txs.map((tx) => [
-      tx.id.substring(0, 8),
-      `R$ ${parseFloat(tx.amount).toFixed(2)}`,
-      tx.status,
-      tx.paymentMethod,
-      new Date(tx.createdAt).toLocaleDateString('pt-BR'),
-    ]),
-    summary: [
-      { label: 'Total de Transações', value: txs.length },
-      { label: 'Aprovadas', value: approved },
-      { label: 'Pendentes', value: pending },
-      { label: 'Recusadas', value: refused },
-      { label: 'Valor Total', value: `R$ ${total.toFixed(2)}` },
-    ],
-  }
-}
-
-async function generateMembershipReport(companyId: string) {
-  const allUsers = await db
-    .select({
-      id: users.id,
-      role: users.role,
-      status: users.status,
-      createdAt: users.createdAt,
-    })
-    .from(users)
-    .where(and(eq(users.companyId, companyId), isNull(users.deletedAt)))
-
-  const byRole = allUsers.reduce(
-    (acc, user) => {
-      acc[user.role] = (acc[user.role] || 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
-  )
-
-  const active = allUsers.filter((u) => u.status === 'active').length
-  const inactive = allUsers.filter((u) => u.status === 'inactive').length
-
-  return {
-    title: 'Relatório de Membresia',
-    headers: ['Tipo', 'Quantidade'],
-    rows: Object.entries(byRole).map(([role, count]) => [role, count]),
-    summary: [
-      { label: 'Total de Usuários', value: allUsers.length },
-      { label: 'Ativos', value: active },
-      { label: 'Inativos', value: inactive },
-    ],
-  }
-}
-
-async function generateChurchesReport(companyId: string) {
-  const whereClause = and(
-    eq(users.companyId, companyId),
-    eq(users.role, 'church_account'),
-    isNull(users.deletedAt),
-  )
-
-  const churches = await db
-    .select({
-      id: users.id,
-      nomeFantasia: churchProfiles.nomeFantasia,
-      city: churchProfiles.city,
-      state: churchProfiles.state,
-      status: users.status,
-    })
-    .from(users)
-    .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-    .where(whereClause)
-
-  return {
-    title: 'Relatório de Igrejas',
-    headers: ['Nome', 'Cidade', 'Estado', 'Status'],
-    rows: churches.map((ch) => [
-      ch.nomeFantasia || 'N/A',
-      ch.city || 'N/A',
-      ch.state || 'N/A',
-      ch.status,
-    ]),
-    summary: [
-      { label: 'Total de Igrejas', value: churches.length },
-      { label: 'Ativas', value: churches.filter((c) => c.status === 'active').length },
-    ],
-  }
-}
-
-async function generateContributionsReport(companyId: string, filters: Filters) {
-  const conditions = [
-    eq(transactions.companyId, companyId),
-    eq(
-      transactions.status,
-      (filters.paymentStatus as 'approved' | 'pending' | 'refused' | 'refunded') || 'approved',
-    ),
-  ]
-
-  if (filters.startDate && filters.endDate) {
-    conditions.push(
-      between(transactions.createdAt, new Date(filters.startDate), new Date(filters.endDate)),
-    )
-  }
-  if (filters.paymentMethod) {
-    conditions.push(
-      eq(transactions.paymentMethod, filters.paymentMethod as 'pix' | 'credit_card' | 'boleto'),
-    )
-  }
-
-  const whereClause = and(...conditions)
-
-  const contributions = await db
-    .select({
-      paymentMethod: transactions.paymentMethod,
-      amount: transactions.amount,
-    })
-    .from(transactions)
-    .where(whereClause)
-
-  const byMethod = contributions.reduce(
-    (acc, c) => {
-      const method = c.paymentMethod
-      if (!acc[method]) {
-        acc[method] = { count: 0, total: 0 }
-      }
-      acc[method].count++
-      acc[method].total += parseFloat(c.amount)
-      return acc
-    },
-    {} as Record<string, { count: number; total: number }>,
-  )
-
-  const totalAmount = contributions.reduce((sum, c) => sum + parseFloat(c.amount), 0)
-
-  return {
-    title: 'Relatório de Contribuições por Tipo',
-    headers: ['Método', 'Quantidade', 'Valor Total'],
-    rows: Object.entries(byMethod).map(([method, data]) => [
-      method,
-      data.count,
-      `R$ ${data.total.toFixed(2)}`,
-    ]),
-    summary: [
-      { label: 'Total de Contribuições', value: contributions.length },
-      { label: 'Valor Total Arrecadado', value: `R$ ${totalAmount.toFixed(2)}` },
-    ],
-  }
-}
-
-async function generateDefaultersReport(companyId: string, filters: Filters) {
-  // Buscar todos os pastores
-  const pastors = await db
-    .select({
-      id: users.id,
-      firstName: pastorProfiles.firstName,
-      lastName: pastorProfiles.lastName,
-      titheDay: users.titheDay,
-    })
-    .from(users)
-    .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-    .where(and(eq(users.companyId, companyId), eq(users.role, 'pastor'), isNull(users.deletedAt)))
-
-  // Buscar todas as igrejas
-  const churches = await db
-    .select({
-      id: users.id,
-      nomeFantasia: churchProfiles.nomeFantasia,
-      titheDay: users.titheDay,
-    })
-    .from(users)
-    .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-    .where(
-      and(
-        eq(users.companyId, companyId),
-        eq(users.role, 'church_account'),
-        isNull(users.deletedAt),
-      ),
-    )
-
-  const now = new Date()
-  const startDate = filters.startDate
-    ? new Date(filters.startDate)
-    : new Date(now.getFullYear(), 0, 1)
-  const endDate = filters.endDate ? new Date(filters.endDate) : now
-
-  const months: string[] = []
-
-  // Gerar lista de meses no período
-  const current = new Date(startDate)
-  while (current <= endDate) {
-    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`)
-    current.setMonth(current.getMonth() + 1)
-  }
-
-  // ✅ OTIMIZADO: Buscar TODOS os pagamentos aprovados do período de uma vez
-  const allContributorIds = [...pastors.map((p) => p.id), ...churches.map((c) => c.id)]
-
-  const allPayments =
-    allContributorIds.length > 0
-      ? await db
-          .select({
-            contributorId: transactions.contributorId,
-            createdAt: transactions.createdAt,
-          })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.status, 'approved'),
-              between(transactions.createdAt, startDate, endDate),
-              inArray(transactions.contributorId, allContributorIds),
-            ),
-          )
-      : []
-
-  // Agrupar pagamentos por contributorId + mês (YYYY-MM)
-  const paymentsByContributorMonth = new Map<string, boolean>()
-  for (const payment of allPayments) {
-    const date = new Date(payment.createdAt)
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-    paymentsByContributorMonth.set(`${payment.contributorId}:${monthKey}`, true)
-  }
-
-  const rows: string[][] = []
-
-  // Verificar pastores
-  for (const pastor of pastors) {
-    const name = `${pastor.firstName} ${pastor.lastName}`
-    const monthlyStatus: string[] = []
-
-    for (const month of months) {
-      const hasPaid = paymentsByContributorMonth.has(`${pastor.id}:${month}`)
-      monthlyStatus.push(hasPaid ? '✓ Pago' : '✗ Não pago')
+    // Erros de validação Zod → 400
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Parâmetros inválidos',
+          detalhes: error.errors.map((e) => e.message),
+        },
+        { status: 400 },
+      )
     }
 
-    rows.push([name, 'Pastor', pastor.titheDay?.toString() || 'N/A', ...monthlyStatus])
-  }
-
-  // Verificar igrejas
-  for (const church of churches) {
-    const monthlyStatus: string[] = []
-
-    for (const month of months) {
-      const hasPaid = paymentsByContributorMonth.has(`${church.id}:${month}`)
-      monthlyStatus.push(hasPaid ? '✓ Pago' : '✗ Não pago')
-    }
-
-    rows.push([
-      church.nomeFantasia || 'N/A',
-      'Igreja',
-      church.titheDay?.toString() || 'N/A',
-      ...monthlyStatus,
-    ])
-  }
-
-  const totalPeople = pastors.length + churches.length
-  const monthHeaders = months.map((m) => {
-    const parts = m.split('-')
-    const year = parts[0]
-    const month = parts[1]
-    if (!year || !month) return 'N/A'
-    const monthNames = [
-      'Jan',
-      'Fev',
-      'Mar',
-      'Abr',
-      'Mai',
-      'Jun',
-      'Jul',
-      'Ago',
-      'Set',
-      'Out',
-      'Nov',
-      'Dez',
-    ]
-    return `${monthNames[parseInt(month) - 1]}/${year}`
-  })
-
-  return {
-    title: 'Relatório de Inadimplência',
-    headers: ['Nome', 'Tipo', 'Dia do Dízimo', ...monthHeaders],
-    rows,
-    summary: [
-      { label: 'Total de Pessoas', value: totalPeople },
-      { label: 'Pastores', value: pastors.length },
-      { label: 'Igrejas', value: churches.length },
-      { label: 'Período', value: `${monthHeaders[0]} - ${monthHeaders[monthHeaders.length - 1]}` },
-    ],
+    // Erros internos → 500
+    console.error('[RELATORIO_GERAL_ERROR]', error)
+    return NextResponse.json(
+      { error: 'Erro ao gerar relatório. Tente novamente.' },
+      { status: 500 },
+    )
   }
 }

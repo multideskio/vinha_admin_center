@@ -1,185 +1,74 @@
 /**
- * @lastReview 2026-01-05 15:45 - API de relatório de membresia implementada
- * @fileoverview API para relatório de dados demográficos e crescimento de membros
- * Segurança: ✅ Validação admin obrigatória
- * Funcionalidades: ✅ Filtros por role, ✅ Dados de crescimento, ✅ Distribuição por tipo
+ * @fileoverview API de relatório de membresia (rota fina)
+ * @description Valida JWT, aplica rate limit, valida input com Zod,
+ * delega ao serviço e registra audit log. Toda lógica de negócio
+ * está em @/lib/report-services/membership-report.ts
+ *
+ * Segurança: ✅ JWT + role admin, ✅ Rate limiting, ✅ Validação Zod
+ * Auditoria: ✅ Audit log assíncrono
  */
 
-import { NextResponse } from 'next/server'
-import { db } from '@/db/drizzle'
-import {
-  users,
-  pastorProfiles,
-  churchProfiles,
-  managerProfiles,
-  supervisorProfiles,
-} from '@/db/schema'
-import { eq, and, isNull, desc } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { rateLimit } from '@/lib/rate-limit'
+import { logUserAction } from '@/lib/action-logger'
+import { membershipReportSchema } from '@/lib/schemas/report-schemas'
+import { generateMembershipReport } from '@/lib/report-services/membership-report'
 import type { UserRole } from '@/lib/types'
-import { getCache, setCache } from '@/lib/cache'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  // 1. Autenticação
   const { user } = await validateRequest()
   if (!user || (user.role as UserRole) !== 'admin') {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
-  try {
-    const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role')
-
-    // ✅ Cache de 5 minutos para relatório de membresia
-    const cacheKey = `relatorio:membresia:${user.companyId}:${role}`
-    const cached = await getCache(cacheKey)
-    if (cached) {
-      return NextResponse.json(cached)
-    }
-
-    // Condições base
-    const conditions = [eq(users.companyId, user.companyId), isNull(users.deletedAt)]
-
-    // Filtro por role se especificado
-    if (role && role !== 'all') {
-      conditions.push(eq(users.role, role as UserRole))
-    }
-
-    // Buscar todos os membros
-    const allMembers = await db
-      .select({
-        id: users.id,
-        role: users.role,
-        status: users.status,
-        email: users.email,
-        createdAt: users.createdAt,
-        // Dados específicos por tipo
-        pastorFirstName: pastorProfiles.firstName,
-        pastorLastName: pastorProfiles.lastName,
-        churchNomeFantasia: churchProfiles.nomeFantasia,
-        managerFirstName: managerProfiles.firstName,
-        managerLastName: managerProfiles.lastName,
-        supervisorFirstName: supervisorProfiles.firstName,
-        supervisorLastName: supervisorProfiles.lastName,
-      })
-      .from(users)
-      .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
-      .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-      .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-      .leftJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
-      .where(and(...conditions))
-      .orderBy(desc(users.createdAt))
-
-    // Formatar dados dos membros
-    const formattedMembers = allMembers.map((m) => {
-      let name = 'N/A'
-      let extraInfo = ''
-
-      switch (m.role) {
-        case 'pastor':
-          name = `${m.pastorFirstName || ''} ${m.pastorLastName || ''}`.trim()
-          extraInfo = 'Pastor'
-          break
-        case 'church_account':
-          name = m.churchNomeFantasia || 'N/A'
-          extraInfo = 'Igreja'
-          break
-        case 'manager':
-          name = `${m.managerFirstName || ''} ${m.managerLastName || ''}`.trim()
-          extraInfo = 'Gerente'
-          break
-        case 'supervisor':
-          name = `${m.supervisorFirstName || ''} ${m.supervisorLastName || ''}`.trim()
-          extraInfo = 'Supervisor'
-          break
-        case 'admin':
-          name = 'Administrador'
-          extraInfo = 'Admin'
-          break
-      }
-
-      return {
-        id: m.id,
-        name: name || 'N/A',
-        email: m.email,
-        role: m.role,
-        extraInfo,
-        createdAt: new Date(m.createdAt).toLocaleDateString('pt-BR'),
-        status: m.status,
-      }
-    })
-
-    // Calcular distribuição por role
-    const byRole = allMembers.reduce(
-      (acc, member) => {
-        const existing = acc.find((item) => item.role === member.role)
-        if (existing) {
-          existing.count++
-        } else {
-          acc.push({ role: member.role, count: 1 })
-        }
-        return acc
-      },
-      [] as { role: string; count: number }[],
+  // 2. Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const rl = await rateLimit('relatorio-membresia', ip, 30, 60)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+      { status: 429, headers: { 'Retry-After': '60' } },
     )
+  }
 
-    // Calcular novos membros este mês
-    const thisMonth = new Date()
-    thisMonth.setDate(1)
-    thisMonth.setHours(0, 0, 0, 0)
+  try {
+    // 3. Validação Zod dos parâmetros de query
+    const params = Object.fromEntries(new URL(request.url).searchParams)
+    const validated = membershipReportSchema.parse(params)
 
-    const newThisMonth = allMembers.filter((m) => new Date(m.createdAt) >= thisMonth).length
+    // 4. Delegar ao serviço
+    const result = await generateMembershipReport(user.companyId, validated)
 
-    // Dados de crescimento dos últimos 6 meses
-    const growthData = []
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = new Date()
-      monthDate.setMonth(monthDate.getMonth() - i)
-      monthDate.setDate(1)
-      monthDate.setHours(0, 0, 0, 0)
+    // 5. Audit log assíncrono (fire-and-forget)
+    logUserAction(
+      user.id,
+      'generate_report',
+      'report',
+      'membresia',
+      JSON.stringify(validated),
+    ).catch((err) => console.error('[AUDIT_LOG_ERROR]', err))
 
-      const nextMonth = new Date(monthDate)
-      nextMonth.setMonth(nextMonth.getMonth() + 1)
-
-      const monthMembers = allMembers.filter((m) => {
-        const createdAt = new Date(m.createdAt)
-        return createdAt >= monthDate && createdAt < nextMonth
-      }).length
-
-      const monthNames = [
-        'Jan',
-        'Fev',
-        'Mar',
-        'Abr',
-        'Mai',
-        'Jun',
-        'Jul',
-        'Ago',
-        'Set',
-        'Out',
-        'Nov',
-        'Dez',
-      ]
-
-      growthData.push({
-        month: `${monthNames[monthDate.getMonth()]}/${monthDate.getFullYear()}`,
-        count: monthMembers,
-      })
-    }
-
-    const result = {
-      members: formattedMembers,
-      summary: {
-        totalMembers: allMembers.length,
-        newThisMonth,
-        byRole,
-      },
-      growthData,
-    }
-
-    await setCache(cacheKey, result, 300) // 5 minutos
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Erro ao gerar relatório de membresia:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    // Erros de validação Zod → 400
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Parâmetros inválidos',
+          detalhes: error.errors.map((e) => e.message),
+        },
+        { status: 400 },
+      )
+    }
+
+    // Erros internos → 500
+    console.error('[RELATORIO_MEMBRESIA_ERROR]', error)
+    return NextResponse.json(
+      { error: 'Erro ao gerar relatório de membresia. Tente novamente.' },
+      { status: 500 },
+    )
   }
 }
