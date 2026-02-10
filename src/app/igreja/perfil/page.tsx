@@ -40,8 +40,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { Label } from '@/components/ui/label'
-import PhoneInput from 'react-phone-input-2'
-import 'react-phone-input-2/lib/style.css'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const churchProfileSchema = z.object({
   id: z.string().optional(),
@@ -653,16 +652,9 @@ export default function ChurchProfilePage() {
                               <FormLabel>Telefone *</FormLabel>
                               <FormControl>
                                 <PhoneInput
+                                  type="mobile"
                                   value={field.value || ''}
-                                  onChange={(value) => field.onChange(value)}
-                                  onBlur={field.onBlur}
-                                  country="br"
-                                  preferredCountries={['br']}
-                                  inputClass={cn(
-                                    'w-full px-3 py-2 rounded-md border border-input bg-background',
-                                    'focus:outline-none focus:ring-2 focus:ring-ring',
-                                  )}
-                                  containerClass="w-full"
+                                  onChange={field.onChange}
                                 />
                               </FormControl>
                               <FormMessage />

@@ -17,8 +17,7 @@ import {
   User,
   Loader2,
 } from 'lucide-react'
-import PhoneInput from 'react-phone-input-2'
-import 'react-phone-input-2/lib/style.css'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -653,34 +652,9 @@ export default function PastorProfilePage() {
                               <FormLabel className="text-xs sm:text-sm">Celular</FormLabel>
                               <FormControl>
                                 <PhoneInput
-                                  country={'br'}
+                                  type="mobile"
                                   value={field.value ?? ''}
                                   onChange={field.onChange}
-                                  inputClass="!w-full"
-                                  containerClass="phone-input-wrapper"
-                                  inputStyle={{
-                                    width: '100%',
-                                    height: '36px',
-                                    fontSize: '14px',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 'calc(var(--radius) - 2px)',
-                                    backgroundColor: 'hsl(var(--background))',
-                                    color: 'hsl(var(--foreground))',
-                                  }}
-                                  buttonStyle={{
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRight: 'none',
-                                    backgroundColor: 'hsl(var(--background))',
-                                    borderRadius:
-                                      'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                                    height: '36px',
-                                  }}
-                                  dropdownStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 'calc(var(--radius) - 2px)',
-                                    color: 'hsl(var(--foreground))',
-                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -695,43 +669,9 @@ export default function PastorProfilePage() {
                               <FormLabel className="text-xs sm:text-sm">Telefone 2</FormLabel>
                               <FormControl>
                                 <PhoneInput
-                                  country={'br'}
+                                  type="landline"
                                   value={field.value || ''}
-                                  onChange={(value) => {
-                                    // Converter string vazia ou apenas código do país para undefined
-                                    const phoneValue = value || ''
-                                    // Se for apenas o código do país (ex: "55"), tratar como vazio
-                                    if (phoneValue.length <= 2) {
-                                      field.onChange(undefined)
-                                    } else {
-                                      field.onChange(phoneValue)
-                                    }
-                                  }}
-                                  inputClass="!w-full"
-                                  containerClass="phone-input-wrapper"
-                                  inputStyle={{
-                                    width: '100%',
-                                    height: '36px',
-                                    fontSize: '14px',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 'calc(var(--radius) - 2px)',
-                                    backgroundColor: 'hsl(var(--background))',
-                                    color: 'hsl(var(--foreground))',
-                                  }}
-                                  buttonStyle={{
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRight: 'none',
-                                    backgroundColor: 'hsl(var(--background))',
-                                    borderRadius:
-                                      'calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px)',
-                                    height: '36px',
-                                  }}
-                                  dropdownStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 'calc(var(--radius) - 2px)',
-                                    color: 'hsl(var(--foreground))',
-                                  }}
+                                  onChange={field.onChange}
                                 />
                               </FormControl>
                               <FormMessage />
