@@ -430,7 +430,7 @@ export const userActionLogs = pgTable('user_action_logs', {
     .notNull(),
   action: varchar('action', { length: 100 }).notNull(),
   entityType: varchar('entity_type', { length: 50 }).notNull(),
-  entityId: uuid('entity_id').notNull(),
+  entityId: uuid('entity_id'),
   details: text('details'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
