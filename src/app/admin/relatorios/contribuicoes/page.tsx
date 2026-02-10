@@ -1,8 +1,8 @@
 /**
- * @lastReview 2026-01-05 15:00 - Página de relatório de contribuições revisada
- * ❌ PROBLEMA CRÍTICO: API /api/v1/relatorios/contribuicoes NÃO EXISTE
- * Frontend: ✅ Interface completa, filtros, export CSV, Design System Videira
- * Backend: ❌ API não implementada - página não funcional
+ * @lastReview 2026-02-10 - Página de relatório de contribuições integrada com API
+ * ✅ API /api/v1/relatorios/contribuicoes implementada com paginação server-side
+ * ✅ Frontend consome PaginatedResult<T> com controles de paginação server-side
+ * ✅ Filtros, export CSV, Design System Videira
  */
 'use client'
 
@@ -16,6 +16,9 @@ import {
   Calendar,
   Award,
   DollarSign,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -70,8 +73,25 @@ type Summary = {
   byContributorType: SummaryByContributorType[]
 }
 
+type PaginationMeta = {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
 export default function RelatorioContribuicoesPage() {
   const [contributors, setContributors] = React.useState<Contributor[]>([])
+  const [contributorsPagination, setContributorsPagination] = React.useState<PaginationMeta>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  })
   const [topContributors, setTopContributors] = React.useState<Contributor[]>([])
   const [summary, setSummary] = React.useState<Summary | null>(null)
   const [period, setPeriod] = React.useState({ from: '', to: '' })
@@ -84,47 +104,56 @@ export default function RelatorioContribuicoesPage() {
     to: undefined,
   })
   const [typeFilter, setTypeFilter] = React.useState('all')
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const itemsPerPage = 20
   const { toast } = useToast()
 
-  const fetchData = React.useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (dateRange.from) params.append('from', dateRange.from.toISOString())
-      if (dateRange.to) params.append('to', dateRange.to.toISOString())
-      if (typeFilter !== 'all') params.append('contributorType', typeFilter)
+  const fetchData = React.useCallback(
+    async (page = 1) => {
+      setIsLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (dateRange.from) params.append('from', dateRange.from.toISOString())
+        if (dateRange.to) params.append('to', dateRange.to.toISOString())
+        if (typeFilter !== 'all') params.append('contributorType', typeFilter)
+        params.append('page', String(page))
+        params.append('limit', String(itemsPerPage))
 
-      const response = await fetch(`/api/v1/relatorios/contribuicoes?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error('Falha ao carregar relatório de contribuições.')
+        const response = await fetch(`/api/v1/relatorios/contribuicoes?${params.toString()}`)
+        if (!response.ok) {
+          throw new Error('Falha ao carregar relatório de contribuições.')
+        }
+        const result = await response.json()
+        setContributors(result.contributors.data)
+        setContributorsPagination(result.contributors.pagination)
+        setTopContributors(result.topContributors)
+        setSummary(result.summary)
+        setPeriod(result.period)
+        setCurrentPage(page)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({
+          title: 'Erro',
+          description: message,
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
       }
-      const result = await response.json()
-      setContributors(result.contributors)
-      setTopContributors(result.topContributors)
-      setSummary(result.summary)
-      setPeriod(result.period)
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({
-        title: 'Erro',
-        description: message,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [dateRange, typeFilter, toast])
+    },
+    [dateRange, typeFilter, toast, itemsPerPage],
+  )
 
   // Carregar dados iniciais apenas uma vez
   React.useEffect(() => {
-    fetchData()
+    fetchData(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Só recarregar quando o filtro de tipo mudar (não quando dateRange mudar)
   React.useEffect(() => {
     if (typeFilter !== 'all') {
-      fetchData()
+      fetchData(1)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeFilter])
@@ -184,7 +213,8 @@ export default function RelatorioContribuicoesPage() {
         description: 'Relatório de contribuições baixado com sucesso.',
         variant: 'success',
       })
-    } catch (e) {
+    } catch (error) {
+      console.error('[CSV_EXPORT_ERROR] Erro ao exportar relatório de contribuições:', error)
       toast({
         title: 'Erro ao exportar',
         description: 'Não foi possível gerar o CSV.',
@@ -298,7 +328,7 @@ export default function RelatorioContribuicoesPage() {
             </div>
           </div>
           <div className="mt-4">
-            <Button onClick={fetchData} variant="outline" size="sm">
+            <Button onClick={() => fetchData(1)} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
@@ -473,7 +503,7 @@ export default function RelatorioContribuicoesPage() {
       {/* Tabela Completa */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista Completa ({contributors.length})</CardTitle>
+          <CardTitle>Lista Completa ({contributorsPagination.total})</CardTitle>
           <CardDescription>Todos os contribuintes do período</CardDescription>
         </CardHeader>
         <CardContent>
@@ -485,46 +515,106 @@ export default function RelatorioContribuicoesPage() {
               </p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-auto max-h-[600px]">
-              <Table>
-                <TableHeader className="sticky top-0 bg-muted z-10">
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Total Contribuído</TableHead>
-                    <TableHead className="text-center">Nº Contrib.</TableHead>
-                    <TableHead>Última Contrib.</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contributors.map((contributor) => (
-                    <TableRow key={contributor.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <p>{contributor.name}</p>
-                          {contributor.extraInfo && (
-                            <p className="text-xs text-muted-foreground">{contributor.extraInfo}</p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {roleMap[contributor.type] || contributor.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-green-600 dark:text-green-400">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(contributor.totalAmount)}
-                      </TableCell>
-                      <TableCell className="text-center">{contributor.contributionCount}</TableCell>
-                      <TableCell className="text-sm">{contributor.lastContribution}</TableCell>
+            <>
+              <div className="rounded-md border overflow-auto max-h-[600px]">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-muted z-10">
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">Total Contribuído</TableHead>
+                      <TableHead className="text-center">Nº Contrib.</TableHead>
+                      <TableHead>Última Contrib.</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {contributors.map((contributor) => (
+                      <TableRow key={contributor.id}>
+                        <TableCell className="font-medium">
+                          <div>
+                            <p>{contributor.name}</p>
+                            {contributor.extraInfo && (
+                              <p className="text-xs text-muted-foreground">
+                                {contributor.extraInfo}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {roleMap[contributor.type] || contributor.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-green-600 dark:text-green-400">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(contributor.totalAmount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {contributor.contributionCount}
+                        </TableCell>
+                        <TableCell className="text-sm">{contributor.lastContribution}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Paginação Server-Side */}
+              {contributorsPagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Mostrando {(contributorsPagination.page - 1) * contributorsPagination.limit + 1}{' '}
+                    a{' '}
+                    {Math.min(
+                      contributorsPagination.page * contributorsPagination.limit,
+                      contributorsPagination.total,
+                    )}{' '}
+                    de {contributorsPagination.total} resultados
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => fetchData(1)}
+                      disabled={!contributorsPagination.hasPrev}
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => fetchData(currentPage - 1)}
+                      disabled={!contributorsPagination.hasPrev}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="flex items-center gap-2 px-4">
+                      <span className="text-sm font-medium">
+                        Página {contributorsPagination.page} de {contributorsPagination.totalPages}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => fetchData(currentPage + 1)}
+                      disabled={!contributorsPagination.hasNext}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => fetchData(contributorsPagination.totalPages)}
+                      disabled={!contributorsPagination.hasNext}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

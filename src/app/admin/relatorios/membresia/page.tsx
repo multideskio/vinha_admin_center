@@ -1,8 +1,8 @@
 /**
- * @lastReview 2026-01-05 15:00 - Página de relatório de membresia revisada
- * ❌ PROBLEMA CRÍTICO: API /api/v1/relatorios/membresia NÃO EXISTE
- * Frontend: ✅ Interface completa, filtros, gráfico de crescimento, export CSV, Design System Videira
- * Backend: ❌ API não implementada - página não funcional
+ * @lastReview 2026-02-10 - Página de relatório de membresia integrada com API
+ * ✅ API /api/v1/relatorios/membresia implementada com paginação server-side
+ * ✅ Frontend consome PaginatedResult<T> com controles de paginação server-side
+ * ✅ Filtros, gráfico de crescimento, export CSV, Design System Videira
  */
 'use client'
 
@@ -68,8 +68,25 @@ type MembresiaSummary = {
   byRole: RoleCount[]
 }
 
+type PaginationMeta = {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
 export default function RelatorioMembresiaPage() {
-  const [allMembers, setAllMembers] = React.useState<Member[]>([])
+  const [members, setMembers] = React.useState<Member[]>([])
+  const [membersPagination, setMembersPagination] = React.useState<PaginationMeta>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  })
   const [summary, setSummary] = React.useState<MembresiaSummary | null>(null)
   const [growthData, setGrowthData] = React.useState<GrowthDataPoint[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -78,45 +95,45 @@ export default function RelatorioMembresiaPage() {
   const itemsPerPage = 20
   const { toast } = useToast()
 
-  // Calcular membros paginados
-  const totalPages = Math.ceil(allMembers.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const members = allMembers.slice(startIndex, endIndex)
+  const fetchData = React.useCallback(
+    async (page = 1) => {
+      setIsLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (roleFilter !== 'all') params.append('role', roleFilter)
+        params.append('page', String(page))
+        params.append('limit', String(itemsPerPage))
 
-  const fetchData = React.useCallback(async () => {
-    setIsLoading(true)
-    setCurrentPage(1)
-    try {
-      const params = new URLSearchParams()
-      if (roleFilter !== 'all') params.append('role', roleFilter)
-
-      const response = await fetch(`/api/v1/relatorios/membresia?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error('Falha ao carregar relatório de membresia.')
+        const response = await fetch(`/api/v1/relatorios/membresia?${params.toString()}`)
+        if (!response.ok) {
+          throw new Error('Falha ao carregar relatório de membresia.')
+        }
+        const result = await response.json()
+        setMembers(result.members.data)
+        setMembersPagination(result.members.pagination)
+        setSummary(result.summary)
+        setGrowthData(result.growthData)
+        setCurrentPage(page)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido'
+        toast({
+          title: 'Erro',
+          description: message,
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
       }
-      const result = await response.json()
-      setAllMembers(result.members)
-      setSummary(result.summary)
-      setGrowthData(result.growthData)
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido'
-      toast({
-        title: 'Erro',
-        description: message,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [roleFilter, toast])
+    },
+    [roleFilter, toast, itemsPerPage],
+  )
 
   React.useEffect(() => {
-    fetchData()
+    fetchData(1)
   }, [fetchData])
 
   const handleExportCSV = () => {
-    if (!allMembers || allMembers.length === 0) {
+    if (!members || members.length === 0) {
       toast({
         title: 'Nenhum dado',
         description: 'Não há membros para exportar.',
@@ -127,14 +144,7 @@ export default function RelatorioMembresiaPage() {
 
     try {
       const headers = ['Nome', 'Email', 'Role', 'Info Adicional', 'Data Cadastro', 'Status']
-      const rows = allMembers.map((m) => [
-        m.name,
-        m.email,
-        m.role,
-        m.extraInfo,
-        m.createdAt,
-        m.status,
-      ])
+      const rows = members.map((m) => [m.name, m.email, m.role, m.extraInfo, m.createdAt, m.status])
       const csv = [
         headers.join(','),
         ...rows.map((r) => r.map((c) => JSON.stringify(c)).join(',')),
@@ -156,7 +166,8 @@ export default function RelatorioMembresiaPage() {
         description: 'Relatório de membresia baixado com sucesso.',
         variant: 'success',
       })
-    } catch (e) {
+    } catch (error) {
+      console.error('[CSV_EXPORT_ERROR] Erro ao exportar relatório de membresia:', error)
       toast({
         title: 'Erro ao exportar',
         description: 'Não foi possível gerar o CSV.',
@@ -253,7 +264,7 @@ export default function RelatorioMembresiaPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={fetchData} variant="outline" className="mt-7">
+            <Button onClick={() => fetchData(1)} variant="outline" className="mt-7">
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
@@ -362,11 +373,11 @@ export default function RelatorioMembresiaPage() {
       {/* Tabela de Membros Recentes */}
       <Card>
         <CardHeader>
-          <CardTitle>Membros Recentes ({allMembers.length})</CardTitle>
+          <CardTitle>Membros Recentes ({membersPagination.total})</CardTitle>
           <CardDescription>Cadastros no sistema</CardDescription>
         </CardHeader>
         <CardContent>
-          {allMembers.length === 0 ? (
+          {members.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-lg font-medium text-muted-foreground">Nenhum membro encontrado</p>
@@ -408,48 +419,52 @@ export default function RelatorioMembresiaPage() {
                 </Table>
               </div>
 
-              {/* Paginação */}
-              {totalPages > 1 && (
+              {/* Paginação Server-Side */}
+              {membersPagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Mostrando {startIndex + 1} a {Math.min(endIndex, allMembers.length)} de{' '}
-                    {allMembers.length} resultados
+                    Mostrando {(membersPagination.page - 1) * membersPagination.limit + 1} a{' '}
+                    {Math.min(
+                      membersPagination.page * membersPagination.limit,
+                      membersPagination.total,
+                    )}{' '}
+                    de {membersPagination.total} resultados
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
+                      onClick={() => fetchData(1)}
+                      disabled={!membersPagination.hasPrev}
                     >
                       <ChevronsLeft className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
+                      onClick={() => fetchData(currentPage - 1)}
+                      disabled={!membersPagination.hasPrev}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <div className="flex items-center gap-2 px-4">
                       <span className="text-sm font-medium">
-                        Página {currentPage} de {totalPages}
+                        Página {membersPagination.page} de {membersPagination.totalPages}
                       </span>
                     </div>
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => fetchData(currentPage + 1)}
+                      disabled={!membersPagination.hasNext}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
+                      onClick={() => fetchData(membersPagination.totalPages)}
+                      disabled={!membersPagination.hasNext}
                     >
                       <ChevronsRight className="h-4 w-4" />
                     </Button>
