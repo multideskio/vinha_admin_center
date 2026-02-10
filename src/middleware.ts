@@ -20,7 +20,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.cloudfront.net https://*.s3.amazonaws.com https://placehold.co",
       "font-src 'self'",
-      "connect-src 'self' https://api.cieloecommerce.cielo.com.br https://apiquery.cieloecommerce.cielo.com.br https://transactionsandbox.cieloecommerce.cielo.com.br https://apisandbox.cieloecommerce.cielo.com.br",
+      "connect-src 'self' https://viacep.com.br https://brasilapi.com.br https://api.cieloecommerce.cielo.com.br https://apiquery.cieloecommerce.cielo.com.br https://transactionsandbox.cieloecommerce.cielo.com.br https://apisandbox.cieloecommerce.cielo.com.br",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
