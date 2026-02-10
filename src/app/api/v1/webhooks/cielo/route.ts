@@ -8,6 +8,7 @@ import { logCieloWebhook } from '@/lib/cielo-logger'
 import { env } from '@/lib/env'
 import { reconcileTransactionState } from '@/lib/webhook-reconciliation'
 import { logger } from '@/lib/logger'
+import { invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -160,6 +161,13 @@ export async function POST(request: NextRequest) {
       previousStatus: reconciliationResult.previousStatus,
       newStatus: reconciliationResult.newStatus,
     })
+
+    // ✅ Invalidar cache do dashboard e relatórios após mudança de status via webhook
+    if (reconciliationResult.statusUpdated) {
+      await invalidateCache('dashboard:admin:*')
+      await invalidateCache('relatorio:*')
+      await invalidateCache('insights:*')
+    }
 
     // Enviar email de comprovante se aprovado e status foi atualizado
     if (newStatus === 'approved' && reconciliationResult.statusUpdated) {

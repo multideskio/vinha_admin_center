@@ -3,6 +3,7 @@ import { db } from '@/db/drizzle'
 import { transactions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
+import { invalidateCache } from '@/lib/cache'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user } = await validateRequest()
@@ -35,6 +36,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         fraudReason: 'Transação identificada como fraudulenta pela administração',
       })
       .where(eq(transactions.id, id))
+
+    // ✅ Invalidar cache do dashboard e relatórios após marcar fraude
+    await invalidateCache('dashboard:admin:*')
+    await invalidateCache('relatorio:*')
 
     return NextResponse.json({
       success: true,

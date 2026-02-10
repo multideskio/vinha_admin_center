@@ -23,6 +23,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { checkDuplicatePayment } from '@/lib/payment-guard'
 import { z } from 'zod'
 import { env } from '@/lib/env'
+import { invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -331,6 +332,10 @@ export async function POST(request: NextRequest) {
         gatewayTransactionId: (paymentResult?.PaymentId as string) || null,
       })
       .returning()
+
+    // ✅ Invalidar cache do dashboard e relatórios após nova transação
+    await invalidateCache('dashboard:admin:*')
+    await invalidateCache('relatorio:*')
 
     return NextResponse.json({
       success: true,

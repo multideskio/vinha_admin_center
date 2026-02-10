@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { queryPayment } from '@/lib/cielo'
 import { rateLimit } from '@/lib/rate-limit'
+import { invalidateCache } from '@/lib/cache'
 
 // @lastReview 2025-01-05 21:45
 
@@ -50,6 +51,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       // Cancelar transação pendente com mais de 15 minutos
       await db.update(transactions).set({ status: 'refused' }).where(eq(transactions.id, id))
 
+      // ✅ Invalidar cache após cancelamento por timeout
+      await invalidateCache('dashboard:admin:*')
+      await invalidateCache('relatorio:*')
+
       return NextResponse.json({
         success: true,
         message: 'Transação cancelada (mais de 15 minutos pendente)',
@@ -82,6 +87,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Atualizar no banco se mudou
     if (newStatus !== transaction.status) {
       await db.update(transactions).set({ status: newStatus }).where(eq(transactions.id, id))
+
+      // ✅ Invalidar cache do dashboard e relatórios após mudança de status
+      await invalidateCache('dashboard:admin:*')
+      await invalidateCache('relatorio:*')
     }
 
     return NextResponse.json({
