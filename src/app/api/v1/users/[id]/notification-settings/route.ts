@@ -69,6 +69,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .select()
       .from(userNotificationSettings)
       .where(eq(userNotificationSettings.userId, id))
+      .limit(10)
 
     const result = NOTIFICATION_TYPES.reduce(
       (acc, type) => {

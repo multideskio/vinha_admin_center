@@ -28,6 +28,7 @@ export async function GET(): Promise<NextResponse> {
       .select()
       .from(gatewayConfigurations)
       .where(eq(gatewayConfigurations.companyId, VALIDATED_COMPANY_ID))
+      .limit(10)
 
     return NextResponse.json({ gateways: allGateways })
   } catch (error: unknown) {

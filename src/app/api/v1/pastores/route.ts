@@ -47,6 +47,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           .leftJoin(users, eq(users.id, pastorProfiles.userId))
           .where(isNull(users.deletedAt))
           .orderBy(desc(users.createdAt))
+          .limit(500)
       } else if (user.role === 'manager') {
         // Manager pode ver pastores de seus supervisores
         const supervisorIdsResult = await db
@@ -70,6 +71,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           .leftJoin(users, eq(users.id, pastorProfiles.userId))
           .where(and(isNull(users.deletedAt), inArray(pastorProfiles.supervisorId, supervisorIds)))
           .orderBy(desc(users.createdAt))
+          .limit(500)
       } else if (user.role === 'supervisor') {
         // Supervisor pode ver apenas seus pastores
         result = await db
@@ -82,6 +84,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           .leftJoin(users, eq(users.id, pastorProfiles.userId))
           .where(and(eq(pastorProfiles.supervisorId, user.id), isNull(users.deletedAt)))
           .orderBy(desc(users.createdAt))
+          .limit(200)
       } else {
         // Outros roles não podem listar pastores
         return NextResponse.json({ pastors: [] })
@@ -111,6 +114,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         .leftJoin(supervisorProfiles, eq(pastorProfiles.supervisorId, supervisorProfiles.userId))
         .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
         .orderBy(desc(users.createdAt))
+        .limit(500)
     } else if (user.role === 'manager') {
       // Manager pode ver pastores de seus supervisores
       const supervisorIdsResult = await db
@@ -146,6 +150,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           ),
         )
         .orderBy(desc(users.createdAt))
+        .limit(500)
     } else if (user.role === 'supervisor') {
       // Supervisor pode ver apenas seus pastores
       result = await db
@@ -170,6 +175,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           ),
         )
         .orderBy(desc(users.createdAt))
+        .limit(200)
     } else {
       // Outros roles não podem listar pastores
       return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })

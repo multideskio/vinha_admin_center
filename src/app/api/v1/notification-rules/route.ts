@@ -37,6 +37,7 @@ export async function GET(): Promise<NextResponse> {
       .from(notificationRules)
       .where(eq(notificationRules.companyId, user.companyId))
       .orderBy(desc(notificationRules.createdAt))
+      .limit(100)
 
     return NextResponse.json({ rules: allRules })
   } catch (error: unknown) {

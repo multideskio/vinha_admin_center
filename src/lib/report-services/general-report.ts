@@ -172,6 +172,7 @@ async function fetchFinancialTransactions(
     .from(transactions)
     .where(and(...conditions))
     .orderBy(desc(transactions.createdAt))
+    .limit(5000)
 
   return rows
 }
@@ -351,6 +352,7 @@ async function fetchChurchesList(companyId: string): Promise<ChurchListRow[]> {
         isNull(users.deletedAt),
       ),
     )
+    .limit(500)
 
   return rows
 }
@@ -575,6 +577,7 @@ async function fetchPastors(companyId: string): Promise<PastorRow[]> {
     .from(users)
     .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
     .where(and(eq(users.companyId, companyId), eq(users.role, 'pastor'), isNull(users.deletedAt)))
+    .limit(1000)
 
   return rows
 }
@@ -605,6 +608,7 @@ async function fetchChurches(companyId: string): Promise<ChurchRow[]> {
         isNull(users.deletedAt),
       ),
     )
+    .limit(1000)
 
   return rows
 }
@@ -631,6 +635,7 @@ async function fetchPaymentsByContributorMonth(
         inArray(transactions.contributorId, contributorIds),
       ),
     )
+    .limit(50000)
 
   const paymentMap = new Map<string, boolean>()
   for (const payment of payments) {

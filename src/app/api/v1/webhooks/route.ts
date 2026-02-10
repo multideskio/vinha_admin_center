@@ -35,6 +35,7 @@ export async function GET(): Promise<NextResponse> {
       .from(webhooks)
       .where(eq(webhooks.companyId, COMPANY_ID))
       .orderBy(desc(webhooks.createdAt))
+      .limit(100)
 
     return NextResponse.json({ webhooks: allWebhooks })
   } catch (error: unknown) {

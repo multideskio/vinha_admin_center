@@ -46,10 +46,12 @@ export async function GET(request: NextRequest) {
               eq(messageTemplates.templateType, templateType),
             ),
           )
+          .limit(100)
       : await db
           .select()
           .from(messageTemplates)
           .where(eq(messageTemplates.companyId, user.companyId))
+          .limit(100)
 
     return NextResponse.json({ templates })
   } catch (error) {

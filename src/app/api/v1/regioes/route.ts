@@ -39,6 +39,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         .from(regions)
         .where(and(eq(regions.companyId, VALIDATED_COMPANY_ID), isNull(regions.deletedAt)))
         .orderBy(desc(regions.updatedAt))
+        .limit(100)
       return NextResponse.json({ regions: allRegions })
     }
 
@@ -47,6 +48,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .from(regions)
       .where(and(eq(regions.companyId, VALIDATED_COMPANY_ID), isNull(regions.deletedAt)))
       .orderBy(desc(regions.updatedAt))
+      .limit(100)
 
     return NextResponse.json({ regions: allRegions })
   } catch (error: unknown) {
@@ -83,6 +85,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           isNull(regions.deletedAt),
         ),
       )
+      .limit(1)
 
     if (existingRegion.length > 0) {
       return NextResponse.json({ error: 'Já existe uma região com este nome.' }, { status: 409 })

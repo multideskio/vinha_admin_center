@@ -111,6 +111,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .leftJoin(regions, eq(supervisorProfiles.regionId, regions.id))
       .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt))
+      .limit(200)
 
     return NextResponse.json({ supervisors: result })
   } catch (error: unknown) {

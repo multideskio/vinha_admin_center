@@ -60,6 +60,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         .leftJoin(users, eq(users.id, churchProfiles.userId))
         .where(isNull(users.deletedAt))
         .orderBy(desc(users.createdAt))
+        .limit(500)
       return NextResponse.json({ churches: result })
     }
 
@@ -84,6 +85,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         .leftJoin(supervisorProfiles, eq(churchProfiles.supervisorId, supervisorProfiles.userId))
         .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
         .orderBy(desc(users.createdAt))
+        .limit(500)
     } else if (user.role === 'manager') {
       // Manager pode ver igrejas de seus supervisores
       const supervisorIdsResult = await db
@@ -119,6 +121,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           ),
         )
         .orderBy(desc(users.createdAt))
+        .limit(500)
     } else if (user.role === 'supervisor') {
       // Supervisor pode ver apenas suas igrejas
       result = await db
@@ -143,6 +146,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           ),
         )
         .orderBy(desc(users.createdAt))
+        .limit(200)
     } else {
       // Outros roles não podem listar igrejas
       return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })

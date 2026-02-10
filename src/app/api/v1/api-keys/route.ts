@@ -35,6 +35,7 @@ export async function GET(): Promise<NextResponse> {
       .from(apiKeys)
       .where(eq(apiKeys.companyId, user.companyId))
       .orderBy(desc(apiKeys.createdAt))
+      .limit(50)
 
     return NextResponse.json({ keys: allKeys })
   } catch (error) {

@@ -8,7 +8,7 @@ import {
   supervisorProfiles,
   pastorProfiles,
 } from '@/db/schema'
-import { eq, gte, lt, desc } from 'drizzle-orm'
+import { eq, gte, lt, desc, inArray } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 
 export async function GET(request: NextRequest) {
@@ -47,53 +47,75 @@ export async function GET(request: NextRequest) {
       query = query.where(lt(transactions.createdAt, new Date(to)))
     }
 
-    const data = await query
+    const data = await query.limit(10000)
 
-    // Enriquecer com nomes dos contribuintes
-    const enrichedData = await Promise.all(
-      data.map(async (t) => {
-        let contributorName = t.contributorEmail
+    // ✅ OTIMIZADO: Buscar todos os perfis de uma vez com inArray por role (em vez de query por transação)
+    const contributorIds = [...new Set(data.map((t) => t.contributorId))]
+    const nameMap = new Map<string, string>()
 
-        try {
-          if (t.contributorRole === 'manager') {
-            const [profile] = await db
-              .select({ firstName: managerProfiles.firstName, lastName: managerProfiles.lastName })
-              .from(managerProfiles)
-              .where(eq(managerProfiles.userId, t.contributorId))
-              .limit(1)
-            if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-          } else if (t.contributorRole === 'supervisor') {
-            const [profile] = await db
+    if (contributorIds.length > 0) {
+      const managerIds = data
+        .filter((t) => t.contributorRole === 'manager')
+        .map((t) => t.contributorId)
+      const supervisorIds = data
+        .filter((t) => t.contributorRole === 'supervisor')
+        .map((t) => t.contributorId)
+      const pastorIds = data
+        .filter((t) => t.contributorRole === 'pastor')
+        .map((t) => t.contributorId)
+      const churchIds = data
+        .filter((t) => t.contributorRole === 'church_account')
+        .map((t) => t.contributorId)
+
+      const [managers, supervisors, pastors, churches] = await Promise.all([
+        managerIds.length > 0
+          ? db
               .select({
+                userId: managerProfiles.userId,
+                firstName: managerProfiles.firstName,
+                lastName: managerProfiles.lastName,
+              })
+              .from(managerProfiles)
+              .where(inArray(managerProfiles.userId, [...new Set(managerIds)]))
+          : Promise.resolve([]),
+        supervisorIds.length > 0
+          ? db
+              .select({
+                userId: supervisorProfiles.userId,
                 firstName: supervisorProfiles.firstName,
                 lastName: supervisorProfiles.lastName,
               })
               .from(supervisorProfiles)
-              .where(eq(supervisorProfiles.userId, t.contributorId))
-              .limit(1)
-            if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-          } else if (t.contributorRole === 'pastor') {
-            const [profile] = await db
-              .select({ firstName: pastorProfiles.firstName, lastName: pastorProfiles.lastName })
+              .where(inArray(supervisorProfiles.userId, [...new Set(supervisorIds)]))
+          : Promise.resolve([]),
+        pastorIds.length > 0
+          ? db
+              .select({
+                userId: pastorProfiles.userId,
+                firstName: pastorProfiles.firstName,
+                lastName: pastorProfiles.lastName,
+              })
               .from(pastorProfiles)
-              .where(eq(pastorProfiles.userId, t.contributorId))
-              .limit(1)
-            if (profile) contributorName = `${profile.firstName} ${profile.lastName}`
-          } else if (t.contributorRole === 'church_account') {
-            const [profile] = await db
-              .select({ nomeFantasia: churchProfiles.nomeFantasia })
+              .where(inArray(pastorProfiles.userId, [...new Set(pastorIds)]))
+          : Promise.resolve([]),
+        churchIds.length > 0
+          ? db
+              .select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
               .from(churchProfiles)
-              .where(eq(churchProfiles.userId, t.contributorId))
-              .limit(1)
-            if (profile) contributorName = profile.nomeFantasia
-          }
-        } catch (error) {
-          console.error(`Erro ao buscar nome do contribuinte ${t.contributorId}:`, error)
-        }
+              .where(inArray(churchProfiles.userId, [...new Set(churchIds)]))
+          : Promise.resolve([]),
+      ])
 
-        return { ...t, contributorName }
-      }),
-    )
+      for (const p of managers) nameMap.set(p.userId, `${p.firstName} ${p.lastName}`)
+      for (const p of supervisors) nameMap.set(p.userId, `${p.firstName} ${p.lastName}`)
+      for (const p of pastors) nameMap.set(p.userId, `${p.firstName} ${p.lastName}`)
+      for (const p of churches) nameMap.set(p.userId, p.nomeFantasia || '')
+    }
+
+    const enrichedData = data.map((t) => ({
+      ...t,
+      contributorName: nameMap.get(t.contributorId) || t.contributorEmail,
+    }))
 
     const statusMap: Record<string, string> = {
       approved: 'Aprovada',

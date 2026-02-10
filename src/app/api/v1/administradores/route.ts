@@ -57,6 +57,7 @@ export async function GET(): Promise<NextResponse> {
       .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))
       .where(and(eq(users.role, 'admin'), isNull(users.deletedAt)))
       .orderBy(desc(users.createdAt))
+      .limit(50)
 
     return NextResponse.json({ admins: result })
   } catch (error: unknown) {

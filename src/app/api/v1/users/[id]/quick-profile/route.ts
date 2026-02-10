@@ -185,7 +185,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             })
             .from(users)
             .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
-            .where(eq(churchProfiles.supervisorId, userId)),
+            .where(eq(churchProfiles.supervisorId, userId))
+            .limit(100),
         ])
 
         hierarchyInfo = {

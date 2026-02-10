@@ -169,6 +169,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         ),
       )
       .groupBy(regions.id, regions.name, regions.color)
+      .limit(100)
 
     const revenueByRegionChurches = await db
       .select({
@@ -189,6 +190,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         ),
       )
       .groupBy(regions.id, regions.name, regions.color)
+      .limit(100)
 
     const revenueByRegionMap = new Map<
       string,
@@ -344,6 +346,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .from(users)
       .innerJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
       .where(and(eq(users.role, 'pastor'), isNull(users.deletedAt)))
+      .limit(1000)
 
     // Buscar igrejas inadimplentes
     const churchesWithTitheDay = await db
@@ -355,6 +358,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .from(users)
       .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
       .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
+      .limit(1000)
 
     // ✅ CORRIGIDO: Buscar todos os últimos pagamentos de uma vez (otimização N+1)
     const allContributorIds = [

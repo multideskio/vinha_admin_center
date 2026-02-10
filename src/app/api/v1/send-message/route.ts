@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       .select({ companyId: users.companyId })
       .from(users)
       .where(eq(users.id, user.id))
+      .limit(1)
 
     if (!userData?.companyId) {
       return NextResponse.json({ error: 'Empresa não encontrada.' }, { status: 400 })
