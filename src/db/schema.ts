@@ -483,7 +483,29 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+// Tabela de Tokens para Links de Pagamento
+export const paymentTokens = pgTable('payment_tokens', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: uuid('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  companyId: uuid('company_id')
+    .references(() => companies.id, { onDelete: 'cascade' })
+    .notNull(),
+  token: varchar('token', { length: 255 }).unique().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 // Relações
+
+export const paymentTokensRelations = relations(paymentTokens, ({ one }) => ({
+  user: one(users, { fields: [paymentTokens.userId], references: [users.id] }),
+  company: one(companies, { fields: [paymentTokens.companyId], references: [companies.id] }),
+}))
 
 export const companiesRelations = relations(companies, ({ many, one }) => ({
   users: many(users),

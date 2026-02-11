@@ -46,6 +46,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/manager') ||
     request.nextUrl.pathname.startsWith('/pastor') ||
     request.nextUrl.pathname.startsWith('/supervisor') ||
+    request.nextUrl.pathname.startsWith('/contribuir') ||
     request.nextUrl.pathname.startsWith('/api') ||
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname === '/maintenance'
