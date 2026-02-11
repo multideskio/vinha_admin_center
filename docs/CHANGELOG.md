@@ -4,6 +4,45 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.5.0] - 2026-02-11 - 🔧 Suporte Neon/Vercel & Migration Bradesco
+
+### 🎯 **FOCO: COMPATIBILIDADE COM INTEGRAÇÃO NEON/VERCEL E MIGRATION DO GATEWAY BRADESCO**
+
+Versão focada em suportar as variáveis de ambiente injetadas automaticamente pela integração Neon/Vercel em preview deploys (`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`), mantendo compatibilidade total com `DATABASE_URL` local.
+
+---
+
+### 🔧 **BANCO DE DADOS E AMBIENTE (5 MUDANÇAS)**
+
+- ✅ **env.ts** — `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING` e `DATABASE_URL` agora opcionais com `.refine()` garantindo pelo menos uma presente
+- ✅ **drizzle.ts** — Pool usa `POSTGRES_URL` (pooled) com fallback para `DATABASE_URL`
+- ✅ **drizzle.config.ts** — Migrations usam `POSTGRES_URL_NON_POOLING` (conexão direta, sem pooler) com fallback para `DATABASE_URL`
+- ✅ **seed.ts** — Mesma lógica de fallback `POSTGRES_URL || DATABASE_URL`
+- ✅ **debug/insights** — Endpoint verifica ambas as variáveis (`POSTGRES_URL || DATABASE_URL`)
+
+---
+
+### 💾 **MIGRATION 0007 (1 MUDANÇA)**
+
+- ✅ **Nova tabela `bradesco_logs`** — logs de operações do gateway Bradesco (operation_type, method, endpoint, request/response, status_code, error_message)
+- ✅ **Campo `pix_key`** adicionado em `gateway_configurations`
+- ✅ **Campo `gateway`** adicionado em `transactions` (varchar 20)
+
+---
+
+### 📝 **ARQUIVOS MODIFICADOS (8 ARQUIVOS)**
+
+- `src/lib/env.ts` (schema Zod com refine)
+- `src/db/drizzle.ts` (pool com POSTGRES_URL)
+- `src/db/seed.ts` (fallback POSTGRES_URL)
+- `drizzle.config.ts` (migrations com POSTGRES_URL_NON_POOLING)
+- `src/app/api/debug/insights/route.ts` (verificação dual)
+- `drizzle/0007_quick_calypso.sql` (novo)
+- `drizzle/meta/0007_snapshot.json` (novo)
+- `drizzle/meta/_journal.json` (atualizado)
+
+---
+
 ## [0.4.1] - 2026-02-11 - 📋 Versionamento Dinâmico, UX Avançada & Documentação Estruturada
 
 ### 🎯 **FOCO: VERSIONAMENTO AUTOMÁTICO, FUNCIONALIDADES DE UX E ORGANIZAÇÃO DA DOCUMENTAÇÃO**

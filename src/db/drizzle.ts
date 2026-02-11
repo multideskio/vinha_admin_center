@@ -5,16 +5,22 @@ import * as schema from './schema'
 
 dotenv.config({ path: '.env' })
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set in the environment variables')
+// Neon/Vercel integration injeta POSTGRES_URL (pooled) automaticamente em preview deploys.
+// Fallback para DATABASE_URL para manter compatibilidade com o setup atual.
+const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL ou POSTGRES_URL não configurada nas variáveis de ambiente')
 }
 
+const isServerless = !!process.env.VERCEL
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20, // Aumentado de 10 para 20 para suportar mais requisições simultâneas
-  idleTimeoutMillis: 30000, // Reduzido de 60s para 30s - libera conexões idle mais rápido
-  connectionTimeoutMillis: 15000, // Aumentado de 10s para 15s - mais tempo para aguardar conexão disponível
-  allowExitOnIdle: false,
+  connectionString,
+  max: isServerless ? 5 : 20,
+  idleTimeoutMillis: isServerless ? 10000 : 30000,
+  connectionTimeoutMillis: 15000,
+  allowExitOnIdle: isServerless,
 })
 
 pool.on('error', (err) => {

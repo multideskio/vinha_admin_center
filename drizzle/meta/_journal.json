@@ -50,6 +50,13 @@
       "when": 1770753386027,
       "tag": "0006_glorious_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770823386796,
+      "tag": "0007_quick_calypso",
+      "breakpoints": true
     }
   ]
 }

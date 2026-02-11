@@ -4,6 +4,24 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.5.0 - Suporte Neon/Vercel & Migration Bradesco (Fevereiro 2026)
+
+### 🔧 Banco de Dados e Ambiente
+
+- Suporte a `POSTGRES_URL` e `POSTGRES_URL_NON_POOLING` injetadas pela integração Neon/Vercel
+- Validação Zod com `.refine()` garantindo pelo menos uma URL de banco configurada
+- Pool de conexão usa `POSTGRES_URL` (pooled) com fallback para `DATABASE_URL`
+- Migrations usam `POSTGRES_URL_NON_POOLING` (conexão direta) com fallback para `DATABASE_URL`
+- Compatibilidade total mantida com setup local via `DATABASE_URL`
+
+### 💾 Migration
+
+- Nova tabela `bradesco_logs` para logs de operações do gateway
+- Campo `pix_key` em `gateway_configurations`
+- Campo `gateway` em `transactions`
+
+---
+
 ## v0.4.1 - Versionamento Dinâmico, UX Avançada & Documentação Estruturada (Fevereiro 2026)
 
 ### 📋 Documentação e Versionamento

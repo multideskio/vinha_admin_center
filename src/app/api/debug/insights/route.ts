@@ -34,7 +34,7 @@ export async function GET() {
         openAIKeyPrefix: settings?.openaiApiKey?.substring(0, 7) + '...' || 'N/A',
       },
       environment_vars: {
-        DATABASE_URL: !!process.env.DATABASE_URL,
+        DATABASE_URL: !!(process.env.POSTGRES_URL || process.env.DATABASE_URL),
         REDIS_URL: !!process.env.REDIS_URL,
         NODE_ENV: process.env.NODE_ENV,
       },

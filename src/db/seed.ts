@@ -7,8 +7,8 @@ import * as bcrypt from 'bcrypt'
 import * as schema from './schema'
 import { users, adminProfiles, companies } from './schema'
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set in the environment variables')
+if (!process.env.POSTGRES_URL && !process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL ou POSTGRES_URL não configurada nas variáveis de ambiente')
 }
 
 if (!process.env.DEFAULT_PASSWORD) {
@@ -26,7 +26,7 @@ if (!process.env.ADMIN_INIT) {
 const ADMIN_INIT = process.env.ADMIN_INIT
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
 })
 
 const db = drizzle(pool, { schema })
