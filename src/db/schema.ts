@@ -16,6 +16,7 @@ import {
   pgEnum,
   uuid,
   primaryKey,
+  index,
 } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 import {
@@ -60,38 +61,55 @@ export const companies = pgTable('companies', {
   deletionReason: text('deletion_reason'),
 })
 
-export const users = pgTable('users', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  companyId: uuid('company_id')
-    .references(() => companies.id, { onDelete: 'cascade' })
-    .notNull(),
-  email: varchar('email', { length: 255 }).unique().notNull(),
-  password: text('password').notNull(),
-  role: userRoleEnum('role').notNull(),
-  status: userStatusEnum('status').default('active').notNull(),
-  phone: varchar('phone', { length: 20 }),
-  titheDay: integer('tithe_day'),
-  avatarUrl: text('avatar_url'),
-  welcomeSent: boolean('welcome_sent').default(false).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by'),
-  deletionReason: text('deletion_reason'),
-})
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id')
+      .references(() => companies.id, { onDelete: 'cascade' })
+      .notNull(),
+    email: varchar('email', { length: 255 }).unique().notNull(),
+    password: text('password').notNull(),
+    role: userRoleEnum('role').notNull(),
+    status: userStatusEnum('status').default('active').notNull(),
+    phone: varchar('phone', { length: 20 }),
+    titheDay: integer('tithe_day'),
+    avatarUrl: text('avatar_url'),
+    welcomeSent: boolean('welcome_sent').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+    deletedAt: timestamp('deleted_at'),
+    deletedBy: uuid('deleted_by'),
+    deletionReason: text('deletion_reason'),
+  },
+  (table) => ({
+    companyIdx: index('users_company_idx').on(table.companyId),
+    roleIdx: index('users_role_idx').on(table.role),
+    statusIdx: index('users_status_idx').on(table.status),
+    createdAtIdx: index('users_created_at_idx').on(table.createdAt),
+    deletedAtIdx: index('users_deleted_at_idx').on(table.deletedAt),
+  }),
+)
 
-export const sessions = pgTable('sessions', {
-  id: text('id').primaryKey(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  expiresAt: timestamp('expires_at', {
-    withTimezone: true,
-    mode: 'date',
-  }).notNull(),
-})
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: text('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at', {
+      withTimezone: true,
+      mode: 'date',
+    }).notNull(),
+  },
+  (table) => ({
+    userIdx: index('sessions_user_idx').on(table.userId),
+    expiresAtIdx: index('sessions_expires_at_idx').on(table.expiresAt),
+  }),
+)
 
 export const regions = pgTable('regions', {
   id: uuid('id')
@@ -110,153 +128,208 @@ export const regions = pgTable('regions', {
 })
 
 // Tabelas de Perfis
-export const adminProfiles = pgTable('admin_profiles', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
-  cpf: varchar('cpf', { length: 14 }).unique().notNull(),
-  permission: permissionLevelEnum('permission').default('admin').notNull(),
-  cep: varchar('cep', { length: 9 }),
-  state: varchar('state', { length: 2 }),
-  city: varchar('city', { length: 100 }),
-  neighborhood: varchar('neighborhood', { length: 100 }),
-  address: varchar('address', { length: 255 }),
-  facebook: varchar('facebook', { length: 255 }),
-  instagram: varchar('instagram', { length: 255 }),
-  website: varchar('website', { length: 255 }),
-})
+export const adminProfiles = pgTable(
+  'admin_profiles',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    firstName: varchar('first_name', { length: 100 }).notNull(),
+    lastName: varchar('last_name', { length: 100 }).notNull(),
+    cpf: varchar('cpf', { length: 14 }).unique().notNull(),
+    permission: permissionLevelEnum('permission').default('admin').notNull(),
+    cep: varchar('cep', { length: 9 }),
+    state: varchar('state', { length: 2 }),
+    city: varchar('city', { length: 100 }),
+    neighborhood: varchar('neighborhood', { length: 100 }),
+    address: varchar('address', { length: 255 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
+  },
+  (table) => ({
+    userIdx: index('admin_profiles_user_idx').on(table.userId),
+  }),
+)
 
-export const managerProfiles = pgTable('manager_profiles', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
-  cpf: varchar('cpf', { length: 14 }).unique().notNull(),
-  landline: varchar('landline', { length: 20 }),
-  cep: varchar('cep', { length: 9 }),
-  state: varchar('state', { length: 2 }),
-  city: varchar('city', { length: 100 }),
-  neighborhood: varchar('neighborhood', { length: 100 }),
-  address: varchar('address', { length: 255 }),
-  facebook: varchar('facebook', { length: 255 }),
-  instagram: varchar('instagram', { length: 255 }),
-  website: varchar('website', { length: 255 }),
-})
+export const managerProfiles = pgTable(
+  'manager_profiles',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    firstName: varchar('first_name', { length: 100 }).notNull(),
+    lastName: varchar('last_name', { length: 100 }).notNull(),
+    cpf: varchar('cpf', { length: 14 }).unique().notNull(),
+    landline: varchar('landline', { length: 20 }),
+    cep: varchar('cep', { length: 9 }),
+    state: varchar('state', { length: 2 }),
+    city: varchar('city', { length: 100 }),
+    neighborhood: varchar('neighborhood', { length: 100 }),
+    address: varchar('address', { length: 255 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
+  },
+  (table) => ({
+    userIdx: index('manager_profiles_user_idx').on(table.userId),
+  }),
+)
 
-export const supervisorProfiles = pgTable('supervisor_profiles', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  managerId: uuid('manager_id').references(() => users.id, { onDelete: 'set null' }),
-  regionId: uuid('region_id').references(() => regions.id, { onDelete: 'set null' }),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
-  cpf: varchar('cpf', { length: 14 }).unique().notNull(),
-  landline: varchar('landline', { length: 20 }),
-  cep: varchar('cep', { length: 9 }),
-  state: varchar('state', { length: 2 }),
-  city: varchar('city', { length: 100 }),
-  neighborhood: varchar('neighborhood', { length: 100 }),
-  address: varchar('address', { length: 255 }),
-  number: varchar('number', { length: 20 }),
-  complement: varchar('complement', { length: 100 }),
-  facebook: varchar('facebook', { length: 255 }),
-  instagram: varchar('instagram', { length: 255 }),
-  website: varchar('website', { length: 255 }),
-})
+export const supervisorProfiles = pgTable(
+  'supervisor_profiles',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    managerId: uuid('manager_id').references(() => users.id, { onDelete: 'set null' }),
+    regionId: uuid('region_id').references(() => regions.id, { onDelete: 'set null' }),
+    firstName: varchar('first_name', { length: 100 }).notNull(),
+    lastName: varchar('last_name', { length: 100 }).notNull(),
+    cpf: varchar('cpf', { length: 14 }).unique().notNull(),
+    landline: varchar('landline', { length: 20 }),
+    cep: varchar('cep', { length: 9 }),
+    state: varchar('state', { length: 2 }),
+    city: varchar('city', { length: 100 }),
+    neighborhood: varchar('neighborhood', { length: 100 }),
+    address: varchar('address', { length: 255 }),
+    number: varchar('number', { length: 20 }),
+    complement: varchar('complement', { length: 100 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
+  },
+  (table) => ({
+    userIdx: index('supervisor_profiles_user_idx').on(table.userId),
+    managerIdx: index('supervisor_profiles_manager_idx').on(table.managerId),
+    regionIdx: index('supervisor_profiles_region_idx').on(table.regionId),
+  }),
+)
 
-export const pastorProfiles = pgTable('pastor_profiles', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  supervisorId: uuid('supervisor_id').references(() => users.id, { onDelete: 'set null' }),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
-  cpf: varchar('cpf', { length: 14 }).unique().notNull(),
-  birthDate: date('birth_date'),
-  landline: varchar('landline', { length: 20 }),
-  cep: varchar('cep', { length: 9 }),
-  state: varchar('state', { length: 2 }),
-  city: varchar('city', { length: 100 }),
-  neighborhood: varchar('neighborhood', { length: 100 }),
-  address: varchar('address', { length: 255 }),
-  number: varchar('number', { length: 20 }),
-  complement: varchar('complement', { length: 100 }),
-  facebook: varchar('facebook', { length: 255 }),
-  instagram: varchar('instagram', { length: 255 }),
-  website: varchar('website', { length: 255 }),
-})
+export const pastorProfiles = pgTable(
+  'pastor_profiles',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    supervisorId: uuid('supervisor_id').references(() => users.id, { onDelete: 'set null' }),
+    firstName: varchar('first_name', { length: 100 }).notNull(),
+    lastName: varchar('last_name', { length: 100 }).notNull(),
+    cpf: varchar('cpf', { length: 14 }).unique().notNull(),
+    birthDate: date('birth_date'),
+    landline: varchar('landline', { length: 20 }),
+    cep: varchar('cep', { length: 9 }),
+    state: varchar('state', { length: 2 }),
+    city: varchar('city', { length: 100 }),
+    neighborhood: varchar('neighborhood', { length: 100 }),
+    address: varchar('address', { length: 255 }),
+    number: varchar('number', { length: 20 }),
+    complement: varchar('complement', { length: 100 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
+  },
+  (table) => ({
+    userIdx: index('pastor_profiles_user_idx').on(table.userId),
+    supervisorIdx: index('pastor_profiles_supervisor_idx').on(table.supervisorId),
+  }),
+)
 
-export const churchProfiles = pgTable('church_profiles', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  supervisorId: uuid('supervisor_id').references(() => users.id, { onDelete: 'set null' }),
-  cnpj: varchar('cnpj', { length: 18 }).unique().notNull(),
-  razaoSocial: varchar('razao_social', { length: 255 }).notNull(),
-  nomeFantasia: varchar('nome_fantasia', { length: 255 }).notNull(),
-  foundationDate: date('foundation_date'),
-  cep: varchar('cep', { length: 9 }),
-  state: varchar('state', { length: 2 }),
-  city: varchar('city', { length: 100 }),
-  neighborhood: varchar('neighborhood', { length: 100 }),
-  address: varchar('address', { length: 255 }),
-  treasurerFirstName: varchar('treasurer_first_name', { length: 100 }),
-  treasurerLastName: varchar('treasurer_last_name', { length: 100 }),
-  treasurerCpf: varchar('treasurer_cpf', { length: 14 }),
-  facebook: varchar('facebook', { length: 255 }),
-  instagram: varchar('instagram', { length: 255 }),
-  website: varchar('website', { length: 255 }),
-})
+export const churchProfiles = pgTable(
+  'church_profiles',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    supervisorId: uuid('supervisor_id').references(() => users.id, { onDelete: 'set null' }),
+    cnpj: varchar('cnpj', { length: 18 }).unique().notNull(),
+    razaoSocial: varchar('razao_social', { length: 255 }).notNull(),
+    nomeFantasia: varchar('nome_fantasia', { length: 255 }).notNull(),
+    foundationDate: date('foundation_date'),
+    cep: varchar('cep', { length: 9 }),
+    state: varchar('state', { length: 2 }),
+    city: varchar('city', { length: 100 }),
+    neighborhood: varchar('neighborhood', { length: 100 }),
+    address: varchar('address', { length: 255 }),
+    treasurerFirstName: varchar('treasurer_first_name', { length: 100 }),
+    treasurerLastName: varchar('treasurer_last_name', { length: 100 }),
+    treasurerCpf: varchar('treasurer_cpf', { length: 14 }),
+    facebook: varchar('facebook', { length: 255 }),
+    instagram: varchar('instagram', { length: 255 }),
+    website: varchar('website', { length: 255 }),
+  },
+  (table) => ({
+    userIdx: index('church_profiles_user_idx').on(table.userId),
+    supervisorIdx: index('church_profiles_supervisor_idx').on(table.supervisorId),
+  }),
+)
 
 // Tabela de Transações
-export const transactions = pgTable('transactions', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  companyId: uuid('company_id')
-    .references(() => companies.id)
-    .notNull(),
-  contributorId: uuid('contributor_id')
-    .references(() => users.id)
-    .notNull(),
-  originChurchId: uuid('origin_church_id').references(() => users.id),
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  status: transactionStatusEnum('status').notNull(),
-  paymentMethod: paymentMethodEnum('payment_method').notNull(),
-  description: text('description'),
-  gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
-  refundRequestReason: text('refund_request_reason'),
-  installments: integer('installments').default(1).notNull(),
-  gateway: varchar('gateway', { length: 20 }),
-  // Campos de controle de fraude
-  isFraud: boolean('is_fraud').default(false).notNull(),
-  fraudMarkedAt: timestamp('fraud_marked_at'),
-  fraudMarkedBy: uuid('fraud_marked_by').references(() => users.id),
-  fraudReason: text('fraud_reason'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  deletedAt: timestamp('deleted_at'),
-  deletedBy: uuid('deleted_by'),
-  deletionReason: text('deletion_reason'),
-})
+export const transactions = pgTable(
+  'transactions',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
+    contributorId: uuid('contributor_id')
+      .references(() => users.id)
+      .notNull(),
+    originChurchId: uuid('origin_church_id').references(() => users.id),
+    amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+    status: transactionStatusEnum('status').notNull(),
+    paymentMethod: paymentMethodEnum('payment_method').notNull(),
+    description: text('description'),
+    gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
+    refundRequestReason: text('refund_request_reason'),
+    installments: integer('installments').default(1).notNull(),
+    gateway: varchar('gateway', { length: 20 }),
+    // Campos de controle de fraude
+    isFraud: boolean('is_fraud').default(false).notNull(),
+    fraudMarkedAt: timestamp('fraud_marked_at'),
+    fraudMarkedBy: uuid('fraud_marked_by').references(() => users.id),
+    fraudReason: text('fraud_reason'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    deletedAt: timestamp('deleted_at'),
+    deletedBy: uuid('deleted_by'),
+    deletionReason: text('deletion_reason'),
+  },
+  (table) => ({
+    companyIdx: index('transactions_company_idx').on(table.companyId),
+    contributorIdx: index('transactions_contributor_idx').on(table.contributorId),
+    originChurchIdx: index('transactions_origin_church_idx').on(table.originChurchId),
+    statusIdx: index('transactions_status_idx').on(table.status),
+    paymentMethodIdx: index('transactions_payment_method_idx').on(table.paymentMethod),
+    createdAtIdx: index('transactions_created_at_idx').on(table.createdAt),
+    isFraudIdx: index('transactions_is_fraud_idx').on(table.isFraud),
+    // Índices compostos para queries comuns
+    contributorStatusIdx: index('transactions_contributor_status_idx').on(
+      table.contributorId,
+      table.status,
+    ),
+    statusCreatedAtIdx: index('transactions_status_created_at_idx').on(
+      table.status,
+      table.createdAt,
+    ),
+  }),
+)
 
 // Tabela de Configurações e Automações
 export const gatewayConfigurations = pgTable('gateway_configurations', {
@@ -385,26 +458,35 @@ export const messageTemplates = pgTable('message_templates', {
   updatedAt: timestamp('updated_at').defaultNow(),
 })
 
-export const notificationLogs = pgTable('notification_logs', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  companyId: uuid('company_id')
-    .references(() => companies.id, { onDelete: 'cascade' })
-    .notNull(),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  notificationType: varchar('notification_type', { length: 50 }).notNull(),
-  channel: varchar('channel', { length: 20 }).notNull(),
-  status: varchar('status', { length: 20 }).notNull(),
-  recipient: varchar('recipient', { length: 255 }),
-  subject: varchar('subject', { length: 500 }),
-  messageContent: text('message_content'),
-  errorMessage: text('error_message'),
-  errorCode: varchar('error_code', { length: 50 }),
-  sentAt: timestamp('sent_at').defaultNow().notNull(),
-})
+export const notificationLogs = pgTable(
+  'notification_logs',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id')
+      .references(() => companies.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    notificationType: varchar('notification_type', { length: 50 }).notNull(),
+    channel: varchar('channel', { length: 20 }).notNull(),
+    status: varchar('status', { length: 20 }).notNull(),
+    recipient: varchar('recipient', { length: 255 }),
+    subject: varchar('subject', { length: 500 }),
+    messageContent: text('message_content'),
+    errorMessage: text('error_message'),
+    errorCode: varchar('error_code', { length: 50 }),
+    sentAt: timestamp('sent_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    companyIdx: index('notification_logs_company_idx').on(table.companyId),
+    userIdx: index('notification_logs_user_idx').on(table.userId),
+    sentAtIdx: index('notification_logs_sent_at_idx').on(table.sentAt),
+    statusIdx: index('notification_logs_status_idx').on(table.status),
+  }),
+)
 
 export const emailBlacklist = pgTable('email_blacklist', {
   id: uuid('id')
@@ -423,19 +505,27 @@ export const emailBlacklist = pgTable('email_blacklist', {
   isActive: boolean('is_active').default(true).notNull(),
 })
 
-export const userActionLogs = pgTable('user_action_logs', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  action: varchar('action', { length: 100 }).notNull(),
-  entityType: varchar('entity_type', { length: 50 }).notNull(),
-  entityId: uuid('entity_id'),
-  details: text('details'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const userActionLogs = pgTable(
+  'user_action_logs',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    action: varchar('action', { length: 100 }).notNull(),
+    entityType: varchar('entity_type', { length: 50 }).notNull(),
+    entityId: uuid('entity_id'),
+    details: text('details'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index('user_action_logs_user_idx').on(table.userId),
+    createdAtIdx: index('user_action_logs_created_at_idx').on(table.createdAt),
+    entityIdx: index('user_action_logs_entity_idx').on(table.entityType, table.entityId),
+  }),
+)
 
 export const cieloLogs = pgTable('cielo_logs', {
   id: uuid('id')
@@ -469,36 +559,50 @@ export const bradescoLogs = pgTable('bradesco_logs', {
   createdAt: timestamp('created_at').defaultNow(),
 })
 
-// Tabela de Tokens para Recuperação de Senha
-export const passwordResetTokens = pgTable('password_reset_tokens', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  token: varchar('token', { length: 255 }).unique().notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  used: boolean('used').default(false).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const passwordResetTokens = pgTable(
+  'password_reset_tokens',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    token: varchar('token', { length: 255 }).unique().notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    used: boolean('used').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index('password_reset_tokens_user_idx').on(table.userId),
+    expiresAtIdx: index('password_reset_tokens_expires_at_idx').on(table.expiresAt),
+  }),
+)
 
 // Tabela de Tokens para Links de Pagamento
-export const paymentTokens = pgTable('payment_tokens', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  companyId: uuid('company_id')
-    .references(() => companies.id, { onDelete: 'cascade' })
-    .notNull(),
-  token: varchar('token', { length: 255 }).unique().notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  usedAt: timestamp('used_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const paymentTokens = pgTable(
+  'payment_tokens',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    companyId: uuid('company_id')
+      .references(() => companies.id, { onDelete: 'cascade' })
+      .notNull(),
+    token: varchar('token', { length: 255 }).unique().notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    usedAt: timestamp('used_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index('payment_tokens_user_idx').on(table.userId),
+    companyIdx: index('payment_tokens_company_idx').on(table.companyId),
+    expiresAtIdx: index('payment_tokens_expires_at_idx').on(table.expiresAt),
+  }),
+)
 
 // Relações
 
