@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { validateRequest } from '@/lib/jwt'
 import { db } from '@/db/drizzle'
 import { users } from '@/db/schema'
@@ -26,11 +27,17 @@ export default async function DashboardPage() {
     },
   })
 
-  // Buscar dados iniciais do dashboard
+  // Buscar dados iniciais do dashboard com cookies de autenticação
+  const cookieStore = await cookies()
+  const authToken = cookieStore.get('auth-token')
+
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/api/v1/dashboard/admin`,
     {
       cache: 'no-store',
+      headers: {
+        Cookie: `auth-token=${authToken?.value || ''}`,
+      },
     },
   )
 
