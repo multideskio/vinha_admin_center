@@ -368,7 +368,7 @@ export default function TransacoesPage() {
                               className="h-8 w-8 sm:h-9 sm:w-9"
                             >
                               <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="sr-only">Toggle menu</span>
+                              <span className="sr-only">Alternar menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40 sm:w-48">

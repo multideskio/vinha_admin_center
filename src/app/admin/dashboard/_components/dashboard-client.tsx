@@ -124,12 +124,14 @@ export function DashboardClient({ initialData, userName }: DashboardClientProps)
     setLastUpdatedAt(new Date().toLocaleString('pt-BR'))
   }, [])
 
-  // Recarregar quando dateRange mudar
+  // Recarregar quando dateRange mudar (apenas se já foi inicializado)
   React.useEffect(() => {
-    if (lastUpdatedAt) {
+    // Só busca dados se o dateRange mudou após a inicialização
+    if (dateRange.from || dateRange.to) {
       fetchData()
     }
-  }, [fetchData, lastUpdatedAt])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange.from, dateRange.to])
 
   const handleDateRangeChange = React.useCallback(
     (range: { from: Date | undefined; to: Date | undefined }) => {

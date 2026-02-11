@@ -79,7 +79,7 @@ export function SupervisorHeader({
             className="shrink-0 md:hidden border-2 hover:bg-videira-blue/10"
           >
             <PanelLeft className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
+            <span className="sr-only">Alternar menu de navegação</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="flex flex-col">
@@ -164,7 +164,7 @@ export function SupervisorHeader({
                 {userFallback}
               </AvatarFallback>
             </Avatar>
-            <span className="sr-only">Toggle user menu</span>
+            <span className="sr-only">Alternar menu do usuário</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">

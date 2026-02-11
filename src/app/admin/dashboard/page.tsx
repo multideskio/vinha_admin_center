@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation'
-import { validateRequest } from '@/lib/jwt'
+import { requireAdmin } from '@/lib/auth/require-role'
 import { db } from '@/db/drizzle'
 import {
   users,
@@ -11,7 +10,6 @@ import {
   adminProfiles,
 } from '@/db/schema'
 import { count, sum, eq, isNull, and, desc, sql, gte, lt, inArray } from 'drizzle-orm'
-import type { UserRole } from '@/lib/types'
 import type { DashboardData } from '@/lib/types/dashboard-types'
 import { DashboardClient } from './_components/dashboard-client'
 import {
@@ -26,11 +24,8 @@ import {
  * Busca dados diretamente do banco e renderiza componente client
  */
 export default async function DashboardPage() {
-  // Validar autenticação
-  const { user } = await validateRequest()
-  if (!user || (user.role as UserRole) !== 'admin') {
-    redirect('/login')
-  }
+  // Validar autenticação e autorização
+  const user = await requireAdmin()
 
   // Buscar nome do usuário
   const userProfile = await db.query.users.findFirst({

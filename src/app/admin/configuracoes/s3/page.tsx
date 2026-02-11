@@ -285,7 +285,7 @@ export default function S3SettingsPage() {
                     <FormItem>
                       <FormLabel>Access Key ID</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Sua Access Key" {...field} />
+                        <Input type="password" placeholder="Sua chave de acesso" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -298,7 +298,11 @@ export default function S3SettingsPage() {
                     <FormItem className="md:col-span-2">
                       <FormLabel>Secret Access Key</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Sua Secret Access Key" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="Sua chave de acesso secreta"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

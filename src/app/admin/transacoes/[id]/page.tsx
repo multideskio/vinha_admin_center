@@ -1,6 +1,5 @@
-import { redirect, notFound } from 'next/navigation'
-import { validateRequest } from '@/lib/jwt'
-import type { UserRole } from '@/lib/types'
+import { notFound } from 'next/navigation'
+import { requireSupervisorOrAbove } from '@/lib/auth/require-role'
 import { db } from '@/db/drizzle'
 import {
   transactions,
@@ -25,11 +24,8 @@ export default async function TransacaoDetalhePage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  // Validar autenticação
-  const { user } = await validateRequest()
-  if (!user || !['admin', 'manager', 'supervisor'].includes(user.role as UserRole)) {
-    redirect('/login')
-  }
+  // Validar autenticação e autorização (admin, manager ou supervisor)
+  await requireSupervisorOrAbove()
 
   const { id } = await params
 

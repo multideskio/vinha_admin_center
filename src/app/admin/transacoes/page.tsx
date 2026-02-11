@@ -1,6 +1,4 @@
-import { redirect } from 'next/navigation'
-import { validateRequest } from '@/lib/jwt'
-import type { UserRole } from '@/lib/types'
+import { requireAdmin } from '@/lib/auth/require-role'
 import { ArrowRightLeft } from 'lucide-react'
 import { TransactionsTable } from './_components/transactions-table'
 import type { Transaction } from '@/types/transaction'
@@ -21,11 +19,8 @@ import { eq, desc } from 'drizzle-orm'
  * @lastReview 2026-02-11 - Refatorado para Server Component
  */
 export default async function TransacoesPage() {
-  // Validar autenticação
-  const { user } = await validateRequest()
-  if (!user || (user.role as UserRole) !== 'admin') {
-    redirect('/login')
-  }
+  // Validar autenticação e autorização
+  await requireAdmin()
 
   // Buscar transações diretamente do banco (evita problema de cookies)
   const userTransactions = await db

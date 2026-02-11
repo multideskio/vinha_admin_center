@@ -703,36 +703,46 @@ export default function AdminProfilePage() {
                   <CardDescription>Configure como deseja receber notificações</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {Object.entries(notificationSettings).map(([key, value]) => (
-                    <div key={key} className="space-y-3">
-                      <div className="font-semibold capitalize">{key.replace(/_/g, ' ')}</div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">E-mail</span>
-                        <Switch
-                          checked={value.email}
-                          onCheckedChange={(checked) =>
-                            setNotificationSettings((prev) => ({
-                              ...prev,
-                              [key]: { email: checked, whatsapp: prev[key]?.whatsapp || false },
-                            }))
-                          }
-                        />
+                  {Object.entries(notificationSettings).map(([key, value]) => {
+                    const notificationLabels: Record<string, string> = {
+                      payment_notifications: 'Notificações de Pagamento',
+                      due_date_reminders: 'Lembretes de Vencimento',
+                      network_reports: 'Relatórios da Rede',
+                    }
+
+                    return (
+                      <div key={key} className="space-y-3">
+                        <div className="font-semibold">
+                          {notificationLabels[key] || key.replace(/_/g, ' ')}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">E-mail</span>
+                          <Switch
+                            checked={value.email}
+                            onCheckedChange={(checked) =>
+                              setNotificationSettings((prev) => ({
+                                ...prev,
+                                [key]: { email: checked, whatsapp: prev[key]?.whatsapp || false },
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">WhatsApp</span>
+                          <Switch
+                            checked={value.whatsapp}
+                            onCheckedChange={(checked) =>
+                              setNotificationSettings((prev) => ({
+                                ...prev,
+                                [key]: { email: prev[key]?.email || false, whatsapp: checked },
+                              }))
+                            }
+                          />
+                        </div>
+                        <Separator />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">WhatsApp</span>
-                        <Switch
-                          checked={value.whatsapp}
-                          onCheckedChange={(checked) =>
-                            setNotificationSettings((prev) => ({
-                              ...prev,
-                              [key]: { email: prev[key]?.email || false, whatsapp: checked },
-                            }))
-                          }
-                        />
-                      </div>
-                      <Separator />
-                    </div>
-                  ))}
+                    )
+                  })}
                   <div className="flex justify-end">
                     <Button
                       onClick={handleSaveNotifications}
