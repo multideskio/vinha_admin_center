@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, churchProfiles, supervisorProfiles } from '@/db/schema'
 import { eq, and, isNull, desc, sql, inArray } from 'drizzle-orm'
@@ -261,6 +262,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // ✅ Invalidar cache de relatórios de membresia após criação de usuário
     await invalidateCache('relatorio:membresia:*')
+
+    // ✅ Revalidar cache do Next.js para sincronizar com invalidateCache
+    revalidatePath('/admin/igrejas')
 
     return NextResponse.json({ success: true, church: newChurch }, { status: 201 })
   } catch (error) {

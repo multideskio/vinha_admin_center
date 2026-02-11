@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, managerProfiles } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
@@ -145,6 +146,10 @@ export async function PUT(
     // Invalidar cache de gerentes após atualização
     await invalidateCache(`gerentes:${VALIDATED_COMPANY_ID}:*`)
 
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/gerentes')
+    revalidatePath(`/admin/gerentes/${id}`)
+
     return NextResponse.json({ success: true, manager: updatedManager })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -198,6 +203,10 @@ export async function DELETE(
     // Invalidar caches após exclusão de gerente
     await invalidateCache(`gerentes:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
+
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/gerentes')
+    revalidatePath(`/admin/gerentes/${id}`)
 
     return NextResponse.json({ success: true, message: 'Gerente excluído com sucesso.' })
   } catch (error) {

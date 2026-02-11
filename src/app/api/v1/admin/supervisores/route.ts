@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, supervisorProfiles, managerProfiles, regions } from '@/db/schema'
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
@@ -145,6 +146,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Invalidar caches após criação de supervisor
     await invalidateCache(`supervisores:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
+
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/supervisores')
 
     return NextResponse.json({ success: true, supervisor: newSupervisor }, { status: 201 })
   } catch (error) {

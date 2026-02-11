@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, churchProfiles } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
@@ -151,6 +152,10 @@ export async function PUT(
       }
     })
 
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/igrejas')
+    revalidatePath(`/admin/igrejas/${id}`)
+
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -195,6 +200,10 @@ export async function DELETE(
 
     // ✅ Invalidar cache de relatórios de membresia após exclusão de usuário
     await invalidateCache('relatorio:membresia:*')
+
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/igrejas')
+    revalidatePath(`/admin/igrejas/${id}`)
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
   } catch (error: unknown) {

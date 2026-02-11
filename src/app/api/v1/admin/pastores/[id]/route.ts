@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, pastorProfiles } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
@@ -152,6 +153,10 @@ export async function PUT(
     // Invalidar cache de pastores após atualização
     await invalidateCache(`pastores:${VALIDATED_COMPANY_ID}:*`)
 
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/pastores')
+    revalidatePath(`/admin/pastores/${id}`)
+
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -197,6 +202,10 @@ export async function DELETE(
     // Invalidar caches após exclusão de pastor
     await invalidateCache(`pastores:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
+
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/pastores')
+    revalidatePath(`/admin/pastores/${id}`)
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error) {

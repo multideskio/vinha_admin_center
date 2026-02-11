@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, supervisorProfiles } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
@@ -193,6 +194,10 @@ export async function PUT(
     // Invalidar cache de supervisores após atualização
     await invalidateCache(`supervisores:${VALIDATED_COMPANY_ID}:*`)
 
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/supervisores')
+    revalidatePath(`/admin/supervisores/${id}`)
+
     return NextResponse.json({ success: true, supervisor: updatedSupervisor })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -238,6 +243,10 @@ export async function DELETE(
     // Invalidar caches após exclusão de supervisor
     await invalidateCache(`supervisores:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
+
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/supervisores')
+    revalidatePath(`/admin/supervisores/${id}`)
 
     return NextResponse.json({ success: true, message: 'Supervisor excluído com sucesso.' })
   } catch (error) {

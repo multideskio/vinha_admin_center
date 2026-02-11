@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, managerProfiles } from '@/db/schema'
 import { eq, and, isNull, desc } from 'drizzle-orm'
@@ -144,6 +145,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Invalidar caches após criação de gerente
     await invalidateCache(`gerentes:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
+
+    // ✅ Revalidar cache do Next.js para sincronizar com invalidateCache
+    revalidatePath('/admin/gerentes')
 
     return NextResponse.json({ success: true, manager: newManager }, { status: 201 })
   } catch (error: unknown) {

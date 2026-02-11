@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db/drizzle'
 import { users, pastorProfiles, supervisorProfiles } from '@/db/schema'
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
@@ -141,6 +142,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Invalidar caches após criação de pastor
     await invalidateCache(`pastores:${VALIDATED_COMPANY_ID}:*`)
     await invalidateCache('relatorio:membresia:*')
+
+    // Revalidar páginas do Next.js
+    revalidatePath('/admin/pastores')
 
     return NextResponse.json({ success: true, pastor: newPastor }, { status: 201 })
   } catch (error: unknown) {
