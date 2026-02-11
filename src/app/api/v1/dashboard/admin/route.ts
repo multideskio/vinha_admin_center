@@ -23,6 +23,7 @@ import {
   formatBrazilDate,
   toBrazilDate,
 } from '@/lib/date-utils'
+import { dashboardParamsSchema } from '@/lib/types/dashboard-types'
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -44,6 +45,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { searchParams } = new URL(request.url)
     const from = searchParams.get('from')
     const to = searchParams.get('to')
+
+    // Validar parâmetros com Zod
+    const validation = dashboardParamsSchema.safeParse({ from, to })
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: validation.error.format() },
+        { status: 400 },
+      )
+    }
+
     const cacheKey = `dashboard:admin:${user.id}:from:${from || 'null'}:to:${to || 'null'}`
     const cached = await getCache(cacheKey)
     if (cached) {
