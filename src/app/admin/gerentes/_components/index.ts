@@ -1,0 +1,6 @@
+export { GerentesClient } from './gerentes-client'
+export { ManagerFormModal } from './manager-form-modal'
+export { ManagerTableView } from './manager-table-view'
+export { ManagerCardView } from './manager-card-view'
+export { DeleteManagerDialog } from './delete-manager-dialog'
+export type { Manager } from './gerentes-client'
