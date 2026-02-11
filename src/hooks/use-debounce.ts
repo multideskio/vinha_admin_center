@@ -1,12 +1,12 @@
+import { useEffect, useState } from 'react'
+
 /**
- * @fileoverview Hook para debounce de valores
- * @version 1.0
- * @date 2025-01-28
+ * Hook para debounce de valores
+ * @param value - Valor a ser debounced
+ * @param delay - Delay em milissegundos (padrão: 500ms)
+ * @returns Valor debounced
  */
-
-import { useState, useEffect } from 'react'
-
-export function useDebounce<T>(value: T, delay: number): T {
+export function useDebounce<T>(value: T, delay: number = 500): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
   useEffect(() => {

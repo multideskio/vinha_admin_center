@@ -33,6 +33,15 @@ import { invalidateCache } from '@/lib/cache'
 
 const COMPANY_ID = env.COMPANY_INIT
 
+// Schema de validação para parâmetros de query GET
+const getTransactionsParamsSchema = z.object({
+  userId: z.string().optional(),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(100),
+})
+
 const transactionSchema = z.object({
   amount: z.number().min(1),
   paymentMethod: z.enum(['pix', 'credit_card', 'boleto']),
@@ -68,12 +77,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     }
 
+    // Validar parâmetros de query
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    const from = searchParams.get('from')
-    const to = searchParams.get('to')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const paramsValidation = getTransactionsParamsSchema.safeParse({
+      userId: searchParams.get('userId') || undefined,
+      from: searchParams.get('from') || undefined,
+      to: searchParams.get('to') || undefined,
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+    })
+
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        {
+          error: 'Parâmetros inválidos',
+          details: paramsValidation.error.errors,
+        },
+        { status: 400 },
+      )
+    }
+
+    const { userId, from, to, page, limit } = paramsValidation.data
     const offset = (page - 1) * limit
 
     let query = db

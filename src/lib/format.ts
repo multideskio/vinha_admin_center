@@ -24,3 +24,14 @@ const currencyFormatterCompact = new Intl.NumberFormat('pt-BR', {
 export function formatCurrency(value: number, compact = false): string {
   return compact ? currencyFormatterCompact.format(value) : currencyFormatter.format(value)
 }
+
+/**
+ * Formata data para padrão brasileiro
+ * @param date - Data a ser formatada (Date ou string ISO)
+ * @param options - Opções de formatação Intl
+ * @returns String formatada em pt-BR
+ */
+export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOptions): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return dateObj.toLocaleDateString('pt-BR', options)
+}
