@@ -50,3 +50,4 @@ firestore-debug.log
 fix-*.sql
 
 .cert/*
+.analise/
