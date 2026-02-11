@@ -169,11 +169,11 @@ async function syncBradescoTransactions(): Promise<SyncResult> {
 
       let newStatus: 'approved' | 'pending' | 'refused' = 'pending'
 
-      if (tx.paymentMethod === 'pix') {
-        const response = await queryBradescoPixPayment(tx.gatewayTransactionId!)
+      if (tx.paymentMethod === 'pix' && tx.gatewayTransactionId) {
+        const response = await queryBradescoPixPayment(tx.gatewayTransactionId)
         newStatus = mapBradescoPixStatus(response.status)
-      } else if (tx.paymentMethod === 'boleto') {
-        const response = await queryBradescoBoletoPayment(tx.gatewayTransactionId!)
+      } else if (tx.paymentMethod === 'boleto' && tx.gatewayTransactionId) {
+        const response = await queryBradescoBoletoPayment(tx.gatewayTransactionId)
         newStatus = mapBradescoBoletoStatus(response.status)
       }
 

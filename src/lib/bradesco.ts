@@ -419,8 +419,11 @@ export function generateTxid(): string {
   const randomValues = new Uint8Array(length)
   crypto.getRandomValues(randomValues)
   for (let i = 0; i < length; i++) {
-    const idx = randomValues[i]! % ALPHANUMERIC_CHARS.length
-    txid += ALPHANUMERIC_CHARS[idx]
+    const randomValue = randomValues[i]
+    if (randomValue !== undefined) {
+      const idx = randomValue % ALPHANUMERIC_CHARS.length
+      txid += ALPHANUMERIC_CHARS[idx]
+    }
   }
   return txid
 }
@@ -437,7 +440,10 @@ export function generateNossoNumero(): string {
   const randomValues = new Uint8Array(length)
   crypto.getRandomValues(randomValues)
   for (let i = 0; i < length; i++) {
-    nossoNumero += (randomValues[i]! % 10).toString()
+    const randomValue = randomValues[i]
+    if (randomValue !== undefined) {
+      nossoNumero += (randomValue % 10).toString()
+    }
   }
   return nossoNumero
 }
