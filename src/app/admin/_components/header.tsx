@@ -26,6 +26,7 @@ import {
   ArrowRightLeft,
   MapPin,
   History,
+  Package,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -222,6 +223,12 @@ export function AdminHeader({
               <Link href="/admin/changelog">
                 <History className="mr-2 h-4 w-4" />
                 <span>Changelog</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/admin/releases">
+                <Package className="mr-2 h-4 w-4" />
+                <span>Releases</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
+import packageJson from '../../../../package.json'
 
 const Logo = (props: React.SVGProps<SVGSVGElement>): JSX.Element => (
   <svg
@@ -124,7 +125,12 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                 <span className="text-white text-lg tracking-tight truncate">
                   {companyName || 'Videira Admin'}
                 </span>
-                <span className="text-white/70 text-xs font-normal">Centro de Gestão</span>
+                <span className="text-white/70 text-xs font-normal flex items-center gap-1.5">
+                  Centro de Gestão
+                  <span className="inline-flex items-center rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+                    v{packageJson.version}
+                  </span>
+                </span>
               </div>
             )}
           </Link>

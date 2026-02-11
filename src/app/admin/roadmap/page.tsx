@@ -4,10 +4,33 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Card, CardContent } from '@/components/ui/card'
 import { MapPin, Rocket, Target } from 'lucide-react'
+import packageJson from '../../../../package.json'
+
+function parseReleasedVersions(markdown: string): string[] {
+  const versionRegex = /^## \[(\d+\.\d+\.\d+)\]/gm
+  const versions: string[] = []
+  let match: RegExpExecArray | null
+  while ((match = versionRegex.exec(markdown)) !== null) {
+    if (match[1]) versions.push(match[1])
+  }
+  return versions
+}
+
+function getNextMinorVersion(current: string): string {
+  const parts = current.split('.').map(Number)
+  const minor = parts[1] ?? 0
+  return `${parts[0]}.${minor + 1}.0`
+}
 
 export default async function RoadmapPage() {
   const filePath = path.join(process.cwd(), 'docs', 'ROADMAP.md')
   const content = await fs.readFile(filePath, 'utf8')
+
+  const currentVersion = packageJson.version
+  const releasedVersions = parseReleasedVersions(
+    await fs.readFile(path.join(process.cwd(), 'docs', 'CHANGELOG.md'), 'utf8'),
+  )
+  const nextVersion = getNextMinorVersion(currentVersion)
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,10 +69,12 @@ export default async function RoadmapPage() {
               <div className="p-2 rounded-lg bg-green-500/20 ring-2 ring-green-500/30">
                 <Target className="h-5 w-5 text-green-600" />
               </div>
-              <div className="text-2xl font-bold text-green-600">4</div>
+              <div className="text-2xl font-bold text-green-600">{releasedVersions.length}</div>
             </div>
             <p className="text-sm font-semibold text-foreground">Versões Lançadas</p>
-            <p className="text-xs text-muted-foreground mt-1">v0.1.0, v0.1.1, v0.1.2, v0.2.0</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {releasedVersions.map((v) => `v${v}`).join(', ')}
+            </p>
           </CardContent>
         </Card>
 
@@ -59,10 +84,10 @@ export default async function RoadmapPage() {
               <div className="p-2 rounded-lg bg-videira-blue/20 ring-2 ring-videira-blue/30">
                 <Rocket className="h-5 w-5 text-videira-blue" />
               </div>
-              <div className="text-2xl font-bold text-videira-blue">v0.2.0</div>
+              <div className="text-2xl font-bold text-videira-blue">v{currentVersion}</div>
             </div>
             <p className="text-sm font-semibold text-foreground">Versão Atual</p>
-            <p className="text-xs text-muted-foreground mt-1">Design System Videira</p>
+            <p className="text-xs text-muted-foreground mt-1">Vinha Admin Center</p>
           </CardContent>
         </Card>
 
@@ -72,10 +97,10 @@ export default async function RoadmapPage() {
               <div className="p-2 rounded-lg bg-amber-500/20 ring-2 ring-amber-500/30">
                 <Target className="h-5 w-5 text-amber-600" />
               </div>
-              <div className="text-2xl font-bold text-amber-600">v0.3.0</div>
+              <div className="text-2xl font-bold text-amber-600">v{nextVersion}</div>
             </div>
             <p className="text-sm font-semibold text-foreground">Próxima Versão</p>
-            <p className="text-xs text-muted-foreground mt-1">Testes & Monitoramento (Q1 2026)</p>
+            <p className="text-xs text-muted-foreground mt-1">Em planejamento</p>
           </CardContent>
         </Card>
       </div>

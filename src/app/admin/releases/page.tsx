@@ -3,17 +3,17 @@ import path from 'path'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, Sparkles } from 'lucide-react'
+import { Package, Sparkles } from 'lucide-react'
 import packageJson from '../../../../package.json'
 
-export default async function ChangelogPage() {
-  const filePath = path.join(process.cwd(), 'docs', 'CHANGELOG.md')
+export default async function ReleasesPage() {
+  const filePath = path.join(process.cwd(), 'docs', 'RELEASES.md')
   const content = await fs.readFile(filePath, 'utf8')
   const currentVersion = packageJson.version
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header Moderno com Gradiente Videira */}
+      {/* Header */}
       <div className="relative overflow-hidden rounded-2xl">
         <div className="absolute inset-0 videira-gradient opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
@@ -24,24 +24,24 @@ export default async function ChangelogPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm">
-                <FileText className="h-6 w-6 text-white" />
+                <Package className="h-6 w-6 text-white" />
               </div>
               <span className="text-white/80 text-sm font-semibold uppercase tracking-wider">
                 v{currentVersion}
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">
-              📝 Changelog
+              📦 Releases
             </h1>
             <p className="text-base text-white/90 mt-2 font-medium">
-              Histórico completo de mudanças e atualizações do sistema
+              Histórico de versões lançadas do Vinha Admin Center
             </p>
           </div>
         </div>
       </div>
 
-      {/* Card de Conteúdo */}
-      <Card className="shadow-lg border-t-4 border-t-videira-blue">
+      {/* Conteúdo */}
+      <Card className="shadow-lg border-t-4 border-t-videira-purple">
         <CardContent className="pt-6">
           <div
             className="prose prose-slate dark:prose-invert max-w-none
@@ -67,7 +67,7 @@ export default async function ChangelogPage() {
         </CardContent>
       </Card>
 
-      {/* Footer Info */}
+      {/* Footer */}
       <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pb-4">
         <Sparkles className="h-4 w-4 text-videira-purple" />
         <span>Vinha Admin Center - Sempre evoluindo</span>
