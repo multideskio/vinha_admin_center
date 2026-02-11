@@ -12,7 +12,9 @@ import { z } from 'zod'
 
 // ✅ CORRIGIDO: Schema com validação de pasta permitida
 const uploadSchema = z.object({
-  folder: z.enum(['uploads', 'avatars', 'documents', 'receipts']).default('uploads'),
+  folder: z
+    .enum(['uploads', 'avatars', 'documents', 'receipts', 'certificates'])
+    .default('uploads'),
   filename: z.string().min(1).max(255),
   subfolder: z.string().optional(), // Para organizar melhor os arquivos
 })
@@ -30,6 +32,8 @@ const ALLOWED_FILE_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'application/x-pkcs12', // .pfx
+  'application/x-pem-file', // .pem
 ]
 
 export async function POST(request: NextRequest) {

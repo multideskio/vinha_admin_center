@@ -40,6 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         refundRequestReason: transactions.refundRequestReason,
         installments: transactions.installments,
         createdAt: transactions.createdAt,
+        gateway: transactions.gateway,
         // Campos de fraude
         isFraud: transactions.isFraud,
         fraudMarkedAt: transactions.fraudMarkedAt,
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       date: new Date(transactionData.createdAt).toLocaleString('pt-BR'),
       amount: parseFloat(transactionData.amount),
       status: transactionData.status,
+      gateway: transactionData.gateway || 'Cielo',
       contributor: {
         id: transactionData.contributorId,
         name: contributorName,

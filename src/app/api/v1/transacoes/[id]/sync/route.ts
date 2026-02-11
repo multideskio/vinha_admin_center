@@ -4,17 +4,50 @@ import { transactions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { queryPayment } from '@/lib/cielo'
+import { queryBradescoPixPayment, queryBradescoBoletoPayment } from '@/lib/bradesco'
 import { rateLimit } from '@/lib/rate-limit'
 import { invalidateCache } from '@/lib/cache'
 
-// @lastReview 2025-01-05 21:45
+// @lastReview 2025-02-11 — Suporte a múltiplos gateways (Cielo + Bradesco)
+
+/**
+ * Mapeia status do Bradesco PIX para status interno do sistema.
+ */
+function mapBradescoPixStatus(bradescoStatus: string): 'approved' | 'pending' | 'refused' {
+  switch (bradescoStatus) {
+    case 'CONCLUIDA':
+      return 'approved'
+    case 'REMOVIDA_PELO_USUARIO_RECEBEDOR':
+    case 'REMOVIDA_PELO_PSP':
+      return 'refused'
+    case 'ATIVA':
+    default:
+      return 'pending'
+  }
+}
+
+/**
+ * Mapeia status do Bradesco Boleto para status interno do sistema.
+ */
+function mapBradescoBoletoStatus(bradescoStatus: string): 'approved' | 'pending' | 'refused' {
+  switch (bradescoStatus) {
+    case 'pago':
+      return 'approved'
+    case 'vencido':
+    case 'cancelado':
+      return 'refused'
+    case 'registrado':
+    default:
+      return 'pending'
+  }
+}
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Rate limiting: 30 requests per minute for POST (sync operations)
     const ip =
       request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-    const rateLimitResult = await rateLimit('transacao-sync', ip, 30, 60) // 30 requests per minute
+    const rateLimitResult = await rateLimit('transacao-sync', ip, 30, 60)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Muitas tentativas. Tente novamente em alguns minutos.' },
@@ -48,10 +81,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const diffMinutes = (now.getTime() - transactionDate.getTime()) / (1000 * 60)
 
     if (transaction.status === 'pending' && diffMinutes > 15) {
-      // Cancelar transação pendente com mais de 15 minutos
       await db.update(transactions).set({ status: 'refused' }).where(eq(transactions.id, id))
 
-      // ✅ Invalidar cache após cancelamento por timeout
       await invalidateCache('dashboard:admin:*')
       await invalidateCache('relatorio:*')
 
@@ -71,24 +102,38 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       })
     }
 
-    // Consultar status na Cielo
-    const cieloResponse = await queryPayment(transaction.gatewayTransactionId)
-
-    // Mapear status da Cielo
     let newStatus: 'approved' | 'pending' | 'refused' | 'refunded' = 'pending'
-    if (cieloResponse.Payment?.Status === 2) {
-      newStatus = 'approved'
-    } else if (cieloResponse.Payment?.Status === 3 || cieloResponse.Payment?.Status === 10) {
-      newStatus = 'refused'
-    } else if (cieloResponse.Payment?.Status === 11) {
-      newStatus = 'refunded'
+    let gatewayStatus: string | number | undefined
+
+    if (transaction.gateway === 'Bradesco') {
+      // Consultar status no Bradesco
+      if (transaction.paymentMethod === 'pix') {
+        const bradescoResponse = await queryBradescoPixPayment(transaction.gatewayTransactionId)
+        newStatus = mapBradescoPixStatus(bradescoResponse.status)
+        gatewayStatus = bradescoResponse.status
+      } else if (transaction.paymentMethod === 'boleto') {
+        const bradescoResponse = await queryBradescoBoletoPayment(transaction.gatewayTransactionId)
+        newStatus = mapBradescoBoletoStatus(bradescoResponse.status)
+        gatewayStatus = bradescoResponse.status
+      }
+    } else {
+      // Consultar status na Cielo (fluxo existente)
+      const cieloResponse = await queryPayment(transaction.gatewayTransactionId)
+
+      if (cieloResponse.Payment?.Status === 2) {
+        newStatus = 'approved'
+      } else if (cieloResponse.Payment?.Status === 3 || cieloResponse.Payment?.Status === 10) {
+        newStatus = 'refused'
+      } else if (cieloResponse.Payment?.Status === 11) {
+        newStatus = 'refunded'
+      }
+      gatewayStatus = cieloResponse.Payment?.Status
     }
 
     // Atualizar no banco se mudou
     if (newStatus !== transaction.status) {
       await db.update(transactions).set({ status: newStatus }).where(eq(transactions.id, id))
 
-      // ✅ Invalidar cache do dashboard e relatórios após mudança de status
       await invalidateCache('dashboard:admin:*')
       await invalidateCache('relatorio:*')
     }
@@ -97,7 +142,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       success: true,
       message: 'Transação sincronizada com sucesso',
       status: newStatus,
-      cieloStatus: cieloResponse.Payment?.Status,
+      gateway: transaction.gateway || 'Cielo',
+      gatewayStatus,
     })
   } catch (error) {
     console.error('[TRANSACAO_SYNC_ERROR]', {

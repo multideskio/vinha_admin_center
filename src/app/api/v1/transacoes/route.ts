@@ -19,6 +19,12 @@ import {
 import { eq, desc } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
+import {
+  getActiveGateway,
+  createBradescoPixPayment,
+  createBradescoBoletoPayment,
+  getBradescoConfig,
+} from '@/lib/bradesco'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkDuplicatePayment } from '@/lib/payment-guard'
 import { z } from 'zod'
@@ -277,41 +283,99 @@ export async function POST(request: NextRequest) {
     let paymentResult: Record<string, unknown> | undefined
     let status: 'pending' | 'approved' | 'refused' = 'pending'
 
-    // Process payment based on method
-    if (data.paymentMethod === 'pix') {
-      paymentResult = await createPixPayment(data.amount, userName as string)
-    } else if (data.paymentMethod === 'credit_card' && data.card) {
-      const installments = data.installments || 1
-      paymentResult = await createCreditCardPayment(
-        data.amount,
-        String(userName),
-        userData.email,
-        data.card,
-        installments,
-      )
-      status =
-        paymentResult.Status === 2 ? 'approved' : paymentResult.Status === 3 ? 'refused' : 'pending'
-    } else if (data.paymentMethod === 'boleto') {
-      if (!userCpf || !userAddress || !userCity || !userState || !userCep || !userDistrict) {
+    // Determinar gateway ativo
+    const activeGateway = await getActiveGateway()
+
+    // Process payment based on gateway and method
+    if (activeGateway === 'Bradesco') {
+      if (data.paymentMethod === 'credit_card') {
         return NextResponse.json(
-          {
-            error:
-              'Boleto requer perfil completo com CPF, endereço e bairro. Complete seu perfil em /manager/perfil',
-          },
+          { error: 'Cartão de crédito não é suportado pelo gateway Bradesco. Use PIX ou Boleto.' },
           { status: 400 },
         )
       }
-      paymentResult = await createBoletoPayment(
-        data.amount,
-        String(userName),
-        userData.email,
-        String(userCpf),
-        String(userAddress),
-        String(userCity),
-        String(userState),
-        String(userCep),
-        String(userDistrict),
-      )
+
+      if (data.paymentMethod === 'pix') {
+        const config = await getBradescoConfig()
+        const pixResult = await createBradescoPixPayment(
+          data.amount,
+          config.pixKey,
+          userName as string,
+          String(userCpf),
+        )
+        paymentResult = {
+          PaymentId: pixResult.txid,
+          QrCodeBase64Image: pixResult.qrCodeBase64Image,
+          QrCodeString: pixResult.qrCode,
+        }
+      } else if (data.paymentMethod === 'boleto') {
+        if (!userCpf || !userAddress || !userCity || !userState || !userCep || !userDistrict) {
+          return NextResponse.json(
+            {
+              error:
+                'Boleto requer perfil completo com CPF, endereço e bairro. Complete seu perfil em /manager/perfil',
+            },
+            { status: 400 },
+          )
+        }
+        const boletoResult = await createBradescoBoletoPayment(
+          data.amount,
+          String(userName),
+          String(userCpf),
+          String(userAddress),
+          String(userCity),
+          String(userState),
+          String(userCep),
+          String(userDistrict),
+        )
+        paymentResult = {
+          PaymentId: boletoResult.nossoNumero,
+          Url: boletoResult.url,
+          DigitableLine: boletoResult.linhaDigitavel,
+          BarCodeNumber: boletoResult.codigoBarras,
+        }
+      }
+    } else {
+      // Cielo gateway (fluxo existente)
+      if (data.paymentMethod === 'pix') {
+        paymentResult = await createPixPayment(data.amount, userName as string)
+      } else if (data.paymentMethod === 'credit_card' && data.card) {
+        const installments = data.installments || 1
+        paymentResult = await createCreditCardPayment(
+          data.amount,
+          String(userName),
+          userData.email,
+          data.card,
+          installments,
+        )
+        status =
+          paymentResult.Status === 2
+            ? 'approved'
+            : paymentResult.Status === 3
+              ? 'refused'
+              : 'pending'
+      } else if (data.paymentMethod === 'boleto') {
+        if (!userCpf || !userAddress || !userCity || !userState || !userCep || !userDistrict) {
+          return NextResponse.json(
+            {
+              error:
+                'Boleto requer perfil completo com CPF, endereço e bairro. Complete seu perfil em /manager/perfil',
+            },
+            { status: 400 },
+          )
+        }
+        paymentResult = await createBoletoPayment(
+          data.amount,
+          String(userName),
+          userData.email,
+          String(userCpf),
+          String(userAddress),
+          String(userCity),
+          String(userState),
+          String(userCep),
+          String(userDistrict),
+        )
+      }
     }
 
     // Save transaction to database
@@ -330,6 +394,7 @@ export async function POST(request: NextRequest) {
         description: data.description || null,
         installments: data.installments || 1,
         gatewayTransactionId: (paymentResult?.PaymentId as string) || null,
+        gateway: activeGateway,
       })
       .returning()
 

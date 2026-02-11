@@ -45,16 +45,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    // Cancelar na Cielo se tiver gatewayTransactionId
+    // Cancelar no gateway se tiver gatewayTransactionId
     if (transaction.gatewayTransactionId) {
-      try {
-        await cancelPayment(transaction.gatewayTransactionId, amount)
-      } catch (cieloError) {
-        console.error('Erro ao cancelar na Cielo:', cieloError)
-        return NextResponse.json(
-          { error: cieloError instanceof Error ? cieloError.message : 'Erro ao cancelar na Cielo' },
-          { status: 500 },
-        )
+      if (transaction.gateway === 'Bradesco') {
+        // Bradesco PIX/Boleto: estorno não é suportado via API.
+        // O reembolso deve ser feito manualmente via internet banking.
+        console.warn('[REFUND_BRADESCO] Estorno Bradesco requer processamento manual', {
+          transactionId: id,
+          gatewayTransactionId: transaction.gatewayTransactionId,
+          paymentMethod: transaction.paymentMethod,
+          amount,
+        })
+      } else {
+        // Cielo: cancelar via API
+        try {
+          await cancelPayment(transaction.gatewayTransactionId, amount)
+        } catch (gatewayError) {
+          console.error('Erro ao cancelar no gateway:', gatewayError)
+          return NextResponse.json(
+            {
+              error:
+                gatewayError instanceof Error
+                  ? gatewayError.message
+                  : 'Erro ao cancelar no gateway',
+            },
+            { status: 500 },
+          )
+        }
       }
     }
 
