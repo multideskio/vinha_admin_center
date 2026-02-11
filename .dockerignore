@@ -72,3 +72,5 @@ docker-compose*
 
 # Playwright
 .playwright-mcp/
+
+cert_test/
