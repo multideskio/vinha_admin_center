@@ -4,6 +4,218 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.8.0] - 2026-02-11 - ♻️ Refatoração do Dashboard Admin
+
+### 🎯 **FOCO: ARQUITETURA, PERFORMANCE E ORGANIZAÇÃO**
+
+Versão focada em refatoração completa do dashboard administrativo, implementação de validação Zod, criação de utilitários reutilizáveis e reorganização da estrutura de configuração Kiro.
+
+---
+
+### ♻️ **REFATORAÇÕES (1 MUDANÇA)**
+
+#### **Dashboard Admin - Server Components e Modularização**
+
+- ✅ Transformar page.tsx em Server Component (redução de ~700 para ~50 linhas)
+- ✅ Criar dashboard-client.tsx para lógica interativa
+- ✅ Modularizar componentes: dashboard-header, kpi-card, insights-card, transactions-table
+- ✅ Implementar lazy loading para Recharts (~200KB) com dynamic()
+- ✅ Renomear componentes para kebab-case (padrão do projeto)
+- ✅ Extrair componentes: defaulters-card, quick-actions, growth-chart, revenue-charts
+- ✅ Remover componentes antigos PascalCase
+- ✅ Fetch inicial de dados no servidor (SSR)
+- ✅ Skeleton loading durante carregamento de gráficos
+
+**Benefícios:**
+
+- Bundle inicial reduzido (~200KB lazy loaded)
+- Server-side rendering para dados iniciais
+- Componentes pequenos e focados (< 200 linhas cada)
+- Separação clara entre Server e Client Components
+
+---
+
+### ✨ **NOVAS FUNCIONALIDADES (2 MUDANÇAS)**
+
+#### **Validação Zod na API do Dashboard**
+
+- ✅ Criar dashboard-types.ts com schemas Zod e tipos TypeScript
+- ✅ Validar parâmetros 'from' e 'to' com safeParse()
+- ✅ Retornar erro 400 com detalhes se validação falhar
+- ✅ Centralizar tipos do dashboard para reutilização
+
+**Benefícios:**
+
+- Segurança melhorada com validação runtime
+- Mensagens de erro estruturadas
+- Tipos consistentes em todo o sistema
+
+#### **Utilitários de Formatação e Exportação**
+
+- ✅ format.ts: singleton para formatação de moeda (evita criar 30+ instâncias)
+- ✅ export-csv.ts: função reutilizável para exportação de dados
+- ✅ Substituir Intl.NumberFormat duplicado em todos os componentes
+- ✅ Tratamento de erros robusto
+
+**Benefícios:**
+
+- Performance melhorada (singleton vs múltiplas instâncias)
+- Redução de duplicação de código
+- Manutenibilidade aumentada
+
+---
+
+### 🔧 **MELHORIAS TÉCNICAS (2 MUDANÇAS)**
+
+#### **Reorganização Estrutura Kiro**
+
+- ✅ Remover steering files antigos (development, product, rules, structure, tech)
+- ✅ Adicionar novos steering files padronizados:
+  - code-standards.md
+  - documentation-standards.md
+  - git-commit-standards.md
+  - performance-optimization.md
+  - project-context.md
+  - pt-br-language.md
+  - security-guidelines.md
+  - testing-guidelines.md
+- ✅ Adicionar estrutura .kiro/ completa (agents, skills, specs)
+- ✅ Adicionar QUICK_REFERENCE.md, README.md, SUMMARY.md
+- ✅ Adicionar estruturas .cursor/ e .trae/ para compatibilidade
+
+**Benefícios:**
+
+- Organização melhorada
+- Padronização de código
+- Documentação centralizada
+
+#### **Atualização .gitignore**
+
+- ✅ Adicionar .agents/ ao .gitignore (skills da comunidade)
+- ✅ Evitar commit de configurações locais de agentes
+
+---
+
+### 📚 **DOCUMENTAÇÃO (1 MUDANÇA)**
+
+#### **Relatório de Refatoração do Dashboard**
+
+- ✅ Documentar refatoração completa com 12 issues corrigidas
+- ✅ Estrutura final de componentes
+- ✅ Benefícios de performance e manutenibilidade
+- ✅ Checklist de qualidade
+- ✅ Próximos passos opcionais
+
+**Arquivo:** `docs/development/DASHBOARD_REFACTORING.md`
+
+---
+
+### 📝 **ARQUIVOS MODIFICADOS (40+ ARQUIVOS)**
+
+**Dashboard (Modificados):**
+
+- `src/app/admin/dashboard/page.tsx` (~700 → ~50 linhas)
+- `src/app/api/v1/dashboard/admin/route.ts` (validação Zod)
+
+**Dashboard (Deletados - PascalCase):**
+
+- `src/app/admin/dashboard/_components/DashboardHeader.tsx`
+- `src/app/admin/dashboard/_components/InsightsCard.tsx`
+- `src/app/admin/dashboard/_components/KpiCard.tsx`
+- `src/app/admin/dashboard/_components/TransactionsTable.tsx`
+
+**Dashboard (Novos - kebab-case):**
+
+- `src/app/admin/dashboard/_components/dashboard-client.tsx`
+- `src/app/admin/dashboard/_components/dashboard-header.tsx`
+- `src/app/admin/dashboard/_components/insights-card.tsx`
+- `src/app/admin/dashboard/_components/kpi-card.tsx`
+- `src/app/admin/dashboard/_components/transactions-table.tsx`
+- `src/app/admin/dashboard/_components/defaulters-card.tsx`
+- `src/app/admin/dashboard/_components/quick-actions.tsx`
+- `src/app/admin/dashboard/_components/growth-chart.tsx`
+- `src/app/admin/dashboard/_components/revenue-charts.tsx`
+
+**Utilitários (Novos):**
+
+- `src/lib/format.ts`
+- `src/lib/export-csv.ts`
+- `src/lib/types/dashboard-types.ts`
+
+**Steering (Deletados):**
+
+- `.kiro/steering/development.md`
+- `.kiro/steering/product.md`
+- `.kiro/steering/rules.md`
+- `.kiro/steering/structure.md`
+- `.kiro/steering/tech.md`
+
+**Steering (Novos):**
+
+- `.kiro/steering/code-standards.md`
+- `.kiro/steering/documentation-standards.md`
+- `.kiro/steering/git-commit-standards.md`
+- `.kiro/steering/performance-optimization.md`
+- `.kiro/steering/project-context.md`
+- `.kiro/steering/pt-br-language.md`
+- `.kiro/steering/security-guidelines.md`
+- `.kiro/steering/testing-guidelines.md`
+
+**Kiro (Novos):**
+
+- `.kiro/QUICK_REFERENCE.md`
+- `.kiro/README.md`
+- `.kiro/SUMMARY.md`
+- `.kiro/agents/` (estrutura)
+- `.kiro/skills/` (estrutura)
+
+**Compatibilidade (Novos):**
+
+- `.cursor/` (estrutura)
+- `.trae/` (estrutura)
+
+**Documentação (Novos):**
+
+- `docs/development/DASHBOARD_REFACTORING.md`
+
+**Config (Modificados):**
+
+- `.gitignore`
+
+---
+
+### 🎯 **IMPACTO E BENEFÍCIOS**
+
+**Performance:**
+
+- ✅ Bundle inicial reduzido (~200KB de Recharts lazy loaded)
+- ✅ Server-side rendering para dados iniciais
+- ✅ Formatação de moeda otimizada (singleton)
+- ✅ Lazy loading de componentes pesados
+
+**Manutenibilidade:**
+
+- ✅ Componentes pequenos e focados (< 200 linhas cada)
+- ✅ Separação clara entre Server e Client Components
+- ✅ Tipos centralizados e reutilizáveis
+- ✅ Utilitários compartilhados
+
+**Qualidade de Código:**
+
+- ✅ Validação Zod em runtime
+- ✅ TypeScript estrito (0 erros)
+- ✅ Nomenclatura consistente (kebab-case)
+- ✅ Código limpo e sem duplicação
+
+**Organização:**
+
+- ✅ Estrutura Kiro padronizada
+- ✅ Steering files organizados por tema
+- ✅ Documentação centralizada
+- ✅ Compatibilidade com múltiplas ferramentas
+
+---
+
 ## [0.7.0] - 2026-02-11 - 🔗 Sistema de Links de Pagamento com Autenticação Temporária
 
 ### 🎯 **FOCO: MELHORAR CONVERSÃO E UX EM NOTIFICAÇÕES DE PAGAMENTO**

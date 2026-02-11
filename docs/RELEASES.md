@@ -4,6 +4,26 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.8.0 - Refatoração do Dashboard Admin (Fevereiro 2026)
+
+### ♻️ Arquitetura e Performance
+
+Refatoração completa do dashboard administrativo seguindo Next.js 15 best practices. Transformação de Client Component monolítico (~700 linhas) em Server Component com componentes modulares, lazy loading de bibliotecas pesadas (Recharts ~200KB) e otimizações de performance.
+
+### ✨ Validação e Tipos
+
+Sistema de validação Zod implementado na API do dashboard com tipos TypeScript centralizados. Parâmetros de data validados com retorno de erro estruturado (400) em caso de falha.
+
+### 🔧 Utilitários Reutilizáveis
+
+Criação de utilitários singleton para formatação de moeda (evita 30+ instâncias duplicadas) e exportação CSV reutilizável. Melhoria significativa de performance e redução de duplicação de código.
+
+### 📚 Organização e Documentação
+
+Reorganização completa da estrutura Kiro com novos steering files padronizados (code-standards, security-guidelines, performance-optimization, etc). Documentação detalhada da refatoração com relatório de 12 issues corrigidas.
+
+---
+
 ## v0.7.0 - Sistema de Links de Pagamento com Autenticação Temporária (Fevereiro 2026)
 
 ### 🔗 Autenticação Temporária

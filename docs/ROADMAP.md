@@ -60,4 +60,4 @@
 | ------ | ------------ | -------- |
 | v0.5.0 | 📋 Planejada | Q2 2026  |
 
-_Última atualização: Fevereiro 2026_
+_Última atualização: 11 de Fevereiro de 2026_
