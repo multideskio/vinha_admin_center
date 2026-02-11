@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { formatCurrency } from '@/lib/format'
 import type { TransactionStatus } from '@/lib/types'
 
 type Transaction = {
@@ -149,12 +150,7 @@ export function TransactionsTable({
                           )}
                         </TableCell>
                         <TableCell className="text-right text-xs sm:text-sm">
-                          {new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          }).format(transaction.amount)}
+                          {formatCurrency(transaction.amount, true)}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <Badge
