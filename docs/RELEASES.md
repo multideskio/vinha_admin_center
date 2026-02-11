@@ -4,6 +4,17 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.6.0 - SEO com Open Graph e Twitter Card (Fevereiro 2026)
+
+### 🔍 SEO e Metadata
+
+- Open Graph metadata com título, descrição, imagem 1200x630 e locale pt_BR
+- Twitter Card (summary_large_image) com imagem de preview
+- metadataBase configurada via `NEXT_PUBLIC_APP_URL`
+- Nova imagem de background para compartilhamento social
+
+---
+
 ## v0.5.0 - Suporte Neon/Vercel & Migration Bradesco (Fevereiro 2026)
 
 ### 🔧 Banco de Dados e Ambiente

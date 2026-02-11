@@ -16,8 +16,30 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://localhost:9002'),
   title: 'Vinha Admin Center',
   description: 'Sistema de Administração para Gestão de Igrejas',
+  openGraph: {
+    title: 'Vinha Admin Center',
+    description: 'Sistema de Administração para Gestão de Igrejas',
+    siteName: 'Vinha Admin Center',
+    images: [
+      {
+        url: '/img/background.png',
+        width: 1200,
+        height: 630,
+        alt: 'Vinha Admin Center',
+      },
+    ],
+    locale: 'pt_BR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Vinha Admin Center',
+    description: 'Sistema de Administração para Gestão de Igrejas',
+    images: ['/img/background.png'],
+  },
 }
 
 export default function RootLayout({

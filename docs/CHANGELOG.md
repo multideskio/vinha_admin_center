@@ -4,6 +4,30 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.6.0] - 2026-02-11 - 🔍 SEO com Open Graph e Twitter Card
+
+### 🎯 **FOCO: MELHORAR COMPARTILHAMENTO E PRESENÇA EM REDES SOCIAIS**
+
+Versão focada em adicionar metadata de Open Graph e Twitter Card para melhorar a aparência do sistema quando compartilhado em redes sociais e plataformas de mensagens.
+
+---
+
+### 🔍 **SEO E METADATA (2 MUDANÇAS)**
+
+- ✅ **Open Graph metadata** — título, descrição, imagem (1200x630), locale pt_BR e tipo website
+- ✅ **Twitter Card metadata** — summary_large_image com título, descrição e imagem
+- ✅ **metadataBase** — configurada via `NEXT_PUBLIC_APP_URL` com fallback para localhost
+- ✅ **Imagem de background** — nova imagem `/img/background.png` para OG/Twitter
+
+---
+
+### 📝 **ARQUIVOS MODIFICADOS (2 ARQUIVOS)**
+
+- `src/app/layout.tsx` (metadata Open Graph e Twitter Card)
+- `public/img/background.png` (novo)
+
+---
+
 ## [0.5.0] - 2026-02-11 - 🔧 Suporte Neon/Vercel & Migration Bradesco
 
 ### 🎯 **FOCO: COMPATIBILIDADE COM INTEGRAÇÃO NEON/VERCEL E MIGRATION DO GATEWAY BRADESCO**
