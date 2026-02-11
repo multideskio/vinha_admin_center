@@ -51,3 +51,6 @@ fix-*.sql
 
 .cert/*
 .analise/
+
+# agent skills (comunidade)
+.agents/
