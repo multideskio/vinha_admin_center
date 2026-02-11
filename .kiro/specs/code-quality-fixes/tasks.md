@@ -155,31 +155,31 @@
 
 ## Tarefas de Validação e Deploy
 
-- [~] 27. Executar suite de testes completa
+- [ ] 27. Executar suite de testes completa
   - Rodar testes unitários (`npm test`)
   - Rodar testes de integração
   - Rodar testes de performance (comparar antes/depois)
 
-- [~] 28. Validar em ambiente de staging
+- [ ] 28. Validar em ambiente de staging
   - Deploy em staging
   - Testar fluxo completo de pagamento (PIX, cartão, boleto)
   - Testar webhooks da Cielo
   - Testar notificações (email e WhatsApp)
   - Validar logs estruturados (verificar se dados sensíveis estão mascarados)
 
-- [~] 29. Revisar métricas de sucesso
+- [ ] 29. Revisar métricas de sucesso
   - Verificar zero tipos `any` no código (`npm run build` sem warnings)
   - Verificar 100% variáveis validadas (todas usando `env`)
   - Medir tempo de resposta médio das APIs (< 200ms)
   - Medir hit rate do cache de configurações (> 80%)
 
-- [~] 30. Atualizar documentação
+- [ ] 30. Atualizar documentação
   - Documentar novas funções utilitárias em README ou docs/
   - Atualizar guia de desenvolvimento com novos padrões
   - Documentar mudanças em variáveis de ambiente (.env.example)
   - Criar CHANGELOG.md com todas as mudanças
 
-- [~] 31. Deploy em produção
+- [ ] 31. Deploy em produção
   - Criar backup do banco de dados
   - Deploy com feature flags (se aplicável)
   - Monitorar logs por 24h após deploy
