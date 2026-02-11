@@ -22,9 +22,14 @@ coverage/
 Thumbs.db
 
 # Documentation
-docs/
+docs/**
 *.md
+
+# Exceções: arquivos MD lidos em runtime pelas páginas admin
 !README.md
+!docs/CHANGELOG.md
+!docs/RELEASES.md
+!docs/ROADMAP.md
 
 # Scripts (não necessários no build)
 scripts/
