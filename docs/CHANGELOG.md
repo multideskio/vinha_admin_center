@@ -4,6 +4,115 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.7.0] - 2026-02-11 - 🔗 Sistema de Links de Pagamento com Autenticação Temporária
+
+### 🎯 **FOCO: MELHORAR CONVERSÃO E UX EM NOTIFICAÇÕES DE PAGAMENTO**
+
+Versão focada em reduzir fricção no processo de pagamento através de links personalizados com autenticação temporária, eliminando a necessidade de login manual.
+
+---
+
+### ✨ **NOVAS FUNCIONALIDADES (2 MUDANÇAS)**
+
+#### **Sistema de Payment Tokens**
+
+- ✅ Geração de tokens seguros (48 bytes hex) com validade de 48 horas
+- ✅ Validação automática com verificação de expiração e status do usuário
+- ✅ Autenticação via JWT após validação bem-sucedida
+- ✅ Redirecionamento inteligente baseado no role (pastor/igreja/supervisor/manager)
+- ✅ Rate limiting (10 tentativas/minuto) para prevenir brute force
+- ✅ Função de cleanup para tokens expirados
+
+#### **Integração com Notificações**
+
+- ✅ Lembretes manuais geram token único por destinatário
+- ✅ Cron de notificações gera tokens para todos os tipos (boas-vindas, pagamentos, lembretes, inadimplentes)
+- ✅ Variável `{link_pagamento}` substituída por URL personalizada com token
+- ✅ Cada notificação tem link exclusivo e rastreável
+
+#### **Página Pública de Contribuição**
+
+- ✅ Nova rota `/contribuir` com validação de token
+- ✅ Feedback visual durante validação (loading, sucesso, erro)
+- ✅ Mensagens de erro amigáveis com opção de ir para login
+- ✅ Suspense boundary para melhor UX
+
+---
+
+### 💾 **BANCO DE DADOS (1 MUDANÇA)**
+
+#### **Nova Tabela: payment_tokens**
+
+- ✅ Campos: id, userId, companyId, token (unique), expiresAt, usedAt, createdAt
+- ✅ Relações com users e companies (cascade delete)
+- ✅ Índice único no campo token para performance
+
+---
+
+### 📚 **DOCUMENTAÇÃO (3 MUDANÇAS)**
+
+#### **Steering Rules Atualizadas**
+
+- ✅ `tech.md` — Seção "Gateways de Pagamento" com Cielo e Bradesco
+- ✅ `product.md` — Regras de negócio separadas por gateway
+- ✅ `development.md` — Padrões de integração Bradesco (PIX, Boleto, OAuth 2.0)
+
+---
+
+### 🔧 **MELHORIAS TÉCNICAS (2 MUDANÇAS)**
+
+- ✅ Middleware atualizado para permitir acesso público a `/contribuir`
+- ✅ `.gitignore` atualizado com pasta `.analise/`
+
+---
+
+### 📝 **ARQUIVOS MODIFICADOS (13 ARQUIVOS)**
+
+**Novos:**
+
+- `src/lib/payment-token.ts`
+- `src/app/api/v1/payment-link/validate/route.ts`
+- `src/app/contribuir/page.tsx`
+
+**Modificados:**
+
+- `src/db/schema.ts` (tabela paymentTokens)
+- `src/middleware.ts` (rota /contribuir)
+- `src/app/api/v1/admin/send-reminders/route.ts`
+- `src/app/api/v1/cron/notifications/route.ts`
+- `.kiro/steering/development.md`
+- `.kiro/steering/product.md`
+- `.kiro/steering/tech.md`
+- `.gitignore`
+- `.kiro/specs/code-quality-fixes/tasks.md`
+
+---
+
+### 🎯 **IMPACTO E BENEFÍCIOS**
+
+**Para Usuários:**
+
+- 🚀 Acesso instantâneo à página de contribuição via link
+- ⚡ Sem necessidade de lembrar senha ou fazer login
+- 📱 Experiência mobile-first otimizada
+- 🔒 Segurança mantida com tokens temporários
+
+**Para o Sistema:**
+
+- 📊 Rastreabilidade de origem de acessos via tokens
+- 🔐 Autenticação segura com expiração automática
+- ♻️ Cleanup automático de tokens expirados
+- 📈 Potencial aumento na taxa de conversão de pagamentos
+
+**Para Notificações:**
+
+- ✉️ Links personalizados em emails e WhatsApp
+- 🎯 Cada usuário recebe URL exclusiva
+- 📉 Redução de fricção no processo de pagamento
+- 🔗 Integração transparente com sistema existente
+
+---
+
 ## [0.6.0] - 2026-02-11 - 🔍 SEO com Open Graph e Twitter Card
 
 ### 🎯 **FOCO: MELHORAR COMPARTILHAMENTO E PRESENÇA EM REDES SOCIAIS**

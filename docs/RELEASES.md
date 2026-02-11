@@ -4,6 +4,26 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.7.0 - Sistema de Links de Pagamento com Autenticação Temporária (Fevereiro 2026)
+
+### 🔗 Autenticação Temporária
+
+Sistema completo de tokens para links de pagamento, permitindo acesso direto à página de contribuição sem login manual. Tokens seguros com 48h de validade, validação automática e redirecionamento inteligente por role.
+
+### 📧 Integração com Notificações
+
+Links personalizados integrados em todas as notificações automáticas (lembretes, boas-vindas, inadimplentes). Cada usuário recebe URL exclusiva com token único, melhorando conversão e rastreabilidade.
+
+### 💾 Banco de Dados
+
+Nova tabela `payment_tokens` com relações para users e companies, suporte a cleanup automático de tokens expirados.
+
+### 📚 Documentação
+
+Steering rules atualizadas com documentação completa do gateway Bradesco (PIX, Boleto, OAuth 2.0, mTLS).
+
+---
+
 ## v0.6.0 - SEO com Open Graph e Twitter Card (Fevereiro 2026)
 
 ### 🔍 SEO e Metadata
