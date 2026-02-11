@@ -6,6 +6,7 @@ import { NotificationService } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
 import { env } from '@/lib/env'
 import { redis } from '@/lib/redis'
+import { generatePaymentLink } from '@/lib/payment-token'
 
 const CRON_SECRET = env.CRON_SECRET
 const LOCK_KEY = 'cron:v1:notifications:lock'
@@ -123,7 +124,7 @@ async function processNewUsers(rule: {
       nome_igreja: 'Nossa Igreja',
       valor_transacao: '0,00',
       data_vencimento: new Date().toLocaleDateString('pt-BR'),
-      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: await generatePaymentLink(user.id, user.companyId),
     }
 
     let message = rule.messageTemplate
@@ -192,7 +193,7 @@ async function processPayments(rule: {
       valor_transacao: String(transaction.amount),
       data_pagamento: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
       data_vencimento: new Date(transaction.createdAt).toLocaleDateString('pt-BR'),
-      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: await generatePaymentLink(user.id, user.companyId),
     }
 
     let message = rule.messageTemplate
@@ -273,7 +274,7 @@ async function processReminders(rule: {
       nome_usuario: name,
       valor_transacao: amount,
       data_vencimento: dueDate,
-      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: await generatePaymentLink(user.id, user.companyId),
       nome_igreja: 'Nossa Igreja',
     }
 
@@ -355,7 +356,7 @@ async function processOverdue(rule: {
       nome_usuario: name,
       valor_transacao: amount,
       data_vencimento: dueDate,
-      link_pagamento: `${env.NEXT_PUBLIC_APP_URL || ''}/contribuir`,
+      link_pagamento: await generatePaymentLink(user.id, user.companyId),
       nome_igreja: 'Nossa Igreja',
     }
 

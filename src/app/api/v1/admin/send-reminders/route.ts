@@ -5,7 +5,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { NotificationService } from '@/lib/notifications'
 import { formatBrazilDate, getBrazilDate } from '@/lib/date-utils'
-import { env } from '@/lib/env'
+import { generatePaymentLink } from '@/lib/payment-token'
 
 export async function POST() {
   try {
@@ -76,6 +76,7 @@ export async function POST() {
         const name = u.email.split('@')[0] || 'Membro'
         const dueDate = formatBrazilDate(targetDate)
         const amount = '100,00'
+        const paymentLink = await generatePaymentLink(u.id, companyId)
 
         const processedMessage = rule.messageTemplate
           .replace(/{nome_usuario}/g, name)
@@ -85,7 +86,7 @@ export async function POST() {
           .replace(/{valor_transacao}/g, amount)
           .replace(/{amount}/g, amount)
           .replace(/{nome_igreja}/g, 'Igreja')
-          .replace(/{link_pagamento}/g, env.NEXT_PUBLIC_APP_URL || '')
+          .replace(/{link_pagamento}/g, paymentLink)
 
         let emailSent = false
         let whatsappSent = false
@@ -182,6 +183,7 @@ export async function POST() {
         const name = u.email.split('@')[0] || 'Membro'
         const dueDate = formatBrazilDate(targetDate)
         const amount = '100,00'
+        const paymentLink = await generatePaymentLink(u.id, companyId)
 
         const processedMessage = rule.messageTemplate
           .replace(/{nome_usuario}/g, name)
@@ -191,7 +193,7 @@ export async function POST() {
           .replace(/{valor_transacao}/g, amount)
           .replace(/{amount}/g, amount)
           .replace(/{nome_igreja}/g, 'Igreja')
-          .replace(/{link_pagamento}/g, env.NEXT_PUBLIC_APP_URL || '')
+          .replace(/{link_pagamento}/g, paymentLink)
 
         let emailSent = false
         let whatsappSent = false
