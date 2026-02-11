@@ -4,6 +4,302 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.4.1] - 2026-02-11 - 📋 Versionamento Dinâmico, UX Avançada & Documentação Estruturada
+
+### 🎯 **FOCO: VERSIONAMENTO AUTOMÁTICO, FUNCIONALIDADES DE UX E ORGANIZAÇÃO DA DOCUMENTAÇÃO**
+
+Versão focada em melhorar a rastreabilidade de versões, documentar funcionalidades existentes que não estavam registradas e organizar a documentação do projeto.
+
+---
+
+### 📋 **VERSIONAMENTO DINÂMICO (3 MUDANÇAS)**
+
+- ✅ **Badge de versão na sidebar** — lê dinamicamente do `package.json` e exibe ao lado de "Centro de Gestão"
+- ✅ **Página `/admin/changelog`** — versão dinâmica via `package.json` ao invés de hardcoded
+- ✅ **Página `/admin/roadmap`** — versão dinâmica com cálculo automático da próxima versão
+
+---
+
+### 📄 **DOCUMENTAÇÃO ESTRUTURADA (4 MUDANÇAS)**
+
+- ✅ **Nova página `/admin/releases`** — renderiza `docs/RELEASES.md` com histórico completo
+- ✅ **Separação ROADMAP vs RELEASES** — ROADMAP agora contém apenas o futuro (v0.5.0+), RELEASES contém o passado
+- ✅ **ROADMAP limpo** — removidas versões futuras especulativas (v0.6.0-v0.8.0), foco apenas na v0.5.0
+- ✅ **Link "Releases"** adicionado ao dropdown do header admin com ícone Package
+
+---
+
+### 🤖 **AUTOMAÇÃO (1 MUDANÇA)**
+
+- ✅ **Hook de commit v3** — agora atualiza automaticamente CHANGELOG, RELEASES, ROADMAP e versão do `package.json` a cada commit
+
+---
+
+### 🔍 **FUNCIONALIDADES EXISTENTES NÃO DOCUMENTADAS ANTERIORMENTE**
+
+As seguintes funcionalidades já existiam no código mas nunca foram registradas no changelog:
+
+#### **Busca Global** (`src/components/global-search.tsx`)
+
+- ✅ Componente de busca global com debounce (300ms)
+- ✅ Agrupamento de resultados por tipo (admin, gerente, supervisor, pastor, igreja, transação)
+- ✅ Badges de status traduzidos para pt-BR
+- ✅ Integração com API de busca por role (`/api/v1/{role}/search`)
+
+#### **Quick Profile Modal** (`src/components/ui/quick-profile-modal.tsx`)
+
+- ✅ Modal de perfil rápido do contribuinte
+- ✅ Exibição de hierarquia completa (gerente → região → supervisor → pastor → igrejas)
+- ✅ Resumo financeiro com últimas 10 transações pagas
+- ✅ Badges de role e método de pagamento com cores Videira
+
+#### **Send Message Dialog** (`src/components/ui/send-message-dialog.tsx`)
+
+- ✅ Dialog para envio de mensagens personalizadas
+- ✅ Suporte a Email e WhatsApp via tabs
+- ✅ Integração com API `/api/v1/send-message`
+
+#### **Fraud Alert** (`src/components/ui/fraud-alert.tsx`)
+
+- ✅ Componente de alerta de fraude em perfis de usuários
+- ✅ Níveis de risco (alto/médio/baixo) com cores diferenciadas
+- ✅ Estatísticas de fraude (total, valor, percentual, período)
+- ✅ Lista de transações fraudulentas recentes com link para detalhes
+- ✅ Integração com API `/api/v1/users/{id}/fraud-stats`
+
+#### **Avatar Upload** (`src/components/ui/avatar-upload.tsx`)
+
+- ✅ Componente dedicado de upload de avatar com preview
+- ✅ Verificação de configuração S3 antes do upload
+- ✅ Loading state e feedback visual
+- ✅ Tamanhos configuráveis (sm/md/lg)
+
+#### **Date Range Picker** (`src/components/ui/date-range-picker.tsx`)
+
+- ✅ Picker de período com calendário duplo
+- ✅ Botões Aplicar/Cancelar/Limpar
+- ✅ Locale pt-BR com date-fns
+- ✅ Seleção confirmada apenas no clique de "Aplicar" (evita chamadas desnecessárias à API)
+
+#### **Configuração OpenAI** (`/admin/configuracoes/openai`)
+
+- ✅ Página de configuração de chave da OpenAI para agentes/IA
+
+#### **Sistemas de Backend Não Documentados**
+
+- ✅ **Payment Guard** (`src/lib/payment-guard.ts`) — proteção contra duplicação de pagamentos com janela de tempo configurável
+- ✅ **Notification Dedup** (`src/lib/notification-dedup.ts`) — deduplicação inteligente de notificações com janelas por tipo (1h para pagamentos, 7 dias para boas-vindas, 24h para lembretes)
+- ✅ **Webhook Reconciliation** (`src/lib/webhook-reconciliation.ts`) — reconciliação de estado de transações com retry e backoff exponencial
+- ✅ **Action Logger** (`src/lib/action-logger.ts`) — auditoria de ações de usuários com validação UUID
+- ✅ **Template Engine** (`src/lib/template-engine.ts`) — processamento de templates com variáveis dinâmicas e condicionais, suporte a aliases pt-BR
+- ✅ **Log Sanitizer** (`src/lib/log-sanitizer.ts`) — sanitização automática de dados sensíveis em logs (CPF, cartão, CVV, senhas, tokens)
+- ✅ **Rate Limiter** (`src/lib/rate-limiter.ts`) — rate limiting in-memory com presets por endpoint (login, registro, reset password)
+- ✅ **Env Validator** (`src/lib/env.ts`) — validação centralizada de variáveis de ambiente com Zod e mensagens descritivas
+
+---
+
+### 📝 **ARQUIVOS MODIFICADOS (8 ARQUIVOS)**
+
+- `src/app/admin/_components/sidebar.tsx` (badge de versão)
+- `src/app/admin/_components/header.tsx` (link releases)
+- `src/app/admin/changelog/page.tsx` (versão dinâmica)
+- `src/app/admin/roadmap/page.tsx` (versão dinâmica)
+- `src/app/admin/releases/page.tsx` (nova página)
+- `docs/RELEASES.md` (novo arquivo)
+- `docs/ROADMAP.md` (reestruturado)
+- `.kiro/hooks/commit-agent.kiro.hook` (v3)
+
+---
+
+## [0.4.0] - 2026-02-11 - 🚀 Gateway Bradesco, Performance & Segurança Enterprise
+
+### 🎯 **FOCO: MULTI-GATEWAY, PERFORMANCE E HARDENING DE SEGURANÇA**
+
+Esta versão representa a maior evolução do sistema desde o lançamento, com a integração completa do gateway Bradesco, otimizações massivas de performance com cache Redis, hardening de segurança em todas as camadas e dezenas de melhorias de qualidade de código.
+
+---
+
+### 💳 **NOVO GATEWAY - BRADESCO (7 COMMITS)**
+
+#### **Integração Completa do Gateway Bradesco**
+
+- ✅ **Módulo core** com OAuth 2.0, PIX e Boleto (`src/lib/bradesco.ts`)
+- ✅ **Schema de banco** com tabela `bradesco_logs`, campo `gateway` e `pixKey`
+- ✅ **Endpoints de configuração** e upload de certificado digital
+- ✅ **Webhook** para recebimento de notificações do Bradesco
+- ✅ **Cron sync** para sincronização automática de status de pagamentos
+- ✅ **Roteamento multi-gateway** — rotas de transação adaptadas por role para suportar Cielo + Bradesco
+- ✅ **UI admin atualizada** com componentes de pagamento para o novo gateway
+- ✅ **Spec de integração** documentada (`docs/specs/bradesco`)
+
+**Impacto:** Sistema agora suporta 2 gateways de pagamento (Cielo + Bradesco) com roteamento inteligente.
+
+---
+
+### ⚡ **PERFORMANCE (10 COMMITS)**
+
+#### **Cache Redis em Todas as Camadas**
+
+- ✅ **Cache Redis nas rotas de listagem** admin (supervisores, pastores, igrejas, transações)
+- ✅ **Invalidação de cache** nas rotas de mutação por ID
+- ✅ **Cache em relatórios** — queries otimizadas com Redis
+- ✅ **Cache em insights** do dashboard com remoção de logs de debug
+- ✅ **Invalidação de cache de membresia** em mutações de usuários
+- ✅ **Cache em transações** — invalidação ao alterar status
+
+#### **Otimizações de Queries**
+
+- ✅ **`.limit()` em todas as queries** de registro único
+- ✅ **Otimização N+1** em exports de relatórios
+- ✅ **Paralelização de queries** no dashboard admin e quick-profile
+- ✅ **Batch query** no relatório de inadimplentes
+- ✅ **Centralização Redis** em singleton (`src/lib/redis.ts`)
+
+**Impacto:** Redução significativa no tempo de resposta das APIs e carga no banco de dados.
+
+---
+
+### 🔒 **SEGURANÇA (12 COMMITS)**
+
+#### **Headers e Middleware**
+
+- ✅ **CSP, HSTS e Permissions-Policy** adicionados ao middleware
+- ✅ **ViaCEP e BrasilAPI** adicionados ao CSP connect-src
+- ✅ **HTTPS enforcement** ativado no middleware
+- ✅ **Rate limiting e validação Zod** em endpoints públicos
+
+#### **Autenticação e Dados**
+
+- ✅ **Melhoria na segurança de autenticação** e geração de senhas
+- ✅ **Auth e remoção de dados sensíveis** de rotas expostas
+- ✅ **Timeout com AbortController** em chamadas externas (Edge Runtime compatible)
+- ✅ **Resiliência Redis** — dedup e lock distribuído em crons de notificação
+
+#### **Sanitização e Logs**
+
+- ✅ **Sanitização de logs** — remoção de catch vazios e uso de `env.ts` centralizado
+- ✅ **Remoção de console.log** de debug em APIs
+- ✅ **Action-logger** — entityId opcional com validação UUID
+
+**Impacto:** Sistema hardened para produção com proteção em todas as camadas.
+
+---
+
+### ♻️ **REFATORAÇÕES (10 COMMITS)**
+
+- ✅ **Componentes PageHeader e PaginationControls** extraídos e reutilizáveis
+- ✅ **Headers e paginação inline** substituídos pelos componentes extraídos
+- ✅ **Phone-input** migrado de react-phone-input-2 para componente interno
+- ✅ **getCompanyId** movido para `company.ts`
+- ✅ **Transação atômica** no seed, bootstrap e webhooks SNS
+- ✅ **Relatórios** — lógica de negócio extraída para camada de serviço
+- ✅ **Notificações** — transação atômica e JOIN no módulo
+- ✅ **Auth** — transações atômicas no registro de pastor e igreja
+- ✅ **Middleware** — HTTPS enforcement e log de falhas do maintenance check
+
+**Impacto:** Código mais limpo, modular e manutenível.
+
+---
+
+### ✨ **NOVAS FUNCIONALIDADES (8 COMMITS)**
+
+- ✅ **Persistência de tema** dark/light no localStorage
+- ✅ **Relatórios com paginação server-side** no frontend
+- ✅ **Infraestrutura de schemas Zod** para relatórios com tipos e testes
+- ✅ **Invalidação de cache de membresia** em mutações de usuários
+- ✅ **Resiliência completa** — fase 4 (tarefas 22-26)
+- ✅ **Performance** — fase 3 (tarefas 16-21)
+- ✅ **Segurança** — fase 2 (tarefas 10-15)
+- ✅ **Validação de env** no startup com Zod em 40+ arquivos
+
+---
+
+### 🐛 **CORREÇÕES DE BUGS (14 COMMITS)**
+
+- ✅ **Formatadores de CPF, CNPJ e CEP** — ordem do slice corrigida
+- ✅ **Dashboard admin** — melhorias de acessibilidade e responsividade
+- ✅ **Build** — remoção de logs informativos que poluíam output
+- ✅ **Lint** — desabilitação de no-extra-semi que conflitava com Prettier
+- ✅ **Config** — endOfLine lf no Prettier
+- ✅ **Quick-profile** — remoção de colunas inexistentes dos selects
+- ✅ **Cache** — invalidação ao alterar transações
+- ✅ **Vercel** — remoção de cron bradesco-sync incompatível com plano Hobby
+- ✅ **ESLint** — correção de todos os 14 warnings
+- ✅ **Tipos any** — substituídos por SessionUser em rotas de pastor, supervisor e igreja
+
+---
+
+### 📚 **DOCUMENTAÇÃO E INFRA (6 COMMITS)**
+
+- ✅ **Spec de integração Bradesco** completa
+- ✅ **Relatório de auditoria** e spec de produção
+- ✅ **Spec de melhorias** nos relatórios financeiros
+- ✅ **Reorganização da documentação** em subpastas temáticas
+- ✅ **Steering e hooks** atualizados para desenvolvimento com IA
+- ✅ **Typecheck adicionado** ao pre-commit hook (Husky)
+
+---
+
+### 🔧 **MELHORIAS TÉCNICAS**
+
+- ✅ **Logging estruturado** implementado em todo o sistema
+- ✅ **Tipos SessionUser e SmtpTransporter** adicionados
+- ✅ **Validação de variáveis de ambiente** com Zod centralizado
+- ✅ **Componentes de layout** não utilizados removidos
+- ✅ **drizzle-kit** atualizado para 0.31.9
+- ✅ **Hook de production readiness check** adicionado
+
+---
+
+### 📊 **ESTATÍSTICAS DA VERSÃO 0.4.0**
+
+| Métrica                          | Valor                |
+| -------------------------------- | -------------------- |
+| **Commits desde v0.3.0**         | 95                   |
+| **Novas funcionalidades (feat)** | 61                   |
+| **Correções (fix)**              | 14                   |
+| **Refatorações (refactor)**      | 10                   |
+| **Performance (perf)**           | 7                    |
+| **Documentação (docs)**          | 4                    |
+| **Gateways de pagamento**        | 2 (Cielo + Bradesco) |
+| **TypeCheck errors**             | 0 ✅                 |
+| **Linter errors**                | 0 ✅                 |
+
+---
+
+### 📝 **ARQUIVOS MODIFICADOS (PRINCIPAIS)**
+
+**Novo Gateway Bradesco:**
+
+- `src/lib/bradesco.ts` (novo)
+- `src/lib/bradesco-logger.ts` (novo)
+- `src/db/schema.ts` (campo gateway, pixKey, tabela bradesco_logs)
+- `src/app/admin/gateways/bradesco/page.tsx` (novo)
+- `src/app/api/v1/gateways/bradesco/` (novos endpoints)
+- `src/app/api/v1/webhooks/bradesco/` (novo webhook)
+- `src/app/api/cron/bradesco-sync/` (novo cron)
+
+**Performance e Cache:**
+
+- `src/lib/redis.ts` (singleton)
+- `src/lib/cache.ts` (melhorias)
+- `src/lib/config-cache.ts` (melhorias)
+- Múltiplas rotas API com cache Redis
+
+**Segurança:**
+
+- `src/middleware.ts` (CSP, HSTS, rate limiting)
+- `src/lib/env.ts` (validação Zod centralizada)
+- `src/lib/rate-limiter.ts` (melhorias)
+
+**Componentes Reutilizáveis:**
+
+- `src/app/admin/_components/PageHeader.tsx` (novo)
+- `src/app/admin/_components/PaginationControls.tsx` (novo)
+- `src/components/ui/phone-input.tsx` (refatorado)
+
+---
+
 ## [0.3.0] - 2025-11-06 - 🐛 Estabilidade Total & Correção de Bugs Críticos
 
 ### 🎯 **FOCO: QUALIDADE E CONFIABILIDADE**
