@@ -56,8 +56,18 @@
 
 ## 📌 Status
 
-| Versão | Status       | Previsão |
-| ------ | ------------ | -------- |
-| v0.5.0 | 📋 Planejada | Q2 2026  |
+| Versão  | Status       | Previsão   |
+| ------- | ------------ | ---------- |
+| v0.11.0 | ✅ Concluída | 11/02/2026 |
+| v0.5.0  | 📋 Planejada | Q2 2026    |
+
+### ✅ Itens Concluídos (v0.11.0)
+
+- ✅ Refatoração de páginas admin concluída
+- ✅ Índices de performance implementados (30+ índices)
+- ✅ Tradução PT-BR completa (interface 100%)
+- ✅ Sistema de autenticação com helpers (requireRole, requireAdmin, etc.)
+- ✅ Scripts de gerenciamento de índices
+- ✅ Documentação de refatoração admin
 
 _Última atualização: 11 de Fevereiro de 2026_

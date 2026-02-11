@@ -4,6 +4,50 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.11.0] - 2026-02-11 - Refatoração Admin + Performance + I18n
+
+### ✨ Novas Funcionalidades
+
+- Sistema de helpers de autenticação (requireRole, requireAdmin, etc.)
+- Tradução completa da interface para português brasileiro
+- Relatório detalhado de traduções aplicadas
+
+### ♻️ Refatorações
+
+- Modularização completa das páginas de gerenciamento admin
+- Extração de componentes reutilizáveis para gerentes, igrejas, pastores e supervisores
+- Redução de ~4.400 linhas de código através de componentização
+
+### ⚡ Performance
+
+- Adição de 30+ índices no banco de dados
+- Otimização de queries em users, sessions, profiles, regions, churches e transactions
+- Melhoria esperada de 40-60% em queries de listagem
+- Scripts automatizados para aplicação e validação de índices
+
+### 🎨 Melhorias de UI/UX
+
+- Textos de acessibilidade (sr-only) traduzidos para PT-BR
+- Placeholders e labels em português
+- Mapeamento de labels dinâmicos de notificações
+- Melhor experiência para usuários com leitores de tela
+
+### 🔧 Melhorias Técnicas
+
+- Remoção de hooks Kiro obsoletos
+- Atualização de configurações do VSCode
+- Documentação de plano de refatoração admin
+- Scripts de gerenciamento de índices do banco
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 42 arquivos modificados
+- 810 inserções, 4.417 deleções
+- 4 arquivos deletados
+- 15+ novos componentes criados
+
+---
+
 ## [0.10.0] - 2026-02-11 - ⚡ Rate Limiting com Fallback em Memória
 
 ### 🎯 **FOCO: RESILIÊNCIA E ALTA DISPONIBILIDADE**

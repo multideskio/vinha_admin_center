@@ -4,6 +4,46 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.11.0 - Refatoração Admin + Performance + I18n (Fevereiro 2026)
+
+### ⚡ Performance
+
+- **Índices de Banco:** 30+ índices adicionados para otimização de queries
+- **Melhoria Esperada:** 40-60% mais rápido em listagens e buscas
+- **Scripts Automatizados:** Ferramentas para aplicar e validar índices
+- **Otimização:** users, sessions, profiles, regions, churches, transactions
+
+### ✨ Funcionalidades
+
+- **Sistema de Autenticação:** Helpers centralizados (requireRole, requireAdmin, etc.)
+- **Internacionalização:** Interface 100% em português brasileiro
+- **Acessibilidade:** Textos de leitores de tela traduzidos
+- **CORS Headers:** Adicionados em todas as API routes
+
+### ♻️ Refatoração
+
+- **Arquitetura Modular:** Páginas admin refatoradas em componentes reutilizáveis
+- **Redução de Código:** ~4.400 linhas removidas através de componentização
+- **Manutenibilidade:** Código mais limpo e testável
+- **Componentes Criados:** 15+ novos componentes modulares
+
+### 📚 Documentação
+
+- Relatório completo de traduções PT-BR
+- Plano de refatoração admin documentado
+- Scripts de gerenciamento de índices
+- JSDoc completo nos helpers de autenticação
+
+### 📊 Métricas
+
+- Arquivos modificados: 42
+- Linhas removidas: 4.417
+- Linhas adicionadas: 810
+- Componentes novos: 15+
+- Índices criados: 30+
+
+---
+
 ## v0.10.0 - Rate Limiting com Fallback em Memória (Fevereiro 2026)
 
 ### ⚡ Resiliência e Alta Disponibilidade
