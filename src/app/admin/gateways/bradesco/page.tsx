@@ -4,7 +4,19 @@ import * as React from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Upload, Loader2, CreditCard, ChevronLeft, Save } from 'lucide-react'
+import {
+  Upload,
+  Loader2,
+  CreditCard,
+  ChevronLeft,
+  Save,
+  Copy,
+  Check,
+  ShieldCheck,
+  Download,
+  KeyRound,
+  Wifi,
+} from 'lucide-react'
 import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
@@ -31,15 +43,25 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 const bradescoGatewaySchema = z.object({
   isActive: z.boolean().default(false),
-  environment: z.enum(['production', 'development']),
+  environment: z.enum(['production', 'development', 'sandbox']),
   prodClientId: z.string().optional().nullable(),
   prodClientSecret: z.string().optional().nullable(),
   devClientId: z.string().optional().nullable(),
   devClientSecret: z.string().optional().nullable(),
   certificatePassword: z.string().optional().nullable(),
+  pixKey: z.string().optional().nullable(),
 })
 
 type BradescoGatewayValues = z.infer<typeof bradescoGatewaySchema>
@@ -48,8 +70,153 @@ export default function BradescoGatewayPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
+  const [isTesting, setIsTesting] = React.useState(false)
   const [isUploading, setIsUploading] = React.useState(false)
   const [certificateFile, setCertificateFile] = React.useState<string | null>(null)
+  const [certificateBase64, setCertificateBase64] = React.useState<string | null>(null)
+  const [copied, setCopied] = React.useState(false)
+  const [certDialogOpen, setCertDialogOpen] = React.useState(false)
+  const [isGeneratingCert, setIsGeneratingCert] = React.useState(false)
+  const [certCommonName, setCertCommonName] = React.useState('')
+  const [certCnpj, setCertCnpj] = React.useState('')
+  const [certOrganization, setCertOrganization] = React.useState('')
+  const [certPassword, setCertPassword] = React.useState('')
+  const [certValidityDays, setCertValidityDays] = React.useState(365)
+
+  interface CertInfo {
+    subject: string
+    organization: string
+    cnpj: string
+    serialNumber: string
+    validFrom: string
+    validTo: string
+    algorithm: string
+    type: string
+  }
+
+  interface GeneratedCertResult {
+    certInfo: CertInfo
+    pfxBase64: string
+    certPem: string
+    keyPem: string
+  }
+
+  const [generatedCertResult, setGeneratedCertResult] = React.useState<GeneratedCertResult | null>(
+    null,
+  )
+
+  const webhookUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/bradesco` : ''
+
+  const handleCopyWebhook = () => {
+    navigator.clipboard.writeText(webhookUrl)
+    setCopied(true)
+    toast({ title: 'Copiado!', description: 'URL do webhook copiada.' })
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleGenerateCert = async () => {
+    if (!certCommonName || !certCnpj || !certOrganization || !certPassword) {
+      toast({
+        title: 'Erro',
+        description: 'Preencha todos os campos obrigatórios.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const cnpjClean = certCnpj.replace(/\D/g, '')
+    if (cnpjClean.length !== 14) {
+      toast({
+        title: 'Erro',
+        description: 'CNPJ deve ter 14 dígitos.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (certPassword.length < 4) {
+      toast({
+        title: 'Erro',
+        description: 'A senha deve ter no mínimo 4 caracteres.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsGeneratingCert(true)
+    setGeneratedCertResult(null)
+    try {
+      const response = await fetch('/api/v1/gateways/bradesco/generate-cert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commonName: certCommonName,
+          cnpj: certCnpj,
+          organization: certOrganization,
+          password: certPassword,
+          validityDays: certValidityDays,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Falha ao gerar certificado.')
+      }
+
+      const result = await response.json()
+
+      // Aplicar o certificado gerado diretamente nos campos do formulário
+      setCertificateBase64(result.pfxBase64)
+      const filePrefix = certCommonName.replace(/\s+/g, '-').toLowerCase()
+      setCertificateFile(`${filePrefix}.pfx`)
+      form.setValue('certificatePassword', certPassword)
+      setGeneratedCertResult({
+        certInfo: result.certInfo,
+        pfxBase64: result.pfxBase64,
+        certPem: result.certPem,
+        keyPem: result.keyPem,
+      })
+
+      toast({
+        title: 'Certificado gerado!',
+        description: 'Baixe os arquivos e faça upload do .pem no portal Bradesco.',
+        variant: 'success',
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsGeneratingCert(false)
+    }
+  }
+
+  const downloadFile = (
+    content: string,
+    filename: string,
+    mimeType: string,
+    isBase64Binary = false,
+  ) => {
+    let blob: Blob
+    if (isBase64Binary) {
+      const binaryString = atob(content)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      blob = new Blob([bytes], { type: mimeType })
+    } else {
+      blob = new Blob([content], { type: mimeType })
+    }
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   const form = useForm<BradescoGatewayValues>({
     resolver: zodResolver(bradescoGatewaySchema),
@@ -61,6 +228,7 @@ export default function BradescoGatewayPage() {
       devClientId: '',
       devClientSecret: '',
       certificatePassword: '',
+      pixKey: '',
     },
   })
 
@@ -92,25 +260,16 @@ export default function BradescoGatewayPage() {
 
     setIsUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', 'certificates')
-
-      const response = await fetch('/api/v1/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Falha ao fazer upload do certificado.')
-      }
-
-      await response.json()
+      // Converter arquivo para base64 para salvar diretamente no banco
+      const arrayBuffer = await file.arrayBuffer()
+      const base64 = btoa(
+        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''),
+      )
+      setCertificateBase64(base64)
       setCertificateFile(file.name)
       toast({
         title: 'Sucesso!',
-        description: 'Certificado enviado com sucesso.',
+        description: 'Certificado carregado com sucesso.',
         variant: 'success',
       })
     } catch (error) {
@@ -134,7 +293,15 @@ export default function BradescoGatewayPage() {
         devClientId: data.config.devClientId ?? '',
         devClientSecret: data.config.devClientSecret ?? '',
         certificatePassword: data.config.certificatePassword ?? '',
+        pixKey: data.config.pixKey ?? '',
       })
+      // Se já existe certificado salvo, indicar no estado
+      if (data.config.hasCertificate) {
+        setCertificateFile('Certificado já cadastrado')
+        // Não recebemos o base64 do backend por segurança — manter null
+        // O certificateBase64 só será preenchido quando o usuário fizer novo upload
+        setCertificateBase64('existing')
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -146,6 +313,36 @@ export default function BradescoGatewayPage() {
   React.useEffect(() => {
     fetchConfig()
   }, [fetchConfig])
+
+  const handleTestConnection = async () => {
+    setIsTesting(true)
+    try {
+      const response = await fetch('/api/v1/gateways/bradesco/test-connection', {
+        method: 'POST',
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        const tokenInfo = data.details.tokenPreview ? ` Token: ${data.details.tokenPreview}` : ''
+        toast({
+          title: 'Conexão OK!',
+          description: `Token obtido em ${data.details.responseTimeMs}ms (${data.details.environment}). Expira em ${data.details.expiresIn}s.${tokenInfo}`,
+          variant: 'success',
+        })
+      } else {
+        toast({
+          title: 'Falha na conexão',
+          description: data.error || data.message,
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
+    } finally {
+      setIsTesting(false)
+    }
+  }
 
   const onSubmit = async (data: BradescoGatewayValues) => {
     setIsSaving(true)
@@ -163,13 +360,45 @@ export default function BradescoGatewayPage() {
         }
       }
 
-      // Validação adicional para ambiente de desenvolvimento
-      if (data.environment === 'development' && data.isActive) {
+      // Validação adicional para ambiente de desenvolvimento ou sandbox
+      if ((data.environment === 'development' || data.environment === 'sandbox') && data.isActive) {
         if (!data.devClientId || !data.devClientSecret) {
           toast({
             title: 'Erro',
             description:
-              'Credenciais de desenvolvimento são obrigatórias para ativar em desenvolvimento.',
+              'Credenciais de desenvolvimento são obrigatórias para ativar em desenvolvimento/sandbox.',
+            variant: 'destructive',
+          })
+          setIsSaving(false)
+          return
+        }
+      }
+
+      // Validação do certificado digital ao ativar
+      if (data.isActive) {
+        if (!certificateBase64) {
+          toast({
+            title: 'Erro',
+            description:
+              'O certificado digital (.pfx ou .pem) é obrigatório para ativar o gateway.',
+            variant: 'destructive',
+          })
+          setIsSaving(false)
+          return
+        }
+        if (!data.certificatePassword) {
+          toast({
+            title: 'Erro',
+            description: 'A senha do certificado é obrigatória para ativar o gateway.',
+            variant: 'destructive',
+          })
+          setIsSaving(false)
+          return
+        }
+        if (!data.pixKey) {
+          toast({
+            title: 'Erro',
+            description: 'A chave PIX do recebedor é obrigatória para ativar o gateway.',
             variant: 'destructive',
           })
           setIsSaving(false)
@@ -180,7 +409,12 @@ export default function BradescoGatewayPage() {
       const response = await fetch('/api/v1/gateways/bradesco', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          // Só enviar certificado se for um novo upload (não o marcador 'existing')
+          certificate:
+            certificateBase64 && certificateBase64 !== 'existing' ? certificateBase64 : undefined,
+        }),
       })
 
       if (!response.ok) {
@@ -308,7 +542,8 @@ export default function BradescoGatewayPage() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="production">Produção</SelectItem>
-                        <SelectItem value="development">Desenvolvimento</SelectItem>
+                        <SelectItem value="development">Desenvolvimento (Homologação)</SelectItem>
+                        <SelectItem value="sandbox">Sandbox</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>Selecione o ambiente para as credenciais.</FormDescription>
@@ -403,6 +638,254 @@ export default function BradescoGatewayPage() {
 
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Certificado Digital</h3>
+
+                {/* Gerador de Certificado Auto-Assinado */}
+                <div className="rounded-lg border border-dashed border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                      <KeyRound className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                        Certificado Auto-Assinado (Dev/Homologação)
+                      </h4>
+                      <p className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-1">
+                        Para ambientes de desenvolvimento e homologação, o Bradesco aceita
+                        certificados auto-assinados. Gere um aqui ou faça upload de um existente.
+                        Para produção, use um certificado ICP-Brasil tipo A1.
+                      </p>
+                      <Dialog open={certDialogOpen} onOpenChange={setCertDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 border-amber-500/50 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/40"
+                          >
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Gerar Certificado Auto-Assinado
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <ShieldCheck className="h-5 w-5 text-amber-600" />
+                              {generatedCertResult
+                                ? 'Certificado Gerado'
+                                : 'Gerar Certificado Auto-Assinado'}
+                            </DialogTitle>
+                            {!generatedCertResult && (
+                              <DialogDescription>
+                                Preencha os dados para gerar o certificado para o ambiente
+                                sandbox/homologação do Bradesco.
+                              </DialogDescription>
+                            )}
+                          </DialogHeader>
+
+                          {/* Etapa 1: Formulário */}
+                          {!generatedCertResult && (
+                            <div className="space-y-3 py-1">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="cert-cn">Razão Social</Label>
+                                <Input
+                                  id="cert-cn"
+                                  placeholder="Ex: Minha Empresa LTDA"
+                                  value={certCommonName}
+                                  onChange={(e) => setCertCommonName(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="cert-cnpj">CNPJ</Label>
+                                <Input
+                                  id="cert-cnpj"
+                                  placeholder="00.000.000/0000-00"
+                                  value={certCnpj}
+                                  onChange={(e) => setCertCnpj(e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  CN gerado no formato RAZÃOSOCIAL:CNPJ (exigido pelo Bradesco)
+                                </p>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="cert-org">Organização</Label>
+                                <Input
+                                  id="cert-org"
+                                  placeholder="Ex: Minha Empresa LTDA"
+                                  value={certOrganization}
+                                  onChange={(e) => setCertOrganization(e.target.value)}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                  <Label htmlFor="cert-password">Senha (.pfx)</Label>
+                                  <Input
+                                    id="cert-password"
+                                    type="password"
+                                    placeholder="Mín. 4 caracteres"
+                                    value={certPassword}
+                                    onChange={(e) => setCertPassword(e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label htmlFor="cert-validity">Validade (dias)</Label>
+                                  <Input
+                                    id="cert-validity"
+                                    type="number"
+                                    min={30}
+                                    max={1095}
+                                    value={certValidityDays}
+                                    onChange={(e) => setCertValidityDays(Number(e.target.value))}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Etapa 2: Resultado e Downloads */}
+                          {generatedCertResult && (
+                            <div className="space-y-4 py-1">
+                              <div className="rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 space-y-1.5">
+                                <p className="text-sm font-semibold text-green-700 dark:text-green-400 flex items-center gap-1.5">
+                                  <Check className="h-4 w-4" /> Certificado gerado com sucesso
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-500">
+                                  CN: {generatedCertResult.certInfo.subject}
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-500">
+                                  Válido até:{' '}
+                                  {new Date(
+                                    generatedCertResult.certInfo.validTo,
+                                  ).toLocaleDateString('pt-BR')}
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-500">
+                                  RSA 2048 / SHA-256 — Aplicado ao formulário automaticamente
+                                </p>
+                              </div>
+
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium">Baixar arquivos:</p>
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="justify-start border-amber-300 dark:border-amber-700"
+                                    onClick={() =>
+                                      downloadFile(
+                                        generatedCertResult.certPem,
+                                        `${certCommonName.replace(/\s+/g, '-').toLowerCase()}.cert.pem`,
+                                        'application/x-pem-file',
+                                      )
+                                    }
+                                  >
+                                    <Download className="mr-2 h-4 w-4 text-amber-600" />
+                                    <span>
+                                      .cert.pem{' '}
+                                      <span className="text-xs text-muted-foreground ml-1">
+                                        — upload no portal Bradesco
+                                      </span>
+                                    </span>
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="justify-start"
+                                    onClick={() =>
+                                      downloadFile(
+                                        generatedCertResult.pfxBase64,
+                                        `${certCommonName.replace(/\s+/g, '-').toLowerCase()}.pfx`,
+                                        'application/x-pkcs12',
+                                        true,
+                                      )
+                                    }
+                                  >
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>
+                                      .pfx{' '}
+                                      <span className="text-xs text-muted-foreground ml-1">
+                                        — aplicação mTLS (backup)
+                                      </span>
+                                    </span>
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="justify-start"
+                                    onClick={() =>
+                                      downloadFile(
+                                        generatedCertResult.keyPem,
+                                        `${certCommonName.replace(/\s+/g, '-').toLowerCase()}.key.pem`,
+                                        'application/x-pem-file',
+                                      )
+                                    }
+                                  >
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>
+                                      .key.pem{' '}
+                                      <span className="text-xs text-muted-foreground ml-1">
+                                        — chave privada (guardar seguro)
+                                      </span>
+                                    </span>
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <p className="text-xs text-amber-600 dark:text-amber-400">
+                                Faça upload do .cert.pem no portal Bradesco Developers (passo 6 —
+                                Solicitar Credencial) para gerar client_id e client_secret.
+                              </p>
+                            </div>
+                          )}
+
+                          <DialogFooter>
+                            {generatedCertResult ? (
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  setCertDialogOpen(false)
+                                  setGeneratedCertResult(null)
+                                }}
+                              >
+                                Concluir
+                              </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setCertDialogOpen(false)}
+                                >
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  type="button"
+                                  onClick={handleGenerateCert}
+                                  disabled={isGeneratingCert}
+                                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                                >
+                                  {isGeneratingCert ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Gerando...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ShieldCheck className="mr-2 h-4 w-4" />
+                                      Gerar Certificado
+                                    </>
+                                  )}
+                                </Button>
+                              </>
+                            )}
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                </div>
+
                 <FormItem>
                   <FormLabel>Arquivo do Certificado (.pfx, .pem)</FormLabel>
                   <FormControl>
@@ -466,7 +949,68 @@ export default function BradescoGatewayPage() {
                 />
               </div>
 
-              <div className="flex justify-end">
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Chave PIX do Recebedor</h3>
+                <FormField
+                  control={form.control}
+                  name="pixKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chave PIX</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="CNPJ, e-mail, telefone ou chave aleatória (EVP)"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Chave PIX cadastrada no Bradesco para receber os pagamentos.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="rounded-lg border p-4 bg-muted/50">
+                <h3 className="text-sm font-medium mb-2">URL do Webhook</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Configure esta URL no painel do Bradesco para receber notificações automáticas de
+                  pagamento (PIX e Boleto).
+                </p>
+                <div className="flex gap-2">
+                  <Input value={webhookUrl} readOnly className="font-mono text-xs" />
+                  <Button type="button" variant="outline" size="icon" onClick={handleCopyWebhook}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isTesting || isSaving}
+                  onClick={handleTestConnection}
+                  className="font-semibold"
+                >
+                  {isTesting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Testando...
+                    </>
+                  ) : (
+                    <>
+                      <Wifi className="mr-2 h-4 w-4" />
+                      Testar Conexão
+                    </>
+                  )}
+                </Button>
                 <Button
                   type="submit"
                   disabled={isSaving}

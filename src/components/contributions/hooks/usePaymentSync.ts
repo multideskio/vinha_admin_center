@@ -34,11 +34,12 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
       devLog(`Checking payment status for transaction: ${transactionId}`)
 
       const res = await fetch(`/api/v1/transacoes/${transactionId}`)
-      const data = await res.json()
+      const data: { transaction?: { status?: string } } = await res.json()
 
-      devLog('Payment status response:', { status: data.transaction?.Payment?.Status })
+      devLog('Payment status response:', { status: data.transaction?.status })
 
-      if (data.transaction?.Payment?.Status === 2) {
+      // Verifica status normalizado (funciona para Cielo e Bradesco)
+      if (data.transaction?.status === 'approved') {
         devLog('Payment confirmed!')
         onSuccess()
         return true
@@ -157,9 +158,9 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
         devLog(`Manual check attempt ${attempts + 1}/${maxAttempts}`)
 
         const res = await fetch(`/api/v1/transacoes/${transactionId}`)
-        const data = await res.json()
+        const data: { transaction?: { status?: string } } = await res.json()
 
-        if (data.transaction?.Payment?.Status === 2) {
+        if (data.transaction?.status === 'approved') {
           devLog('Manual check: Payment confirmed!')
           onSuccess()
 
@@ -183,7 +184,7 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
       toast({
         title: 'Ainda Pendente',
         description:
-          'Pagamento ainda não foi confirmado pela Cielo. Aguarde alguns instantes e tente novamente.',
+          'Pagamento ainda não foi confirmado. Aguarde alguns instantes e tente novamente.',
         variant: 'default',
       })
     } catch (error) {
@@ -193,7 +194,7 @@ export default function usePaymentSync(options: UsePaymentSyncOptions): UsePayme
       toast({
         title: 'Erro na Verificação',
         description:
-          'Problema temporário na consulta à Cielo. Tente novamente em alguns instantes.',
+          'Problema temporário na consulta ao gateway. Tente novamente em alguns instantes.',
         variant: 'destructive',
       })
 

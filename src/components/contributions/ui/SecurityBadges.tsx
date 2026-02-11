@@ -7,6 +7,23 @@ import { cn } from '@/lib/utils'
 import { SecurityBadgesProps } from '../types'
 
 export default function SecurityBadges({ className }: SecurityBadgesProps) {
+  const [gateway, setGateway] = React.useState<string>('')
+
+  React.useEffect(() => {
+    const fetchGateway = async () => {
+      try {
+        const response = await fetch('/api/v1/payment-methods')
+        if (response.ok) {
+          const data: { gateway?: string } = await response.json()
+          setGateway(data.gateway || '')
+        }
+      } catch (error) {
+        console.error('Failed to fetch gateway info:', error)
+      }
+    }
+    fetchGateway()
+  }, [])
+
   return (
     <div
       className={cn(
@@ -39,12 +56,12 @@ export default function SecurityBadges({ className }: SecurityBadgesProps) {
           <span className="font-medium">PCI Compliant</span>
         </div>
 
-        {/* Cielo Gateway Badge */}
+        {/* Gateway Badge — dinâmico */}
         <div className="flex items-center gap-1 text-purple-700 dark:text-purple-300">
           <div className="h-4 w-4 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">
-            C
+            {gateway === 'Bradesco' ? 'B' : 'C'}
           </div>
-          <span className="font-medium">Gateway Cielo</span>
+          <span className="font-medium">Gateway {gateway || 'Pagamento'}</span>
         </div>
       </div>
 

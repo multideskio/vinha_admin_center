@@ -32,6 +32,7 @@ import { PIX_COUNTDOWN_SECONDS } from './types'
 export default function ContributionForm({ onSuccess, onError, className }: ContributionFormProps) {
   const [availablePaymentMethods, setAvailablePaymentMethods] = React.useState<string[]>([])
   const [isLoadingMethods, setIsLoadingMethods] = React.useState(true)
+  const [activeGateway, setActiveGateway] = React.useState<string>('')
 
   // Busca métodos disponíveis no mount
   React.useEffect(() => {
@@ -39,8 +40,9 @@ export default function ContributionForm({ onSuccess, onError, className }: Cont
       try {
         const response = await fetch('/api/v1/payment-methods')
         if (response.ok) {
-          const data = await response.json()
+          const data: { methods?: string[]; gateway?: string } = await response.json()
           setAvailablePaymentMethods(data.methods || [])
+          setActiveGateway(data.gateway || '')
         }
       } catch (error) {
         console.error('Failed to fetch payment methods:', error)
@@ -375,11 +377,11 @@ export default function ContributionForm({ onSuccess, onError, className }: Cont
               <div className="flex flex-col items-center gap-2 p-3 bg-white/50 dark:bg-black/20 rounded-xl backdrop-blur-sm">
                 <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
                   <div className="h-5 w-5 bg-gradient-to-br from-purple-600 to-purple-700 rounded text-white text-sm flex items-center justify-center font-black">
-                    C
+                    {activeGateway === 'Bradesco' ? 'B' : 'C'}
                   </div>
                 </div>
                 <span className="text-xs font-bold text-purple-700 dark:text-purple-300">
-                  Cielo
+                  {activeGateway || 'Gateway'}
                 </span>
               </div>
             </div>
@@ -436,7 +438,7 @@ export default function ContributionForm({ onSuccess, onError, className }: Cont
                 <span className="font-medium">SSL 256-bit</span>
               </div>
               <span>•</span>
-              <span className="font-medium">Cielo Gateway</span>
+              <span className="font-medium">{activeGateway || 'Gateway'} Gateway</span>
             </div>
           </div>
         </div>
