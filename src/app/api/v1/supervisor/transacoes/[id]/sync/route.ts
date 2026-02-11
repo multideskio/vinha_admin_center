@@ -18,6 +18,7 @@ import { eq } from 'drizzle-orm'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
+import { queryBradescoPixPayment, queryBradescoBoletoPayment } from '@/lib/bradesco'
 import { SessionUser } from '@/lib/types'
 
 async function getCieloCredentials(): Promise<{
@@ -168,59 +169,83 @@ export async function POST(
       )
     }
 
-    // Buscar credenciais da Cielo
-    const credentials = await getCieloCredentials()
+    // Sincronizar com o gateway correto
+    let newStatus: 'approved' | 'pending' | 'refused' | 'refunded' = 'pending'
 
-    // Consultar status na Cielo
-    const cieloController = new AbortController()
-    const cieloTimeoutId = setTimeout(() => cieloController.abort(), 15_000)
-    let response: Response
-    try {
-      response = await fetch(`${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          MerchantId: credentials.merchantId || '',
-          MerchantKey: credentials.merchantKey || '',
-        },
-        signal: cieloController.signal,
-      })
-      clearTimeout(cieloTimeoutId)
-    } catch (fetchError) {
-      clearTimeout(cieloTimeoutId)
-      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error('[CIELO_TIMEOUT] Timeout ao sincronizar transação com Cielo', {
+    if (transaction.gateway === 'Bradesco') {
+      // Consultar status no Bradesco
+      if (transaction.paymentMethod === 'pix') {
+        const bradescoResponse = await queryBradescoPixPayment(transaction.gatewayTransactionId)
+        if (bradescoResponse.status === 'CONCLUIDA') newStatus = 'approved'
+        else if (
+          bradescoResponse.status === 'REMOVIDA_PELO_USUARIO_RECEBEDOR' ||
+          bradescoResponse.status === 'REMOVIDA_PELO_PSP'
+        )
+          newStatus = 'refused'
+      } else if (transaction.paymentMethod === 'boleto') {
+        const bradescoResponse = await queryBradescoBoletoPayment(transaction.gatewayTransactionId)
+        if (bradescoResponse.status === 'pago') newStatus = 'approved'
+        else if (bradescoResponse.status === 'vencido' || bradescoResponse.status === 'cancelado')
+          newStatus = 'refused'
+      }
+    } else {
+      // Consultar status na Cielo
+      const credentials = await getCieloCredentials()
+
+      const cieloController = new AbortController()
+      const cieloTimeoutId = setTimeout(() => cieloController.abort(), 15_000)
+      let response: Response
+      try {
+        response = await fetch(
+          `${credentials.apiUrl}/1/sales/${transaction.gatewayTransactionId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              MerchantId: credentials.merchantId || '',
+              MerchantKey: credentials.merchantKey || '',
+            },
+            signal: cieloController.signal,
+          },
+        )
+        clearTimeout(cieloTimeoutId)
+      } catch (fetchError) {
+        clearTimeout(cieloTimeoutId)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.error('[CIELO_TIMEOUT] Timeout ao sincronizar transação com Cielo', {
+            transactionId: id,
+          })
+          return NextResponse.json(
+            { error: 'Timeout ao comunicar com a Cielo. Tente novamente.' },
+            { status: 504 },
+          )
+        }
+        throw fetchError
+      }
+
+      if (!response.ok) {
+        console.error('[SUPERVISOR_TRANSACOES_SYNC_GATEWAY_ERROR]', {
+          supervisorId: sessionUser.id,
           transactionId: id,
+          gateway: 'Cielo',
+          status: response.status,
+          statusText: response.statusText,
+          timestamp: new Date().toISOString(),
         })
-        return NextResponse.json(
-          { error: 'Timeout ao comunicar com a Cielo. Tente novamente.' },
-          { status: 504 },
-        )
-      }
-      throw fetchError
-    }
 
-    if (!response.ok) {
-      console.error('[SUPERVISOR_TRANSACOES_SYNC_CIELO_ERROR]', {
-        supervisorId: sessionUser.id,
-        transactionId: id,
-        status: response.status,
-        statusText: response.statusText,
-        timestamp: new Date().toISOString(),
-      })
+        if (response.status === 404) {
+          return NextResponse.json(
+            { error: 'Transação ainda não processada pelo gateway.' },
+            { status: 404 },
+          )
+        }
 
-      if (response.status === 404) {
-        return NextResponse.json(
-          { error: 'Transação ainda não processada pela Cielo.' },
-          { status: 404 },
-        )
+        throw new Error('Falha ao consultar status no gateway.')
       }
 
-      throw new Error('Falha ao consultar status na Cielo.')
+      const gatewayData: { Payment: { Status: number } } = await response.json()
+      newStatus = mapCieloStatus(gatewayData.Payment.Status)
     }
-
-    const cieloData = await response.json()
-    const newStatus = mapCieloStatus(cieloData.Payment.Status)
 
     // Atualizar status no banco local se mudou
     if (newStatus !== transaction.status) {

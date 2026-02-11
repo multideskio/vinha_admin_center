@@ -13,6 +13,7 @@ import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { ApiError } from '@/lib/errors'
 import { rateLimit } from '@/lib/rate-limit'
+import { queryBradescoPixPayment, queryBradescoBoletoPayment } from '@/lib/bradesco'
 import { SessionUser } from '@/lib/types'
 
 async function getCieloCredentials(): Promise<{
@@ -148,7 +149,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         pending: true,
-        message: 'Transação ainda não processada pela Cielo.',
+        message: 'Transação ainda não processada pelo gateway.',
         transaction: {
           id: transaction.id,
           amount: Number(transaction.amount),
@@ -160,6 +161,46 @@ export async function GET(
       })
     }
 
+    // Consultar gateway baseado no campo `gateway` da transação
+    if (transaction.gateway === 'Bradesco') {
+      // Bradesco: consultar status via API PIX ou Boleto
+      let bradescoStatus = 'pending'
+      if (transaction.paymentMethod === 'pix') {
+        const pixResponse = await queryBradescoPixPayment(transaction.gatewayTransactionId)
+        if (pixResponse.status === 'CONCLUIDA') bradescoStatus = 'approved'
+        else if (
+          pixResponse.status === 'REMOVIDA_PELO_USUARIO_RECEBEDOR' ||
+          pixResponse.status === 'REMOVIDA_PELO_PSP'
+        )
+          bradescoStatus = 'refused'
+      } else if (transaction.paymentMethod === 'boleto') {
+        const boletoResponse = await queryBradescoBoletoPayment(transaction.gatewayTransactionId)
+        if (boletoResponse.status === 'pago') bradescoStatus = 'approved'
+        else if (boletoResponse.status === 'vencido' || boletoResponse.status === 'cancelado')
+          bradescoStatus = 'refused'
+      }
+
+      // Normalizar resposta no mesmo formato que o frontend espera
+      return NextResponse.json({
+        success: true,
+        transaction: {
+          id: transaction.id,
+          amount: Number(transaction.amount),
+          status: bradescoStatus,
+          paymentMethod: transaction.paymentMethod,
+          description: transaction.description,
+          gateway: 'Bradesco',
+          Payment: {
+            Status: bradescoStatus === 'approved' ? 2 : bradescoStatus === 'refused' ? 3 : 0,
+          },
+        },
+        contributorEmail: transactionData.contributorEmail,
+        originChurchId: transaction.originChurchId,
+        description: transaction.description,
+      })
+    }
+
+    // Cielo: consultar via API REST
     const credentials = await getCieloCredentials()
 
     const cieloController = new AbortController()
@@ -179,11 +220,11 @@ export async function GET(
     } catch (fetchError) {
       clearTimeout(cieloTimeoutId)
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error('[CIELO_TIMEOUT] Timeout ao consultar transação na Cielo', {
+        console.error('[GATEWAY_TIMEOUT] Timeout ao consultar transação no gateway', {
           transactionId,
         })
         return NextResponse.json(
-          { error: 'Timeout ao comunicar com a Cielo. Tente novamente.' },
+          { error: 'Timeout ao comunicar com o gateway. Tente novamente.' },
           { status: 504 },
         )
       }
@@ -192,21 +233,21 @@ export async function GET(
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}))
-      console.error('[PASTOR_TRANSACOES_DETAIL_CIELO_ERROR]', {
+      console.error('[PASTOR_TRANSACOES_DETAIL_GATEWAY_ERROR]', {
         pastorId: sessionUser.id,
         transactionId,
-        cieloError: errorBody,
+        gatewayError: errorBody,
         timestamp: new Date().toISOString(),
       })
-      throw new Error('Falha ao consultar o status da transação na Cielo.')
+      throw new Error('Falha ao consultar o status da transação no gateway.')
     }
 
-    const cieloData = await response.json()
+    const gatewayData: Record<string, unknown> = await response.json()
 
-    // Retornar dados da Cielo junto com email do contribuinte e dados locais
+    // Retornar dados do gateway junto com email do contribuinte e dados locais
     return NextResponse.json({
       success: true,
-      transaction: cieloData,
+      transaction: gatewayData,
       contributorEmail: transactionData.contributorEmail,
       originChurchId: transaction.originChurchId,
       description: transaction.description,
