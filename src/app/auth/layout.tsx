@@ -53,7 +53,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="mt-12 pt-8 border-t border-white/20">
               <div className="flex items-center gap-2 text-white/70 text-sm">
                 <Sparkles className="h-4 w-4" />
-                <span>Desenvolvido com dedicação para sua comunidade</span>
+                <span>
+                  Desenvolvido e mantido com ❤️ por{' '}
+                  <a
+                    href="https://multidesk.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-white transition-colors"
+                  >
+                    Multidesk.io
+                  </a>
+                </span>
               </div>
             </div>
           </div>
