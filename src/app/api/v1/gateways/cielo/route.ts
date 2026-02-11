@@ -81,6 +81,19 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const body = await request.json()
     const validatedData = cieloGatewaySchema.parse(body)
 
+    // Se ativando a Cielo, desativar outros gateways (exclusão mútua)
+    if (validatedData.isActive) {
+      await db
+        .update(gatewayConfigurations)
+        .set({ isActive: false })
+        .where(
+          and(
+            eq(gatewayConfigurations.companyId, VALIDATED_COMPANY_ID),
+            eq(gatewayConfigurations.isActive, true),
+          ),
+        )
+    }
+
     const [updatedConfig] = await db
       .update(gatewayConfigurations)
       .set(validatedData)
