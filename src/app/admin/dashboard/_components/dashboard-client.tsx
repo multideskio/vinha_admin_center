@@ -46,9 +46,7 @@ export function DashboardClient({ initialData, userName }: DashboardClientProps)
   })
   const { toast } = useToast()
   const [sending, setSending] = React.useState(false)
-  const [lastUpdatedAt, setLastUpdatedAt] = React.useState<string>(
-    new Date().toLocaleString('pt-BR'),
-  )
+  const [lastUpdatedAt, setLastUpdatedAt] = React.useState<string | null>(null)
   const [insightLoading, setInsightLoading] = React.useState(false)
   const [insightSummary, setInsightSummary] = React.useState('')
   const [insightCards, setInsightCards] = React.useState<
@@ -121,10 +119,17 @@ export function DashboardClient({ initialData, userName }: DashboardClientProps)
     }
   }, [toast, dateRange])
 
+  // Definir timestamp inicial apenas no cliente
+  React.useEffect(() => {
+    setLastUpdatedAt(new Date().toLocaleString('pt-BR'))
+  }, [])
+
   // Recarregar quando dateRange mudar
   React.useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (lastUpdatedAt) {
+      fetchData()
+    }
+  }, [fetchData, lastUpdatedAt])
 
   const handleDateRangeChange = React.useCallback(
     (range: { from: Date | undefined; to: Date | undefined }) => {
