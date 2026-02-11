@@ -10,8 +10,24 @@ inclusion: always
 - **PostgreSQL** + **Drizzle ORM 0.44.7**
 - **JWT** (jose) + **bcrypt** + **Zod**
 - **Tailwind CSS 3.4.1** + **shadcn/ui**
-- **AWS S3/SES**, **Cielo API**, **Evolution API v2**, **ViaCEP**
+- **AWS S3/SES**, **Cielo API**, **Bradesco API (PIX + Boleto)**, **Evolution API v2**, **ViaCEP**
 - **BullMQ + Redis** para filas
+
+## Gateways de Pagamento
+
+### Cielo API
+
+- Cartão de crédito/débito
+- Boleto via Bradesco2 provider
+- Webhooks em tempo real
+
+### Bradesco API (REST)
+
+- **PIX**: Cobrança imediata via API REST
+- **Boleto**: Registro via API REST (não usa CNAB)
+- **OAuth 2.0**: Autenticação com certificado digital mTLS
+- **Webhooks**: Notificações automáticas de pagamento
+- **Ambientes**: Production, Development (Homologação), Sandbox
 
 ## Comandos Principais
 

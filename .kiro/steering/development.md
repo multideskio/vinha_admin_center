@@ -146,13 +146,27 @@ When implementing features:
 - Filter database queries by user's scope (region, church, etc.)
 - Never expose data outside user's permission scope
 
-## Payment Integration (Cielo API)
+## Payment Integration
+
+### Cielo API
 
 - Transactions MUST be idempotent - check status before creating charges
 - Use integers for monetary values (centavos) - NEVER floats
 - Webhooks may arrive before user redirect - handle async state properly
 - Payment failures require manual review - DO NOT auto-retry
-- See `/docs/CIELO_API_GUIDE.md` for detailed integration patterns
+- See `/docs/integrations/CIELO_API_GUIDE.md` for detailed integration patterns
+
+### Bradesco API (REST)
+
+- **PIX**: Use `createBradescoPixPayment()` from `@/lib/bradesco`
+- **Boleto**: Use `createBradescoBoletoPayment()` from `@/lib/bradesco`
+- **Query**: Use `queryBradescoPixPayment()` and `queryBradescoBoletoPayment()`
+- **Authentication**: OAuth 2.0 with mTLS certificate (automatic via `getBradescoToken()`)
+- **CRITICAL**: DO NOT implement CNAB file generation - system uses REST API only
+- **Certificate**: Digital certificate (.pfx/.pem) required for mTLS authentication
+- **Webhooks**: `/api/v1/webhooks/bradesco` handles PIX and Boleto notifications
+- All monetary values in centavos (integers)
+- Idempotency via unique txid (PIX) and nossoNumero (Boleto)
 
 ## Pre-Commit Checklist
 

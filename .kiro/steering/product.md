@@ -35,12 +35,26 @@ inclusion: always
 
 ## Regras Críticas de Negócio
 
-### Pagamentos (Cielo API)
+### Pagamentos (Cielo + Bradesco)
+
+**Geral:**
 
 - Transações DEVEM ser idempotentes - nunca duplicar cobranças
 - Valores monetários em inteiros (centavos) - evitar float
 - Webhooks podem chegar antes do redirect - tratar estado async
 - Falhas requerem revisão manual - NUNCA auto-retry
+
+**Cielo API:**
+
+- Cartão de crédito/débito
+- Boleto via provider Bradesco2
+
+**Bradesco API (REST):**
+
+- PIX: Cobrança imediata com QR Code
+- Boleto: Registro via API REST (não usa CNAB 400)
+- Autenticação: OAuth 2.0 com certificado digital mTLS
+- NUNCA implementar geração de arquivos CNAB - sistema usa API REST moderna
 
 ### Hierarquia de Dados
 
