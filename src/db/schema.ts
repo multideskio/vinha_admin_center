@@ -246,6 +246,7 @@ export const transactions = pgTable('transactions', {
   gatewayTransactionId: varchar('gateway_transaction_id', { length: 255 }),
   refundRequestReason: text('refund_request_reason'),
   installments: integer('installments').default(1).notNull(),
+  gateway: varchar('gateway', { length: 20 }),
   // Campos de controle de fraude
   isFraud: boolean('is_fraud').default(false).notNull(),
   fraudMarkedAt: timestamp('fraud_marked_at'),
@@ -274,6 +275,7 @@ export const gatewayConfigurations = pgTable('gateway_configurations', {
   devClientSecret: text('dev_client_secret'),
   certificate: text('certificate'),
   certificatePassword: text('certificate_password'),
+  pixKey: text('pix_key'),
   acceptedPaymentMethods: text('accepted_payment_methods'),
 })
 
@@ -449,6 +451,22 @@ export const cieloLogs = pgTable('cielo_logs', {
   statusCode: integer('status_code'),
   errorMessage: text('error_message'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const bradescoLogs = pgTable('bradesco_logs', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  operationType: varchar('operation_type', { length: 20 }).notNull(), // 'pix' | 'boleto' | 'consulta' | 'token' | 'webhook'
+  type: varchar('type', { length: 10 }).notNull(), // 'request' | 'response'
+  method: varchar('method', { length: 10 }).notNull(), // 'GET' | 'POST' | 'PUT'
+  endpoint: text('endpoint').notNull(),
+  paymentId: text('payment_id'),
+  requestBody: text('request_body'),
+  responseBody: text('response_body'),
+  statusCode: integer('status_code'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow(),
 })
 
 // Tabela de Tokens para Recuperação de Senha

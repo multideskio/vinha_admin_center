@@ -100,4 +100,6 @@ export const CACHE_KEYS = {
   SMTP_CONFIG: (companyId: string) => `smtp:config:${companyId}`,
   WHATSAPP_CONFIG: (companyId: string) => `whatsapp:config:${companyId}`,
   COMPANY_CONFIG: (companyId: string) => `company:config:${companyId}`,
+  BRADESCO_CONFIG: (companyId: string) => `bradesco:config:${companyId}`,
+  BRADESCO_TOKEN: (companyId: string) => `bradesco:token:${companyId}`,
 } as const
