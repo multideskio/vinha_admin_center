@@ -81,12 +81,11 @@ class ConfigCache {
   }
 
   /**
-   * Retorna estatísticas do cache
+   * Retorna estatísticas do cache (sem expor chaves por segurança)
    */
-  getStats(): { size: number; keys: string[] } {
+  getStats(): { size: number } {
     return {
       size: this.cache.size,
-      keys: Array.from(this.cache.keys()),
     }
   }
 }

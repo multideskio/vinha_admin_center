@@ -220,9 +220,6 @@ export async function getBradescoConfig(): Promise<BradescoConfig> {
 
 // ─── OAuth Client com mTLS ────────────────────────────────────────────────────
 
-/** Token OAuth2 cacheado em memória */
-let cachedToken: BradescoOAuthToken | null = null
-
 /**
  * Realiza uma requisição HTTPS com mTLS (certificado digital).
  * Necessário para autenticação OAuth2 com o Bradesco, pois o `fetch` padrão
@@ -292,8 +289,11 @@ function bradescoMtlsFetch(
  * @throws Error se a autenticação falhar (mensagem em pt-BR)
  */
 export async function getBradescoToken(): Promise<BradescoOAuthToken> {
-  if (cachedToken && cachedToken.expiresAt > Date.now()) {
-    return cachedToken
+  // ✅ SEGURANÇA: Usar configCache ao invés de variável global para invalidação centralizada
+  const tokenCacheKey = `bradesco:oauth:pix:${COMPANY_ID}`
+  const cached = configCache.get<BradescoOAuthToken>(tokenCacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached
   }
 
   const config = await getBradescoConfig()
@@ -358,7 +358,8 @@ export async function getBradescoToken(): Promise<BradescoOAuthToken> {
       expiresAt: Date.now() + data.expires_in * 1000 - 60_000,
     }
 
-    cachedToken = token
+    // ✅ SEGURANÇA: Usar configCache para invalidação centralizada
+    configCache.set(tokenCacheKey, token)
 
     await logBradescoResponse({
       operationType: 'token',
@@ -391,9 +392,6 @@ export async function getBradescoToken(): Promise<BradescoOAuthToken> {
 
 // ─── OAuth Cobrança (Boleto) ─────────────────────────────────────────────────
 
-/** Token OAuth2 de Cobrança cacheado em memória (separado do PIX) */
-let cachedCobrancaToken: BradescoOAuthToken | null = null
-
 /**
  * Obtém um token OAuth2 específico para a API de Cobrança (boleto) do Bradesco.
  * A API de Cobrança usa um endpoint de autenticação diferente do PIX:
@@ -405,8 +403,11 @@ let cachedCobrancaToken: BradescoOAuthToken | null = null
  * @throws Error se a autenticação falhar
  */
 export async function getBradescoCobrancaToken(): Promise<BradescoOAuthToken> {
-  if (cachedCobrancaToken && cachedCobrancaToken.expiresAt > Date.now()) {
-    return cachedCobrancaToken
+  // ✅ SEGURANÇA: Usar configCache para invalidação centralizada
+  const cobrancaCacheKey = `bradesco:oauth:cobranca:${COMPANY_ID}`
+  const cached = configCache.get<BradescoOAuthToken>(cobrancaCacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached
   }
 
   const config = await getBradescoConfig()
@@ -475,7 +476,7 @@ export async function getBradescoCobrancaToken(): Promise<BradescoOAuthToken> {
       expiresAt: Date.now() + data.expires_in * 1000 - 60_000,
     }
 
-    cachedCobrancaToken = token
+    configCache.set(cobrancaCacheKey, token)
 
     await logBradescoResponse({
       operationType: 'token',
