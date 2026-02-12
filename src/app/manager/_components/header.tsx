@@ -235,7 +235,7 @@ export function ManagerHeader({
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/ajuda">
+            <Link href="/manager/ajuda">
               <LifeBuoy className="mr-2 h-4 w-4" />
               <span>Ajuda</span>
             </Link>

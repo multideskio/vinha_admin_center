@@ -196,11 +196,11 @@ export default function ContributionDataForm({
           <FormField
             control={form.control}
             name="amount"
-            render={() => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-base font-medium">Valor da Contribuição *</FormLabel>
-                <FormControl>
-                  <div className="relative group">
+                <div className="relative group">
+                  <FormControl>
                     <Input
                       type="text"
                       inputMode="numeric"
@@ -214,29 +214,30 @@ export default function ContributionDataForm({
                         // Não precisa fazer nada especial no blur
                         // O estado rawDigits já está correto
                       }}
+                      ref={field.ref}
                       className="text-2xl font-bold h-14 border-2 focus:border-videira-cyan focus:ring-2 focus:ring-videira-cyan/20 transition-all text-center"
                     />
-                    {/* Valores sugeridos */}
-                    <div className="flex gap-2 mt-2">
-                      {[50, 100, 200, 500].map((value) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => {
-                            // Define diretamente os dígitos brutos (valor em centavos)
-                            const cents = (value * 100).toString()
-                            setRawDigits(cents)
-                            form.setValue('amount', value)
-                            setMoneyError(validateMoneyAmount(value))
-                          }}
-                          className="flex-1 px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-videira-cyan/10 hover:text-videira-cyan border border-gray-200 hover:border-videira-cyan rounded-lg transition-all"
-                        >
-                          R$ {value}
-                        </button>
-                      ))}
-                    </div>
+                  </FormControl>
+                  {/* Valores sugeridos */}
+                  <div className="flex gap-2 mt-2">
+                    {[50, 100, 200, 500].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          // Define diretamente os dígitos brutos (valor em centavos)
+                          const cents = (value * 100).toString()
+                          setRawDigits(cents)
+                          form.setValue('amount', value)
+                          setMoneyError(validateMoneyAmount(value))
+                        }}
+                        className="flex-1 px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-videira-cyan/10 hover:text-videira-cyan border border-gray-200 hover:border-videira-cyan rounded-lg transition-all"
+                      >
+                        R$ {value}
+                      </button>
+                    ))}
                   </div>
-                </FormControl>
+                </div>
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-muted-foreground font-medium">
                     💡 Valor mínimo: R$ 1,00 • Máximo: R$ 100.000,00
@@ -258,42 +259,38 @@ export default function ContributionDataForm({
             control={form.control}
             name="contributionType"
             render={({ field }) => (
-              <FormItem>
+              <FormItem role="radiogroup">
                 <FormLabel className="text-base font-medium">Tipo de Contribuição *</FormLabel>
-                <FormControl>
-                  <div className="grid grid-cols-2 gap-3">
-                    {Object.entries(CONTRIBUTION_TYPES).map(([key, config]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => field.onChange(key)}
-                        className={`p-4 border-2 rounded-xl transition-all text-left ${
-                          field.value === key
-                            ? 'border-videira-cyan bg-videira-cyan/10 text-videira-cyan'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                              field.value === key
-                                ? 'border-videira-cyan bg-videira-cyan'
-                                : 'border-gray-300'
-                            }`}
-                          >
-                            {field.value === key && (
-                              <div className="w-2 h-2 bg-white rounded-full" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{config.label}</p>
-                            <p className="text-xs text-muted-foreground">{config.description}</p>
-                          </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(CONTRIBUTION_TYPES).map(([key, config]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => field.onChange(key)}
+                      className={`p-4 border-2 rounded-xl transition-all text-left ${
+                        field.value === key
+                          ? 'border-videira-cyan bg-videira-cyan/10 text-videira-cyan'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                            field.value === key
+                              ? 'border-videira-cyan bg-videira-cyan'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          {field.value === key && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                </FormControl>
+                        <div>
+                          <p className="font-semibold">{config.label}</p>
+                          <p className="text-xs text-muted-foreground">{config.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
