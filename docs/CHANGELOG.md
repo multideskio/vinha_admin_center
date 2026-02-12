@@ -4,6 +4,42 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.14.0] - 2026-02-12 - Gateway Bradesco Cobrança, Gráficos & Páginas de Ajuda
+
+### ✨ Novas Funcionalidades
+
+- **Integração Bradesco API de Cobrança** — reescrita completa do módulo de boleto para usar endpoint `/boleto/cobranca-registro/v1/cobranca`
+- **OAuth2 de Cobrança separado** — novo endpoint de autenticação `/auth/server-mtls/v2/token` com cache independente do PIX
+- **mTLS em todas as chamadas** — `bradescoFetch` reescrito com `https.Agent` e certificado digital (mTLS) em vez de `fetch` nativo
+- **Suporte sandbox Bradesco** — valores fixos conforme Postman Collection oficial para PIX e Boleto
+- **Páginas de Ajuda** — novas páginas `/admin/ajuda` e `/manager/ajuda`
+
+### 🐛 Correções de Bugs
+
+- **Gráficos de pizza com valores zero** — filtro `.filter(d => d.value > 0)` aplicado em todos os dashboards (admin, manager, supervisor, pastor, igreja) para evitar fatias vazias
+- **SVG path incorreto** — typo `616` → `016` no ícone de cadeado em 4 componentes de contribuição
+- **FormControl envolvendo botões** — `FormControl` reposicionado para envolver apenas o `Input` no formulário de contribuição
+- **Link de ajuda do manager** — corrigido de `/ajuda` para `/manager/ajuda`
+
+### ♻️ Refatorações
+
+- **Payload de boleto** — novo `BradescoCobrancaPayload` com todos os campos exigidos pela API de Cobrança (cedente, pagador, sacador/avalista)
+- **Tratamento de erros Bradesco** — parsing expandido com suporte a `cdErro`, `msgErro`, `title`, `message` e verificação de erro lógico (status 200 com cdErro)
+- **Tipos PIX flexíveis** — `calendario.expiracao` aceita `number | string`, `devedor` agora opcional, `modalidadeAlteracao` adicionado
+
+### 🎨 Melhorias de UI/UX
+
+- **Acessibilidade dialog** — `aria-describedby={undefined}` no DialogContent para suprimir warning
+- **Acessibilidade formulário** — `role="radiogroup"` e `ref` correto no campo de tipo de contribuição
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 14 arquivos (2 novos, 12 modificados)
+- Novos: `src/app/admin/ajuda/page.tsx`, `src/app/manager/ajuda/page.tsx`
+- Modificados: `bradesco.ts`, 5 dashboards, 4 componentes de contribuição, `dialog.tsx`, `header.tsx`
+
+---
+
 ## [0.13.0] - 2026-02-11 - Sistema de Bloqueio de Usuários & Correções de UI
 
 ### ✨ Novas Funcionalidades

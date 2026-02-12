@@ -58,10 +58,17 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.14.0 | ✅ Concluída | 12/02/2026 |
 | v0.13.0 | ✅ Concluída | 11/02/2026 |
 | v0.12.0 | ✅ Concluída | 11/02/2026 |
 | v0.11.0 | ✅ Concluída | 11/02/2026 |
 | v0.5.0  | 📋 Planejada | Q2 2026    |
+
+### ✅ Itens Concluídos (v0.14.0)
+
+- ✅ Reescrita da integração Bradesco para API de Cobrança com mTLS
+- ✅ Correção de gráficos de pizza com valores zero
+- ✅ Páginas de ajuda para admin e manager
 
 ### ✅ Itens Concluídos (v0.13.0)
 
@@ -84,4 +91,4 @@
 - ✅ Scripts de gerenciamento de índices
 - ✅ Documentação de refatoração admin
 
-_Última atualização: 11 de Fevereiro de 2026_
+_Última atualização: 12 de Fevereiro de 2026_

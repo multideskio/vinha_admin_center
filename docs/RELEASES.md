@@ -4,6 +4,39 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.14.0 - Gateway Bradesco Cobrança & Melhorias de UI (Fevereiro 2026)
+
+### 💳 Gateway Bradesco — API de Cobrança
+
+- Reescrita completa do módulo de boleto para API de Cobrança (`/boleto/cobranca-registro/v1/cobranca`)
+- OAuth2 de Cobrança com endpoint separado (`/auth/server-mtls/v2/token`) e cache independente
+- mTLS (certificado digital) em todas as chamadas via `https.Agent`
+- Suporte sandbox com valores fixos conforme Postman Collection oficial
+- Tratamento de erros expandido com suporte a `cdErro`, `msgErro` e erro lógico
+
+### 🐛 Correções
+
+- Gráficos de pizza filtram valores zero em todos os dashboards
+- SVG path corrigido no ícone de cadeado (4 componentes)
+- FormControl reposicionado no formulário de contribuição
+- Link de ajuda do manager corrigido
+
+### ✨ Funcionalidades
+
+- Páginas de ajuda para admin e manager (`/admin/ajuda`, `/manager/ajuda`)
+
+### 🎨 Acessibilidade
+
+- `aria-describedby` e `role="radiogroup"` nos componentes de formulário e dialog
+
+### 📊 Métricas
+
+- Arquivos novos: 2
+- Arquivos modificados: 12
+- Dashboards corrigidos: 5
+
+---
+
 ## v0.13.0 - Sistema de Bloqueio de Usuários (Fevereiro 2026)
 
 ### 🔒 Bloqueio de Usuários
