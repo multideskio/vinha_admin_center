@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -69,41 +68,8 @@ export function FraudAlert({ userId, userName, className }: FraudAlertProps) {
     fetchFraudStats()
   }, [userId])
 
-  if (isLoading) {
-    return (
-      <Card className={cn('shadow-lg border-t-4 border-t-orange-500', className)}>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-6 w-6 rounded-lg" />
-            <Skeleton className="h-6 w-48" />
-          </div>
-          <Skeleton className="h-4 w-64" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card className={cn('shadow-lg border-t-4 border-t-red-500', className)}>
-        <CardContent className="pt-6">
-          <Alert className="bg-red-50 border-red-200">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
-              Erro ao carregar dados de fraude: {error}
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  // Se não há fraudes, não exibir o componente
-  if (!stats || stats.totalFraudTransactions === 0) {
+  // Não renderizar nada durante loading, em caso de erro, ou se não há fraudes
+  if (isLoading || error || !stats || stats.totalFraudTransactions === 0) {
     return null
   }
 
