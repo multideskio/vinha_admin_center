@@ -272,7 +272,7 @@ export function DashboardClient({ initialData, userName }: DashboardClientProps)
   const totalNewMembers = data.newMembers?.reduce((sum, m) => sum + m.count, 0) ?? 0
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 max-w-full overflow-x-hidden">
+    <div className="flex flex-col gap-4 sm:gap-6 max-w-full">
       {/* Header */}
       <DashboardHeader
         userName={userName}
@@ -293,9 +293,9 @@ export function DashboardClient({ initialData, userName }: DashboardClientProps)
       />
 
       {/* Container principal */}
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-4 sm:space-y-6 overflow-visible">
         {/* KPIs principais */}
-        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 p-2 -m-2">
           {kpiDisplayData.map((kpi, index) => (
             <KpiCard
               key={kpi.title}
@@ -309,7 +309,7 @@ export function DashboardClient({ initialData, userName }: DashboardClientProps)
         </div>
 
         {/* KPIs secundários */}
-        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 p-2 -m-2">
           {secondaryKpis.map((kpi, index) => (
             <KpiCard
               key={kpi.title}

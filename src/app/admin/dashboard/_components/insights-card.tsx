@@ -55,11 +55,13 @@ export function InsightsCard({
   }
 
   return (
-    <Card className="relative overflow-hidden border-2 border-videira-purple/20 shadow-lg hover:shadow-2xl transition-all duration-300">
+    <Card className="relative border-2 border-videira-purple/20 shadow-lg hover:shadow-2xl transition-all duration-300">
       {/* Fundo decorativo com gradiente */}
-      <div className="absolute inset-0 bg-gradient-to-br from-videira-purple/5 via-videira-blue/5 to-videira-cyan/5 pointer-events-none" />
-      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-videira-purple/10 blur-3xl pointer-events-none" />
-      <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-videira-cyan/10 blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-videira-purple/5 via-videira-blue/5 to-videira-cyan/5" />
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-videira-purple/10 blur-3xl" />
+        <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-videira-cyan/10 blur-3xl" />
+      </div>
 
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between relative z-10 gap-4">
         <div className="min-w-0 flex-1">
