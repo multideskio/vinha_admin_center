@@ -75,6 +75,8 @@ export default function BradescoGatewayPage() {
   const [certificateFile, setCertificateFile] = React.useState<string | null>(null)
   const [certificateBase64, setCertificateBase64] = React.useState<string | null>(null)
   const [copied, setCopied] = React.useState(false)
+  const [hasProdSecret, setHasProdSecret] = React.useState(false)
+  const [hasDevSecret, setHasDevSecret] = React.useState(false)
   const [certDialogOpen, setCertDialogOpen] = React.useState(false)
   const [isGeneratingCert, setIsGeneratingCert] = React.useState(false)
   const [certCommonName, setCertCommonName] = React.useState('')
@@ -286,13 +288,15 @@ export default function BradescoGatewayPage() {
       const response = await fetch('/api/v1/gateways/bradesco')
       if (!response.ok) throw new Error('Falha ao carregar configurações.')
       const data = await response.json()
+      setHasProdSecret(!!data.config.hasProdSecret)
+      setHasDevSecret(!!data.config.hasDevSecret)
       form.reset({
         ...data.config,
         prodClientId: data.config.prodClientId ?? '',
-        prodClientSecret: data.config.prodClientSecret ?? '',
+        prodClientSecret: '',
         devClientId: data.config.devClientId ?? '',
-        devClientSecret: data.config.devClientSecret ?? '',
-        certificatePassword: data.config.certificatePassword ?? '',
+        devClientSecret: '',
+        certificatePassword: '',
         pixKey: data.config.pixKey ?? '',
       })
       // Se já existe certificado salvo, indicar no estado
@@ -349,7 +353,7 @@ export default function BradescoGatewayPage() {
     try {
       // Validação adicional para ambiente de produção
       if (data.environment === 'production' && data.isActive) {
-        if (!data.prodClientId || !data.prodClientSecret) {
+        if (!data.prodClientId || (!data.prodClientSecret && !hasProdSecret)) {
           toast({
             title: 'Erro',
             description: 'Credenciais de produção são obrigatórias para ativar em produção.',
@@ -362,7 +366,7 @@ export default function BradescoGatewayPage() {
 
       // Validação adicional para ambiente de desenvolvimento ou sandbox
       if ((data.environment === 'development' || data.environment === 'sandbox') && data.isActive) {
-        if (!data.devClientId || !data.devClientSecret) {
+        if (!data.devClientId || (!data.devClientSecret && !hasDevSecret)) {
           toast({
             title: 'Erro',
             description:
@@ -582,7 +586,11 @@ export default function BradescoGatewayPage() {
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder="Seu Client Secret de produção"
+                          placeholder={
+                            hasProdSecret
+                              ? '••••••••  (já configurado — deixe vazio para manter)'
+                              : 'Seu Client Secret de produção'
+                          }
                           {...field}
                           value={field.value ?? ''}
                         />
@@ -623,7 +631,11 @@ export default function BradescoGatewayPage() {
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder="Seu Client Secret de desenvolvimento"
+                          placeholder={
+                            hasDevSecret
+                              ? '••••••••  (já configurado — deixe vazio para manter)'
+                              : 'Seu Client Secret de desenvolvimento'
+                          }
                           {...field}
                           value={field.value ?? ''}
                         />

@@ -106,6 +106,16 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const body = await request.json()
     const validatedData = cieloGatewaySchema.parse(body)
 
+    // ✅ SEGURANÇA: Não sobrescrever secrets com string vazia
+    // Se o frontend envia vazio/null, significa que não alterou o secret
+    const updateData: Record<string, unknown> = { ...validatedData }
+    if (!validatedData.prodClientSecret) {
+      delete updateData.prodClientSecret
+    }
+    if (!validatedData.devClientSecret) {
+      delete updateData.devClientSecret
+    }
+
     // Se ativando a Cielo, desativar outros gateways (exclusão mútua)
     if (validatedData.isActive) {
       await db
@@ -121,7 +131,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
     const [updatedConfig] = await db
       .update(gatewayConfigurations)
-      .set(validatedData)
+      .set(updateData)
       .where(
         and(
           eq(gatewayConfigurations.companyId, VALIDATED_COMPANY_ID),

@@ -115,6 +115,21 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const body = await request.json()
     const validatedData = bradescoGatewaySchema.parse(body)
 
+    // ✅ SEGURANÇA: Não sobrescrever secrets com string vazia
+    const updateData: Record<string, unknown> = { ...validatedData }
+    if (!validatedData.prodClientSecret) {
+      delete updateData.prodClientSecret
+    }
+    if (!validatedData.devClientSecret) {
+      delete updateData.devClientSecret
+    }
+    if (!validatedData.certificate) {
+      delete updateData.certificate
+    }
+    if (!validatedData.certificatePassword) {
+      delete updateData.certificatePassword
+    }
+
     // Se ativando o Bradesco, desativar outros gateways (exclusão mútua)
     if (validatedData.isActive) {
       await db
@@ -130,7 +145,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
     const [updatedConfig] = await db
       .update(gatewayConfigurations)
-      .set(validatedData)
+      .set(updateData)
       .where(
         and(
           eq(gatewayConfigurations.companyId, VALIDATED_COMPANY_ID),

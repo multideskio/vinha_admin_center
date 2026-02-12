@@ -57,6 +57,8 @@ export default function CieloGatewayPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
+  const [hasProdSecret, setHasProdSecret] = React.useState(false)
+  const [hasDevSecret, setHasDevSecret] = React.useState(false)
 
   const webhookUrl =
     typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/cielo` : ''
@@ -87,12 +89,14 @@ export default function CieloGatewayPage() {
       const response = await fetch('/api/v1/gateways/cielo')
       if (!response.ok) throw new Error('Falha ao carregar configurações.')
       const data = await response.json()
+      setHasProdSecret(!!data.config.hasProdSecret)
+      setHasDevSecret(!!data.config.hasDevSecret)
       form.reset({
         ...data.config,
         prodClientId: data.config.prodClientId ?? '',
-        prodClientSecret: data.config.prodClientSecret ?? '',
+        prodClientSecret: '',
         devClientId: data.config.devClientId ?? '',
-        devClientSecret: data.config.devClientSecret ?? '',
+        devClientSecret: '',
         acceptedPaymentMethods: data.config.acceptedPaymentMethods
           ? data.config.acceptedPaymentMethods.split(',')
           : [],
@@ -114,7 +118,7 @@ export default function CieloGatewayPage() {
     try {
       // Validação adicional para ambiente de produção
       if (data.environment === 'production' && data.isActive) {
-        if (!data.prodClientId || !data.prodClientSecret) {
+        if (!data.prodClientId || (!data.prodClientSecret && !hasProdSecret)) {
           toast({
             title: 'Erro',
             description: 'Credenciais de produção são obrigatórias para ativar em produção.',
@@ -127,7 +131,7 @@ export default function CieloGatewayPage() {
 
       // Validação adicional para ambiente de desenvolvimento
       if (data.environment === 'development' && data.isActive) {
-        if (!data.devClientId || !data.devClientSecret) {
+        if (!data.devClientId || (!data.devClientSecret && !hasDevSecret)) {
           toast({
             title: 'Erro',
             description:
@@ -312,7 +316,11 @@ export default function CieloGatewayPage() {
                       <FormLabel>MerchantKey</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Sua MerchantKey de produção"
+                          placeholder={
+                            hasProdSecret
+                              ? '••••••••  (já configurada — deixe vazio para manter)'
+                              : 'Sua MerchantKey de produção'
+                          }
                           {...field}
                           value={field.value ?? ''}
                         />
@@ -352,7 +360,11 @@ export default function CieloGatewayPage() {
                       <FormLabel>MerchantKey</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Sua MerchantKey de desenvolvimento"
+                          placeholder={
+                            hasDevSecret
+                              ? '••••••••  (já configurada — deixe vazio para manter)'
+                              : 'Sua MerchantKey de desenvolvimento'
+                          }
                           {...field}
                           value={field.value ?? ''}
                         />
