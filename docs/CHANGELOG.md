@@ -4,6 +4,40 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.16.0] - 2026-02-12 - Credenciais Bradesco Separadas por Produto
+
+### ✨ Novas Funcionalidades
+
+- **Credenciais separadas por produto** — PIX e Boleto agora possuem credenciais OAuth2 independentes (client_id, client_secret, api_key) por ambiente
+- **Configuração flexível** — suporte a ambientes mistos (ex: PIX em produção, Boleto em sandbox)
+- **Teste de conexão duplo** — validação simultânea de PIX e Boleto com métricas separadas
+
+### ♻️ Refatorações
+
+- **`getBradescoPixConfig()`** — nova função para carregar credenciais PIX
+- **`getBradescoBoletoConfig()`** — nova função para carregar credenciais Boleto
+- **`bradescoFetch()`** — parâmetro `productType` para selecionar credenciais corretas
+- **UI admin** — seções separadas para configuração de PIX e Boleto
+
+### 💾 Banco de Dados
+
+- 12 novos campos em `gateway_configurations` para credenciais separadas
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 9 arquivos modificados (7 modificados, 2 novos)
+- `src/db/schema.ts` — novos campos de credenciais
+- `src/lib/bradesco.ts` — funções de configuração separadas
+- `src/app/admin/gateways/bradesco/page.tsx` — UI com seções por produto
+- `src/app/api/v1/gateways/bradesco/route.ts` — schema e proteção de secrets
+- `src/app/api/v1/gateways/bradesco/test-connection/route.ts` — teste duplo
+- `src/app/api/v1/transacoes/route.ts` — uso de getBradescoPixConfig()
+- `drizzle/meta/_journal.json` — journal atualizado
+- `drizzle/meta/0010_snapshot.json` — snapshot da migration (novo)
+- `drizzle/meta/0011_snapshot.json` — snapshot da migration (novo)
+
+---
+
 ## [0.15.0] - 2026-02-12 - Notificações Automáticas, Segurança de Secrets & Cielo CPF
 
 ### ✨ Novas Funcionalidades

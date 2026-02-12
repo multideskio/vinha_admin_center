@@ -25,6 +25,14 @@ const SECRET_FIELDS = [
   'certificatePassword',
   'prodClientSecret',
   'devClientSecret',
+  'boletoProdClientSecret',
+  'boletoProdApiKey',
+  'boletoDevClientSecret',
+  'boletoDevApiKey',
+  'pixProdClientSecret',
+  'pixProdApiKey',
+  'pixDevClientSecret',
+  'pixDevApiKey',
 ] as const
 
 /** Remove campos sensíveis e adiciona flags de presença */
@@ -51,6 +59,20 @@ const bradescoGatewaySchema = z.object({
   certificate: z.string().optional().nullable(),
   certificatePassword: z.string().optional().nullable(),
   pixKey: z.string().optional().nullable(),
+  // Credenciais específicas para Boleto
+  boletoProdClientId: z.string().optional().nullable(),
+  boletoProdClientSecret: z.string().optional().nullable(),
+  boletoProdApiKey: z.string().optional().nullable(),
+  boletoDevClientId: z.string().optional().nullable(),
+  boletoDevClientSecret: z.string().optional().nullable(),
+  boletoDevApiKey: z.string().optional().nullable(),
+  // Credenciais específicas para PIX
+  pixProdClientId: z.string().optional().nullable(),
+  pixProdClientSecret: z.string().optional().nullable(),
+  pixProdApiKey: z.string().optional().nullable(),
+  pixDevClientId: z.string().optional().nullable(),
+  pixDevClientSecret: z.string().optional().nullable(),
+  pixDevApiKey: z.string().optional().nullable(),
 })
 
 export async function GET(): Promise<NextResponse> {
@@ -128,6 +150,30 @@ export async function PUT(request: Request): Promise<NextResponse> {
     }
     if (!validatedData.certificatePassword) {
       delete updateData.certificatePassword
+    }
+    if (!validatedData.boletoProdClientSecret) {
+      delete updateData.boletoProdClientSecret
+    }
+    if (!validatedData.boletoProdApiKey) {
+      delete updateData.boletoProdApiKey
+    }
+    if (!validatedData.boletoDevClientSecret) {
+      delete updateData.boletoDevClientSecret
+    }
+    if (!validatedData.boletoDevApiKey) {
+      delete updateData.boletoDevApiKey
+    }
+    if (!validatedData.pixProdClientSecret) {
+      delete updateData.pixProdClientSecret
+    }
+    if (!validatedData.pixProdApiKey) {
+      delete updateData.pixProdApiKey
+    }
+    if (!validatedData.pixDevClientSecret) {
+      delete updateData.pixDevClientSecret
+    }
+    if (!validatedData.pixDevApiKey) {
+      delete updateData.pixDevApiKey
     }
 
     // Se ativando o Bradesco, desativar outros gateways (exclusão mútua)

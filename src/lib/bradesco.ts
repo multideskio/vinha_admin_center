@@ -154,8 +154,15 @@ export function getBradescoCobrancaAuthUrl(environment: BradescoEnvironment): st
  * @returns Configuração do Bradesco com credenciais e certificado
  * @throws Error se o gateway não estiver configurado ou ativo
  */
-export async function getBradescoConfig(): Promise<BradescoConfig> {
-  const cacheKey = CACHE_KEYS.BRADESCO_CONFIG(COMPANY_ID)
+/**
+ * Busca a configuração do gateway Bradesco BOLETO no banco de dados com cache.
+ * Usa credenciais específicas para o produto Boleto.
+ *
+ * @returns Configuração do Bradesco Boleto com credenciais e certificado
+ * @throws Error se o gateway não estiver configurado ou ativo
+ */
+export async function getBradescoBoletoConfig(): Promise<BradescoConfig> {
+  const cacheKey = CACHE_KEYS.BRADESCO_CONFIG(COMPANY_ID) + ':boleto'
   const cached = configCache.get<BradescoConfig>(cacheKey)
   if (cached) {
     return cached
@@ -180,13 +187,16 @@ export async function getBradescoConfig(): Promise<BradescoConfig> {
     throw new Error('Gateway Bradesco está desativado. Ative em /admin/gateways/bradesco')
   }
 
-  const clientId = config.environment === 'production' ? config.prodClientId : config.devClientId
+  const clientId =
+    config.environment === 'production' ? config.boletoProdClientId : config.boletoDevClientId
   const clientSecret =
-    config.environment === 'production' ? config.prodClientSecret : config.devClientSecret
+    config.environment === 'production'
+      ? config.boletoProdClientSecret
+      : config.boletoDevClientSecret
 
   if (!clientId || !clientSecret) {
     throw new Error(
-      `Credenciais Bradesco ${config.environment} não configuradas. Configure em /admin/gateways/bradesco`,
+      `Credenciais Bradesco Boleto ${config.environment} não configuradas. Configure em /admin/gateways/bradesco`,
     )
   }
 
@@ -211,7 +221,79 @@ export async function getBradescoConfig(): Promise<BradescoConfig> {
 
   configCache.set(cacheKey, bradescoConfig)
 
-  safeLog('[BRADESCO_CONFIG] Configuração carregada e cacheada', {
+  safeLog('[BRADESCO_BOLETO_CONFIG] Configuração carregada e cacheada', {
+    environment: bradescoConfig.environment,
+  })
+
+  return bradescoConfig
+}
+
+/**
+ * Busca a configuração do gateway Bradesco PIX no banco de dados com cache.
+ * Usa credenciais específicas para o produto PIX.
+ *
+ * @returns Configuração do Bradesco PIX com credenciais e certificado
+ * @throws Error se o gateway não estiver configurado ou ativo
+ */
+export async function getBradescoPixConfig(): Promise<BradescoConfig> {
+  const cacheKey = CACHE_KEYS.BRADESCO_CONFIG(COMPANY_ID) + ':pix'
+  const cached = configCache.get<BradescoConfig>(cacheKey)
+  if (cached) {
+    return cached
+  }
+
+  const [config] = await db
+    .select()
+    .from(gatewayConfigurations)
+    .where(
+      and(
+        eq(gatewayConfigurations.companyId, COMPANY_ID),
+        eq(gatewayConfigurations.gatewayName, 'Bradesco'),
+      ),
+    )
+    .limit(1)
+
+  if (!config) {
+    throw new Error('Gateway Bradesco não configurado. Configure em /admin/gateways/bradesco')
+  }
+
+  if (!config.isActive) {
+    throw new Error('Gateway Bradesco está desativado. Ative em /admin/gateways/bradesco')
+  }
+
+  const clientId =
+    config.environment === 'production' ? config.pixProdClientId : config.pixDevClientId
+  const clientSecret =
+    config.environment === 'production' ? config.pixProdClientSecret : config.pixDevClientSecret
+
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      `Credenciais Bradesco PIX ${config.environment} não configuradas. Configure em /admin/gateways/bradesco`,
+    )
+  }
+
+  if (!config.certificate || !config.certificatePassword) {
+    throw new Error(
+      'Certificado digital do Bradesco não configurado. Configure em /admin/gateways/bradesco',
+    )
+  }
+
+  if (!config.pixKey) {
+    throw new Error('Chave PIX do recebedor não configurada. Configure em /admin/gateways/bradesco')
+  }
+
+  const bradescoConfig: BradescoConfig = {
+    clientId,
+    clientSecret,
+    certificate: config.certificate,
+    certificatePassword: config.certificatePassword,
+    pixKey: config.pixKey,
+    environment: config.environment as BradescoEnvironment,
+  }
+
+  configCache.set(cacheKey, bradescoConfig)
+
+  safeLog('[BRADESCO_PIX_CONFIG] Configuração carregada e cacheada', {
     environment: bradescoConfig.environment,
   })
 
@@ -229,286 +311,6 @@ export async function getBradescoConfig(): Promise<BradescoConfig> {
  * @param options - Opções da requisição (method, headers, body, agent)
  * @returns Objeto com statusCode e body (string)
  */
-function bradescoMtlsFetch(
-  url: string,
-  options: {
-    method: string
-    headers: Record<string, string>
-    body: string
-    agent: https.Agent
-  },
-): Promise<{ statusCode: number; body: string }> {
-  return new Promise((resolve, reject) => {
-    const parsedUrl = new URL(url)
-    const req = https.request(
-      {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port || 443,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: options.method,
-        headers: options.headers,
-        agent: options.agent,
-      },
-      (res) => {
-        const chunks: Buffer[] = []
-        res.on('data', (chunk: Buffer) => chunks.push(chunk))
-        res.on('end', () => {
-          const body = Buffer.concat(chunks).toString('utf-8')
-          resolve({ statusCode: res.statusCode ?? 0, body })
-        })
-      },
-    )
-
-    const timeoutId = setTimeout(() => {
-      req.destroy()
-      reject(
-        new Error('Timeout ao comunicar com a API de autenticação do Bradesco. Tente novamente.'),
-      )
-    }, BRADESCO_TIMEOUT_MS)
-
-    req.on('error', (error) => {
-      clearTimeout(timeoutId)
-      reject(error)
-    })
-
-    req.on('close', () => {
-      clearTimeout(timeoutId)
-    })
-
-    req.write(options.body)
-    req.end()
-  })
-}
-
-/**
- * Obtém um token OAuth2 do Bradesco via client_credentials com mTLS.
- * O token é cacheado em memória com TTL baseado no `expires_in` da resposta,
- * subtraindo 1 minuto como margem de segurança.
- *
- * @returns Token OAuth2 com accessToken e expiresAt
- * @throws Error se a autenticação falhar (mensagem em pt-BR)
- */
-export async function getBradescoToken(): Promise<BradescoOAuthToken> {
-  // ✅ SEGURANÇA: Usar configCache ao invés de variável global para invalidação centralizada
-  const tokenCacheKey = `bradesco:oauth:pix:${COMPANY_ID}`
-  const cached = configCache.get<BradescoOAuthToken>(tokenCacheKey)
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached
-  }
-
-  const config = await getBradescoConfig()
-  const authUrl = getBradescoAuthUrl(config.environment)
-
-  // Sandbox envia client_id/client_secret no body (form-urlencoded).
-  // Produção e homologação usam Basic Auth no header.
-  const isSandbox = config.environment === 'sandbox'
-  const body = isSandbox
-    ? `grant_type=client_credentials&client_id=${encodeURIComponent(config.clientId)}&client_secret=${encodeURIComponent(config.clientSecret)}`
-    : 'grant_type=client_credentials'
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-  }
-
-  if (!isSandbox) {
-    const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')
-    headers['Authorization'] = `Basic ${basicAuth}`
-  }
-
-  await logBradescoRequest({
-    operationType: 'token',
-    method: 'POST',
-    endpoint: authUrl,
-    requestBody: { grant_type: 'client_credentials', environment: config.environment },
-  })
-
-  try {
-    const agent = new https.Agent({
-      pfx: Buffer.from(config.certificate, 'base64'),
-      passphrase: config.certificatePassword,
-    })
-
-    const response = await bradescoMtlsFetch(authUrl, {
-      method: 'POST',
-      headers,
-      body,
-      agent,
-    })
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      await logBradescoResponse({
-        operationType: 'token',
-        method: 'POST',
-        endpoint: authUrl,
-        statusCode: response.statusCode,
-        responseBody: response.body,
-        errorMessage: `HTTP ${response.statusCode}`,
-      })
-      throw new Error(
-        'Erro na autenticação OAuth2 com o Bradesco. Verifique as credenciais e o certificado digital.',
-      )
-    }
-
-    const data: { access_token: string; expires_in: number; token_type: string } = JSON.parse(
-      response.body,
-    )
-
-    const token: BradescoOAuthToken = {
-      accessToken: data.access_token,
-      expiresAt: Date.now() + data.expires_in * 1000 - 60_000,
-    }
-
-    // ✅ SEGURANÇA: Usar configCache para invalidação centralizada
-    configCache.set(tokenCacheKey, token)
-
-    await logBradescoResponse({
-      operationType: 'token',
-      method: 'POST',
-      endpoint: authUrl,
-      statusCode: response.statusCode,
-      responseBody: { token_type: data.token_type, expires_in: data.expires_in },
-    })
-
-    safeLog('[BRADESCO_AUTH] Token OAuth2 obtido e cacheado', {
-      environment: config.environment,
-      expiresIn: data.expires_in,
-    })
-
-    return token
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Erro na autenticação OAuth2')) {
-      throw error
-    }
-
-    safeError('[BRADESCO_AUTH] Falha na autenticação OAuth2', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-
-    throw new Error(
-      'Erro na autenticação OAuth2 com o Bradesco. Verifique as credenciais e o certificado digital.',
-    )
-  }
-}
-
-// ─── OAuth Cobrança (Boleto) ─────────────────────────────────────────────────
-
-/**
- * Obtém um token OAuth2 específico para a API de Cobrança (boleto) do Bradesco.
- * A API de Cobrança usa um endpoint de autenticação diferente do PIX:
- * `/auth/server-mtls/v2/token` ao invés de `/auth/server/oauth/token`
- *
- * O token é cacheado separadamente do token PIX.
- *
- * @returns Token OAuth2 com accessToken e expiresAt
- * @throws Error se a autenticação falhar
- */
-export async function getBradescoCobrancaToken(): Promise<BradescoOAuthToken> {
-  // ✅ SEGURANÇA: Usar configCache para invalidação centralizada
-  const cobrancaCacheKey = `bradesco:oauth:cobranca:${COMPANY_ID}`
-  const cached = configCache.get<BradescoOAuthToken>(cobrancaCacheKey)
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached
-  }
-
-  const config = await getBradescoConfig()
-  const authUrl = getBradescoCobrancaAuthUrl(config.environment)
-
-  // Sandbox envia client_id/client_secret no body (form-urlencoded).
-  // Produção e homologação usam Basic Auth no header.
-  const isSandbox = config.environment === 'sandbox'
-  const body = isSandbox
-    ? `grant_type=client_credentials&client_id=${encodeURIComponent(config.clientId)}&client_secret=${encodeURIComponent(config.clientSecret)}`
-    : 'grant_type=client_credentials'
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-  }
-
-  if (!isSandbox) {
-    const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')
-    headers['Authorization'] = `Basic ${basicAuth}`
-  }
-
-  await logBradescoRequest({
-    operationType: 'token',
-    method: 'POST',
-    endpoint: authUrl,
-    requestBody: {
-      grant_type: 'client_credentials',
-      environment: config.environment,
-      type: 'cobranca',
-    },
-  })
-
-  try {
-    const agent = new https.Agent({
-      pfx: Buffer.from(config.certificate, 'base64'),
-      passphrase: config.certificatePassword,
-    })
-
-    const response = await bradescoMtlsFetch(authUrl, {
-      method: 'POST',
-      headers,
-      body,
-      agent,
-    })
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      await logBradescoResponse({
-        operationType: 'token',
-        method: 'POST',
-        endpoint: authUrl,
-        statusCode: response.statusCode,
-        responseBody: response.body,
-        errorMessage: `HTTP ${response.statusCode}`,
-      })
-      throw new Error(
-        'Erro na autenticação OAuth2 de Cobrança com o Bradesco. Verifique as credenciais e o certificado digital.',
-      )
-    }
-
-    const data: { access_token: string; expires_in: number; token_type: string } = JSON.parse(
-      response.body,
-    )
-
-    const token: BradescoOAuthToken = {
-      accessToken: data.access_token,
-      expiresAt: Date.now() + data.expires_in * 1000 - 60_000,
-    }
-
-    configCache.set(cobrancaCacheKey, token)
-
-    await logBradescoResponse({
-      operationType: 'token',
-      method: 'POST',
-      endpoint: authUrl,
-      statusCode: response.statusCode,
-      responseBody: { token_type: data.token_type, expires_in: data.expires_in },
-    })
-
-    safeLog('[BRADESCO_AUTH_COBRANCA] Token OAuth2 de Cobrança obtido e cacheado', {
-      environment: config.environment,
-      expiresIn: data.expires_in,
-    })
-
-    return token
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Erro na autenticação OAuth2')) {
-      throw error
-    }
-
-    safeError('[BRADESCO_AUTH_COBRANCA] Falha na autenticação OAuth2 de Cobrança', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-
-    throw new Error(
-      'Erro na autenticação OAuth2 de Cobrança com o Bradesco. Verifique as credenciais e o certificado digital.',
-    )
-  }
-}
-
-// ─── Fetch wrapper com mTLS e timeout ────────────────────────────────────────
-
 /**
  * Wrapper para requisições HTTPS com mTLS (certificado digital) e timeout de 15s.
  * O Bradesco exige autenticação mútua TLS em TODAS as chamadas à API,
@@ -516,9 +318,18 @@ export async function getBradescoCobrancaToken(): Promise<BradescoOAuthToken> {
  *
  * Retorna um objeto compatível com a interface Response do fetch para
  * manter compatibilidade com o código existente.
+ *
+ * @param url - URL completa do endpoint
+ * @param options - Opções da requisição (method, headers, body)
+ * @param productType - Tipo de produto ('pix' ou 'boleto') para carregar credenciais corretas
  */
-export async function bradescoFetch(url: string, options: RequestInit): Promise<Response> {
-  const config = await getBradescoConfig()
+export async function bradescoFetch(
+  url: string,
+  options: RequestInit,
+  productType: 'pix' | 'boleto' = 'pix',
+): Promise<Response> {
+  const config =
+    productType === 'boleto' ? await getBradescoBoletoConfig() : await getBradescoPixConfig()
 
   return new Promise((resolve, reject) => {
     const parsedUrl = new URL(url)
@@ -598,6 +409,231 @@ export async function bradescoFetch(url: string, options: RequestInit): Promise<
     req.end()
   })
 }
+
+/**
+ * Obtém um token OAuth2 do Bradesco via client_credentials com mTLS.
+ * O token é cacheado em memória com TTL baseado no `expires_in` da resposta,
+ * subtraindo 1 minuto como margem de segurança.
+ *
+ * @returns Token OAuth2 com accessToken e expiresAt
+ * @throws Error se a autenticação falhar (mensagem em pt-BR)
+ */
+export async function getBradescoToken(): Promise<BradescoOAuthToken> {
+  // ✅ SEGURANÇA: Usar configCache ao invés de variável global para invalidação centralizada
+  const tokenCacheKey = `bradesco:oauth:pix:${COMPANY_ID}`
+  const cached = configCache.get<BradescoOAuthToken>(tokenCacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached
+  }
+
+  const config = await getBradescoPixConfig()
+  const authUrl = getBradescoAuthUrl(config.environment)
+
+  // Sandbox envia client_id/client_secret no body (form-urlencoded).
+  // Produção e homologação usam Basic Auth no header.
+  const isSandbox = config.environment === 'sandbox'
+  const body = isSandbox
+    ? `grant_type=client_credentials&client_id=${encodeURIComponent(config.clientId)}&client_secret=${encodeURIComponent(config.clientSecret)}`
+    : 'grant_type=client_credentials'
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  }
+
+  if (!isSandbox) {
+    const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')
+    headers['Authorization'] = `Basic ${basicAuth}`
+  }
+
+  await logBradescoRequest({
+    operationType: 'token',
+    method: 'POST',
+    endpoint: authUrl,
+    requestBody: { grant_type: 'client_credentials', environment: config.environment },
+  })
+
+  try {
+    const response = await bradescoFetch(
+      authUrl,
+      {
+        method: 'POST',
+        headers,
+        body,
+      },
+      'pix',
+    )
+
+    if (!response.ok) {
+      const responseText = await response.text()
+      await logBradescoResponse({
+        operationType: 'token',
+        method: 'POST',
+        endpoint: authUrl,
+        statusCode: response.status,
+        responseBody: responseText,
+        errorMessage: `HTTP ${response.status}`,
+      })
+      throw new Error(
+        'Erro na autenticação OAuth2 com o Bradesco. Verifique as credenciais e o certificado digital.',
+      )
+    }
+
+    const data: { access_token: string; expires_in: number; token_type: string } =
+      await response.json()
+
+    const token: BradescoOAuthToken = {
+      accessToken: data.access_token,
+      expiresAt: Date.now() + data.expires_in * 1000 - 60_000,
+    }
+
+    // ✅ SEGURANÇA: Usar configCache para invalidação centralizada
+    configCache.set(tokenCacheKey, token)
+
+    await logBradescoResponse({
+      operationType: 'token',
+      method: 'POST',
+      endpoint: authUrl,
+      statusCode: response.status,
+      responseBody: { token_type: data.token_type, expires_in: data.expires_in },
+    })
+
+    safeLog('[BRADESCO_AUTH] Token OAuth2 obtido e cacheado', {
+      environment: config.environment,
+      expiresIn: data.expires_in,
+    })
+
+    return token
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Erro na autenticação OAuth2')) {
+      throw error
+    }
+
+    safeError('[BRADESCO_AUTH] Falha na autenticação OAuth2', {
+      error: error instanceof Error ? error.message : String(error),
+    })
+
+    throw new Error(
+      'Erro na autenticação OAuth2 com o Bradesco. Verifique as credenciais e o certificado digital.',
+    )
+  }
+}
+
+// ─── OAuth Cobrança (Boleto) ─────────────────────────────────────────────────
+
+/**
+ * Obtém um token OAuth2 específico para a API de Cobrança (boleto) do Bradesco.
+ * A API de Cobrança usa um endpoint de autenticação diferente do PIX:
+ * `/auth/server-mtls/v2/token` ao invés de `/auth/server/oauth/token`
+ *
+ * O token é cacheado separadamente do token PIX.
+ *
+ * @returns Token OAuth2 com accessToken e expiresAt
+ * @throws Error se a autenticação falhar
+ */
+export async function getBradescoCobrancaToken(): Promise<BradescoOAuthToken> {
+  // ✅ SEGURANÇA: Usar configCache para invalidação centralizada
+  const cobrancaCacheKey = `bradesco:oauth:cobranca:${COMPANY_ID}`
+  const cached = configCache.get<BradescoOAuthToken>(cobrancaCacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached
+  }
+
+  const config = await getBradescoBoletoConfig()
+  const authUrl = getBradescoCobrancaAuthUrl(config.environment)
+
+  // Sandbox envia client_id/client_secret no body (form-urlencoded).
+  // Produção e homologação usam Basic Auth no header.
+  const isSandbox = config.environment === 'sandbox'
+  const body = isSandbox
+    ? `grant_type=client_credentials&client_id=${encodeURIComponent(config.clientId)}&client_secret=${encodeURIComponent(config.clientSecret)}`
+    : 'grant_type=client_credentials'
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  }
+
+  if (!isSandbox) {
+    const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')
+    headers['Authorization'] = `Basic ${basicAuth}`
+  }
+
+  await logBradescoRequest({
+    operationType: 'token',
+    method: 'POST',
+    endpoint: authUrl,
+    requestBody: {
+      grant_type: 'client_credentials',
+      environment: config.environment,
+      type: 'cobranca',
+    },
+  })
+
+  try {
+    const response = await bradescoFetch(
+      authUrl,
+      {
+        method: 'POST',
+        headers,
+        body,
+      },
+      'boleto',
+    )
+
+    if (!response.ok) {
+      const responseText = await response.text()
+      await logBradescoResponse({
+        operationType: 'token',
+        method: 'POST',
+        endpoint: authUrl,
+        statusCode: response.status,
+        responseBody: responseText,
+        errorMessage: `HTTP ${response.status}`,
+      })
+      throw new Error(
+        'Erro na autenticação OAuth2 de Cobrança com o Bradesco. Verifique as credenciais e o certificado digital.',
+      )
+    }
+
+    const data: { access_token: string; expires_in: number; token_type: string } =
+      await response.json()
+
+    const token: BradescoOAuthToken = {
+      accessToken: data.access_token,
+      expiresAt: Date.now() + data.expires_in * 1000 - 60_000,
+    }
+
+    configCache.set(cobrancaCacheKey, token)
+
+    await logBradescoResponse({
+      operationType: 'token',
+      method: 'POST',
+      endpoint: authUrl,
+      statusCode: response.status,
+      responseBody: { token_type: data.token_type, expires_in: data.expires_in },
+    })
+
+    safeLog('[BRADESCO_AUTH_COBRANCA] Token OAuth2 de Cobrança obtido e cacheado', {
+      environment: config.environment,
+      expiresIn: data.expires_in,
+    })
+
+    return token
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Erro na autenticação OAuth2')) {
+      throw error
+    }
+
+    safeError('[BRADESCO_AUTH_COBRANCA] Falha na autenticação OAuth2 de Cobrança', {
+      error: error instanceof Error ? error.message : String(error),
+    })
+
+    throw new Error(
+      'Erro na autenticação OAuth2 de Cobrança com o Bradesco. Verifique as credenciais e o certificado digital.',
+    )
+  }
+}
+
+// ─── Fetch wrapper com mTLS e timeout ────────────────────────────────────────
 
 // ─── Geradores de identificadores ────────────────────────────────────────────
 
@@ -690,7 +726,7 @@ export async function createBradescoPixPayment(
   customerName: string,
   customerCpf: string,
 ): Promise<BradescoPixResponse> {
-  const config = await getBradescoConfig()
+  const config = await getBradescoPixConfig()
   const token = await getBradescoToken()
   const pixUrl = getBradescoPixUrl(config.environment)
   const isSandbox = config.environment === 'sandbox'
@@ -740,14 +776,18 @@ export async function createBradescoPixPayment(
   })
 
   try {
-    const response = await bradescoFetch(endpoint, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token.accessToken}`,
+    const response = await bradescoFetch(
+      endpoint,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token.accessToken}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    })
+      'pix',
+    )
 
     const responseText = await response.text()
 
@@ -816,13 +856,17 @@ export async function createBradescoPixPayment(
     if (location && !qrCode) {
       try {
         // Buscar payload PIX via location URL (padrão BACEN)
-        const qrResponse = await bradescoFetch(location, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token.accessToken}`,
-            Accept: 'application/json',
+        const qrResponse = await bradescoFetch(
+          location,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token.accessToken}`,
+              Accept: 'application/json',
+            },
           },
-        })
+          'pix',
+        )
 
         if (qrResponse.ok) {
           const qrText = await qrResponse.text()
@@ -905,7 +949,7 @@ export async function createBradescoPixPayment(
  * @returns Dados da cobrança com status atual e informações de pagamento (se concluída)
  */
 export async function queryBradescoPixPayment(txid: string): Promise<BradescoPixQueryResponse> {
-  const config = await getBradescoConfig()
+  const config = await getBradescoPixConfig()
   const token = await getBradescoToken()
   const pixUrl = getBradescoPixUrl(config.environment)
   const endpoint = `${pixUrl}/v2/cob/${txid}`
@@ -924,12 +968,16 @@ export async function queryBradescoPixPayment(txid: string): Promise<BradescoPix
   })
 
   try {
-    const response = await bradescoFetch(endpoint, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token.accessToken}`,
+    const response = await bradescoFetch(
+      endpoint,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token.accessToken}`,
+        },
       },
-    })
+      'pix',
+    )
 
     const responseText = await response.text()
 
@@ -1130,7 +1178,7 @@ export async function createBradescoBoletoPayment(
   customerZipCode: string,
   customerDistrict: string,
 ): Promise<BradescoBoletoResponse> {
-  const config = await getBradescoConfig()
+  const config = await getBradescoBoletoConfig()
   const token = await getBradescoCobrancaToken()
   const nossoNumero = generateNossoNumero()
   const apiUrl = getBradescoApiUrl(config.environment)
@@ -1244,14 +1292,18 @@ export async function createBradescoBoletoPayment(
   })
 
   try {
-    const response = await bradescoFetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token.accessToken}`,
+    const response = await bradescoFetch(
+      endpoint,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token.accessToken}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    })
+      'boleto',
+    )
 
     const responseText = await response.text()
 
@@ -1370,7 +1422,7 @@ export async function createBradescoBoletoPayment(
 export async function queryBradescoBoletoPayment(
   nossoNumero: string,
 ): Promise<BradescoBoletoQueryResponse> {
-  const config = await getBradescoConfig()
+  const config = await getBradescoBoletoConfig()
   const token = await getBradescoCobrancaToken()
   const apiUrl = getBradescoApiUrl(config.environment)
   const endpoint = `${apiUrl}/boleto/cobranca-registro/v1/cobranca/${nossoNumero}`
@@ -1389,12 +1441,16 @@ export async function queryBradescoBoletoPayment(
   })
 
   try {
-    const response = await bradescoFetch(endpoint, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token.accessToken}`,
+    const response = await bradescoFetch(
+      endpoint,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token.accessToken}`,
+        },
       },
-    })
+      'boleto',
+    )
 
     const responseText = await response.text()
 

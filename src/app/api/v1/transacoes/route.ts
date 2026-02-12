@@ -23,7 +23,7 @@ import {
   getActiveGateway,
   createBradescoPixPayment,
   createBradescoBoletoPayment,
-  getBradescoConfig,
+  getBradescoPixConfig,
 } from '@/lib/bradesco'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkDuplicatePayment } from '@/lib/payment-guard'
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (data.paymentMethod === 'pix') {
-        const config = await getBradescoConfig()
+        const config = await getBradescoPixConfig()
         const pixResult = await createBradescoPixPayment(
           data.amount,
           config.pixKey,

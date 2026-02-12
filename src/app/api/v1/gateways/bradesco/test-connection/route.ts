@@ -5,7 +5,12 @@
 
 import { NextResponse } from 'next/server'
 import { validateRequest } from '@/lib/jwt'
-import { getBradescoToken, getBradescoConfig } from '@/lib/bradesco'
+import {
+  getBradescoToken,
+  getBradescoPixConfig,
+  getBradescoCobrancaToken,
+  getBradescoBoletoConfig,
+} from '@/lib/bradesco'
 
 export async function POST(): Promise<NextResponse> {
   const { user } = await validateRequest()
@@ -14,20 +19,37 @@ export async function POST(): Promise<NextResponse> {
   }
 
   try {
-    const config = await getBradescoConfig()
-    const startTime = Date.now()
-    const token = await getBradescoToken()
-    const elapsed = Date.now() - startTime
+    // Testar conexão PIX
+    const pixConfig = await getBradescoPixConfig()
+    const pixStartTime = Date.now()
+    const pixToken = await getBradescoToken()
+    const pixElapsed = Date.now() - pixStartTime
+
+    // Testar conexão Boleto
+    await getBradescoBoletoConfig()
+    const boletoStartTime = Date.now()
+    const boletoToken = await getBradescoCobrancaToken()
+    const boletoElapsed = Date.now() - boletoStartTime
 
     return NextResponse.json({
       success: true,
       message: 'Conexão com o Bradesco estabelecida com sucesso!',
       details: {
-        environment: config.environment,
-        tokenObtained: !!token.accessToken,
-        tokenPreview: token.accessToken ? `${token.accessToken.substring(0, 20)}...` : null,
-        responseTimeMs: elapsed,
-        expiresIn: Math.round((token.expiresAt - Date.now()) / 1000),
+        environment: pixConfig.environment,
+        pix: {
+          tokenObtained: !!pixToken.accessToken,
+          tokenPreview: pixToken.accessToken ? `${pixToken.accessToken.substring(0, 20)}...` : null,
+          responseTimeMs: pixElapsed,
+          expiresIn: Math.round((pixToken.expiresAt - Date.now()) / 1000),
+        },
+        boleto: {
+          tokenObtained: !!boletoToken.accessToken,
+          tokenPreview: boletoToken.accessToken
+            ? `${boletoToken.accessToken.substring(0, 20)}...`
+            : null,
+          responseTimeMs: boletoElapsed,
+          expiresIn: Math.round((boletoToken.expiresAt - Date.now()) / 1000),
+        },
       },
     })
   } catch (error) {

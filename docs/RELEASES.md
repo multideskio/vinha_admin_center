@@ -4,6 +4,37 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.16.0 - Credenciais Bradesco Separadas por Produto (Fevereiro 2026)
+
+### 💳 Gateway Bradesco — Credenciais Independentes
+
+Cada produto do Bradesco (PIX e Boleto) agora possui suas próprias credenciais OAuth2 por ambiente, permitindo configuração flexível e ambientes mistos.
+
+### ✨ Funcionalidades
+
+- Credenciais separadas: client_id, client_secret e api_key para PIX e Boleto
+- Suporte a ambientes mistos (ex: PIX em produção, Boleto em sandbox)
+- Teste de conexão valida ambos os produtos simultaneamente
+- UI admin com seções organizadas por produto
+
+### ♻️ Melhorias Técnicas
+
+- Funções de configuração separadas: `getBradescoPixConfig()` e `getBradescoBoletoConfig()`
+- `bradescoFetch()` com parâmetro `productType` para selecionar credenciais
+- Proteção de secrets: campos vazios não sobrescrevem credenciais existentes
+
+### 💾 Banco de Dados
+
+- 12 novos campos em `gateway_configurations`
+
+### 📊 Métricas
+
+- Arquivos modificados: 9 (7 modificados, 2 novos)
+- Campos de banco adicionados: 12
+- Produtos suportados: 2 (PIX e Boleto)
+
+---
+
 ## v0.15.0 - Notificações Automáticas, Segurança de Secrets & Cielo CPF (Fevereiro 2026)
 
 ### ✨ Funcionalidades

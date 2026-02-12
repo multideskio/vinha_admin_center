@@ -353,6 +353,20 @@ export const gatewayConfigurations = pgTable('gateway_configurations', {
   certificatePassword: text('certificate_password'),
   pixKey: text('pix_key'),
   acceptedPaymentMethods: text('accepted_payment_methods'),
+  // Credenciais específicas para Boleto Bradesco
+  boletoProdClientId: text('boleto_prod_client_id'),
+  boletoProdClientSecret: text('boleto_prod_client_secret'),
+  boletoProdApiKey: text('boleto_prod_api_key'),
+  boletoDevClientId: text('boleto_dev_client_id'),
+  boletoDevClientSecret: text('boleto_dev_client_secret'),
+  boletoDevApiKey: text('boleto_dev_api_key'),
+  // Credenciais específicas para PIX Bradesco
+  pixProdClientId: text('pix_prod_client_id'),
+  pixProdClientSecret: text('pix_prod_client_secret'),
+  pixProdApiKey: text('pix_prod_api_key'),
+  pixDevClientId: text('pix_dev_client_id'),
+  pixDevClientSecret: text('pix_dev_client_secret'),
+  pixDevApiKey: text('pix_dev_api_key'),
 })
 
 export const otherSettings = pgTable('other_settings', {

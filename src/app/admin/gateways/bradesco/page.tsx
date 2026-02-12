@@ -56,12 +56,22 @@ import {
 const bradescoGatewaySchema = z.object({
   isActive: z.boolean().default(false),
   environment: z.enum(['production', 'development', 'sandbox']),
-  prodClientId: z.string().optional().nullable(),
-  prodClientSecret: z.string().optional().nullable(),
-  devClientId: z.string().optional().nullable(),
-  devClientSecret: z.string().optional().nullable(),
   certificatePassword: z.string().optional().nullable(),
   pixKey: z.string().optional().nullable(),
+  // Credenciais específicas para Boleto
+  boletoProdClientId: z.string().optional().nullable(),
+  boletoProdClientSecret: z.string().optional().nullable(),
+  boletoProdApiKey: z.string().optional().nullable(),
+  boletoDevClientId: z.string().optional().nullable(),
+  boletoDevClientSecret: z.string().optional().nullable(),
+  boletoDevApiKey: z.string().optional().nullable(),
+  // Credenciais específicas para PIX
+  pixProdClientId: z.string().optional().nullable(),
+  pixProdClientSecret: z.string().optional().nullable(),
+  pixProdApiKey: z.string().optional().nullable(),
+  pixDevClientId: z.string().optional().nullable(),
+  pixDevClientSecret: z.string().optional().nullable(),
+  pixDevApiKey: z.string().optional().nullable(),
 })
 
 type BradescoGatewayValues = z.infer<typeof bradescoGatewaySchema>
@@ -75,8 +85,6 @@ export default function BradescoGatewayPage() {
   const [certificateFile, setCertificateFile] = React.useState<string | null>(null)
   const [certificateBase64, setCertificateBase64] = React.useState<string | null>(null)
   const [copied, setCopied] = React.useState(false)
-  const [hasProdSecret, setHasProdSecret] = React.useState(false)
-  const [hasDevSecret, setHasDevSecret] = React.useState(false)
   const [certDialogOpen, setCertDialogOpen] = React.useState(false)
   const [isGeneratingCert, setIsGeneratingCert] = React.useState(false)
   const [certCommonName, setCertCommonName] = React.useState('')
@@ -225,12 +233,20 @@ export default function BradescoGatewayPage() {
     defaultValues: {
       isActive: false,
       environment: 'development',
-      prodClientId: '',
-      prodClientSecret: '',
-      devClientId: '',
-      devClientSecret: '',
       certificatePassword: '',
       pixKey: '',
+      boletoProdClientId: '',
+      boletoProdClientSecret: '',
+      boletoProdApiKey: '',
+      boletoDevClientId: '',
+      boletoDevClientSecret: '',
+      boletoDevApiKey: '',
+      pixProdClientId: '',
+      pixProdClientSecret: '',
+      pixProdApiKey: '',
+      pixDevClientId: '',
+      pixDevClientSecret: '',
+      pixDevApiKey: '',
     },
   })
 
@@ -288,16 +304,22 @@ export default function BradescoGatewayPage() {
       const response = await fetch('/api/v1/gateways/bradesco')
       if (!response.ok) throw new Error('Falha ao carregar configurações.')
       const data = await response.json()
-      setHasProdSecret(!!data.config.hasProdSecret)
-      setHasDevSecret(!!data.config.hasDevSecret)
       form.reset({
         ...data.config,
-        prodClientId: data.config.prodClientId ?? '',
-        prodClientSecret: '',
-        devClientId: data.config.devClientId ?? '',
-        devClientSecret: '',
         certificatePassword: '',
         pixKey: data.config.pixKey ?? '',
+        boletoProdClientId: data.config.boletoProdClientId ?? '',
+        boletoProdClientSecret: '',
+        boletoProdApiKey: '',
+        boletoDevClientId: data.config.boletoDevClientId ?? '',
+        boletoDevClientSecret: '',
+        boletoDevApiKey: '',
+        pixProdClientId: data.config.pixProdClientId ?? '',
+        pixProdClientSecret: '',
+        pixProdApiKey: '',
+        pixDevClientId: data.config.pixDevClientId ?? '',
+        pixDevClientSecret: '',
+        pixDevApiKey: '',
       })
       // Se já existe certificado salvo, indicar no estado
       if (data.config.hasCertificate) {
@@ -353,10 +375,16 @@ export default function BradescoGatewayPage() {
     try {
       // Validação adicional para ambiente de produção
       if (data.environment === 'production' && data.isActive) {
-        if (!data.prodClientId || (!data.prodClientSecret && !hasProdSecret)) {
+        const hasBoletoCredentials =
+          data.boletoProdClientId && data.boletoProdClientSecret && data.boletoProdApiKey
+        const hasPixCredentials =
+          data.pixProdClientId && data.pixProdClientSecret && data.pixProdApiKey
+
+        if (!hasBoletoCredentials && !hasPixCredentials) {
           toast({
             title: 'Erro',
-            description: 'Credenciais de produção são obrigatórias para ativar em produção.',
+            description:
+              'Configure as credenciais de produção para pelo menos um produto (Boleto ou PIX).',
             variant: 'destructive',
           })
           setIsSaving(false)
@@ -366,11 +394,16 @@ export default function BradescoGatewayPage() {
 
       // Validação adicional para ambiente de desenvolvimento ou sandbox
       if ((data.environment === 'development' || data.environment === 'sandbox') && data.isActive) {
-        if (!data.devClientId || (!data.devClientSecret && !hasDevSecret)) {
+        const hasBoletoCredentials =
+          data.boletoDevClientId && data.boletoDevClientSecret && data.boletoDevApiKey
+        const hasPixCredentials =
+          data.pixDevClientId && data.pixDevClientSecret && data.pixDevApiKey
+
+        if (!hasBoletoCredentials && !hasPixCredentials) {
           toast({
             title: 'Erro',
             description:
-              'Credenciais de desenvolvimento são obrigatórias para ativar em desenvolvimento/sandbox.',
+              'Configure as credenciais de desenvolvimento para pelo menos um produto (Boleto ou PIX).',
             variant: 'destructive',
           })
           setIsSaving(false)
@@ -559,16 +592,16 @@ export default function BradescoGatewayPage() {
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Credenciais de Produção</h3>
+                <h3 className="text-lg font-medium">Credenciais de Boleto - Produção</h3>
                 <FormField
                   control={form.control}
-                  name="prodClientId"
+                  name="boletoProdClientId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client ID</FormLabel>
+                      <FormLabel>Client ID (Boleto)</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Seu Client ID de produção"
+                          placeholder="Client ID específico para boleto"
                           {...field}
                           value={field.value ?? ''}
                         />
@@ -579,22 +612,39 @@ export default function BradescoGatewayPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="prodClientSecret"
+                  name="boletoProdClientSecret"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client Secret</FormLabel>
+                      <FormLabel>Client Secret (Boleto)</FormLabel>
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder={
-                            hasProdSecret
-                              ? '••••••••  (já configurado — deixe vazio para manter)'
-                              : 'Seu Client Secret de produção'
-                          }
+                          placeholder="Client Secret específico para boleto"
                           {...field}
                           value={field.value ?? ''}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="boletoProdApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key (Boleto)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="API Key específica para boleto"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Cada produto do Bradesco tem sua própria API Key
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -604,16 +654,16 @@ export default function BradescoGatewayPage() {
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Credenciais de Desenvolvimento</h3>
+                <h3 className="text-lg font-medium">Credenciais de Boleto - Desenvolvimento</h3>
                 <FormField
                   control={form.control}
-                  name="devClientId"
+                  name="boletoDevClientId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client ID</FormLabel>
+                      <FormLabel>Client ID (Boleto)</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Seu Client ID de desenvolvimento"
+                          placeholder="Client ID de desenvolvimento para boleto"
                           {...field}
                           value={field.value ?? ''}
                         />
@@ -624,22 +674,163 @@ export default function BradescoGatewayPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="devClientSecret"
+                  name="boletoDevClientSecret"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client Secret</FormLabel>
+                      <FormLabel>Client Secret (Boleto)</FormLabel>
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder={
-                            hasDevSecret
-                              ? '••••••••  (já configurado — deixe vazio para manter)'
-                              : 'Seu Client Secret de desenvolvimento'
-                          }
+                          placeholder="Client Secret de desenvolvimento para boleto"
                           {...field}
                           value={field.value ?? ''}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="boletoDevApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key (Boleto)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="API Key de desenvolvimento para boleto"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Use as credenciais do ambiente sandbox/homologação
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Credenciais de PIX - Produção</h3>
+                <FormField
+                  control={form.control}
+                  name="pixProdClientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client ID (PIX)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Client ID específico para PIX"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="pixProdClientSecret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Secret (PIX)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Client Secret específico para PIX"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="pixProdApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key (PIX)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="API Key específica para PIX"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Cada produto do Bradesco tem sua própria API Key
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Credenciais de PIX - Desenvolvimento</h3>
+                <FormField
+                  control={form.control}
+                  name="pixDevClientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client ID (PIX)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Client ID de desenvolvimento para PIX"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="pixDevClientSecret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Secret (PIX)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Client Secret de desenvolvimento para PIX"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="pixDevApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key (PIX)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="API Key de desenvolvimento para PIX"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Use as credenciais do ambiente sandbox/homologação
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -71,6 +71,20 @@
       "when": 1770863033916,
       "tag": "0009_young_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1770917977325,
+      "tag": "0010_lowly_kronos",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1770919390282,
+      "tag": "0011_real_hitman",
+      "breakpoints": true
     }
   ]
 }
