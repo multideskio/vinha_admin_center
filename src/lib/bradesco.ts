@@ -60,6 +60,9 @@ export interface BradescoBoletoResponse {
   linhaDigitavel: string
   codigoBarras: string
   url: string
+  /** Campos adicionais retornados pela API de Cobrança Bradesco */
+  cdBarras?: string
+  nuLinhaDigitavel?: string
 }
 
 export interface BradescoBoletoQueryResponse {
@@ -94,16 +97,19 @@ export interface BradescoBoletoQueryResponse {
 const BRADESCO_URLS = {
   production: {
     auth: 'https://qrpix.bradesco.com.br/auth/server/oauth/token',
+    authCobranca: 'https://openapi.bradesco.com.br/auth/server-mtls/v2/token',
     api: 'https://openapi.bradesco.com.br',
     pix: 'https://qrpix.bradesco.com.br',
   },
   development: {
     auth: 'https://proxy.api.prebanco.com.br/auth/server/oauth/token',
+    authCobranca: 'https://proxy.api.prebanco.com.br/auth/server-mtls/v2/token',
     api: 'https://proxy.api.prebanco.com.br',
     pix: 'https://qrpix-h.bradesco.com.br',
   },
   sandbox: {
     auth: 'https://openapisandbox.prebanco.com.br/auth/server/oauth/token',
+    authCobranca: 'https://openapisandbox.prebanco.com.br/auth/server-mtls/v2/token',
     api: 'https://openapisandbox.prebanco.com.br',
     pix: 'https://openapisandbox.prebanco.com.br',
   },
@@ -128,6 +134,15 @@ export function getBradescoPixUrl(environment: BradescoEnvironment): string {
  */
 export function getBradescoAuthUrl(environment: BradescoEnvironment): string {
   return BRADESCO_URLS[environment].auth
+}
+
+/**
+ * Retorna a URL de autenticação OAuth de Cobrança (boleto) do Bradesco.
+ * A API de Cobrança usa um endpoint de auth diferente do PIX:
+ * `/auth/server-mtls/v2/token` ao invés de `/auth/server/oauth/token`
+ */
+export function getBradescoCobrancaAuthUrl(environment: BradescoEnvironment): string {
+  return BRADESCO_URLS[environment].authCobranca
 }
 
 // ─── Configuração com cache ──────────────────────────────────────────────────
@@ -374,31 +389,213 @@ export async function getBradescoToken(): Promise<BradescoOAuthToken> {
   }
 }
 
-// ─── Fetch wrapper com timeout ───────────────────────────────────────────────
+// ─── OAuth Cobrança (Boleto) ─────────────────────────────────────────────────
+
+/** Token OAuth2 de Cobrança cacheado em memória (separado do PIX) */
+let cachedCobrancaToken: BradescoOAuthToken | null = null
 
 /**
- * Wrapper para fetch com AbortController e timeout de 15s.
- * Compatível com Node.js runtime (não usa AbortSignal.timeout).
- * Segue o mesmo padrão do `cieloFetch()`.
+ * Obtém um token OAuth2 específico para a API de Cobrança (boleto) do Bradesco.
+ * A API de Cobrança usa um endpoint de autenticação diferente do PIX:
+ * `/auth/server-mtls/v2/token` ao invés de `/auth/server/oauth/token`
+ *
+ * O token é cacheado separadamente do token PIX.
+ *
+ * @returns Token OAuth2 com accessToken e expiresAt
+ * @throws Error se a autenticação falhar
+ */
+export async function getBradescoCobrancaToken(): Promise<BradescoOAuthToken> {
+  if (cachedCobrancaToken && cachedCobrancaToken.expiresAt > Date.now()) {
+    return cachedCobrancaToken
+  }
+
+  const config = await getBradescoConfig()
+  const authUrl = getBradescoCobrancaAuthUrl(config.environment)
+
+  // Sandbox envia client_id/client_secret no body (form-urlencoded).
+  // Produção e homologação usam Basic Auth no header.
+  const isSandbox = config.environment === 'sandbox'
+  const body = isSandbox
+    ? `grant_type=client_credentials&client_id=${encodeURIComponent(config.clientId)}&client_secret=${encodeURIComponent(config.clientSecret)}`
+    : 'grant_type=client_credentials'
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  }
+
+  if (!isSandbox) {
+    const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')
+    headers['Authorization'] = `Basic ${basicAuth}`
+  }
+
+  await logBradescoRequest({
+    operationType: 'token',
+    method: 'POST',
+    endpoint: authUrl,
+    requestBody: {
+      grant_type: 'client_credentials',
+      environment: config.environment,
+      type: 'cobranca',
+    },
+  })
+
+  try {
+    const agent = new https.Agent({
+      pfx: Buffer.from(config.certificate, 'base64'),
+      passphrase: config.certificatePassword,
+    })
+
+    const response = await bradescoMtlsFetch(authUrl, {
+      method: 'POST',
+      headers,
+      body,
+      agent,
+    })
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      await logBradescoResponse({
+        operationType: 'token',
+        method: 'POST',
+        endpoint: authUrl,
+        statusCode: response.statusCode,
+        responseBody: response.body,
+        errorMessage: `HTTP ${response.statusCode}`,
+      })
+      throw new Error(
+        'Erro na autenticação OAuth2 de Cobrança com o Bradesco. Verifique as credenciais e o certificado digital.',
+      )
+    }
+
+    const data: { access_token: string; expires_in: number; token_type: string } = JSON.parse(
+      response.body,
+    )
+
+    const token: BradescoOAuthToken = {
+      accessToken: data.access_token,
+      expiresAt: Date.now() + data.expires_in * 1000 - 60_000,
+    }
+
+    cachedCobrancaToken = token
+
+    await logBradescoResponse({
+      operationType: 'token',
+      method: 'POST',
+      endpoint: authUrl,
+      statusCode: response.statusCode,
+      responseBody: { token_type: data.token_type, expires_in: data.expires_in },
+    })
+
+    safeLog('[BRADESCO_AUTH_COBRANCA] Token OAuth2 de Cobrança obtido e cacheado', {
+      environment: config.environment,
+      expiresIn: data.expires_in,
+    })
+
+    return token
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Erro na autenticação OAuth2')) {
+      throw error
+    }
+
+    safeError('[BRADESCO_AUTH_COBRANCA] Falha na autenticação OAuth2 de Cobrança', {
+      error: error instanceof Error ? error.message : String(error),
+    })
+
+    throw new Error(
+      'Erro na autenticação OAuth2 de Cobrança com o Bradesco. Verifique as credenciais e o certificado digital.',
+    )
+  }
+}
+
+// ─── Fetch wrapper com mTLS e timeout ────────────────────────────────────────
+
+/**
+ * Wrapper para requisições HTTPS com mTLS (certificado digital) e timeout de 15s.
+ * O Bradesco exige autenticação mútua TLS em TODAS as chamadas à API,
+ * não apenas na autenticação OAuth2.
+ *
+ * Retorna um objeto compatível com a interface Response do fetch para
+ * manter compatibilidade com o código existente.
  */
 export async function bradescoFetch(url: string, options: RequestInit): Promise<Response> {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), BRADESCO_TIMEOUT_MS)
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    })
-    clearTimeout(timeoutId)
-    return response
-  } catch (error) {
-    clearTimeout(timeoutId)
-    if (error instanceof Error && error.name === 'AbortError') {
-      safeError('[BRADESCO_TIMEOUT] Timeout ao comunicar com API do Bradesco', { url })
-      throw new Error('Timeout ao comunicar com a API do Bradesco. Tente novamente.')
+  const config = await getBradescoConfig()
+
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url)
+    const method = (options.method || 'GET').toUpperCase()
+
+    const headers: Record<string, string> = {}
+    if (options.headers) {
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((value, key) => {
+          headers[key] = value
+        })
+      } else if (Array.isArray(options.headers)) {
+        for (const [key, value] of options.headers) {
+          headers[key] = value
+        }
+      } else {
+        Object.assign(headers, options.headers)
+      }
     }
-    throw error
-  }
+
+    const agent = new https.Agent({
+      pfx: Buffer.from(config.certificate, 'base64'),
+      passphrase: config.certificatePassword,
+    })
+
+    const req = https.request(
+      {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || 443,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method,
+        headers,
+        agent,
+      },
+      (res) => {
+        const chunks: Buffer[] = []
+        res.on('data', (chunk: Buffer) => chunks.push(chunk))
+        res.on('end', () => {
+          clearTimeout(timeoutId)
+          const body = Buffer.concat(chunks).toString('utf-8')
+
+          // Construir objeto Response compatível com fetch API
+          const response = new Response(body, {
+            status: res.statusCode ?? 0,
+            statusText: res.statusMessage ?? '',
+            headers: new Headers(
+              Object.entries(res.headers).reduce(
+                (acc, [key, value]) => {
+                  if (value) acc[key] = Array.isArray(value) ? value.join(', ') : value
+                  return acc
+                },
+                {} as Record<string, string>,
+              ),
+            ),
+          })
+
+          resolve(response)
+        })
+      },
+    )
+
+    const timeoutId = setTimeout(() => {
+      req.destroy()
+      safeError('[BRADESCO_TIMEOUT] Timeout ao comunicar com API do Bradesco', { url })
+      reject(new Error('Timeout ao comunicar com a API do Bradesco. Tente novamente.'))
+    }, BRADESCO_TIMEOUT_MS)
+
+    req.on('error', (error) => {
+      clearTimeout(timeoutId)
+      reject(error)
+    })
+
+    if (options.body) {
+      req.write(typeof options.body === 'string' ? options.body : JSON.stringify(options.body))
+    }
+
+    req.end()
+  })
 }
 
 // ─── Geradores de identificadores ────────────────────────────────────────────
@@ -452,9 +649,9 @@ export function generateNossoNumero(): string {
 
 /** Payload BACEN para cobrança PIX imediata */
 interface BradescoPixCobPayload {
-  calendario: { expiracao: number }
-  devedor: { cpf: string; nome: string }
-  valor: { original: string }
+  calendario: { expiracao: number | string }
+  devedor?: { cpf: string; nome: string }
+  valor: { original: string; modalidadeAlteracao?: number }
   chave: string
   solicitacaoPagador: string
 }
@@ -494,20 +691,37 @@ export async function createBradescoPixPayment(
 ): Promise<BradescoPixResponse> {
   const config = await getBradescoConfig()
   const token = await getBradescoToken()
-  const txid = generateTxid()
   const pixUrl = getBradescoPixUrl(config.environment)
+  const isSandbox = config.environment === 'sandbox'
+
+  // Sandbox do Bradesco usa dados fixos pré-cadastrados no mock server
+  // Referência: Coleção Postman oficial "Pix - geração de QR Code"
+  const SANDBOX_TXID = 'TESTESANDBOXPORTAL00000000000000002'
+  const SANDBOX_PIX_KEY = '97f97304-c70e-448f-ae4d-eefc737850d4'
+
+  const txid = isSandbox ? SANDBOX_TXID : generateTxid()
   const endpoint = `${pixUrl}/v2/cob/${txid}`
 
-  const payload: BradescoPixCobPayload = {
-    calendario: { expiracao: 3600 },
-    devedor: {
-      cpf: stripCpfNonDigits(customerCpf),
-      nome: customerName,
-    },
-    valor: { original: formatPixAmount(amount) },
-    chave: pixKey,
-    solicitacaoPagador: 'Contribuição',
-  }
+  // Montar payload conforme ambiente
+  // Sandbox: expiracao como string, modalidadeAlteracao, chave EVP fixa, sem devedor
+  // Produção: expiracao como número, devedor com CPF/nome, chave real
+  const payload: BradescoPixCobPayload = isSandbox
+    ? {
+        calendario: { expiracao: '3600' },
+        valor: { original: formatPixAmount(amount), modalidadeAlteracao: 0 },
+        chave: SANDBOX_PIX_KEY,
+        solicitacaoPagador: 'Contribuição',
+      }
+    : {
+        calendario: { expiracao: 3600 },
+        devedor: {
+          cpf: stripCpfNonDigits(customerCpf),
+          nome: customerName,
+        },
+        valor: { original: formatPixAmount(amount) },
+        chave: pixKey,
+        solicitacaoPagador: 'Contribuição',
+      }
 
   safeLog('[BRADESCO_PIX_REQUEST]', {
     endpoint,
@@ -555,13 +769,24 @@ export async function createBradescoPixPayment(
           errorMessage = `Erro ao criar cobrança PIX: ${errorData.detail}`
         } else if (errorData.violacoes && errorData.violacoes.length > 0) {
           errorMessage = `Erro ao criar cobrança PIX: ${errorData.violacoes.map((v) => v.razao).join(', ')}`
+        } else if (errorData.title) {
+          errorMessage = `Erro ao criar cobrança PIX: ${errorData.title}`
         }
       } catch (parseError) {
         safeError('[BRADESCO_PIX_PARSE_ERROR] Não foi possível parsear erro da API PIX', {
-          responseText: responseText?.substring(0, 200),
+          responseText: responseText?.substring(0, 500),
         })
         errorMessage = `Erro ${response.status} ao criar cobrança PIX no Bradesco`
       }
+
+      safeError('[BRADESCO_PIX_ERROR]', {
+        statusCode: response.status,
+        errorMessage,
+        responseBody: responseText?.substring(0, 500),
+        txid,
+        environment: config.environment,
+      })
+
       throw new Error(errorMessage)
     }
 
@@ -768,35 +993,96 @@ export async function queryBradescoPixPayment(txid: string): Promise<BradescoPix
   }
 }
 
-// ─── Boleto Service ──────────────────────────────────────────────────────────
+// ─── Boleto Service (API Cobrança Bradesco) ─────────────────────────────────
 
-/** Payload para registro de boleto no Bradesco */
-interface BradescoBoletoPayload {
-  nossoNumero: string
-  valorNominal: number // valor em centavos
-  dataVencimento: string // formato "YYYY-MM-DD"
-  pagador: {
-    nome: string
-    cpf: string
-    endereco: string
-    cidade: string
-    uf: string
-    cep: string
-    bairro: string
-  }
+/**
+ * Payload completo para registro de cobrança (boleto) na API Bradesco.
+ * O sandbox exige TODOS os campos, mesmo os opcionais em produção.
+ * Endpoint: POST /boleto/cobranca-registro/v1/cobranca
+ */
+interface BradescoCobrancaPayload {
+  // Dados do cedente/beneficiário
+  nuCPFCNPJ: string
+  filialCPFCNPJ: string
+  ctrlCPFCNPJ: string
+  // Produto e negociação
+  idProduto: string
+  nuNegociacao: string
+  // Dados do título
+  nuCliente: string
+  dtEmissaoTitulo: string
+  dtVencimentoTitulo: string
+  vlNominalTitulo: string
+  cdEspecieTitulo: string
+  tpDuplicata: string
+  // Aceite e tipo de acesso
+  cindcdAceitSacdo: string
+  cdTipoAcesso: string
+  cdTipoContaCaucao: string
+  // Dados do pagador (sacado)
+  nomePagador: string
+  logradouroPagador: string
+  nuLogradouroPagador: string
+  complementoLogradouroPagador: string
+  cepPagador: string
+  complementoCepPagador: string
+  bairroPagador: string
+  municipioPagador: string
+  ufPagador: string
+  cdIndCpfcnpjPagador: string
+  nuCpfcnpjPagador: string
+  endEletronicoPagador: string
+  // Dados do sacador/avalista
+  nomeSacadorAvalista: string
+  logradouroSacadorAvalista: string
+  nuLogradouroSacadorAvalista: string
+  complementoLogradouroSacadorAvalista: string
+  cepSacadorAvalista: string
+  complementoCepSacadorAvalista: string
+  bairroSacadorAvalista: string
+  municipioSacadorAvalista: string
+  ufSacadorAvalista: string
+  cdIndCpfcnpjSacadorAvalista: string
+  nuCpfcnpjSacadorAvalista: string
+  // Campos adicionais de controle
+  filialCPFCNPJRecworking?: string
+  ctrlCPFCNPJRecworking?: string
+  idProdutoRecworking?: string
+  nuNegociacaoRecworking?: string
+  [key: string]: string | undefined
 }
+
+/** Valores fixos do sandbox Bradesco para Cobrança */
+const BRADESCO_BOLETO_SANDBOX = {
+  nuCPFCNPJ: '31759489',
+  filialCPFCNPJ: '1',
+  ctrlCPFCNPJ: '55',
+  idProduto: '9',
+  nuNegociacao: '285600000000222652',
+} as const
 
 /**
  * Formata a data de vencimento do boleto (7 dias a partir de hoje).
- * Formato: "YYYY-MM-DD"
+ * Formato Bradesco: "DD.MM.YYYY"
  */
 function getBoletoExpirationDate(): string {
   const date = new Date()
   date.setDate(date.getDate() + 7)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}.${month}.${year}`
+}
+
+/**
+ * Formata a data atual no formato Bradesco: "DD.MM.YYYY"
+ */
+function getBoletoEmissionDate(): string {
+  const date = new Date()
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}.${month}.${year}`
 }
 
 /**
@@ -808,9 +1094,21 @@ function stripCepNonDigits(cep: string): string {
 }
 
 /**
- * Registra um boleto na API de Boleto Registrado do Bradesco.
+ * Formata valor em reais para string com 2 casas decimais.
+ * Ex: 100 → "100.00", 49.9 → "49.90"
+ */
+function formatBoletoAmount(amount: number): string {
+  return amount.toFixed(2)
+}
+
+/**
+ * Registra um boleto na API de Cobrança do Bradesco.
+ * Endpoint: POST /boleto/cobranca-registro/v1/cobranca
  *
- * @param amount - Valor em reais (convertido para centavos internamente)
+ * No sandbox, usa valores fixos conforme Postman Collection oficial.
+ * Em produção, mapeia os parâmetros para o formato da API Bradesco.
+ *
+ * @param amount - Valor em reais
  * @param customerName - Nome do pagador
  * @param customerCpf - CPF do pagador (aceita formatado ou apenas dígitos)
  * @param customerAddress - Endereço do pagador
@@ -818,7 +1116,7 @@ function stripCepNonDigits(cep: string): string {
  * @param customerState - UF do pagador (2 caracteres)
  * @param customerZipCode - CEP do pagador (aceita formatado ou apenas dígitos)
  * @param customerDistrict - Bairro do pagador
- * @returns Dados do boleto registrado (nossoNumero, linhaDigitavel, codigoBarras, url)
+ * @returns Dados do boleto registrado
  * @throws Error com mensagem em pt-BR se o registro falhar
  */
 export async function createBradescoBoletoPayment(
@@ -832,30 +1130,107 @@ export async function createBradescoBoletoPayment(
   customerDistrict: string,
 ): Promise<BradescoBoletoResponse> {
   const config = await getBradescoConfig()
-  const token = await getBradescoToken()
+  const token = await getBradescoCobrancaToken()
   const nossoNumero = generateNossoNumero()
   const apiUrl = getBradescoApiUrl(config.environment)
-  const endpoint = `${apiUrl}/v1/boleto/registrar`
+  const endpoint = `${apiUrl}/boleto/cobranca-registro/v1/cobranca`
 
-  const payload: BradescoBoletoPayload = {
-    nossoNumero,
-    valorNominal: Math.round(amount * 100),
-    dataVencimento: getBoletoExpirationDate(),
-    pagador: {
-      nome: customerName,
-      cpf: stripCpfNonDigits(customerCpf),
-      endereco: customerAddress,
-      cidade: customerCity,
-      uf: customerState,
-      cep: stripCepNonDigits(customerZipCode),
-      bairro: customerDistrict,
-    },
-  }
+  const isSandbox = config.environment === 'sandbox'
+  const cleanCep = stripCepNonDigits(customerZipCode)
+  const cleanCpf = stripCpfNonDigits(customerCpf)
+
+  // Montar payload conforme formato da API de Cobrança Bradesco
+  // O sandbox exige TODOS os campos, incluindo sacadorAvalista e campos de controle
+  const payload: BradescoCobrancaPayload = isSandbox
+    ? {
+        // Sandbox: valores fixos da collection Postman
+        nuCPFCNPJ: BRADESCO_BOLETO_SANDBOX.nuCPFCNPJ,
+        filialCPFCNPJ: BRADESCO_BOLETO_SANDBOX.filialCPFCNPJ,
+        ctrlCPFCNPJ: BRADESCO_BOLETO_SANDBOX.ctrlCPFCNPJ,
+        idProduto: BRADESCO_BOLETO_SANDBOX.idProduto,
+        nuNegociacao: BRADESCO_BOLETO_SANDBOX.nuNegociacao,
+        nuCliente: nossoNumero,
+        dtEmissaoTitulo: getBoletoEmissionDate(),
+        dtVencimentoTitulo: getBoletoExpirationDate(),
+        vlNominalTitulo: formatBoletoAmount(amount),
+        cdEspecieTitulo: '04',
+        tpDuplicata: ' ',
+        cindcdAceitSacdo: 'N',
+        cdTipoAcesso: '2',
+        cdTipoContaCaucao: '0',
+        // Pagador
+        nomePagador: customerName || 'PAGADOR TESTE SANDBOX',
+        logradouroPagador: customerAddress || 'Rua Teste',
+        nuLogradouroPagador: '100',
+        complementoLogradouroPagador: '',
+        cepPagador: cleanCep.substring(0, 5) || '01310',
+        complementoCepPagador: cleanCep.substring(5, 8) || '100',
+        bairroPagador: customerDistrict || 'Centro',
+        municipioPagador: customerCity || 'Sao Paulo',
+        ufPagador: customerState || 'SP',
+        cdIndCpfcnpjPagador: '1',
+        nuCpfcnpjPagador: cleanCpf || '00000000000',
+        endEletronicoPagador: '',
+        // Sacador/Avalista (mesmo dados do cedente no sandbox)
+        nomeSacadorAvalista: 'EMPRESA TESTE SANDBOX',
+        logradouroSacadorAvalista: 'Rua Teste',
+        nuLogradouroSacadorAvalista: '100',
+        complementoLogradouroSacadorAvalista: '',
+        cepSacadorAvalista: '01310',
+        complementoCepSacadorAvalista: '100',
+        bairroSacadorAvalista: 'Centro',
+        municipioSacadorAvalista: 'Sao Paulo',
+        ufSacadorAvalista: 'SP',
+        cdIndCpfcnpjSacadorAvalista: '2',
+        nuCpfcnpjSacadorAvalista: BRADESCO_BOLETO_SANDBOX.nuCPFCNPJ,
+      }
+    : {
+        // Produção: mapear parâmetros reais
+        nuCPFCNPJ: config.clientId,
+        filialCPFCNPJ: '1',
+        ctrlCPFCNPJ: '55',
+        idProduto: '9',
+        nuNegociacao: '',
+        nuCliente: nossoNumero,
+        dtEmissaoTitulo: getBoletoEmissionDate(),
+        dtVencimentoTitulo: getBoletoExpirationDate(),
+        vlNominalTitulo: formatBoletoAmount(amount),
+        cdEspecieTitulo: '04',
+        tpDuplicata: ' ',
+        cindcdAceitSacdo: 'N',
+        cdTipoAcesso: '2',
+        cdTipoContaCaucao: '0',
+        // Pagador
+        nomePagador: customerName,
+        logradouroPagador: customerAddress,
+        nuLogradouroPagador: '0',
+        complementoLogradouroPagador: '',
+        cepPagador: cleanCep.substring(0, 5),
+        complementoCepPagador: cleanCep.substring(5, 8),
+        bairroPagador: customerDistrict,
+        municipioPagador: customerCity,
+        ufPagador: customerState,
+        cdIndCpfcnpjPagador: cleanCpf.length <= 11 ? '1' : '2',
+        nuCpfcnpjPagador: cleanCpf,
+        endEletronicoPagador: '',
+        // Sacador/Avalista (dados da empresa)
+        nomeSacadorAvalista: '',
+        logradouroSacadorAvalista: '',
+        nuLogradouroSacadorAvalista: '0',
+        complementoLogradouroSacadorAvalista: '',
+        cepSacadorAvalista: '00000',
+        complementoCepSacadorAvalista: '000',
+        bairroSacadorAvalista: '',
+        municipioSacadorAvalista: '',
+        ufSacadorAvalista: '',
+        cdIndCpfcnpjSacadorAvalista: '2',
+        nuCpfcnpjSacadorAvalista: '',
+      }
 
   safeLog('[BRADESCO_BOLETO_REQUEST]', {
     endpoint,
     environment: config.environment,
-    amount: payload.valorNominal,
+    amount: formatBoletoAmount(amount),
     nossoNumero,
   })
 
@@ -892,41 +1267,78 @@ export async function createBradescoBoletoPayment(
     if (!response.ok) {
       let errorMessage = 'Erro ao registrar boleto no Bradesco'
       try {
-        const errorData: { title?: string; detail?: string; mensagem?: string } =
-          JSON.parse(responseText)
-        if (errorData.detail) {
+        const errorData: {
+          title?: string
+          detail?: string
+          mensagem?: string
+          code?: string
+          message?: string
+          errosValidacao?: unknown
+          cdErro?: string
+          msgErro?: string
+        } = JSON.parse(responseText)
+
+        safeError('[BRADESCO_BOLETO_ERROR]', {
+          statusCode: response.status,
+          responseBody: responseText?.substring(0, 500),
+          nossoNumero,
+          environment: config.environment,
+        })
+
+        if (errorData.msgErro) {
+          errorMessage = `Erro ao registrar boleto: ${errorData.msgErro}`
+        } else if (errorData.detail) {
           errorMessage = `Erro ao registrar boleto: ${errorData.detail}`
         } else if (errorData.mensagem) {
           errorMessage = `Erro ao registrar boleto: ${errorData.mensagem}`
+        } else if (errorData.message) {
+          errorMessage = `Erro ao registrar boleto: ${errorData.message}`
         }
       } catch (parseError) {
-        safeError('[BRADESCO_BOLETO_PARSE_ERROR] Não foi possível parsear erro da API Boleto', {
-          responseText: responseText?.substring(0, 200),
+        safeError('[BRADESCO_BOLETO_PARSE_ERROR]', {
+          responseText: responseText?.substring(0, 500),
+          statusCode: response.status,
+          nossoNumero,
         })
         errorMessage = `Erro ${response.status} ao registrar boleto no Bradesco`
       }
       throw new Error(errorMessage)
     }
 
+    // Resposta da API de Cobrança Bradesco
     const data: {
+      cdBarras?: string
+      nuLinhaDigitavel?: string
       nossoNumero?: string
-      linhaDigitavel?: string
-      codigoBarras?: string
-      url?: string
+      nuCliente?: string
+      cdErro?: string
+      msgErro?: string
+      [key: string]: unknown
     } = JSON.parse(responseText)
 
+    // Verificar se houve erro lógico na resposta (status 200 mas com cdErro)
+    if (data.cdErro && data.cdErro !== '0' && data.cdErro !== '00') {
+      safeError('[BRADESCO_BOLETO_LOGIC_ERROR]', {
+        cdErro: data.cdErro,
+        msgErro: data.msgErro,
+        nossoNumero,
+      })
+      throw new Error(`Erro ao registrar boleto: ${data.msgErro || `Código ${data.cdErro}`}`)
+    }
+
     safeLog('[BRADESCO_BOLETO_RESPONSE]', {
-      nossoNumero: data.nossoNumero || nossoNumero,
-      hasLinhaDigitavel: !!data.linhaDigitavel,
-      hasCodigoBarras: !!data.codigoBarras,
-      hasUrl: !!data.url,
+      nossoNumero: data.nossoNumero || data.nuCliente || nossoNumero,
+      hasCdBarras: !!data.cdBarras,
+      hasLinhaDigitavel: !!data.nuLinhaDigitavel,
     })
 
     return {
-      nossoNumero: data.nossoNumero || nossoNumero,
-      linhaDigitavel: data.linhaDigitavel || '',
-      codigoBarras: data.codigoBarras || '',
-      url: data.url || '',
+      nossoNumero: data.nossoNumero || data.nuCliente || nossoNumero,
+      linhaDigitavel: data.nuLinhaDigitavel || '',
+      codigoBarras: data.cdBarras || '',
+      url: '',
+      cdBarras: data.cdBarras,
+      nuLinhaDigitavel: data.nuLinhaDigitavel,
     }
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('Erro')) {
@@ -946,21 +1358,21 @@ export async function createBradescoBoletoPayment(
 }
 
 /**
- * Consulta o status de um boleto por nosso número na API do Bradesco.
+ * Consulta o status de um boleto na API de Cobrança do Bradesco.
  *
  * Em caso de erro, retorna status 'registrado' (pendente) para permitir nova tentativa,
  * seguindo o mesmo padrão do `queryBradescoPixPayment()`.
  *
- * @param nossoNumero - Número de controle do boleto
+ * @param nossoNumero - Número de controle do boleto (nuCliente)
  * @returns Dados do boleto com status atual e informações de pagamento (se pago)
  */
 export async function queryBradescoBoletoPayment(
   nossoNumero: string,
 ): Promise<BradescoBoletoQueryResponse> {
   const config = await getBradescoConfig()
-  const token = await getBradescoToken()
+  const token = await getBradescoCobrancaToken()
   const apiUrl = getBradescoApiUrl(config.environment)
-  const endpoint = `${apiUrl}/v1/boleto/consultar/${nossoNumero}`
+  const endpoint = `${apiUrl}/boleto/cobranca-registro/v1/cobranca/${nossoNumero}`
 
   safeLog('[BRADESCO_BOLETO_QUERY_REQUEST]', {
     endpoint,
@@ -1010,19 +1422,23 @@ export async function queryBradescoBoletoPayment(
 
     const data: {
       nossoNumero?: string
+      nuCliente?: string
       status?: string
       valorPago?: number
       dataPagamento?: string
+      cdErro?: string
+      msgErro?: string
+      [key: string]: unknown
     } = JSON.parse(responseText)
 
     safeLog('[BRADESCO_BOLETO_QUERY_SUCCESS]', {
-      nossoNumero: data.nossoNumero || nossoNumero,
+      nossoNumero: data.nossoNumero || data.nuCliente || nossoNumero,
       status: data.status,
       hasValorPago: data.valorPago !== undefined,
     })
 
     return {
-      nossoNumero: data.nossoNumero || nossoNumero,
+      nossoNumero: data.nossoNumero || data.nuCliente || nossoNumero,
       status: (data.status as BradescoBoletoQueryResponse['status']) || 'registrado',
       valorPago: data.valorPago,
       dataPagamento: data.dataPagamento,
