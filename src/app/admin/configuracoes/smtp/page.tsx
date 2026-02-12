@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import DOMPurify from 'isomorphic-dompurify'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -85,6 +86,45 @@ interface EmailLogItem {
   error?: string
   errorMessage?: string
   messageContent?: string
+}
+
+/**
+ * Sanitiza HTML para prevenir XSS ao renderizar conteúdo de email
+ */
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p',
+      'br',
+      'strong',
+      'em',
+      'b',
+      'i',
+      'u',
+      'a',
+      'ul',
+      'ol',
+      'li',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'div',
+      'span',
+      'table',
+      'tr',
+      'td',
+      'th',
+      'thead',
+      'tbody',
+      'img',
+      'hr',
+      'blockquote',
+      'pre',
+      'code',
+    ],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'class', 'width', 'height', 'target', 'rel'],
+  })
 }
 
 export default function SmtpSettingsPage() {
@@ -787,7 +827,7 @@ export default function SmtpSettingsPage() {
                 <div
                   className="border rounded-lg p-4 bg-white dark:bg-gray-950 overflow-auto"
                   dangerouslySetInnerHTML={{
-                    __html: selectedEmail.messageContent || '<p>Sem conteúdo</p>',
+                    __html: sanitizeHtml(selectedEmail.messageContent || '<p>Sem conteúdo</p>'),
                   }}
                 />
               </div>
