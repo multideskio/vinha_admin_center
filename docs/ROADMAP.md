@@ -58,11 +58,16 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.14.1 | ✅ Concluída | 12/02/2026 |
 | v0.14.0 | ✅ Concluída | 12/02/2026 |
 | v0.13.0 | ✅ Concluída | 11/02/2026 |
 | v0.12.0 | ✅ Concluída | 11/02/2026 |
 | v0.11.0 | ✅ Concluída | 11/02/2026 |
 | v0.5.0  | 📋 Planejada | Q2 2026    |
+
+### ✅ Itens Concluídos (v0.14.1)
+
+- ✅ Hardening de segurança: sanitização XSS, remoção de secrets das respostas, verificação server-side de webhooks
 
 ### ✅ Itens Concluídos (v0.14.0)
 

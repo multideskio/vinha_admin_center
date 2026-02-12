@@ -4,6 +4,31 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.14.1] - 2026-02-12 - Hardening de Segurança (XSS, Secrets, Webhooks)
+
+### 🔒 Segurança
+
+- **Sanitização XSS na página SMTP** — conteúdo HTML de emails agora é sanitizado com `isomorphic-dompurify` antes de renderizar via `dangerouslySetInnerHTML`
+- **Secrets removidos das respostas de API** — rotas GET/PUT de Bradesco e Cielo não retornam mais `clientSecret`, `certificatePassword` nem `certificate` no JSON
+- **Chave privada removida da geração de certificado** — endpoint `generate-cert` não retorna mais `keyPem` separadamente (protegida dentro do PFX)
+- **Verificação server-side em webhooks** — webhooks PIX e Boleto consultam a API do Bradesco para confirmar status real antes de atualizar transações (proteção contra webhook spoofing)
+- **Cache centralizado para tokens OAuth** — tokens PIX e Cobrança migrados de variáveis globais para `configCache`, permitindo invalidação centralizada
+- **Config cache não expõe chaves** — `getStats()` não retorna mais a lista de chaves do cache
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 9 arquivos modificados
+- `package.json`, `package-lock.json` — adição de `isomorphic-dompurify` e `@types/dompurify`
+- `src/app/admin/configuracoes/smtp/page.tsx` — sanitização XSS
+- `src/app/api/v1/gateways/bradesco/route.ts` — remoção de secrets da resposta
+- `src/app/api/v1/gateways/bradesco/generate-cert/route.ts` — remoção de keyPem
+- `src/app/api/v1/gateways/cielo/route.ts` — remoção de secrets da resposta
+- `src/app/api/v1/webhooks/bradesco/route.ts` — verificação server-side de status
+- `src/lib/bradesco.ts` — cache centralizado de tokens OAuth
+- `src/lib/config-cache.ts` — remoção de exposição de chaves
+
+---
+
 ## [0.14.0] - 2026-02-12 - Gateway Bradesco Cobrança, Gráficos & Páginas de Ajuda
 
 ### ✨ Novas Funcionalidades

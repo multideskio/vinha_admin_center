@@ -4,6 +4,19 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.14.1 - Hardening de Segurança (Fevereiro 2026)
+
+### 🔒 Segurança
+
+- Sanitização XSS com DOMPurify na visualização de emails (página SMTP)
+- Secrets (clientSecret, certificatePassword, certificate) removidos de todas as respostas JSON dos gateways Bradesco e Cielo
+- Chave privada não é mais retornada separadamente na geração de certificado
+- Webhooks PIX e Boleto agora verificam status real via API do Bradesco antes de atualizar transações
+- Tokens OAuth migrados para cache centralizado com invalidação
+- Config cache não expõe mais lista de chaves
+
+---
+
 ## v0.14.0 - Gateway Bradesco Cobrança & Melhorias de UI (Fevereiro 2026)
 
 ### 💳 Gateway Bradesco — API de Cobrança
