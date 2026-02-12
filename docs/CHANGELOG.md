@@ -4,6 +4,44 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.15.0] - 2026-02-12 - Notificações Automáticas, Segurança de Secrets & Cielo CPF
+
+### ✨ Novas Funcionalidades
+
+- **Notificações automáticas via templates nos webhooks** — `onTransactionCreated` reescrito para enviar email de comprovante bonito + WhatsApp via regras de notificação (`notificationRules`)
+- **Variáveis contextuais por tipo de evento** — página de mensagens automáticas agora exibe variáveis específicas por gatilho (ex: `{valor_transacao}` só aparece em "Pagamento Recebido")
+- **CPF/CNPJ enviado à Cielo** — PIX e cartão de crédito agora incluem `Identity` e `IdentityType` no payload, conforme exigência da Cielo
+- **Captura automática de cartão** — `Capture: true` adicionado ao payload de cartão de crédito
+
+### 🐛 Correções de Bugs
+
+- **Secrets sobrescritos com string vazia** — APIs PUT de Cielo e Bradesco agora ignoram campos de secret vazios, evitando apagar credenciais ao salvar configurações
+- **Status de cartão incorreto** — `Status === 1` (Authorized) agora é mapeado como `approved`; `Status === 13` (Aborted) como `refused`
+- **Deduplicação de notificações** — chave de deduplicação separada para regras de notificação vs. hook direto, evitando bloqueio mútuo
+
+### ♻️ Refatorações
+
+- **`ReconciliationResult` exportado** — interface agora é pública e inclui `transactionId` para uso nos hooks de notificação
+- **Subjects de email em PT-BR** — emails de regras de notificação usam subjects amigáveis (ex: "💰 Lembrete de Pagamento") ao invés de `PAYMENT_DUE_REMINDER`
+- **Email de pagamento separado do WhatsApp** — comprovante de email enviado diretamente pelo hook; WhatsApp disparado via regras de notificação
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 11 arquivos modificados
+- `src/app/api/v1/gateways/cielo/route.ts` — proteção de secrets no PUT
+- `src/app/api/v1/gateways/bradesco/route.ts` — proteção de secrets e certificado no PUT
+- `src/app/admin/gateways/cielo/page.tsx` — estado hasProdSecret/hasDevSecret, placeholder informativo
+- `src/app/admin/gateways/bradesco/page.tsx` — idem
+- `src/lib/cielo.ts` — customerIdentity (CPF/CNPJ) em PIX e cartão, Capture: true
+- `src/app/api/v1/transacoes/route.ts` — passar CPF, mapeamento de status, notificação em background
+- `src/lib/webhook-reconciliation.ts` — exportar interface, retornar transactionId
+- `src/lib/notification-hooks.ts` — reescrita de onTransactionCreated, deduplicação, subjects PT-BR
+- `src/app/api/v1/webhooks/cielo/route.ts` — chamar onTransactionCreated
+- `src/app/api/v1/webhooks/bradesco/route.ts` — chamar onTransactionCreated em PIX e Boleto
+- `src/app/admin/configuracoes/mensagens/page.tsx` — variáveis contextuais por tipo de evento
+
+---
+
 ## [0.14.1] - 2026-02-12 - Hardening de Segurança (XSS, Secrets, Webhooks)
 
 ### 🔒 Segurança

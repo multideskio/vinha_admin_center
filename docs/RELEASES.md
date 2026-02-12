@@ -4,6 +4,33 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.15.0 - Notificações Automáticas, Segurança de Secrets & Cielo CPF (Fevereiro 2026)
+
+### ✨ Funcionalidades
+
+- Notificações automáticas via templates: email de comprovante + WhatsApp via regras de notificação nos webhooks Cielo e Bradesco
+- Variáveis contextuais por tipo de evento na página de mensagens automáticas
+- CPF/CNPJ (Identity/IdentityType) enviado à Cielo em PIX e cartão de crédito
+- Captura automática de cartão (`Capture: true`)
+
+### 🐛 Correções
+
+- Secrets de gateways não são mais sobrescritos com string vazia ao salvar configurações
+- Mapeamento de status de cartão corrigido (Status 1 = approved, Status 13 = refused)
+- Deduplicação de notificações com chaves separadas para evitar bloqueio mútuo
+
+### ♻️ Melhorias Técnicas
+
+- Interface `ReconciliationResult` exportada com `transactionId`
+- Subjects de email em PT-BR com emojis amigáveis
+- Separação de canais: email direto pelo hook, WhatsApp via regras
+
+### 📊 Métricas
+
+- Arquivos modificados: 11
+
+---
+
 ## v0.14.1 - Hardening de Segurança (Fevereiro 2026)
 
 ### 🔒 Segurança
