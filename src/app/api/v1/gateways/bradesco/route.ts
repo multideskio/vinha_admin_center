@@ -19,6 +19,28 @@ const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
 const GATEWAY_NAME = 'Bradesco'
 
+/** Campos sensíveis que não devem ser retornados na resposta da API */
+const SECRET_FIELDS = [
+  'certificate',
+  'certificatePassword',
+  'prodClientSecret',
+  'devClientSecret',
+] as const
+
+/** Remove campos sensíveis e adiciona flags de presença */
+function sanitizeGatewayResponse(config: Record<string, unknown>) {
+  const safe: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(config)) {
+    if (!(SECRET_FIELDS as readonly string[]).includes(key)) {
+      safe[key] = value
+    }
+  }
+  safe.hasCertificate = !!config.certificate
+  safe.hasProdSecret = !!config.prodClientSecret
+  safe.hasDevSecret = !!config.devClientSecret
+  return safe
+}
+
 const bradescoGatewaySchema = z.object({
   isActive: z.boolean().default(false),
   environment: z.enum(['production', 'development', 'sandbox']),
@@ -59,15 +81,17 @@ export async function GET(): Promise<NextResponse> {
           environment: 'development',
         })
         .returning()
+      if (!newConfig) {
+        return NextResponse.json({ error: 'Falha ao criar configuração.' }, { status: 500 })
+      }
       return NextResponse.json({
         config: { ...newConfig, certificate: undefined, hasCertificate: false },
       })
     }
 
-    // Não retornar o conteúdo do certificado — apenas indicar se existe
-    const { certificate, ...safeConfig } = config
+    // ✅ SEGURANÇA: Não retornar secrets nem certificado na resposta
     return NextResponse.json({
-      config: { ...safeConfig, hasCertificate: !!certificate },
+      config: sanitizeGatewayResponse(config),
     })
   } catch (error: unknown) {
     console.error(`Erro ao buscar configuração do gateway ${GATEWAY_NAME}:`, error)
@@ -119,7 +143,14 @@ export async function PUT(request: Request): Promise<NextResponse> {
     configCache.invalidate(CACHE_KEYS.BRADESCO_CONFIG(VALIDATED_COMPANY_ID))
     configCache.invalidate(CACHE_KEYS.BRADESCO_TOKEN(VALIDATED_COMPANY_ID))
 
-    return NextResponse.json({ success: true, config: updatedConfig })
+    // ✅ SEGURANÇA: Não retornar secrets nem certificado na resposta do PUT
+    if (!updatedConfig) {
+      return NextResponse.json({ error: 'Falha ao atualizar configuração.' }, { status: 500 })
+    }
+    return NextResponse.json({
+      success: true,
+      config: sanitizeGatewayResponse(updatedConfig),
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

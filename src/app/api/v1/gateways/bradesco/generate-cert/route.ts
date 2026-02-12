@@ -107,9 +107,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Exportar certificado público como PEM — para upload no portal Bradesco
     const certPem = forge.pki.certificateToPem(cert)
 
-    // Exportar chave privada como PEM — guardar em local seguro
-    const keyPem = forge.pki.privateKeyToPem(keys.privateKey)
-
     // Informações do certificado para exibição
     const certInfo = {
       subject: commonNameValue,
@@ -122,13 +119,14 @@ export async function POST(request: Request): Promise<NextResponse> {
       type: 'Auto-assinado (sandbox/homologação)',
     }
 
+    // ✅ SEGURANÇA: Não retornar chave privada separadamente.
+    // A chave privada já está protegida por senha dentro do pfxBase64.
     return NextResponse.json({
       success: true,
       pfxBase64,
       certPem,
-      keyPem,
       certInfo,
-      message: 'Certificado auto-assinado gerado com sucesso.',
+      message: 'Certificado gerado. A chave privada está protegida dentro do arquivo PFX.',
     })
   } catch (error) {
     if (error instanceof z.ZodError) {

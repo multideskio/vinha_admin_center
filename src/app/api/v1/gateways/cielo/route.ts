@@ -18,6 +18,22 @@ const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
 const GATEWAY_NAME = 'Cielo'
 
+/** Campos sensíveis que não devem ser retornados na resposta da API */
+const SECRET_FIELDS = ['prodClientSecret', 'devClientSecret'] as const
+
+/** Remove campos sensíveis e adiciona flags de presença */
+function sanitizeGatewayResponse(config: Record<string, unknown>) {
+  const safe: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(config)) {
+    if (!(SECRET_FIELDS as readonly string[]).includes(key)) {
+      safe[key] = value
+    }
+  }
+  safe.hasProdSecret = !!config.prodClientSecret
+  safe.hasDevSecret = !!config.devClientSecret
+  return safe
+}
+
 const cieloGatewaySchema = z.object({
   isActive: z.boolean().default(false),
   environment: z.enum(['production', 'development']),
@@ -57,10 +73,19 @@ export async function GET(): Promise<NextResponse> {
           environment: 'development',
         })
         .returning()
-      return NextResponse.json({ config: newConfig })
+      // Não retornar secrets na resposta
+      if (!newConfig) {
+        return NextResponse.json({ error: 'Falha ao criar configuração.' }, { status: 500 })
+      }
+      return NextResponse.json({
+        config: sanitizeGatewayResponse(newConfig),
+      })
     }
 
-    return NextResponse.json({ config })
+    // ✅ SEGURANÇA: Não retornar secrets (MerchantKey) na resposta
+    return NextResponse.json({
+      config: sanitizeGatewayResponse(config),
+    })
   } catch (error) {
     console.error(`Erro ao buscar configuração do gateway ${GATEWAY_NAME}:`, error)
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
@@ -108,7 +133,14 @@ export async function PUT(request: Request): Promise<NextResponse> {
     // ✅ Invalidar cache após atualização
     configCache.invalidate(CACHE_KEYS.CIELO_CONFIG(VALIDATED_COMPANY_ID))
 
-    return NextResponse.json({ success: true, config: updatedConfig })
+    // ✅ SEGURANÇA: Não retornar secrets na resposta do PUT
+    if (!updatedConfig) {
+      return NextResponse.json({ error: 'Falha ao atualizar configuração.' }, { status: 500 })
+    }
+    return NextResponse.json({
+      success: true,
+      config: sanitizeGatewayResponse(updatedConfig),
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
