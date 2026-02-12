@@ -58,9 +58,16 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.13.0 | ✅ Concluída | 11/02/2026 |
 | v0.12.0 | ✅ Concluída | 11/02/2026 |
 | v0.11.0 | ✅ Concluída | 11/02/2026 |
 | v0.5.0  | 📋 Planejada | Q2 2026    |
+
+### ✅ Itens Concluídos (v0.13.0)
+
+- ✅ Sistema de bloqueio/desbloqueio de usuários
+- ✅ Proteção em todas as camadas de autenticação
+- ✅ Correção de overflow no dashboard
 
 ### ✅ Itens Concluídos (v0.12.0)
 

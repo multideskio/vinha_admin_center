@@ -4,6 +4,44 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.13.0] - 2026-02-11 - Sistema de Bloqueio de Usuários & Correções de UI
+
+### ✨ Novas Funcionalidades
+
+- **Sistema de Bloqueio/Desbloqueio de Usuários** — admins podem bloquear login de qualquer usuário com motivo obrigatório
+- **Server Actions** (`blockUser`, `unblockUser`, `checkBlockStatus`) com validação Zod e verificação de permissões
+- **Componente BlockUserButton** com diálogos de confirmação, feedback visual e exibição de status de bloqueio
+- **Proteção em todas as camadas de autenticação** — login (action + API route), JWT validation, forgot-password e reset-password
+- **Migration de banco** com campos `blocked_at`, `blocked_by` e `block_reason` na tabela users
+- **Botão de bloqueio** adicionado nos perfis de administradores, gerentes, supervisores, pastores e igrejas
+
+### 🐛 Correções de Bugs
+
+- **Overflow no dashboard** — elementos decorativos do InsightsCard vazavam do container, causando scroll horizontal
+- **Layout admin** — `overflow-x-hidden` substituído por `overflow-x-clip` para preservar sombras e tooltips
+
+### ♻️ Refatorações
+
+- **FraudAlert simplificado** — estados de loading, erro e sem dados unificados em uma única condição de retorno null
+- **Import não utilizado** removido (`Skeleton` do fraud-alert)
+
+### 🔒 Segurança
+
+- Usuários bloqueados não conseguem fazer login (mensagem genérica "Credenciais inválidas")
+- Sessões ativas são invalidadas automaticamente ao detectar bloqueio (JWT validation)
+- Forgot-password não envia email para contas bloqueadas (sem expor status)
+- Reset-password retorna erro 403 para contas bloqueadas
+- Login API route com busca case-insensitive de email
+- Admins não podem bloquear a si mesmos
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 19 arquivos (3 novos, 16 modificados)
+- Novos: `user-blocking.ts`, `block-user-button.tsx`, `0009_user_blocking.sql`
+- Modificados: schema, jwt, auth, login route, forgot/reset-password, 5 páginas de perfil, dashboard-client, insights-card, admin layout, fraud-alert, drizzle journal
+
+---
+
 ## [0.12.0] - 2026-02-11 - Sistema de Impersonation para Suporte
 
 ### ✨ Novas Funcionalidades

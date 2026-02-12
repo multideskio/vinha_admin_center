@@ -4,6 +4,44 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.13.0 - Sistema de Bloqueio de Usuários (Fevereiro 2026)
+
+### 🔒 Bloqueio de Usuários
+
+- **Bloquear/desbloquear login** de qualquer usuário (apenas admins)
+- Server actions com validação Zod, verificação de permissões e proteção contra auto-bloqueio
+- Componente BlockUserButton com diálogos de confirmação e exibição de status
+- Botão disponível nos perfis de administradores, gerentes, supervisores, pastores e igrejas
+
+### 🛡️ Segurança
+
+- Bloqueio verificado em todas as camadas: login (action + API), JWT validation, forgot/reset-password
+- Sessões ativas invalidadas automaticamente ao detectar bloqueio
+- Mensagem genérica no login para não expor status de bloqueio
+- Forgot-password silenciosamente ignora contas bloqueadas
+- Login API com busca case-insensitive de email
+
+### 🐛 Correções
+
+- Overflow de elementos decorativos no InsightsCard do dashboard
+- Layout admin com `overflow-x-clip` para preservar sombras e tooltips
+
+### ♻️ Refatoração
+
+- FraudAlert simplificado — estados de loading/erro/vazio unificados
+
+### 💾 Banco de Dados
+
+- Migration com campos `blocked_at`, `blocked_by` e `block_reason` na tabela users
+
+### 📊 Métricas
+
+- Arquivos novos: 3
+- Arquivos modificados: 16
+- Camadas de proteção: 5 (login action, login API, JWT, forgot-password, reset-password)
+
+---
+
 ## v0.12.0 - Sistema de Impersonation para Suporte (Fevereiro 2026)
 
 ### ✨ Impersonation
