@@ -414,14 +414,16 @@ export default function SupervisorDashboardPage(): JSX.Element {
                   <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
                   <Legend content={<ChartLegendContent nameKey="method" />} />
                   <Pie
-                    data={data.revenueByMethod}
+                    data={data.revenueByMethod.filter((d) => d.value > 0)}
                     dataKey="value"
                     nameKey="method"
                     innerRadius={60}
                   >
-                    {data.revenueByMethod.map((entry) => (
-                      <Cell key={entry.method} fill={entry.fill} />
-                    ))}
+                    {data.revenueByMethod
+                      .filter((d) => d.value > 0)
+                      .map((entry) => (
+                        <Cell key={entry.method} fill={entry.fill} />
+                      ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
@@ -449,14 +451,16 @@ export default function SupervisorDashboardPage(): JSX.Element {
                   <Tooltip content={<ChartTooltipContent hideLabel />} />
                   <Legend content={<ChartLegendContent nameKey="name" />} />
                   <Pie
-                    data={data.revenueByChurch}
+                    data={data.revenueByChurch.filter((d) => d.revenue > 0)}
                     dataKey="revenue"
                     nameKey="name"
                     innerRadius={60}
                   >
-                    {data.revenueByChurch.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
+                    {data.revenueByChurch
+                      .filter((d) => d.revenue > 0)
+                      .map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
@@ -483,10 +487,17 @@ export default function SupervisorDashboardPage(): JSX.Element {
                 <PieChart>
                   <Tooltip content={<ChartTooltipContent hideLabel />} />
                   <Legend content={<ChartLegendContent nameKey="name" />} />
-                  <Pie data={data.membersByChurch} dataKey="count" nameKey="name" innerRadius={60}>
-                    {data.membersByChurch.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
+                  <Pie
+                    data={data.membersByChurch.filter((d) => d.count > 0)}
+                    dataKey="count"
+                    nameKey="name"
+                    innerRadius={60}
+                  >
+                    {data.membersByChurch
+                      .filter((d) => d.count > 0)
+                      .map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>

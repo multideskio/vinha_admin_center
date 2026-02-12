@@ -32,15 +32,17 @@ export function RevenueCharts({
                   <Tooltip content={<ChartTooltipContent nameKey="method" hideLabel />} />
                   <Legend content={<ChartLegendContent nameKey="method" />} />
                   <Pie
-                    data={revenueByMethod}
+                    data={revenueByMethod.filter((d) => d.value > 0)}
                     dataKey="value"
                     nameKey="method"
                     innerRadius={40}
                     outerRadius="70%"
                   >
-                    {revenueByMethod.map((entry) => (
-                      <Cell key={entry.method} fill={entry.fill} />
-                    ))}
+                    {revenueByMethod
+                      .filter((d) => d.value > 0)
+                      .map((entry) => (
+                        <Cell key={entry.method} fill={entry.fill} />
+                      ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
@@ -68,15 +70,17 @@ export function RevenueCharts({
                       <Tooltip content={<ChartTooltipContent hideLabel />} />
                       <Legend content={<ChartLegendContent nameKey="name" />} />
                       <Pie
-                        data={revenueByRegion}
+                        data={revenueByRegion.filter((d) => d.revenue > 0)}
                         dataKey="revenue"
                         nameKey="name"
                         innerRadius={35}
                         outerRadius="65%"
                       >
-                        {revenueByRegion.map((entry, index) => (
-                          <Cell key={`cell-revenue-${index}`} fill={entry.fill || '#8884d8'} />
-                        ))}
+                        {revenueByRegion
+                          .filter((d) => d.revenue > 0)
+                          .map((entry, index) => (
+                            <Cell key={`cell-revenue-${index}`} fill={entry.fill || '#8884d8'} />
+                          ))}
                       </Pie>
                     </PieChart>
                   </ChartContainer>
@@ -97,15 +101,17 @@ export function RevenueCharts({
                       <Tooltip content={<ChartTooltipContent hideLabel />} />
                       <Legend content={<ChartLegendContent nameKey="name" />} />
                       <Pie
-                        data={churchesByRegion}
+                        data={churchesByRegion.filter((d) => d.count > 0)}
                         dataKey="count"
                         nameKey="name"
                         innerRadius={35}
                         outerRadius="65%"
                       >
-                        {churchesByRegion.map((entry, index) => (
-                          <Cell key={`cell-churches-${index}`} fill={entry.fill || '#82ca9d'} />
-                        ))}
+                        {churchesByRegion
+                          .filter((d) => d.count > 0)
+                          .map((entry, index) => (
+                            <Cell key={`cell-churches-${index}`} fill={entry.fill || '#82ca9d'} />
+                          ))}
                       </Pie>
                     </PieChart>
                   </ChartContainer>

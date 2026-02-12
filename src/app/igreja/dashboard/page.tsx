@@ -379,15 +379,17 @@ export default function ChurchDashboardPage() {
                 <Tooltip content={<ChartTooltipContent hideLabel />} />
                 <Legend content={<ChartLegendContent nameKey="method" />} />
                 <Pie
-                  data={data.paymentMethods}
+                  data={data.paymentMethods.filter((d) => d.value > 0)}
                   dataKey="value"
                   nameKey="method"
                   innerRadius={40}
                   outerRadius={80}
                 >
-                  {data.paymentMethods.map((entry) => (
-                    <Cell key={entry.method} fill={entry.fill} />
-                  ))}
+                  {data.paymentMethods
+                    .filter((d) => d.value > 0)
+                    .map((entry) => (
+                      <Cell key={entry.method} fill={entry.fill} />
+                    ))}
                 </Pie>
               </PieChart>
             </ChartContainer>
