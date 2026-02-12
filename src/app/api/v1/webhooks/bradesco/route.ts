@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logBradescoWebhook } from '@/lib/bradesco-logger'
+import { queryBradescoPixPayment, queryBradescoBoletoPayment } from '@/lib/bradesco'
 import { reconcileTransactionState } from '@/lib/webhook-reconciliation'
 import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
@@ -50,7 +51,23 @@ export async function POST(request: NextRequest) {
 
         logger.info('Processando webhook PIX', { txid, valor: pixPayment.valor })
 
-        const reconciliation = await reconcileTransactionState(txid, 'approved', {
+        // ✅ SEGURANÇA: Consultar API do Bradesco para confirmar status real do pagamento
+        const bradescoStatus = await queryBradescoPixPayment(txid)
+        let confirmedStatus: 'approved' | 'pending' = 'pending'
+
+        if (bradescoStatus.status === 'CONCLUIDA') {
+          confirmedStatus = 'approved'
+        } else {
+          logger.warn('Webhook PIX - status não confirmado pelo Bradesco', {
+            txid,
+            webhookStatus: 'approved',
+            bradescoStatus: bradescoStatus.status,
+          })
+          // Manter como pending se o Bradesco não confirmar
+          confirmedStatus = 'pending'
+        }
+
+        const reconciliation = await reconcileTransactionState(txid, confirmedStatus, {
           maxAttempts: 5,
           initialDelayMs: 100,
           maxDelayMs: 5000,
@@ -80,6 +97,7 @@ export async function POST(request: NextRequest) {
 
         logger.info('Webhook PIX processado', {
           txid,
+          confirmedStatus,
           statusUpdated: reconciliation.statusUpdated,
         })
       }
@@ -95,12 +113,28 @@ export async function POST(request: NextRequest) {
 
       logger.info('Processando webhook Boleto', { nossoNumero, status: boletoStatus })
 
-      // Mapear status do Bradesco para status interno
+      // ✅ SEGURANÇA: Consultar API do Bradesco para confirmar status real do boleto
+      const bradescoStatus = await queryBradescoBoletoPayment(nossoNumero)
+
       let newStatus: 'approved' | 'pending' | 'refused' = 'pending'
-      if (boletoStatus === 'pago' || boletoStatus === 'liquidado') {
+      if (bradescoStatus.status === 'pago') {
         newStatus = 'approved'
-      } else if (boletoStatus === 'cancelado' || boletoStatus === 'baixado') {
+      } else if (bradescoStatus.status === 'cancelado') {
         newStatus = 'refused'
+      } else {
+        // Se o Bradesco não confirmar, usar status do webhook como fallback
+        // mas apenas para cancelamento/recusa (nunca confiar em aprovação sem confirmação)
+        if (boletoStatus === 'cancelado' || boletoStatus === 'baixado') {
+          newStatus = 'refused'
+        } else {
+          newStatus = 'pending'
+        }
+        logger.warn('Webhook Boleto - status não confirmado pelo Bradesco', {
+          nossoNumero,
+          webhookStatus: boletoStatus,
+          bradescoStatus: bradescoStatus.status,
+          resolvedStatus: newStatus,
+        })
       }
 
       const reconciliation = await reconcileTransactionState(nossoNumero, newStatus, {
@@ -133,6 +167,7 @@ export async function POST(request: NextRequest) {
 
       logger.info('Webhook Boleto processado', {
         nossoNumero,
+        confirmedStatus: newStatus,
         statusUpdated: reconciliation.statusUpdated,
       })
 
