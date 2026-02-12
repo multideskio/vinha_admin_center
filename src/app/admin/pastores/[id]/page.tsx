@@ -98,6 +98,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { FraudAlert } from '@/components/ui/fraud-alert'
+import { ImpersonateButton } from '@/components/ui/impersonate-button'
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
@@ -468,6 +469,7 @@ export default function PastorProfilePage(): JSX.Element {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = React.useState<'admin' | 'manager' | null>(null)
 
   const params = useParams()
   const router = useRouter()
@@ -503,6 +505,19 @@ export default function PastorProfilePage(): JSX.Element {
       setPastor(sanitizedData)
       setSupervisors(supervisorsData.supervisors)
       form.reset(sanitizedData)
+
+      // Buscar role do usuário atual para botão de impersonation
+      try {
+        const currentUserRes = await fetch('/api/v1/auth/me')
+        if (currentUserRes.ok) {
+          const currentUser = await currentUserRes.json()
+          if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+            setCurrentUserRole(currentUser.role)
+          }
+        }
+      } catch {
+        // Silenciar erro - não é crítico
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -827,6 +842,14 @@ export default function PastorProfilePage(): JSX.Element {
                     WhatsApp
                   </Button>
                 </div>
+                {currentUserRole && (
+                  <ImpersonateButton
+                    targetUserId={id as string}
+                    targetUserName={`${pastor.firstName} ${pastor.lastName}`}
+                    targetUserRole="pastor"
+                    currentUserRole={currentUserRole}
+                  />
+                )}
               </CardContent>
               <Separator />
               <CardContent className="pt-6">

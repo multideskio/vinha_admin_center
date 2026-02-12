@@ -52,6 +52,7 @@ import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { FraudAlert } from '@/components/ui/fraud-alert'
 import { Switch } from '@/components/ui/switch'
+import { ImpersonateButton } from '@/components/ui/impersonate-button'
 import {
   Table,
   TableBody,
@@ -432,6 +433,7 @@ export default function GerenteProfilePage() {
   const [manager, setManager] = React.useState<ManagerProfile | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = React.useState<'admin' | 'manager' | null>(null)
   const params = useParams()
   const router = useRouter()
   const { id } = params
@@ -465,9 +467,22 @@ export default function GerenteProfilePage() {
     if (!id) return
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/v1/admin/gerentes/${id}`)
-      if (!response.ok) throw new Error('Failed to fetch manager data')
-      const data = await response.json()
+      // Buscar dados do gerente e do usuário atual em paralelo
+      const [managerResponse, currentUserResponse] = await Promise.all([
+        fetch(`/api/v1/admin/gerentes/${id}`),
+        fetch('/api/v1/auth/me'),
+      ])
+
+      if (!managerResponse.ok) throw new Error('Failed to fetch manager data')
+      const data = await managerResponse.json()
+
+      // Definir role do usuário atual
+      if (currentUserResponse.ok) {
+        const currentUser = await currentUserResponse.json()
+        if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+          setCurrentUserRole(currentUser.role)
+        }
+      }
 
       const sanitizedData = {
         ...data,
@@ -802,30 +817,43 @@ export default function GerenteProfilePage() {
                   {manager.firstName} {manager.lastName}
                 </h2>
                 <p className="text-sm text-muted-foreground font-medium">Gerente</p>
-                <div className="flex gap-2 mt-4">
-                  <SendMessageDialog
-                    recipientName={`${manager.firstName} ${manager.lastName}`}
-                    recipientEmail={manager.email}
-                    recipientPhone={manager.phone || ''}
-                  >
+                <div className="flex flex-col gap-2 mt-4">
+                  <div className="flex gap-2">
+                    <SendMessageDialog
+                      recipientName={`${manager.firstName} ${manager.lastName}`}
+                      recipientEmail={manager.email}
+                      recipientPhone={manager.phone || ''}
+                    >
+                      <Button
+                        size="sm"
+                        className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Mensagem
+                      </Button>
+                    </SendMessageDialog>
                     <Button
                       size="sm"
-                      className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                      onClick={() =>
+                        window.open(
+                          `https://wa.me/55${manager.phone?.replace(/\D/g, '')}`,
+                          '_blank',
+                        )
+                      }
+                      className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                     >
-                      <Mail className="h-4 w-4 mr-1" />
-                      Mensagem
+                      <Smartphone className="h-4 w-4 mr-1" />
+                      WhatsApp
                     </Button>
-                  </SendMessageDialog>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      window.open(`https://wa.me/55${manager.phone?.replace(/\D/g, '')}`, '_blank')
-                    }
-                    className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-                  >
-                    <Smartphone className="h-4 w-4 mr-1" />
-                    WhatsApp
-                  </Button>
+                  </div>
+                  {currentUserRole && (
+                    <ImpersonateButton
+                      targetUserId={id as string}
+                      targetUserName={`${manager.firstName} ${manager.lastName}`}
+                      targetUserRole="manager"
+                      currentUserRole={currentUserRole}
+                    />
+                  )}
                 </div>
               </CardContent>
               <Separator />

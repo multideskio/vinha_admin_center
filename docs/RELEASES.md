@@ -4,6 +4,32 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.12.0 - Sistema de Impersonation para Suporte (Fevereiro 2026)
+
+### ✨ Impersonation
+
+- **Login como outro usuário** para suporte técnico (admins e managers)
+- Server action segura com cookie de sessão original e expiração de 2h
+- Botão nos perfis de todos os tipos de usuário (admin, gerente, supervisor, pastor, igreja)
+- Banner "Modo Suporte Ativo" em todos os layouts com retorno à conta original
+- Endpoint `/api/v1/auth/me` para dados do usuário autenticado
+
+### 🔒 Segurança
+
+- Permissões restritas a admin e manager
+- Cookie httpOnly/secure com expiração automática
+- Log de auditoria em todas as ações de impersonation
+- Diálogo de confirmação obrigatório
+
+### 📊 Métricas
+
+- Arquivos novos: 5
+- Arquivos modificados: 10
+- Layouts atualizados: 5
+- Páginas de perfil atualizadas: 5
+
+---
+
 ## v0.11.0 - Refatoração Admin + Performance + I18n (Fevereiro 2026)
 
 ### ⚡ Performance

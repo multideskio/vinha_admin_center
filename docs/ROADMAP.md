@@ -58,8 +58,15 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.12.0 | ✅ Concluída | 11/02/2026 |
 | v0.11.0 | ✅ Concluída | 11/02/2026 |
 | v0.5.0  | 📋 Planejada | Q2 2026    |
+
+### ✅ Itens Concluídos (v0.12.0)
+
+- ✅ Sistema de impersonation para suporte técnico
+- ✅ Banner de modo suporte em todos os layouts
+- ✅ Endpoint /api/v1/auth/me
 
 ### ✅ Itens Concluídos (v0.11.0)
 

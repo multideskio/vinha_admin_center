@@ -15,6 +15,8 @@ import { users, managerProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getCompanySettings } from '@/lib/company'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { ImpersonationBanner } from '@/components/ui/impersonation-banner'
+import { checkImpersonationStatus } from '@/actions/impersonation'
 
 // Força renderização dinâmica para páginas autenticadas
 export const dynamic = 'force-dynamic'
@@ -55,6 +57,9 @@ export default async function ManagerLayout({
     getCompanySettings(),
   ])
 
+  // Verificar se está em modo impersonation
+  const { isImpersonating } = await checkImpersonationStatus()
+
   const userName = userData?.firstName
     ? `${userData.firstName} ${userData.lastName}`
     : user.email?.split('@')[0] || 'User'
@@ -79,6 +84,7 @@ export default async function ManagerLayout({
             companyName={company?.name || undefined}
           />
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+            <ImpersonationBanner isImpersonating={isImpersonating} />
             {children}
           </main>
         </div>

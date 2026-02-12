@@ -4,6 +4,43 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.12.0] - 2026-02-11 - Sistema de Impersonation para Suporte
+
+### ✨ Novas Funcionalidades
+
+- **Sistema de Impersonation** — admins e managers podem logar como qualquer usuário para fornecer suporte técnico
+- **Server Action** com validação de permissões, cookie de sessão original e expiração de 2 horas
+- **Botão "Logar como Usuário"** nos perfis de administradores, gerentes, supervisores, pastores e igrejas
+- **Banner "Modo Suporte Ativo"** em todos os layouts com botão para retornar à conta original
+- **Endpoint `/api/v1/auth/me`** para obter dados do usuário autenticado atual
+
+### 🔒 Segurança
+
+- Apenas roles `admin` e `manager` podem iniciar impersonation
+- Cookie `original_user_id` com httpOnly, secure e expiração de 2h
+- Admins não podem impersonar outros admins (exceto superadmins)
+- Todas as ações de impersonation são logadas para auditoria
+- Diálogo de confirmação obrigatório antes de iniciar
+
+### 🎨 Melhorias de UI/UX
+
+- Botão com estilo warning (amarelo) para destaque visual
+- Banner fixo no topo com informação clara do modo suporte
+- Redirecionamento inteligente baseado no role do usuário alvo
+- Feedback visual com loading states e toasts de sucesso/erro
+
+### 📚 Documentação
+
+- `docs/development/IMPERSONATION_FEATURE.md` — documentação completa da funcionalidade
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 15 arquivos (5 novos, 10 modificados)
+- Novos: `impersonation.ts`, `impersonate-button.tsx`, `impersonation-banner.tsx`, `auth/me/route.ts`, `IMPERSONATION_FEATURE.md`
+- Modificados: 5 layouts (admin, igreja, manager, pastor, supervisor) + 5 páginas de perfil
+
+---
+
 ## [0.11.0] - 2026-02-11 - Refatoração Admin + Performance + I18n
 
 ### ✨ Novas Funcionalidades

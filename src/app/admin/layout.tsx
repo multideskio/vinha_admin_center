@@ -15,6 +15,8 @@ import { users, adminProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getCompanySettings } from '@/lib/company'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import { ImpersonationBanner } from '@/components/ui/impersonation-banner'
+import { checkImpersonationStatus } from '@/actions/impersonation'
 
 export async function generateMetadata(): Promise<Metadata> {
   const company = await getCompanySettings()
@@ -50,6 +52,9 @@ export default async function AdminLayout({
     getCompanySettings(),
   ])
 
+  // Verificar se está em modo impersonation
+  const { isImpersonating } = await checkImpersonationStatus()
+
   const userName = userData?.firstName
     ? `${userData.firstName} ${userData.lastName}`
     : user.email?.split('@')[0] || 'User'
@@ -74,6 +79,7 @@ export default async function AdminLayout({
             companyName={company?.name || undefined}
           />
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-x-hidden">
+            <ImpersonationBanner isImpersonating={isImpersonating} />
             {children}
           </main>
         </div>

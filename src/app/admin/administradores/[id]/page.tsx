@@ -48,6 +48,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { FraudAlert } from '@/components/ui/fraud-alert'
+import { ImpersonateButton } from '@/components/ui/impersonate-button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -139,6 +140,7 @@ export default function AdminProfilePage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = React.useState<'admin' | 'manager' | null>(null)
   const [notificationSettings, setNotificationSettings] = React.useState<
     Record<string, { email: boolean; whatsapp: boolean }>
   >({
@@ -186,6 +188,19 @@ export default function AdminProfilePage() {
 
       setAdmin(sanitizedData)
       form.reset(sanitizedData)
+
+      // Buscar role do usuário atual para botão de impersonation
+      try {
+        const currentUserRes = await fetch('/api/v1/auth/me')
+        if (currentUserRes.ok) {
+          const currentUser = await currentUserRes.json()
+          if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+            setCurrentUserRole(currentUser.role)
+          }
+        }
+      } catch {
+        // Silenciar erro - não é crítico
+      }
     } catch (error) {
       toast({
         title: 'Erro',
@@ -526,6 +541,14 @@ export default function AdminProfilePage() {
                     WhatsApp
                   </Button>
                 </div>
+                {currentUserRole && (
+                  <ImpersonateButton
+                    targetUserId={id as string}
+                    targetUserName={`${admin.firstName} ${admin.lastName}`}
+                    targetUserRole="admin"
+                    currentUserRole={currentUserRole}
+                  />
+                )}
               </CardContent>
               <Separator />
               <CardContent className="pt-6">

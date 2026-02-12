@@ -75,6 +75,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { ImpersonateButton } from '@/components/ui/impersonate-button'
 import {
   Table,
   TableBody,
@@ -316,6 +317,7 @@ export default function SupervisorProfilePage(): JSX.Element {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewImage, setPreviewImage] = React.useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = React.useState<'admin' | 'manager' | null>(null)
   const [notif, setNotif] = React.useState<{
     payment_notifications: { email: boolean; whatsapp: boolean }
     due_date_reminders: { email: boolean; whatsapp: boolean }
@@ -359,6 +361,19 @@ export default function SupervisorProfilePage(): JSX.Element {
       setRegions(regionsData.regions)
       setNotif(notifData)
       form.reset(supervisorData)
+
+      // Buscar role do usuário atual para botão de impersonation
+      try {
+        const currentUserRes = await fetch('/api/v1/auth/me')
+        if (currentUserRes.ok) {
+          const currentUser = await currentUserRes.json()
+          if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+            setCurrentUserRole(currentUser.role)
+          }
+        }
+      } catch {
+        // Silenciar erro - não é crítico
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -667,33 +682,43 @@ export default function SupervisorProfilePage(): JSX.Element {
                   {supervisor.firstName} {supervisor.lastName}
                 </h2>
                 <p className="text-sm text-muted-foreground font-medium">Supervisor</p>
-                <div className="flex gap-2 mt-4">
-                  <SendMessageDialog
-                    recipientName={`${supervisor.firstName} ${supervisor.lastName}`}
-                    recipientEmail={supervisor.email || ''}
-                    recipientPhone={supervisor.phone || ''}
-                  >
+                <div className="flex flex-col gap-2 mt-4">
+                  <div className="flex gap-2">
+                    <SendMessageDialog
+                      recipientName={`${supervisor.firstName} ${supervisor.lastName}`}
+                      recipientEmail={supervisor.email || ''}
+                      recipientPhone={supervisor.phone || ''}
+                    >
+                      <Button
+                        size="sm"
+                        className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Mensagem
+                      </Button>
+                    </SendMessageDialog>
                     <Button
                       size="sm"
-                      className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
+                      onClick={() =>
+                        window.open(
+                          `https://wa.me/55${supervisor.phone?.replace(/\D/g, '')}`,
+                          '_blank',
+                        )
+                      }
+                      className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
                     >
-                      <Mail className="h-4 w-4 mr-1" />
-                      Mensagem
+                      <Smartphone className="h-4 w-4 mr-1" />
+                      WhatsApp
                     </Button>
-                  </SendMessageDialog>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      window.open(
-                        `https://wa.me/55${supervisor.phone?.replace(/\D/g, '')}`,
-                        '_blank',
-                      )
-                    }
-                    className="bg-white dark:bg-background border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm hover:shadow-md font-semibold"
-                  >
-                    <Smartphone className="h-4 w-4 mr-1" />
-                    WhatsApp
-                  </Button>
+                  </div>
+                  {currentUserRole && (
+                    <ImpersonateButton
+                      targetUserId={id as string}
+                      targetUserName={`${supervisor.firstName} ${supervisor.lastName}`}
+                      targetUserRole="supervisor"
+                      currentUserRole={currentUserRole}
+                    />
+                  )}
                 </div>
               </CardContent>
               <Separator />
