@@ -103,17 +103,29 @@ function getCieloQueryApiUrl(environment: 'production' | 'development'): string 
     : 'https://apiquerysandbox.cieloecommerce.cielo.com.br'
 }
 
-export async function createPixPayment(amount: number, customerName: string) {
+export async function createPixPayment(
+  amount: number,
+  customerName: string,
+  customerIdentity?: string,
+) {
   const config = await getCieloConfig()
   if (!config) throw new Error('Configuração Cielo não encontrada')
 
   const apiUrl = getCieloApiUrl(config.environment)
 
+  const customer: Record<string, string> = {
+    Name: customerName,
+  }
+
+  // Cielo exige Identity (CPF/CNPJ) para PIX
+  if (customerIdentity) {
+    customer.Identity = customerIdentity.replace(/\D/g, '')
+    customer.IdentityType = customer.Identity.length > 11 ? 'CNPJ' : 'CPF'
+  }
+
   const payload = {
     MerchantOrderId: `PIX-${Date.now()}`,
-    Customer: {
-      Name: customerName,
-    },
+    Customer: customer,
     Payment: {
       Type: 'Pix',
       Amount: Math.round(amount * 100),
@@ -204,6 +216,7 @@ export async function createCreditCardPayment(
     brand: string
   },
   installments: number = 1,
+  customerIdentity?: string,
 ) {
   const config = await getCieloConfig()
   if (!config) throw new Error('Configuração Cielo não encontrada')
@@ -212,16 +225,25 @@ export async function createCreditCardPayment(
 
   const [month, year] = card.expirationDate.split('/')
 
+  const customer: Record<string, string> = {
+    Name: customerName,
+    Email: customerEmail,
+  }
+
+  // Cielo exige Identity (CPF/CNPJ) para cartão de crédito
+  if (customerIdentity) {
+    customer.Identity = customerIdentity.replace(/\D/g, '')
+    customer.IdentityType = customer.Identity.length > 11 ? 'CNPJ' : 'CPF'
+  }
+
   const payload = {
     MerchantOrderId: `ORDER-${Date.now()}`,
-    Customer: {
-      Name: customerName,
-      Email: customerEmail,
-    },
+    Customer: customer,
     Payment: {
       Type: 'CreditCard',
       Amount: Math.round(amount * 100),
       Installments: installments,
+      Capture: true,
       SoftDescriptor: 'Contribuicao',
       CreditCard: {
         CardNumber: card.number.replace(/\s/g, ''),

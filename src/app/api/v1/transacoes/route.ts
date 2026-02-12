@@ -30,6 +30,7 @@ import { checkDuplicatePayment } from '@/lib/payment-guard'
 import { z } from 'zod'
 import { env } from '@/lib/env'
 import { invalidateCache } from '@/lib/cache'
+import { onTransactionCreated } from '@/lib/notification-hooks'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -362,7 +363,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Cielo gateway (fluxo existente)
       if (data.paymentMethod === 'pix') {
-        paymentResult = await createPixPayment(data.amount, userName as string)
+        paymentResult = await createPixPayment(data.amount, userName as string, String(userCpf))
       } else if (data.paymentMethod === 'credit_card' && data.card) {
         const installments = data.installments || 1
         paymentResult = await createCreditCardPayment(
@@ -371,11 +372,12 @@ export async function POST(request: NextRequest) {
           userData.email,
           data.card,
           installments,
+          String(userCpf),
         )
         status =
-          paymentResult.Status === 2
+          paymentResult.Status === 1 || paymentResult.Status === 2
             ? 'approved'
-            : paymentResult.Status === 3
+            : paymentResult.Status === 3 || paymentResult.Status === 13
               ? 'refused'
               : 'pending'
       } else if (data.paymentMethod === 'boleto') {
@@ -425,6 +427,19 @@ export async function POST(request: NextRequest) {
     // ✅ Invalidar cache do dashboard e relatórios após nova transação
     await invalidateCache('dashboard:admin:*')
     await invalidateCache('relatorio:*')
+
+    // ✅ Disparar notificações (email + WhatsApp) se transação aprovada imediatamente
+    // Cartão de crédito pode ser aprovado na hora (status === 'approved')
+    // PIX e boleto ficam 'pending' e são notificados via webhook
+    if (status === 'approved' && transaction?.id) {
+      // Executar em background para não atrasar a resposta ao usuário
+      onTransactionCreated(transaction.id).catch((err) => {
+        console.error('[TRANSACOES_NOTIFICATION_ERROR]', {
+          transactionId: transaction.id,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        })
+      })
+    }
 
     return NextResponse.json({
       success: true,

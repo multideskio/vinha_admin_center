@@ -24,12 +24,13 @@ type TransactionStatus = 'pending' | 'approved' | 'refused' | 'refunded'
 /**
  * Resultado da reconciliação
  */
-interface ReconciliationResult {
+export interface ReconciliationResult {
   success: boolean
   transactionFound: boolean
   statusUpdated: boolean
   previousStatus?: TransactionStatus
   newStatus?: TransactionStatus
+  transactionId?: string
   error?: string
 }
 
@@ -263,6 +264,7 @@ export async function reconcileTransactionState(
         statusUpdated: false,
         previousStatus: currentStatus,
         newStatus: webhookStatus,
+        transactionId: transaction.id,
       }
     }
 
@@ -290,6 +292,7 @@ export async function reconcileTransactionState(
       statusUpdated: true,
       previousStatus: currentStatus,
       newStatus: webhookStatus,
+      transactionId: transaction.id,
     }
   } catch (error) {
     logger.error('Error during transaction reconciliation', error)
