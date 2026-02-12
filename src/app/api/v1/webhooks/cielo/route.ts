@@ -15,6 +15,7 @@ import { env } from '@/lib/env'
 import { reconcileTransactionState } from '@/lib/webhook-reconciliation'
 import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
+import { onTransactionCreated } from '@/lib/notification-hooks'
 import { z } from 'zod'
 
 // Schema Zod para validação do webhook da Cielo
@@ -270,6 +271,11 @@ export async function POST(request: NextRequest) {
         logger.error('Error sending receipt email', emailError)
         // Não falha o webhook se o email falhar
       }
+
+      // ✅ Disparar notificações via templates (WhatsApp + email personalizado)
+      onTransactionCreated(transaction.id).catch((err) => {
+        logger.error('Error sending notification hooks', err)
+      })
     }
 
     logger.clearContext()

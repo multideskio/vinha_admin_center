@@ -103,7 +103,6 @@ export async function onUserCreated(userId: string): Promise<void> {
 
 // Hook para quando uma transação é criada
 export async function onTransactionCreated(transactionId: string): Promise<void> {
-  // Busca transação e usuário
   try {
     const [transaction] = await db
       .select()
@@ -112,7 +111,6 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
       .limit(1)
     if (!transaction) return
 
-    // Busca usuário doador
     const [user] = await db
       .select()
       .from(users)
@@ -120,65 +118,97 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
       .limit(1)
     if (!user) return
 
-    // Busca settings da empresa
-    const [settings] = await db
-      .select()
-      .from(otherSettings)
-      .where(eq(otherSettings.companyId, transaction.companyId))
-      .limit(1)
-    if (!settings) return
-
     // Só notifica se transação aprovada
     if (transaction.status !== 'approved') return
 
-    // ✅ DEDUPLICAÇÃO: Verificar se notificação já foi enviada
     logger.setContext({
       userId: user.id,
       transactionId: transaction.id,
       operation: 'onTransactionCreated',
     })
 
+    // ✅ DEDUPLICAÇÃO: Verificar se notificação já foi enviada
     const shouldSend = await shouldSendNotificationWithConfig(user.id, 'payment_confirmation')
-
     if (!shouldSend) {
       logger.warn('Notificação de pagamento duplicada bloqueada', {
         userId: user.id,
         transactionId: transaction.id,
-        notificationType: 'payment_confirmation',
       })
       logger.clearContext()
       return
     }
 
-    // Prepara notification service
-    const notificationService = new NotificationService({
-      whatsappApiUrl: settings.whatsappApiUrl || undefined,
-      whatsappApiKey: settings.whatsappApiKey || undefined,
-      whatsappApiInstance: settings.whatsappApiInstance || undefined,
-      sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
-      sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
-      sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
-      fromEmail: settings.smtpFrom || undefined,
-      companyId: transaction.companyId,
-    })
-    // Dados para templates
-    const amount = String(transaction.amount)
     const name = user.email.split('@')[0] || 'Membro'
     const paidAt = new Date(transaction.createdAt).toLocaleString('pt-BR')
 
-    await notificationService.sendPaymentReceived(
-      user.id,
-      name,
-      amount,
-      paidAt,
-      user.phone || undefined,
-      user.email || undefined,
-    )
+    // Buscar nome da empresa (usado no email e nas variáveis do WhatsApp)
+    const { companies } = await import('@/db/schema')
+    const [company] = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.id, transaction.companyId))
+      .limit(1)
+    const companyName = company?.name || 'Vinha Ministérios'
 
-    logger.info('Notificação de pagamento enviada com sucesso', {
+    let emailEnviado = false
+
+    // ✅ EMAIL: Sempre enviar comprovante bonito direto
+    if (user.email) {
+      try {
+        const { createTransactionReceiptEmail } = await import('./email-templates')
+        const { sendEmail } = await import('./email')
+
+        const emailHtml = createTransactionReceiptEmail({
+          companyName,
+          amount: Number(transaction.amount),
+          transactionId: transaction.gatewayTransactionId || transaction.id,
+          status: 'Aprovado',
+          date: new Date(transaction.createdAt),
+        })
+
+        await sendEmail({
+          to: user.email,
+          subject: `✅ Pagamento Aprovado - ${companyName}`,
+          html: emailHtml,
+          userId: user.id,
+          notificationType: 'payment_receipt',
+        })
+
+        emailEnviado = true
+        logger.info('Email de comprovante enviado com sucesso', {
+          userId: user.id,
+          transactionId: transaction.id,
+          email: user.email,
+        })
+      } catch (emailError) {
+        logger.error('Falha ao enviar email de comprovante', emailError, {
+          userId: user.id,
+          transactionId: transaction.id,
+          email: user.email,
+        })
+      }
+    }
+
+    // ✅ WHATSAPP: Disparar via regras de notificação (notificationRules)
+    processNotificationEvent('payment_received', {
       userId: user.id,
       transactionId: transaction.id,
-      amount,
+      nome_usuario: name,
+      valor_transacao: `R$ ${Number(transaction.amount).toFixed(2).replace('.', ',')}`,
+      data_pagamento: paidAt,
+      nome_igreja: companyName,
+    }).catch((err) => {
+      logger.error('Erro ao processar regras de notificação (WhatsApp)', err, {
+        userId: user.id,
+        transactionId: transaction.id,
+      })
+    })
+
+    logger.info('Resultado final da notificação de pagamento', {
+      userId: user.id,
+      transactionId: transaction.id,
+      amount: '***',
+      emailEnviado,
     })
 
     logger.clearContext()
@@ -476,7 +506,11 @@ export async function processNotificationEvent(
 
     const notificationType = notificationTypeMap[eventType] || eventType
 
-    const shouldSend = await shouldSendNotificationWithConfig(userId, notificationType)
+    // Se temos transactionId, usar chave de deduplicação específica para evitar conflito
+    // com a deduplicação do onTransactionCreated
+    const dedupKey = data.transactionId ? `${notificationType}_rules` : notificationType
+
+    const shouldSend = await shouldSendNotificationWithConfig(userId, dedupKey)
 
     if (!shouldSend) {
       logger.warn('Notificação de evento duplicada bloqueada', {
@@ -528,16 +562,46 @@ export async function processNotificationEvent(
       // Monta mensagem a partir do template da regra (substitui variáveis)
       const variables: Record<string, string> = {
         nome_usuario: user.email.split('@')[0] || '',
+        nome_igreja: '', // Preenchido abaixo se disponível
         ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
       }
-      let message = rule.messageTemplate
-      message = message.replace(/\{(\w+)\}/g, (_, key) => variables[key] || `{${key}}`)
 
-      // Email
-      if (rule.sendViaEmail && user.email) {
+      // Buscar nome da empresa se não veio nos dados
+      if (!variables.nome_igreja) {
+        try {
+          const { companies } = await import('@/db/schema')
+          const [company] = await db
+            .select({ name: companies.name })
+            .from(companies)
+            .where(eq(companies.id, user.companyId))
+            .limit(1)
+          variables.nome_igreja = company?.name || ''
+        } catch {
+          // Ignorar erro, variável fica vazia
+        }
+      }
+
+      let message = rule.messageTemplate
+      // Substituir variáveis conhecidas e remover tags não preenchidas
+      message = message.replace(/\{(\w+)\}/g, (match, key) => {
+        const value = variables[key]
+        return value || ''
+      })
+
+      // Email — pular se for payment_received (comprovante já enviado pelo onTransactionCreated)
+      if (rule.sendViaEmail && user.email && eventType !== 'payment_received') {
+        // Mapa de subjects amigáveis em PT-BR
+        const subjectMap: Record<string, string> = {
+          user_registered: 'Bem-vindo(a)!',
+          payment_due_reminder: '💰 Lembrete de Pagamento',
+          payment_overdue: '🚨 Pagamento em Atraso',
+        }
+        const subject =
+          subjectMap[eventType] || rule.name || eventType.replace(/_/g, ' ').toUpperCase()
+
         await notificationService.sendEmail({
           to: user.email,
-          subject: eventType.replace('_', ' ').toUpperCase(),
+          subject,
           html: `<p>${message}</p>`,
         })
         logger.info('Email enviado via regra de notificação', {

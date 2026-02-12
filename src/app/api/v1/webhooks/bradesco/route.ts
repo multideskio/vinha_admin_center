@@ -4,6 +4,7 @@ import { queryBradescoPixPayment, queryBradescoBoletoPayment } from '@/lib/brade
 import { reconcileTransactionState } from '@/lib/webhook-reconciliation'
 import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
+import { onTransactionCreated } from '@/lib/notification-hooks'
 import { z } from 'zod'
 
 // Zod schemas para validação de webhooks Bradesco
@@ -93,6 +94,13 @@ export async function POST(request: NextRequest) {
           await invalidateCache('dashboard:admin:*')
           await invalidateCache('relatorio:*')
           await invalidateCache('insights:*')
+
+          // ✅ Disparar notificações (email + WhatsApp) se aprovado
+          if (confirmedStatus === 'approved' && reconciliation.transactionId) {
+            onTransactionCreated(reconciliation.transactionId).catch((err) => {
+              logger.error('Error sending PIX notification hooks', err)
+            })
+          }
         }
 
         logger.info('Webhook PIX processado', {
@@ -163,6 +171,13 @@ export async function POST(request: NextRequest) {
         await invalidateCache('dashboard:admin:*')
         await invalidateCache('relatorio:*')
         await invalidateCache('insights:*')
+
+        // ✅ Disparar notificações (email + WhatsApp) se aprovado
+        if (reconciliation.transactionId) {
+          onTransactionCreated(reconciliation.transactionId).catch((err) => {
+            logger.error('Error sending Boleto notification hooks', err)
+          })
+        }
       }
 
       logger.info('Webhook Boleto processado', {

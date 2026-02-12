@@ -87,7 +87,30 @@ const eventTriggerOptions = {
   payment_overdue: 'Aviso de Atraso',
 }
 
-const availableTags = ['{nome_usuario}', '{data_vencimento}', '{link_pagamento}', '{nome_igreja}']
+const availableTags: Record<string, { tag: string; label: string }[]> = {
+  user_registered: [
+    { tag: '{nome_usuario}', label: 'Nome do usuário' },
+    { tag: '{nome_igreja}', label: 'Nome da igreja' },
+  ],
+  payment_received: [
+    { tag: '{nome_usuario}', label: 'Nome do usuário' },
+    { tag: '{valor_transacao}', label: 'Valor pago' },
+    { tag: '{data_pagamento}', label: 'Data do pagamento' },
+    { tag: '{nome_igreja}', label: 'Nome da igreja' },
+  ],
+  payment_due_reminder: [
+    { tag: '{nome_usuario}', label: 'Nome do usuário' },
+    { tag: '{data_vencimento}', label: 'Data de vencimento' },
+    { tag: '{link_pagamento}', label: 'Link de pagamento' },
+    { tag: '{nome_igreja}', label: 'Nome da igreja' },
+  ],
+  payment_overdue: [
+    { tag: '{nome_usuario}', label: 'Nome do usuário' },
+    { tag: '{data_vencimento}', label: 'Data de vencimento' },
+    { tag: '{link_pagamento}', label: 'Link de pagamento' },
+    { tag: '{nome_igreja}', label: 'Nome da igreja' },
+  ],
+}
 
 const NotificationFormModal = ({
   rule,
@@ -296,7 +319,7 @@ const NotificationFormModal = ({
                     Clique em uma variável para adicioná-la ao texto:
                   </FormDescription>
                   <div className="flex flex-wrap gap-1 pt-1">
-                    {availableTags.map((tag) => (
+                    {(availableTags[eventTrigger] || []).map(({ tag, label }) => (
                       <Button
                         key={tag}
                         type="button"
@@ -304,6 +327,7 @@ const NotificationFormModal = ({
                         size="sm"
                         className="h-auto px-2 py-0.5 text-xs"
                         onClick={() => handleTagClick(tag)}
+                        title={label}
                       >
                         {tag}
                       </Button>
