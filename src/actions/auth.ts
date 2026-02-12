@@ -55,14 +55,19 @@ export async function loginUser(
       throw new Error('Este usuário não tem uma senha cadastrada.')
     }
 
-    // 2. Comparar a senha fornecida com o hash armazenado
+    // 2. Verificar se o usuário está bloqueado ANTES de validar a senha
+    if (existingUser.blockedAt) {
+      throw new Error('Credenciais inválidas.')
+    }
+
+    // 3. Comparar a senha fornecida com o hash armazenado
     const isPasswordValid = await bcrypt.compare(password, String(existingUser.password))
 
     if (!isPasswordValid) {
       throw new Error('Credenciais inválidas.')
     }
 
-    // 3. Criar token JWT e definir cookie
+    // 4. Criar token JWT e definir cookie
     const token = await createJWT({
       id: existingUser.id,
       email: existingUser.email,

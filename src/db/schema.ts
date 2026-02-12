@@ -83,6 +83,9 @@ export const users = pgTable(
     deletedAt: timestamp('deleted_at'),
     deletedBy: uuid('deleted_by'),
     deletionReason: text('deletion_reason'),
+    blockedAt: timestamp('blocked_at'),
+    blockedBy: uuid('blocked_by'),
+    blockReason: text('block_reason'),
   },
   (table) => ({
     companyIdx: index('users_company_idx').on(table.companyId),

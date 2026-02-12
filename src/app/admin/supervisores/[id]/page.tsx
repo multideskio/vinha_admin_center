@@ -76,6 +76,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { ImpersonateButton } from '@/components/ui/impersonate-button'
+import { BlockUserButton } from '@/components/ui/block-user-button'
 import {
   Table,
   TableBody,
@@ -717,6 +718,12 @@ export default function SupervisorProfilePage(): JSX.Element {
                       targetUserName={`${supervisor.firstName} ${supervisor.lastName}`}
                       targetUserRole="supervisor"
                       currentUserRole={currentUserRole}
+                    />
+                  )}
+                  {currentUserRole === 'admin' && (
+                    <BlockUserButton
+                      targetUserId={id as string}
+                      targetUserName={`${supervisor.firstName} ${supervisor.lastName}`}
                     />
                   )}
                 </div>

@@ -99,6 +99,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { FraudAlert } from '@/components/ui/fraud-alert'
 import { ImpersonateButton } from '@/components/ui/impersonate-button'
+import { BlockUserButton } from '@/components/ui/block-user-button'
 
 const pastorUpdateSchema = pastorProfileSchema
   .extend({
@@ -848,6 +849,12 @@ export default function PastorProfilePage(): JSX.Element {
                     targetUserName={`${pastor.firstName} ${pastor.lastName}`}
                     targetUserRole="pastor"
                     currentUserRole={currentUserRole}
+                  />
+                )}
+                {currentUserRole === 'admin' && (
+                  <BlockUserButton
+                    targetUserId={id as string}
+                    targetUserName={`${pastor.firstName} ${pastor.lastName}`}
                   />
                 )}
               </CardContent>

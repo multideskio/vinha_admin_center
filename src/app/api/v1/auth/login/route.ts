@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { users } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
 import { createJWT, setJWTCookie } from '@/lib/jwt'
 import { z } from 'zod'
@@ -26,19 +26,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const body = await request.json()
     const { email, password } = loginSchema.parse(body)
 
-    // Buscar usuário no banco de dados
+    // Buscar usuário no banco de dados (case-insensitive)
     const [user] = await db
       .select({
         id: users.id,
         email: users.email,
         password: users.password,
         role: users.role,
+        blockedAt: users.blockedAt,
       })
       .from(users)
-      .where(eq(users.email, email))
+      .where(sql`LOWER(${users.email}) = ${email.toLowerCase()}`)
       .limit(1)
 
     if (!user) {
+      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 })
+    }
+
+    // Verificar se o usuário está bloqueado ANTES de validar a senha
+    if (user.blockedAt) {
       return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 })
     }
 

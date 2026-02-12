@@ -49,6 +49,7 @@ import { Switch } from '@/components/ui/switch'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { FraudAlert } from '@/components/ui/fraud-alert'
 import { ImpersonateButton } from '@/components/ui/impersonate-button'
+import { BlockUserButton } from '@/components/ui/block-user-button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -547,6 +548,12 @@ export default function AdminProfilePage() {
                     targetUserName={`${admin.firstName} ${admin.lastName}`}
                     targetUserRole="admin"
                     currentUserRole={currentUserRole}
+                  />
+                )}
+                {currentUserRole === 'admin' && (
+                  <BlockUserButton
+                    targetUserId={id as string}
+                    targetUserName={`${admin.firstName} ${admin.lastName}`}
                   />
                 )}
               </CardContent>

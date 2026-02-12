@@ -53,6 +53,7 @@ import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { FraudAlert } from '@/components/ui/fraud-alert'
 import { Switch } from '@/components/ui/switch'
 import { ImpersonateButton } from '@/components/ui/impersonate-button'
+import { BlockUserButton } from '@/components/ui/block-user-button'
 import {
   Table,
   TableBody,
@@ -852,6 +853,12 @@ export default function GerenteProfilePage() {
                       targetUserName={`${manager.firstName} ${manager.lastName}`}
                       targetUserRole="manager"
                       currentUserRole={currentUserRole}
+                    />
+                  )}
+                  {currentUserRole === 'admin' && (
+                    <BlockUserButton
+                      targetUserId={id as string}
+                      targetUserName={`${manager.firstName} ${manager.lastName}`}
                     />
                   )}
                 </div>

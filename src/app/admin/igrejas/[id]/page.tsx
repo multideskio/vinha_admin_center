@@ -98,6 +98,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { SendMessageDialog } from '@/components/ui/send-message-dialog'
 import { FraudAlert } from '@/components/ui/fraud-alert'
 import { ImpersonateButton } from '@/components/ui/impersonate-button'
+import { BlockUserButton } from '@/components/ui/block-user-button'
 
 const churchUpdateSchema = churchProfileSchema.extend({
   newPassword: z.string().optional().or(z.literal('')),
@@ -840,6 +841,12 @@ export default function IgrejaProfilePage(): JSX.Element {
                     targetUserName={church.nomeFantasia || 'Igreja'}
                     targetUserRole="igreja"
                     currentUserRole={currentUserRole}
+                  />
+                )}
+                {currentUserRole === 'admin' && (
+                  <BlockUserButton
+                    targetUserId={id as string}
+                    targetUserName={church.nomeFantasia || 'Igreja'}
                   />
                 )}
               </CardContent>

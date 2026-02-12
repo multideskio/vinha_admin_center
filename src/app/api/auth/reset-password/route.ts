@@ -49,6 +49,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token expirado' }, { status: 400 })
     }
 
+    // Verificar se o usuário está bloqueado
+    const [targetUser] = await db
+      .select({ blockedAt: users.blockedAt })
+      .from(users)
+      .where(eq(users.id, reset.userId))
+      .limit(1)
+
+    if (targetUser?.blockedAt) {
+      return NextResponse.json(
+        { error: 'Sua conta foi bloqueada. Entre em contato com o administrador.' },
+        { status: 403 },
+      )
+    }
+
     // Atualiza a senha
     const hashed = await bcrypt.hash(password, 10)
     await db.update(users).set({ password: hashed }).where(eq(users.id, reset.userId))

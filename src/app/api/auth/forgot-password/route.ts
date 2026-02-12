@@ -53,6 +53,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    // Verificar se o usuário está bloqueado - não enviar email de reset
+    if (user.blockedAt) {
+      // Retorna OK para não expor que a conta está bloqueada
+      return NextResponse.json({ success: true })
+    }
+
     // Apaga tokens anteriores não usados desse usuário (segurança)
     await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id))
 

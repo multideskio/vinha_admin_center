@@ -146,12 +146,19 @@ export async function validateJWTRequest(): Promise<{
         id: users.id,
         email: users.email,
         role: users.role,
+        blockedAt: users.blockedAt,
       })
       .from(users)
       .where(eq(users.id, payload.userId))
       .limit(1)
 
     if (!dbUser) {
+      return { user: null, token: null }
+    }
+
+    // Verificar se o usuário está bloqueado
+    if (dbUser.blockedAt) {
+      await clearJWTCookie()
       return { user: null, token: null }
     }
 
@@ -206,6 +213,7 @@ export async function validateRequest(): Promise<{
         role: users.role,
         companyId: users.companyId,
         avatarUrl: users.avatarUrl,
+        blockedAt: users.blockedAt,
       })
       .from(users)
       .where(eq(users.id, payload.userId))
@@ -214,6 +222,12 @@ export async function validateRequest(): Promise<{
     const dbUser = dbUsers[0]
 
     if (!dbUser) {
+      return { user: null, session: null }
+    }
+
+    // Verificar se o usuário está bloqueado - invalidar sessão e limpar cookie
+    if (dbUser.blockedAt) {
+      await clearJWTCookie()
       return { user: null, session: null }
     }
 
