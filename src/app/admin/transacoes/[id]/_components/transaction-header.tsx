@@ -39,16 +39,17 @@ export function TransactionHeader({ transactionId }: TransactionHeaderProps) {
     <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-videira-blue via-videira-purple to-videira-pink p-6 text-white">
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin/transacoes" passHref legacyBehavior>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Voltar para transações"
-              className="text-white hover:bg-white/20"
-            >
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Voltar para transações"
+            className="text-white hover:bg-white/20"
+            asChild
+          >
+            <Link href="/admin/transacoes">
               <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <div>
             <h1 className="text-2xl font-bold">Detalhes da Transação</h1>
             <div className="mt-1 flex items-center gap-2">
