@@ -4,6 +4,26 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.18.1] - 2026-03-08 - Correção de Logo e Deprecações Next.js 15
+
+### 🐛 Correções de Bugs
+
+- **Persistência da URL da logo** — corrigido bug onde o upload da logo não salvava a URL no banco de dados (faltava `shouldDirty: true` no `setValue` e input hidden registrado no React Hook Form)
+- **Auto-save da logo** — após upload, a URL é salva automaticamente no banco sem precisar clicar "Salvar"
+- **Fallback de imagem quebrada** — adicionado `onError` com state em todos os componentes que exibem logo (admin sidebar/header, manager sidebar/header, config gerais), mostrando ícone SVG padrão quando a imagem falha
+- **Link legacyBehavior deprecated** — removido `legacyBehavior` e `passHref` do componente `TransactionHeader`, substituído pelo padrão correto do Next.js 15 com `Button asChild`
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- `src/app/admin/_components/header.tsx` — fallback de logo
+- `src/app/admin/_components/sidebar.tsx` — fallback de logo
+- `src/app/manager/_components/header.tsx` — fallback de logo
+- `src/app/manager/_components/sidebar.tsx` — fallback de logo
+- `src/app/admin/configuracoes/gerais/page.tsx` — fix setValue + auto-save + fallback preview
+- `src/app/admin/transacoes/[id]/_components/transaction-header.tsx` — remoção legacyBehavior
+
+---
+
 ## [0.18.0] - 2026-03-08 - Componentes Compartilhados, Acessibilidade & Error Boundaries
 
 ### ✨ Novas Funcionalidades

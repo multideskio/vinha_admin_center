@@ -4,6 +4,17 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.18.1 - Correção de Logo e Deprecações Next.js 15 (Março 2026)
+
+### 🐛 Correções
+
+- Persistência da URL da logo no banco após upload (React Hook Form `setValue` + input hidden)
+- Auto-save da logo após upload sem precisar clicar "Salvar"
+- Fallback de imagem quebrada em todos os sidebars/headers (admin e manager)
+- Remoção do `legacyBehavior` deprecated do `Link` no Next.js 15
+
+---
+
 ## v0.18.0 - Componentes Compartilhados, Acessibilidade & Error Boundaries (Março 2026)
 
 ### ♻️ Arquitetura — Componentes Compartilhados
