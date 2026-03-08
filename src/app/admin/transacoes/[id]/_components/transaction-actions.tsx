@@ -88,7 +88,15 @@ export function TransactionActions({
       }
 
       const data = await response.json()
-      onTransactionUpdate(data.transaction)
+
+      // Atualizar transação localmente com o novo status retornado pela API
+      if (data.status) {
+        onTransactionUpdate({
+          ...transaction,
+          status: data.status,
+          gateway: data.gateway || transaction.gateway,
+        })
+      }
 
       toast({
         title: 'Sincronização Concluída',
@@ -127,8 +135,16 @@ export function TransactionActions({
         throw new Error('Falha ao marcar como fraude')
       }
 
-      const data = await response.json()
-      onTransactionUpdate(data.transaction)
+      await response.json()
+
+      // Atualizar transação localmente com os dados de fraude
+      onTransactionUpdate({
+        ...transaction,
+        status: 'refused' as const,
+        isFraud: true,
+        fraudMarkedAt: new Date().toISOString(),
+        fraudReason: 'Transação identificada como fraudulenta pela administração',
+      })
 
       toast({
         title: 'Marcada como Fraude',

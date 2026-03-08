@@ -4,6 +4,24 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.18.2] - 2026-03-08 - Correção de Crash nas Ações de Transação
+
+### 🐛 Correções de Bugs
+
+- **TypeError em ações de transação** — corrigido crash `Cannot read properties of undefined (reading 'id')` no `TransactionDetailsClient` causado pelas APIs de sync, fraud e refund que não retornavam o objeto `transaction` na resposta, mas o frontend tentava usar `data.transaction` (que era `undefined`) para atualizar o estado
+- **Sincronizar Status** — agora faz merge do status retornado pela API com a transação atual ao invés de substituir por `undefined`
+- **Marcar como Fraude** — atualiza localmente os campos de fraude (`isFraud`, `fraudMarkedAt`, `fraudReason`, `status`) sem depender de `data.transaction`
+- **Solicitar Reembolso** — `RefundModal` agora passa apenas os campos alterados (`status: 'refunded'`, `refundRequestReason`) e o client component faz merge com o estado atual
+- **Guard defensivo** — adicionado early return no `TransactionDetailsClient` para quando `currentTransaction` é `undefined`, exibindo mensagem amigável com link de volta
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- `src/app/admin/transacoes/[id]/_components/transaction-actions.tsx` — fix sync e fraud
+- `src/app/admin/transacoes/[id]/_components/refund-modal.tsx` — fix refund + interface Partial
+- `src/app/admin/transacoes/[id]/_components/transaction-details-client.tsx` — guard + merge no onSuccess
+
+---
+
 ## [0.18.1] - 2026-03-08 - Correção de Logo e Deprecações Next.js 15
 
 ### 🐛 Correções de Bugs

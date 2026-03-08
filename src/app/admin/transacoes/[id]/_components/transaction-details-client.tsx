@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type { TransactionDetails } from '@/types/transaction'
 import { TransactionHeader } from './transaction-header'
 import { TransactionAmountCard } from './transaction-amount-card'
@@ -30,6 +31,20 @@ export function TransactionDetailsClient({ transaction }: TransactionDetailsClie
   const [loadingAction, setLoadingAction] = useState<ActionType>(null)
   const [showRefundModal, setShowRefundModal] = useState(false)
   const [currentTransaction, setCurrentTransaction] = useState(transaction)
+
+  // Guard: se a transação não foi carregada, exibir estado de erro
+  if (!currentTransaction) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <p className="text-lg text-muted-foreground">
+          Transação não encontrada ou dados indisponíveis.
+        </p>
+        <Link href="/admin/transacoes" className="text-primary underline hover:no-underline">
+          Voltar para transações
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,7 +97,10 @@ export function TransactionDetailsClient({ transaction }: TransactionDetailsClie
           status={currentTransaction.status}
           onClose={() => setShowRefundModal(false)}
           onSuccess={(updatedTransaction) => {
-            setCurrentTransaction(updatedTransaction)
+            setCurrentTransaction((prev) => ({
+              ...prev,
+              ...updatedTransaction,
+            }))
             setShowRefundModal(false)
           }}
         />

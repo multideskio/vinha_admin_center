@@ -22,7 +22,7 @@ interface RefundModalProps {
   amount: number
   status: TransactionStatus
   onClose: () => void
-  onSuccess: (transaction: TransactionDetails) => void
+  onSuccess: (transaction: Partial<TransactionDetails>) => void
 }
 
 /**
@@ -62,14 +62,18 @@ export function RefundModal({
         throw new Error(error.message || 'Falha ao solicitar reembolso')
       }
 
-      const data = await response.json()
+      await response.json()
 
       toast({
         title: 'Reembolso Solicitado',
         description: 'A solicitação de reembolso foi enviada com sucesso',
       })
 
-      onSuccess(data.transaction)
+      // API retorna { success, message } — construir o objeto atualizado localmente
+      onSuccess({
+        status: 'refunded',
+        refundRequestReason: reason.trim(),
+      })
     } catch (error) {
       console.error('[REFUND_ERROR]', {
         transactionId,

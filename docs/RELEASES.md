@@ -4,6 +4,16 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.18.2 - Correção de Crash nas Ações de Transação (Março 2026)
+
+### 🐛 Correções
+
+- Crash `TypeError: Cannot read properties of undefined` ao usar Sincronizar Status, Marcar como Fraude ou Solicitar Reembolso na página de detalhes de transação
+- APIs não retornavam objeto `transaction` na resposta — frontend agora faz merge local do estado
+- Guard defensivo no componente client para transação undefined
+
+---
+
 ## v0.18.1 - Correção de Logo e Deprecações Next.js 15 (Março 2026)
 
 ### 🐛 Correções
