@@ -28,14 +28,4 @@ export const LazyLineChart = dynamic(
 
 // Sub-componentes do Recharts (não precisam de lazy loading individual,
 // são carregados junto com o chart pai)
-export {
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Pie,
-  Cell,
-  Legend,
-  Line,
-} from 'recharts'
+export { Bar, XAxis, YAxis, Tooltip, CartesianGrid, Pie, Cell, Legend, Line } from 'recharts'

@@ -167,7 +167,13 @@ export function PastoresClient({ initialPastors, supervisors }: PastoresClientPr
               >
                 <Grid3x3 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" aria-label="Atualizar dados" onClick={fetchData} disabled={isLoading}>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Atualizar dados"
+                onClick={fetchData}
+                disabled={isLoading}
+              >
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>

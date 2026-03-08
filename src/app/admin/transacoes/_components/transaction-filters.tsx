@@ -108,7 +108,11 @@ export function TransactionFilters({
             disabled={isExporting}
             className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold gap-2"
           >
-            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
             <span className="sr-only sm:not-sr-only">
               {isExporting ? 'Exportando...' : 'Exportar CSV'}
             </span>

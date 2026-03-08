@@ -39,7 +39,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Line, XAxis, YAxis, CartesianGrid, Tooltip, LazyLineChart as LineChart } from '@/components/shared/LazyRecharts'
+import {
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  LazyLineChart as LineChart,
+} from '@/components/shared/LazyRecharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 
 type Member = {

@@ -22,8 +22,6 @@ import {
   Pencil,
   Calendar as CalendarIcon,
   Search,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -545,14 +543,6 @@ export default function PastoresPage(): JSX.Element {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   )
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1)
-  }
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1)
-  }
 
   const TableView = () => (
     <Card className="shadow-lg border-t-4 border-t-videira-blue">

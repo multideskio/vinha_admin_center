@@ -3,19 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Map,
-  UserCheck,
-  UserCog,
-  User,
-  Church,
-  Settings,
-  FileText,
-  Shield,
-  ArrowRightLeft,
-  Sparkles,
-} from 'lucide-react'
+import { User, Sparkles } from 'lucide-react'
 import { ADMIN_NAV_ITEMS, ADMIN_SETTINGS_ITEM } from '../_config/navigation'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'

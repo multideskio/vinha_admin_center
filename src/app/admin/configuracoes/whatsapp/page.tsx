@@ -30,7 +30,6 @@ import {
   RefreshCw,
   LogOut,
   RotateCcw,
-  ChevronLeft,
   Save,
   Send,
   AlertTriangle,
@@ -38,7 +37,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import Link from 'next/link'
 import {
   Breadcrumb,
   BreadcrumbItem,

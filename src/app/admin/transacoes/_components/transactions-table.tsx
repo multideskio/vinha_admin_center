@@ -146,75 +146,81 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
     }
   }
 
-  const handleSyncTransaction = React.useCallback(async (transactionId: string) => {
-    const actionKey = `sync-${transactionId}`
-    setLoadingActions((prev) => new Set(prev).add(actionKey))
+  const handleSyncTransaction = React.useCallback(
+    async (transactionId: string) => {
+      const actionKey = `sync-${transactionId}`
+      setLoadingActions((prev) => new Set(prev).add(actionKey))
 
-    try {
-      const response = await fetch(`/api/v1/transacoes/${transactionId}/sync`, {
-        method: 'POST',
-      })
+      try {
+        const response = await fetch(`/api/v1/transacoes/${transactionId}/sync`, {
+          method: 'POST',
+        })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Falha ao sincronizar')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Falha ao sincronizar')
+        }
+
+        toast({
+          title: 'Sucesso',
+          description: 'Transação sincronizada com sucesso',
+          variant: 'success',
+        })
+
+        fetchTransactions()
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: error instanceof Error ? error.message : 'Erro ao sincronizar',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoadingActions((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(actionKey)
+          return newSet
+        })
       }
+    },
+    [toast, fetchTransactions],
+  )
 
-      toast({
-        title: 'Sucesso',
-        description: 'Transação sincronizada com sucesso',
-        variant: 'success',
-      })
+  const handleResendReceipt = React.useCallback(
+    async (transactionId: string) => {
+      const actionKey = `resend-${transactionId}`
+      setLoadingActions((prev) => new Set(prev).add(actionKey))
 
-      fetchTransactions()
-    } catch (error) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao sincronizar',
-        variant: 'destructive',
-      })
-    } finally {
-      setLoadingActions((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(actionKey)
-        return newSet
-      })
-    }
-  }, [toast, fetchTransactions])
+      try {
+        const response = await fetch(`/api/v1/transacoes/${transactionId}/resend`, {
+          method: 'POST',
+        })
 
-  const handleResendReceipt = React.useCallback(async (transactionId: string) => {
-    const actionKey = `resend-${transactionId}`
-    setLoadingActions((prev) => new Set(prev).add(actionKey))
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Falha ao reenviar comprovante')
+        }
 
-    try {
-      const response = await fetch(`/api/v1/transacoes/${transactionId}/resend`, {
-        method: 'POST',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Falha ao reenviar comprovante')
+        toast({
+          title: 'Sucesso',
+          description: 'Comprovante reenviado com sucesso',
+          variant: 'success',
+        })
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: error instanceof Error ? error.message : 'Erro ao reenviar comprovante',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoadingActions((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(actionKey)
+          return newSet
+        })
       }
-
-      toast({
-        title: 'Sucesso',
-        description: 'Comprovante reenviado com sucesso',
-        variant: 'success',
-      })
-    } catch (error) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao reenviar comprovante',
-        variant: 'destructive',
-      })
-    } finally {
-      setLoadingActions((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(actionKey)
-        return newSet
-      })
-    }
-  }, [toast])
+    },
+    [toast],
+  )
 
   // Filtrar transações
   const filteredTransactions = transactions

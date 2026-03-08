@@ -205,104 +205,106 @@ export default function TransacoesPage() {
             </DropdownMenu>
           </div>
           <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
-              <TableRow>
-                <TableHead>Contribuinte</TableHead>
-                <TableHead className="hidden md:table-cell">Descrição</TableHead>
-                <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="hidden md:table-cell">Data</TableHead>
-                <TableHead>
-                  <span className="sr-only">Ações</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-40" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-4 w-20 ml-auto" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-8 w-8 ml-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : filteredTransactions.length === 0 ? (
+            <Table>
+              <TableHeader className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    Nenhuma transação encontrada.
-                  </TableCell>
+                  <TableHead>Contribuinte</TableHead>
+                  <TableHead className="hidden md:table-cell">Descrição</TableHead>
+                  <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Data</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Ações</span>
+                  </TableHead>
                 </TableRow>
-              ) : (
-                filteredTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.contributor}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {transaction.description ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <span className="truncate max-w-[150px] inline-block">
-                                {transaction.description}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>{transaction.description}</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-right">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(transaction.amount)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
-                        {statusMap[transaction.status]?.text || transaction.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {transaction.date}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Alternar menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/igreja/transacoes/${transaction.id}`}>Ver Detalhes</Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-40" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Skeleton className="h-4 w-20 ml-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8 ml-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredTransactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Nenhuma transação encontrada.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">{transaction.contributor}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {transaction.description ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <span className="truncate max-w-[150px] inline-block">
+                                  {transaction.description}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>{transaction.description}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-right">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(transaction.amount)}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={statusMap[transaction.status]?.variant || 'default'}>
+                          {statusMap[transaction.status]?.text || transaction.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {transaction.date}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Alternar menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/igreja/transacoes/${transaction.id}`}>
+                                Ver Detalhes
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

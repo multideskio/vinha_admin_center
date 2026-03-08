@@ -535,8 +535,6 @@ export default function SupervisoresPage() {
     currentPage * itemsPerPage,
   )
 
-
-
   const TableView = () => (
     <Card className="shadow-lg border-t-4 border-t-videira-blue">
       <CardContent className="pt-6">
@@ -751,16 +749,15 @@ export default function SupervisoresPage() {
         )}
       </div>
       <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredSupervisors.length}
-          itemsPerPage={itemsPerPage}
-          isLoading={isLoading}
-          onPageChange={setCurrentPage}
-        />
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredSupervisors.length}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
+        onPageChange={setCurrentPage}
+      />
     </>
   )
-
 
   return (
     <div className="flex flex-col gap-6">

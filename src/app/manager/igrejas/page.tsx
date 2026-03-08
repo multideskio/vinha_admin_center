@@ -630,8 +630,6 @@ export default function IgrejasPage() {
     currentPage * itemsPerPage,
   )
 
-
-
   const TableView = () => (
     <Card className="shadow-lg border-t-4 border-t-videira-cyan">
       <CardContent className="pt-6">
@@ -825,16 +823,15 @@ export default function IgrejasPage() {
         )}
       </div>
       <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredChurches.length}
-          itemsPerPage={itemsPerPage}
-          isLoading={isLoading}
-          onPageChange={setCurrentPage}
-        />
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredChurches.length}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
+        onPageChange={setCurrentPage}
+      />
     </>
   )
-
 
   return (
     <div className="flex flex-col gap-6">

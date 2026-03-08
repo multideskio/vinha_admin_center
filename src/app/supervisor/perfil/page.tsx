@@ -270,7 +270,12 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" aria-label="Abrir menu de ações" size="icon" variant="ghost">
+                            <Button
+                              aria-haspopup="true"
+                              aria-label="Abrir menu de ações"
+                              size="icon"
+                              variant="ghost"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

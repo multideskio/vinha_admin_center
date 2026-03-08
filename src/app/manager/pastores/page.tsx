@@ -537,8 +537,6 @@ export default function PastoresPage() {
     currentPage * itemsPerPage,
   )
 
-
-
   const TableView = () => (
     <Card className="shadow-lg border-t-4 border-t-videira-purple">
       <CardContent className="pt-6">
@@ -753,16 +751,15 @@ export default function PastoresPage() {
         )}
       </div>
       <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredPastors.length}
-          itemsPerPage={itemsPerPage}
-          isLoading={isLoading}
-          onPageChange={setCurrentPage}
-        />
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredPastors.length}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
+        onPageChange={setCurrentPage}
+      />
     </>
   )
-
 
   return (
     <div className="flex flex-col gap-6">

@@ -15,7 +15,13 @@ type EmptyStateProps = {
  * Componente de estado vazio padronizado.
  * Exibe ícone, título, descrição opcional e ação opcional (via children).
  */
-export function EmptyState({ icon: Icon, title, description, className, children }: EmptyStateProps) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  className,
+  children,
+}: EmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center gap-3 py-16', className)}>
       <Icon className="h-12 w-12 text-muted-foreground" />
