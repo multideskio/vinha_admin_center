@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Logo } from '@/components/shared/Logo'
+import { useState } from 'react'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -70,6 +71,8 @@ export function ManagerHeader({
   companyLogo,
   companyName,
 }: HeaderProps) {
+  const [logoError, setLogoError] = useState(false)
+
   const handleLogoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -86,11 +89,6 @@ export function ManagerHeader({
       const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer logout'
       alert(errorMessage)
     }
-  }
-
-  const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('Failed to load company logo:', companyLogo)
-    e.currentTarget.style.display = 'none'
   }
 
   return (
@@ -118,14 +116,14 @@ export function ManagerHeader({
             <div className="relative z-10 flex h-16 items-center px-6">
               <Link href="/manager/dashboard" className="flex items-center gap-3 group">
                 <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-lg">
-                  {companyLogo ? (
+                  {companyLogo && !logoError ? (
                     <Image
                       src={companyLogo}
                       alt="Logo"
                       width={24}
                       height={24}
                       className="h-6 w-auto object-contain"
-                      onError={handleLogoError}
+                      onError={() => setLogoError(true)}
                     />
                   ) : (
                     <Logo className="h-6 w-6 text-white" />

@@ -43,6 +43,7 @@ import { logoutUser } from '@/actions/auth'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { GlobalSearch } from '@/components/global-search'
 import { Logo } from '@/components/shared/Logo'
+import { useState } from 'react'
 
 type AdminHeaderProps = {
   userName: string
@@ -62,6 +63,7 @@ export function AdminHeader({
   companyName,
 }: AdminHeaderProps): JSX.Element {
   const { isCollapsed, toggleSidebar } = useSidebar()
+  const [logoError, setLogoError] = useState(false)
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
@@ -98,13 +100,14 @@ export function AdminHeader({
           </SheetDescription>
           <nav className="grid gap-2 text-lg font-medium">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold">
-              {companyLogo ? (
+              {companyLogo && !logoError ? (
                 <Image
                   src={companyLogo}
                   alt={companyName || 'Logo'}
                   width={24}
                   height={24}
                   className="h-6 w-auto object-contain"
+                  onError={() => setLogoError(true)}
                 />
               ) : (
                 <Logo className="h-6 w-6 text-primary" />

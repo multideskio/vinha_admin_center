@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import {
   LayoutDashboard,
   UserCog,
@@ -38,11 +39,7 @@ type SidebarProps = {
 
 export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
   const pathname = usePathname()
-
-  const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('Failed to load company logo:', companyLogo)
-    e.currentTarget.style.display = 'none'
-  }
+  const [logoError, setLogoError] = useState(false)
 
   const getGradientClass = (gradient: string) => {
     switch (gradient) {
@@ -81,14 +78,14 @@ export function ManagerSidebar({ companyLogo, companyName }: SidebarProps) {
           <div className="relative z-10 flex h-16 items-center px-6 lg:h-20">
             <Link href="/manager/dashboard" className="flex items-center gap-3 group">
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 group-hover:ring-white/50 transition-all shadow-lg">
-                {companyLogo ? (
+                {companyLogo && !logoError ? (
                   <Image
                     src={companyLogo}
                     alt="Logo"
                     width={24}
                     height={24}
                     className="h-6 w-auto object-contain"
-                    onError={handleLogoError}
+                    onError={() => setLogoError(true)}
                   />
                 ) : (
                   <Grape className="h-6 w-6 text-white" />

@@ -123,9 +123,25 @@ export default function GeneralSettingsPage() {
       }
 
       const { url } = await response.json()
-      form.setValue('logoUrl', url)
+      form.setValue('logoUrl', url, { shouldDirty: true, shouldValidate: true })
       setLogoPreview(url)
-      toast({ title: 'Sucesso!', description: 'Logo enviada com sucesso.', variant: 'success' })
+
+      // Salvar a URL da logo automaticamente no banco
+      const saveResponse = await fetch('/api/v1/company', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logoUrl: url }),
+      })
+
+      if (!saveResponse.ok) {
+        throw new Error('Upload realizado, mas falha ao salvar a URL no banco.')
+      }
+
+      toast({
+        title: 'Sucesso!',
+        description: 'Logo enviada e salva com sucesso.',
+        variant: 'success',
+      })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       toast({ title: 'Erro', description: errorMessage, variant: 'destructive' })
@@ -280,6 +296,8 @@ export default function GeneralSettingsPage() {
               />
               <div className="space-y-2">
                 <Label>Logo da Aplicação</Label>
+                {/* Input hidden registrado no form para persistir logoUrl */}
+                <input type="hidden" {...form.register('logoUrl')} />
                 {logoPreview && (
                   <div className="mb-4">
                     <Image
@@ -288,6 +306,7 @@ export default function GeneralSettingsPage() {
                       width={80}
                       height={80}
                       className="h-20 object-contain"
+                      onError={() => setLogoPreview(null)}
                     />
                   </div>
                 )}

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import { User, Sparkles } from 'lucide-react'
 import { ADMIN_NAV_ITEMS, ADMIN_SETTINGS_ITEM } from '../_config/navigation'
 import { cn } from '@/lib/utils'
@@ -18,6 +19,7 @@ type AppSidebarProps = {
 export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): JSX.Element {
   const pathname = usePathname()
   const { isCollapsed } = useSidebar()
+  const [logoError, setLogoError] = useState(false)
 
   const getGradientClass = (gradient: string) => {
     switch (gradient) {
@@ -58,13 +60,14 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
         {/* Logo Header com Gradiente */}
         <div className="flex h-16 items-center border-b border-border/40 px-6 videira-gradient">
           <Link href="/admin/dashboard" className="flex items-center gap-3 font-bold group">
-            {companyLogo ? (
+            {companyLogo && !logoError ? (
               <Image
                 src={companyLogo}
                 alt={companyName || 'Logo'}
                 width={32}
                 height={32}
                 className="h-8 w-auto object-contain flex-shrink-0"
+                onError={() => setLogoError(true)}
               />
             ) : (
               <div className="relative flex-shrink-0">
