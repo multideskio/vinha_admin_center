@@ -461,6 +461,7 @@ export default function RelatorioIgrejasPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Primeira página"
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
                     >
@@ -469,6 +470,7 @@ export default function RelatorioIgrejasPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Página anterior"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
                     >
@@ -482,6 +484,7 @@ export default function RelatorioIgrejasPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Próxima página"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
                     >
@@ -490,6 +493,7 @@ export default function RelatorioIgrejasPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Última página"
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
                     >

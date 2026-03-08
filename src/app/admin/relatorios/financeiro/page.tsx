@@ -490,6 +490,7 @@ export default function RelatorioFinanceiroPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Primeira página"
                       onClick={() => fetchData(1)}
                       disabled={!pagination.hasPrev}
                     >
@@ -498,6 +499,7 @@ export default function RelatorioFinanceiroPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Página anterior"
                       onClick={() => fetchData(currentPage - 1)}
                       disabled={!pagination.hasPrev}
                     >
@@ -511,6 +513,7 @@ export default function RelatorioFinanceiroPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Próxima página"
                       onClick={() => fetchData(currentPage + 1)}
                       disabled={!pagination.hasNext}
                     >
@@ -519,6 +522,7 @@ export default function RelatorioFinanceiroPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Última página"
                       onClick={() => fetchData(pagination.totalPages)}
                       disabled={!pagination.hasNext}
                     >

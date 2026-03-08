@@ -54,6 +54,7 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
   const [quickProfileUserId, setQuickProfileUserId] = React.useState<string | null>(null)
   const [isQuickProfileOpen, setIsQuickProfileOpen] = React.useState(false)
   const [loadingActions, setLoadingActions] = React.useState<Set<string>>(new Set())
+  const [isExporting, setIsExporting] = React.useState(false)
   const { toast } = useToast()
 
   const fetchTransactions = React.useCallback(async () => {
@@ -112,6 +113,7 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
   )
 
   const handleExportCSV = async () => {
+    setIsExporting(true)
     try {
       const params = new URLSearchParams()
       if (dateRange.from) params.append('from', dateRange.from.toISOString())
@@ -139,10 +141,12 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
         description: 'Erro ao exportar transações',
         variant: 'destructive',
       })
+    } finally {
+      setIsExporting(false)
     }
   }
 
-  const handleSyncTransaction = async (transactionId: string) => {
+  const handleSyncTransaction = React.useCallback(async (transactionId: string) => {
     const actionKey = `sync-${transactionId}`
     setLoadingActions((prev) => new Set(prev).add(actionKey))
 
@@ -176,9 +180,9 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
         return newSet
       })
     }
-  }
+  }, [toast, fetchTransactions])
 
-  const handleResendReceipt = async (transactionId: string) => {
+  const handleResendReceipt = React.useCallback(async (transactionId: string) => {
     const actionKey = `resend-${transactionId}`
     setLoadingActions((prev) => new Set(prev).add(actionKey))
 
@@ -210,7 +214,7 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
         return newSet
       })
     }
-  }
+  }, [toast])
 
   // Filtrar transações
   const filteredTransactions = transactions
@@ -255,6 +259,7 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
             onDateRangeChange={handleDateRangeChange}
             onRefresh={fetchTransactions}
             onExport={handleExportCSV}
+            isExporting={isExporting}
             totalResults={filteredTransactions.length}
           />
 

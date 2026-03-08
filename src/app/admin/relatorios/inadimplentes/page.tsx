@@ -381,6 +381,7 @@ export default function InadimplentesPage() {
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="Primeira página"
                     onClick={() => goToPage(1)}
                     disabled={!pagination.hasPrev}
                   >
@@ -389,6 +390,7 @@ export default function InadimplentesPage() {
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="Página anterior"
                     onClick={() => goToPage(pagination.page - 1)}
                     disabled={!pagination.hasPrev}
                   >
@@ -402,6 +404,7 @@ export default function InadimplentesPage() {
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="Próxima página"
                     onClick={() => goToPage(pagination.page + 1)}
                     disabled={!pagination.hasNext}
                   >
@@ -410,6 +413,7 @@ export default function InadimplentesPage() {
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="Última página"
                     onClick={() => goToPage(pagination.totalPages)}
                     disabled={!pagination.hasNext}
                   >

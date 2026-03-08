@@ -164,6 +164,7 @@ export function SupervisoresClient({
               <Button
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="icon"
+                aria-label="Visualizar em tabela"
                 onClick={() => setViewMode('table')}
                 className={viewMode === 'table' ? 'bg-videira-blue hover:bg-videira-blue/90' : ''}
               >
@@ -172,12 +173,13 @@ export function SupervisoresClient({
               <Button
                 variant={viewMode === 'card' ? 'default' : 'outline'}
                 size="icon"
+                aria-label="Visualizar em cards"
                 onClick={() => setViewMode('card')}
                 className={viewMode === 'card' ? 'bg-videira-blue hover:bg-videira-blue/90' : ''}
               >
                 <Grid3x3 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={fetchData} disabled={isLoading}>
+              <Button variant="outline" size="icon" aria-label="Atualizar dados" onClick={fetchData} disabled={isLoading}>
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>

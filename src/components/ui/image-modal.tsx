@@ -34,6 +34,7 @@ export function ImageModal({ src, alt, children, className }: ImageModalProps) {
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Fechar imagem"
             className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
             onClick={() => setOpen(false)}
           >

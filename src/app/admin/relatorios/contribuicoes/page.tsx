@@ -577,6 +577,7 @@ export default function RelatorioContribuicoesPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Primeira página"
                       onClick={() => fetchData(1)}
                       disabled={!contributorsPagination.hasPrev}
                     >
@@ -585,6 +586,7 @@ export default function RelatorioContribuicoesPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Página anterior"
                       onClick={() => fetchData(currentPage - 1)}
                       disabled={!contributorsPagination.hasPrev}
                     >
@@ -598,6 +600,7 @@ export default function RelatorioContribuicoesPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Próxima página"
                       onClick={() => fetchData(currentPage + 1)}
                       disabled={!contributorsPagination.hasNext}
                     >
@@ -606,6 +609,7 @@ export default function RelatorioContribuicoesPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Última página"
                       onClick={() => fetchData(contributorsPagination.totalPages)}
                       disabled={!contributorsPagination.hasNext}
                     >

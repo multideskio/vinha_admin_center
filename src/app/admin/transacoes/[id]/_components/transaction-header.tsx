@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowLeft, Copy, Check } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
@@ -14,7 +14,6 @@ interface TransactionHeaderProps {
  * Header da página de detalhes com gradiente e ações
  */
 export function TransactionHeader({ transactionId }: TransactionHeaderProps) {
-  const router = useRouter()
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
 
@@ -40,14 +39,16 @@ export function TransactionHeader({ transactionId }: TransactionHeaderProps) {
     <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-videira-blue via-videira-purple to-videira-pink p-6 text-white">
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="text-white hover:bg-white/20"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <Link href="/admin/transacoes" passHref legacyBehavior>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Voltar para transações"
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
           <div>
             <h1 className="text-2xl font-bold">Detalhes da Transação</h1>
             <div className="mt-1 flex items-center gap-2">
@@ -55,6 +56,7 @@ export function TransactionHeader({ transactionId }: TransactionHeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Copiar ID da transação"
                 onClick={handleCopyId}
                 className="h-6 w-6 text-white hover:bg-white/20"
               >

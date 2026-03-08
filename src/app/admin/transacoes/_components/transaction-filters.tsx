@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Download, ListFilter, RefreshCw, Search } from 'lucide-react'
+import { Download, ListFilter, RefreshCw, Search, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ type TransactionFiltersProps = {
   onDateRangeChange: (range: { from: Date | undefined; to: Date | undefined }) => void
   onRefresh: () => void
   onExport: () => void
+  isExporting?: boolean
   totalResults: number
 }
 
@@ -38,6 +39,7 @@ export function TransactionFilters({
   onDateRangeChange,
   onRefresh,
   onExport,
+  isExporting,
   totalResults,
 }: TransactionFiltersProps) {
   const [searchInput, setSearchInput] = React.useState(searchTerm)
@@ -55,6 +57,7 @@ export function TransactionFilters({
         <Button
           onClick={onRefresh}
           size="icon"
+          aria-label="Atualizar transações"
           className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md"
         >
           <RefreshCw className="h-4 w-4" />
@@ -102,10 +105,13 @@ export function TransactionFilters({
           <Button
             size="sm"
             onClick={onExport}
+            disabled={isExporting}
             className="bg-white dark:bg-background border-2 border-videira-cyan text-videira-cyan hover:bg-videira-cyan hover:text-white transition-all shadow-sm hover:shadow-md font-semibold gap-2"
           >
-            <Download className="h-4 w-4" />
-            <span className="sr-only sm:not-sr-only">Exportar CSV</span>
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span className="sr-only sm:not-sr-only">
+              {isExporting ? 'Exportando...' : 'Exportar CSV'}
+            </span>
           </Button>
         </div>
         <DateRangePicker

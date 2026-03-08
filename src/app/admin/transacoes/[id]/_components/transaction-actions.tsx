@@ -4,6 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Mail, RefreshCw, AlertTriangle, DollarSign } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import type { TransactionDetails } from '@/types/transaction'
 
 type ActionType = 'resend' | 'sync' | 'fraud' | null
@@ -97,11 +108,10 @@ export function TransactionActions({
     }
   }
 
-  const handleMarkFraud = async () => {
-    if (!confirm('Tem certeza que deseja marcar esta transação como fraude?')) {
-      return
-    }
+  const [showFraudDialog, setShowFraudDialog] = React.useState(false)
 
+  const handleMarkFraud = async () => {
+    setShowFraudDialog(false)
     onMarkFraud()
     try {
       const response = await fetch(`/api/v1/transacoes/${transaction.id}/fraud`, {
@@ -161,15 +171,36 @@ export function TransactionActions({
         </Button>
 
         {!transaction.isFraud && (
-          <Button
-            variant="outline"
-            onClick={handleMarkFraud}
-            disabled={loadingAction === 'fraud'}
-            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          >
-            <AlertTriangle className="mr-2 h-4 w-4" />
-            {loadingAction === 'fraud' ? 'Marcando...' : 'Marcar como Fraude'}
-          </Button>
+          <AlertDialog open={showFraudDialog} onOpenChange={setShowFraudDialog}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={loadingAction === 'fraud'}
+                className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                {loadingAction === 'fraud' ? 'Marcando...' : 'Marcar como Fraude'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar marcação de fraude</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja marcar esta transação como fraude? Esta ação pode afetar o
+                  status do contribuinte.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleMarkFraud}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Marcar como Fraude
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
 
         {canRequestRefund && (
