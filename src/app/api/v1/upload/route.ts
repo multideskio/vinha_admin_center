@@ -9,6 +9,7 @@ import { db } from '@/db/drizzle'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { rateLimitSync, getClientIP } from '@/lib/rate-limit'
 
 // ✅ CORRIGIDO: Schema com validação de pasta permitida
 const uploadSchema = z.object({
@@ -38,6 +39,19 @@ const ALLOWED_FILE_TYPES = [
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Rate limiting para prevenir abuso de upload
+    const clientIP = getClientIP(request)
+    const rateLimitResult = rateLimitSync(`upload:${clientIP}`, {
+      maxAttempts: 20,
+      windowMs: 60 * 1000,
+    })
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas requisições de upload. Tente novamente em breve.' },
+        { status: 429 },
+      )
+    }
+
     const { user } = await validateRequest()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

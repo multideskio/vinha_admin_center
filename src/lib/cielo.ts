@@ -5,6 +5,7 @@ import { logCieloRequest, logCieloResponse } from './cielo-logger'
 import { env } from '@/lib/env'
 import { safeLog, safeError } from '@/lib/log-sanitizer'
 import { configCache, CACHE_KEYS } from '@/lib/config-cache'
+import { decryptGatewayConfig } from '@/lib/gateway-encryption'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -69,9 +70,13 @@ async function getCieloConfig(): Promise<CieloConfig | null> {
     throw new Error('Gateway Cielo está desativado. Ative em /admin/gateways/cielo')
   }
 
-  const merchantId = config.environment === 'production' ? config.prodClientId : config.devClientId
+  // ✅ Descriptografar credenciais sensíveis
+  const decrypted = decryptGatewayConfig(config)
+
+  const merchantId =
+    decrypted.environment === 'production' ? decrypted.prodClientId : decrypted.devClientId
   const merchantKey =
-    config.environment === 'production' ? config.prodClientSecret : config.devClientSecret
+    decrypted.environment === 'production' ? decrypted.prodClientSecret : decrypted.devClientSecret
 
   if (!merchantId || !merchantKey) {
     throw new Error(

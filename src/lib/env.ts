@@ -51,6 +51,12 @@ const envSchema = z
 
     // URL pública da aplicação (opcional - usada em links de emails/notificações)
     NEXT_PUBLIC_APP_URL: z.string().url('NEXT_PUBLIC_APP_URL deve ser uma URL válida').optional(),
+
+    // Criptografia de dados sensíveis no banco (opcional - sem ela, dados ficam em texto plano)
+    ENCRYPTION_KEY: z
+      .string()
+      .min(16, 'ENCRYPTION_KEY deve ter no mínimo 16 caracteres')
+      .optional(),
   })
   .refine((data) => data.POSTGRES_URL || data.DATABASE_URL, {
     message: 'DATABASE_URL ou POSTGRES_URL deve estar configurada',

@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto'
 import { db } from '@/db/drizzle'
 import { users, pastorProfiles } from '@/db/schema'
 import { sql } from 'drizzle-orm'
-import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
+import { rateLimitSync as rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limit'
 import { env } from '@/lib/env'
 import { invalidateCache } from '@/lib/cache'
 

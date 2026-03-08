@@ -10,7 +10,9 @@ import type { UserRole } from './types'
 const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET)
 
 const JWT_COOKIE_NAME = 'auth_token'
-const JWT_EXPIRES_IN = '30d' // 30 dias
+const JWT_EXPIRES_IN = '1d' // 1 dia — renovado automaticamente pelo middleware
+const JWT_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 dias (cookie dura mais que o token para permitir refresh)
+const REFRESH_THRESHOLD_SECONDS = 12 * 60 * 60 // Renovar quando faltar menos de 12h
 
 export interface JWTPayload {
   userId: string
@@ -92,7 +94,7 @@ export async function setJWTCookie(token: string): Promise<void> {
     secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 30 * 24 * 60 * 60, // 30 dias em segundos
+    maxAge: JWT_COOKIE_MAX_AGE,
   })
 }
 
@@ -118,6 +120,60 @@ export async function getJWTFromCookie(): Promise<string | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(JWT_COOKIE_NAME)
   return token?.value || null
+}
+
+/**
+ * Verifica se um token está próximo de expirar e precisa ser renovado.
+ */
+export function shouldRefreshToken(payload: JWTPayload): boolean {
+  const now = Math.floor(Date.now() / 1000)
+  const timeUntilExpiry = payload.exp - now
+  return timeUntilExpiry > 0 && timeUntilExpiry < REFRESH_THRESHOLD_SECONDS
+}
+
+/**
+ * Renova o token JWT se estiver próximo de expirar.
+ * Retorna o novo token se renovado, null se não precisou renovar.
+ */
+export async function refreshTokenIfNeeded(): Promise<string | null> {
+  const token = await getJWTFromCookie()
+  if (!token) return null
+
+  const payload = await verifyJWT(token)
+  if (!payload) return null
+
+  if (!shouldRefreshToken(payload)) return null
+
+  // Verificar se o usuário ainda está ativo antes de renovar
+  try {
+    const [dbUser] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        role: users.role,
+        blockedAt: users.blockedAt,
+      })
+      .from(users)
+      .where(eq(users.id, payload.userId))
+      .limit(1)
+
+    if (!dbUser || dbUser.blockedAt) return null
+
+    // Emitir novo token com dados atualizados do banco
+    const newToken = await createJWT({
+      id: dbUser.id,
+      email: dbUser.email,
+      role: dbUser.role as UserRole,
+    })
+    await setJWTCookie(newToken)
+    return newToken
+  } catch (error) {
+    console.error(
+      '[JWT_REFRESH] Erro ao renovar token:',
+      error instanceof Error ? error.message : error,
+    )
+    return null
+  }
 }
 
 /**

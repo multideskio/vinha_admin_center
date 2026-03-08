@@ -7,7 +7,7 @@ import { addHours } from 'date-fns'
 import { createPasswordResetEmail } from '@/lib/email-templates'
 import { EmailService } from '@/lib/notifications'
 import { otherSettings } from '@/db/schema'
-import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
+import { rateLimitSync as rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
 import { env } from '@/lib/env'
 
@@ -79,15 +79,17 @@ export async function POST(request: NextRequest) {
     if (!settings)
       return NextResponse.json({ error: 'Configuração não encontrada' }, { status: 500 })
 
-    // ✅ CORRIGIDO: Usar URL validada via env.ts
-    const host = env.NEXT_PUBLIC_APP_URL
+    // ✅ CORRIGIDO: Usar URL validada via env.ts (sem duplicar protocolo)
+    const appUrl = env.NEXT_PUBLIC_APP_URL
 
-    if (!host) {
+    if (!appUrl) {
       console.error('[FORGOT_PASSWORD] NEXT_PUBLIC_APP_URL não configurada no .env')
       return NextResponse.json({ error: 'Configuração do sistema inválida' }, { status: 500 })
     }
 
-    const resetLink = `https://${host}/auth/redefinir-senha/${token}`
+    // Remover trailing slash e garantir que não duplicamos o protocolo
+    const baseUrl = appUrl.replace(/\/+$/, '')
+    const resetLink = `${baseUrl}/auth/redefinir-senha/${token}`
     const html = createPasswordResetEmail({
       companyName: settings.smtpFrom || 'Equipe Vinha',
       userName: user.email,

@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Pie, PieChart, Cell, Tooltip, Legend } from 'recharts'
+import { Pie, Cell, Tooltip, Legend } from '@/components/shared/LazyRecharts'
+import { LazyPieChart as PieChart } from '@/components/shared/LazyRecharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart'
 import type { DashboardData } from '@/lib/types/dashboard-types'

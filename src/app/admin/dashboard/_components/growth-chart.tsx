@@ -2,7 +2,14 @@
 
 import * as React from 'react'
 import { TrendingUp } from 'lucide-react'
-import { CartesianGrid, ComposedChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
+import {
+  CartesianGrid,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  LazyComposedChart,
+} from '@/components/shared/LazyRecharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
@@ -35,7 +42,7 @@ export function GrowthChart({ data, totalNewMembers }: GrowthChartProps) {
       <CardContent className="overflow-hidden">
         <div className="w-full overflow-x-auto -mx-2 px-2">
           <ChartContainer config={{}} className="h-[250px] sm:h-[280px] lg:h-[320px] min-w-[350px]">
-            <ComposedChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <LazyComposedChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
               <XAxis
                 dataKey="month"
@@ -58,7 +65,7 @@ export function GrowthChart({ data, totalNewMembers }: GrowthChartProps) {
                 stroke="transparent"
                 dot={{ r: 5, fill: 'hsl(var(--primary))' }}
               />
-            </ComposedChart>
+            </LazyComposedChart>
           </ChartContainer>
         </div>
         {data.length === 0 && (

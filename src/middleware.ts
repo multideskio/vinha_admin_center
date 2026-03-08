@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtVerify, SignJWT } from 'jose'
+
+const REFRESH_THRESHOLD_SECONDS = 12 * 60 * 60 // Renovar quando faltar menos de 12h
 
 /**
  * Adiciona headers de segurança a uma resposta do middleware.
@@ -12,20 +15,20 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  const isVercelPreview =
-    process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development'
-  const scriptSrc = isVercelPreview
-    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  const isVercel = !!process.env.VERCEL
+  const vercelScriptSrc = isVercel ? ' https://vercel.live' : ''
+  const vercelConnectSrc = isVercel ? ' https://vercel.live https://*.vercel.live' : ''
+  const vercelFrameSrc = isVercel ? ' https://vercel.live' : ''
   response.headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      scriptSrc,
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval'${vercelScriptSrc}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.cloudfront.net https://*.s3.amazonaws.com https://placehold.co",
       "font-src 'self'",
-      "connect-src 'self' https://viacep.com.br https://brasilapi.com.br https://api.cieloecommerce.cielo.com.br https://apiquery.cieloecommerce.cielo.com.br https://transactionsandbox.cieloecommerce.cielo.com.br https://apisandbox.cieloecommerce.cielo.com.br",
+      `connect-src 'self' https://viacep.com.br https://brasilapi.com.br https://api.cieloecommerce.cielo.com.br https://apiquery.cieloecommerce.cielo.com.br https://transactionsandbox.cieloecommerce.cielo.com.br https://apisandbox.cieloecommerce.cielo.com.br${vercelConnectSrc}`,
+      `frame-src 'self'${vercelFrameSrc}`,
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -35,6 +38,18 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 }
 
 export async function middleware(request: NextRequest) {
+  // Guard: JWT_SECRET deve estar configurado
+  if (!process.env.JWT_SECRET) {
+    console.error('[MIDDLEWARE] JWT_SECRET não configurado')
+    // Permitir apenas rotas públicas
+    if (
+      request.nextUrl.pathname.startsWith('/api/v1/') &&
+      !request.nextUrl.pathname.startsWith('/api/v1/webhooks/')
+    ) {
+      return NextResponse.json({ error: 'Erro de configuração do servidor' }, { status: 500 })
+    }
+  }
+
   // HTTPS enforcement em produção
   if (process.env.NODE_ENV === 'production' && !request.nextUrl.hostname.includes('localhost')) {
     const proto = request.headers.get('x-forwarded-proto')
@@ -56,6 +71,72 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname === '/maintenance'
   ) {
+    // ✅ Verificação de JWT no middleware para rotas /api/v1/* (defesa em profundidade)
+    // Rotas excluídas: webhooks, auth, maintenance-check, payment-link, payment-methods
+    const pathname = request.nextUrl.pathname
+    if (
+      pathname.startsWith('/api/v1/') &&
+      !pathname.startsWith('/api/v1/webhooks/') &&
+      !pathname.startsWith('/api/v1/auth/') &&
+      !pathname.startsWith('/api/v1/maintenance-check') &&
+      !pathname.startsWith('/api/v1/payment-link/') &&
+      pathname !== '/api/v1/payment-methods' &&
+      !pathname.startsWith('/api/v1/payment-methods/') &&
+      !pathname.startsWith('/api/auth/')
+    ) {
+      const token = request.cookies.get('auth_token')?.value
+
+      if (!token) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      }
+
+      // Verificação leve do JWT (sem consultar banco — handlers fazem isso)
+      try {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || '')
+        await jwtVerify(token, secret)
+      } catch {
+        return NextResponse.json({ error: 'Token inválido ou expirado' }, { status: 401 })
+      }
+    }
+
+    // ✅ Sliding window token refresh para rotas de página autenticadas
+    // Renova o JWT automaticamente quando próximo de expirar (sem consultar banco — leve)
+    const pageToken = request.cookies.get('auth_token')?.value
+    if (pageToken && !pathname.startsWith('/api/')) {
+      try {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || '')
+        const { payload } = await jwtVerify(pageToken, secret)
+        const now = Math.floor(Date.now() / 1000)
+        const exp = payload.exp as number
+        const timeUntilExpiry = exp - now
+
+        if (timeUntilExpiry > 0 && timeUntilExpiry < REFRESH_THRESHOLD_SECONDS) {
+          // Token próximo de expirar — emitir novo token com mesmos dados
+          const newToken = await new SignJWT({
+            userId: payload.userId,
+            email: payload.email,
+            role: payload.role,
+          })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('1d')
+            .sign(secret)
+
+          const response = addSecurityHeaders(NextResponse.next())
+          response.cookies.set('auth_token', newToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60, // 7 dias
+          })
+          return response
+        }
+      } catch {
+        // Token inválido — não renovar, deixar o handler lidar
+      }
+    }
+
     return addSecurityHeaders(NextResponse.next())
   }
 

@@ -7,7 +7,7 @@ import { sql } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
 import { createJWT, setJWTCookie, clearJWTCookie } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
-import { rateLimit, rateLimitPresets } from '@/lib/rate-limiter'
+import { rateLimitSync as rateLimit, rateLimitPresets } from '@/lib/rate-limit'
 import { headers } from 'next/headers'
 
 const loginSchema = z.object({

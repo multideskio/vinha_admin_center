@@ -1,11 +1,11 @@
 /**
  * @fileoverview Conexão Drizzle com PostgreSQL.
- * Em Vercel/Neon: usa @neondatabase/serverless (HTTP) para melhor desempenho serverless.
+ * Em Vercel/Neon: usa @neondatabase/serverless (WebSocket) com suporte a transações.
  * Local: usa pg Pool para dev e scripts.
  */
 import * as dotenv from 'dotenv'
-import { neon, neonConfig } from '@neondatabase/serverless'
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http'
+import { Pool as NeonPool } from '@neondatabase/serverless'
+import { drizzle as drizzleNeonServerless } from 'drizzle-orm/neon-serverless'
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import * as schema from './schema'
@@ -20,14 +20,13 @@ if (!connectionString) {
 
 const isServerless = !!process.env.VERCEL
 
-// Serverless (Vercel): Neon HTTP driver com connection reuse
+// Serverless (Vercel): Neon WebSocket driver (suporta transações)
 // Local: pg Pool
 const db = isServerless ? createNeonDb() : createPgDb()
 
 function createNeonDb() {
-  neonConfig.fetchConnectionCache = true
-  const sql = neon(connectionString!)
-  return drizzleNeon({ client: sql, schema })
+  const pool = new NeonPool({ connectionString: connectionString as string })
+  return drizzleNeonServerless({ client: pool, schema })
 }
 
 function createPgDb() {

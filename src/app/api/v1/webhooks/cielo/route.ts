@@ -16,6 +16,7 @@ import { reconcileTransactionState } from '@/lib/webhook-reconciliation'
 import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
 import { onTransactionCreated } from '@/lib/notification-hooks'
+import { validateCieloWebhook } from '@/lib/webhook-security'
 import { z } from 'zod'
 
 // Schema Zod para validação do webhook da Cielo
@@ -36,6 +37,16 @@ class ValidationError extends Error {
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Validação de origem do webhook (IP + rate limiting)
+    const webhookValidation = validateCieloWebhook(request)
+    if (!webhookValidation.valid) {
+      logger.warn('Webhook Cielo rejeitado', {
+        reason: webhookValidation.reason,
+        ip: webhookValidation.clientIP,
+      })
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 })
+    }
+
     const body = await request.json()
 
     // Configurar contexto do logger

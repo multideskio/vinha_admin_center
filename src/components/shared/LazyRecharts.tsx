@@ -26,6 +26,11 @@ export const LazyLineChart = dynamic(
   { ssr: false, loading: ChartSkeleton },
 )
 
+export const LazyComposedChart = dynamic(
+  () => import('recharts').then((mod) => ({ default: mod.ComposedChart })),
+  { ssr: false, loading: ChartSkeleton },
+)
+
 // Sub-componentes do Recharts (não precisam de lazy loading individual,
 // são carregados junto com o chart pai)
 export { Bar, XAxis, YAxis, Tooltip, CartesianGrid, Pie, Cell, Legend, Line } from 'recharts'

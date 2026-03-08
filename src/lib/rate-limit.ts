@@ -199,3 +199,55 @@ export function getInMemoryStats(): {
     oldestEntry: oldestResetAt,
   }
 }
+
+// ─── API Síncrona (compatibilidade com rate-limiter.ts) ─────────────────────
+
+interface RateLimitSyncOptions {
+  maxAttempts: number
+  windowMs: number
+}
+
+/**
+ * Rate limiting síncrono (in-memory only).
+ * Usado em endpoints de auth e webhooks onde async não é necessário.
+ * Ideal para webhooks, auth e endpoints que precisam de resposta rápida.
+ * Para endpoints gerais com Redis disponível, use `rateLimit()` async.
+ */
+export function rateLimitSync(
+  identifier: string,
+  options: RateLimitSyncOptions,
+): { allowed: boolean; remaining: number; resetAt: number } {
+  const windowSec = Math.ceil(options.windowMs / 1000)
+  const result = inMemoryRateLimit(identifier, '', options.maxAttempts, windowSec)
+  const resetAt = Date.now() + options.windowMs
+  return { ...result, resetAt }
+}
+
+/**
+ * Rate limit presets para diferentes endpoints
+ */
+export const rateLimitPresets = {
+  login: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },
+  forgotPassword: { maxAttempts: 3, windowMs: 60 * 60 * 1000 },
+  register: { maxAttempts: 3, windowMs: 60 * 60 * 1000 },
+  resetPassword: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },
+  api: { maxAttempts: 30, windowMs: 60 * 1000 },
+}
+
+/**
+ * Extrai IP do request
+ */
+export function getClientIP(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const realIP = request.headers.get('x-real-ip')
+
+  if (forwarded) {
+    return forwarded.split(',')[0]?.trim() || 'unknown'
+  }
+
+  if (realIP) {
+    return realIP
+  }
+
+  return 'unknown'
+}

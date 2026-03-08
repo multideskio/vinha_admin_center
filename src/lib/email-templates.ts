@@ -1,3 +1,5 @@
+import { sanitizeHtml, sanitizeUrl } from '@/lib/sanitize'
+
 type EmailTemplateProps = {
   companyName: string
   title: string
@@ -79,6 +81,11 @@ export function createTransactionReceiptEmail(data: {
   status: string
   date: Date
 }): string {
+  // Sanitizar dados para prevenir XSS em clientes de email
+  const safeCompanyName = sanitizeHtml(data.companyName)
+  const safeTransactionId = sanitizeHtml(data.transactionId)
+  const safeStatus = sanitizeHtml(data.status)
+
   const content = `
     <p style="text-align: center; margin: 0 0 48px; color: #5b21b6; font-size: 48px; font-weight: 700; letter-spacing: -1px;">
       R$ ${data.amount.toFixed(2).replace('.', ',')}
@@ -87,7 +94,7 @@ export function createTransactionReceiptEmail(data: {
       <tr>
         <td style="padding: 0 0 20px;">
           <p style="margin: 0; color: #7c3aed; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">ID da Transação</p>
-          <p style="margin: 6px 0 0; color: #1e1b4b; font-size: 15px; font-weight: 600; font-family: 'Courier New', monospace;">${data.transactionId}</p>
+          <p style="margin: 6px 0 0; color: #1e1b4b; font-size: 15px; font-weight: 600; font-family: 'Courier New', monospace;">${safeTransactionId}</p>
         </td>
       </tr>
       <tr>
@@ -99,14 +106,14 @@ export function createTransactionReceiptEmail(data: {
       <tr>
         <td style="padding: 20px 0 0; border-top: 1px solid #e9d5ff;">
           <p style="margin: 0; color: #7c3aed; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Status</p>
-          <p style="margin: 6px 0 0; color: #10b981; font-size: 15px; font-weight: 600;">${data.status}</p>
+          <p style="margin: 6px 0 0; color: #10b981; font-size: 15px; font-weight: 600;">${safeStatus}</p>
         </td>
       </tr>
     </table>
   `
 
   return createEmailTemplate({
-    companyName: data.companyName,
+    companyName: safeCompanyName,
     title: 'Pagamento confirmado',
     subtitle: 'Você pagou',
     content,
@@ -118,15 +125,19 @@ export function createWelcomeEmail(data: {
   userName: string
   userRole: string
 }): string {
+  // Sanitizar dados do usuário para prevenir XSS em clientes de email
+  const safeName = sanitizeHtml(data.userName)
+  const safeRole = sanitizeHtml(data.userRole)
+
   const content = `
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #faf5ff; border-radius: 12px; padding: 32px; border: 1px solid #e9d5ff;">
       <tr>
         <td style="padding: 0;">
           <p style="margin: 0 0 16px; color: #1e1b4b; font-size: 16px; line-height: 1.6;">
-            Olá <strong>${data.userName}</strong>,
+            Olá <strong>${safeName}</strong>,
           </p>
           <p style="margin: 0 0 16px; color: #1e1b4b; font-size: 16px; line-height: 1.6;">
-            Seja bem-vindo(a) ao sistema! Sua conta foi criada com sucesso como <strong>${data.userRole}</strong>.
+            Seja bem-vindo(a) ao sistema! Sua conta foi criada com sucesso como <strong>${safeRole}</strong>.
           </p>
           <p style="margin: 0; color: #1e1b4b; font-size: 16px; line-height: 1.6;">
             Você já pode acessar o sistema e começar a utilizar todas as funcionalidades disponíveis.
@@ -149,12 +160,16 @@ export function createPasswordResetEmail(data: {
   userName: string
   resetLink: string
 }): string {
+  // Sanitizar dados do usuário para prevenir XSS em clientes de email
+  const safeName = sanitizeHtml(data.userName)
+  const safeLink = sanitizeUrl(data.resetLink)
+
   const content = `
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #faf5ff; border-radius: 12px; padding: 32px; border: 1px solid #e9d5ff;">
       <tr>
         <td style="padding: 0 0 24px;">
           <p style="margin: 0 0 16px; color: #1e1b4b; font-size: 16px; line-height: 1.6;">
-            Olá <strong>${data.userName}</strong>,
+            Olá <strong>${safeName}</strong>,
           </p>
           <p style="margin: 0; color: #1e1b4b; font-size: 16px; line-height: 1.6;">
             Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo para criar uma nova senha:
@@ -163,7 +178,7 @@ export function createPasswordResetEmail(data: {
       </tr>
       <tr>
         <td style="text-align: center; padding: 0;">
-          <a href="${data.resetLink}" style="display: inline-block; background-color: #7c3aed; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Redefinir Senha</a>
+          <a href="${safeLink}" style="display: inline-block; background-color: #7c3aed; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Redefinir Senha</a>
         </td>
       </tr>
       <tr>

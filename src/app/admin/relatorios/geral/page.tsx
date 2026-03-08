@@ -144,7 +144,7 @@ export default function ReportsGeralPage() {
       const filename = `${reportInfo?.name.replace(/\s+/g, '_')}_${formatDate(new Date(), 'dd-MM-yyyy')}`
 
       if (format === 'pdf') {
-        const blob = ReportGenerator.generatePDF(previewData)
+        const blob = await ReportGenerator.generatePDF(previewData)
         ReportGenerator.downloadFile(blob, `${filename}.pdf`)
       } else {
         const blob = await ReportGenerator.generateExcel(previewData)

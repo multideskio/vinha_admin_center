@@ -5,8 +5,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false, // ✅ Validar tipos no build (MANTIDO)
   },
   eslint: {
-    ignoreDuringBuilds: true, // ⚠️ Temporário: código legado tem muitos erros de lint
-    // TODO: Corrigir gradualmente e voltar para false
+    ignoreDuringBuilds: false, // ✅ CORRIGIDO: ESLint habilitado no build
   },
   images: {
     remotePatterns: [

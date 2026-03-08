@@ -12,6 +12,7 @@ import { env } from '@/lib/env'
 import { safeLog, safeError } from '@/lib/log-sanitizer'
 import { logBradescoRequest, logBradescoResponse } from '@/lib/bradesco-logger'
 import { configCache, CACHE_KEYS } from '@/lib/config-cache'
+import { decryptGatewayConfig } from '@/lib/gateway-encryption'
 
 const COMPANY_ID = env.COMPANY_INIT
 
@@ -187,36 +188,41 @@ export async function getBradescoBoletoConfig(): Promise<BradescoConfig> {
     throw new Error('Gateway Bradesco está desativado. Ative em /admin/gateways/bradesco')
   }
 
+  // ✅ Descriptografar credenciais sensíveis
+  const decrypted = decryptGatewayConfig(config)
+
   const clientId =
-    config.environment === 'production' ? config.boletoProdClientId : config.boletoDevClientId
+    decrypted.environment === 'production'
+      ? decrypted.boletoProdClientId
+      : decrypted.boletoDevClientId
   const clientSecret =
-    config.environment === 'production'
-      ? config.boletoProdClientSecret
-      : config.boletoDevClientSecret
+    decrypted.environment === 'production'
+      ? decrypted.boletoProdClientSecret
+      : decrypted.boletoDevClientSecret
 
   if (!clientId || !clientSecret) {
     throw new Error(
-      `Credenciais Bradesco Boleto ${config.environment} não configuradas. Configure em /admin/gateways/bradesco`,
+      `Credenciais Bradesco Boleto ${decrypted.environment} não configuradas. Configure em /admin/gateways/bradesco`,
     )
   }
 
-  if (!config.certificate || !config.certificatePassword) {
+  if (!decrypted.certificate || !decrypted.certificatePassword) {
     throw new Error(
       'Certificado digital do Bradesco não configurado. Configure em /admin/gateways/bradesco',
     )
   }
 
-  if (!config.pixKey) {
+  if (!decrypted.pixKey) {
     throw new Error('Chave PIX do recebedor não configurada. Configure em /admin/gateways/bradesco')
   }
 
   const bradescoConfig: BradescoConfig = {
     clientId,
     clientSecret,
-    certificate: config.certificate,
-    certificatePassword: config.certificatePassword,
-    pixKey: config.pixKey,
-    environment: config.environment as BradescoEnvironment,
+    certificate: decrypted.certificate,
+    certificatePassword: decrypted.certificatePassword,
+    pixKey: decrypted.pixKey,
+    environment: decrypted.environment as BradescoEnvironment,
   }
 
   configCache.set(cacheKey, bradescoConfig)
@@ -261,34 +267,39 @@ export async function getBradescoPixConfig(): Promise<BradescoConfig> {
     throw new Error('Gateway Bradesco está desativado. Ative em /admin/gateways/bradesco')
   }
 
+  // ✅ Descriptografar credenciais sensíveis
+  const decrypted = decryptGatewayConfig(config)
+
   const clientId =
-    config.environment === 'production' ? config.pixProdClientId : config.pixDevClientId
+    decrypted.environment === 'production' ? decrypted.pixProdClientId : decrypted.pixDevClientId
   const clientSecret =
-    config.environment === 'production' ? config.pixProdClientSecret : config.pixDevClientSecret
+    decrypted.environment === 'production'
+      ? decrypted.pixProdClientSecret
+      : decrypted.pixDevClientSecret
 
   if (!clientId || !clientSecret) {
     throw new Error(
-      `Credenciais Bradesco PIX ${config.environment} não configuradas. Configure em /admin/gateways/bradesco`,
+      `Credenciais Bradesco PIX ${decrypted.environment} não configuradas. Configure em /admin/gateways/bradesco`,
     )
   }
 
-  if (!config.certificate || !config.certificatePassword) {
+  if (!decrypted.certificate || !decrypted.certificatePassword) {
     throw new Error(
       'Certificado digital do Bradesco não configurado. Configure em /admin/gateways/bradesco',
     )
   }
 
-  if (!config.pixKey) {
+  if (!decrypted.pixKey) {
     throw new Error('Chave PIX do recebedor não configurada. Configure em /admin/gateways/bradesco')
   }
 
   const bradescoConfig: BradescoConfig = {
     clientId,
     clientSecret,
-    certificate: config.certificate,
-    certificatePassword: config.certificatePassword,
-    pixKey: config.pixKey,
-    environment: config.environment as BradescoEnvironment,
+    certificate: decrypted.certificate,
+    certificatePassword: decrypted.certificatePassword,
+    pixKey: decrypted.pixKey,
+    environment: decrypted.environment as BradescoEnvironment,
   }
 
   configCache.set(cacheKey, bradescoConfig)

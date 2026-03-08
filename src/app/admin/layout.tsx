@@ -6,7 +6,8 @@
  */
 
 // TEMP: CACHE DISABLED — restore before production release
-export const dynamic = 'force-dynamic'
+// export const dynamic = 'force-dynamic' // ✅ REMOVIDO: usar revalidate granular
+export const revalidate = 60 // Revalidar a cada 60 segundos
 
 import type { Metadata } from 'next'
 import { AppSidebar } from './_components/sidebar'

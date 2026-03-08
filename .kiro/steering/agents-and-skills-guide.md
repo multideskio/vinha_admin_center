@@ -44,7 +44,14 @@ Sub-agentes são invocados via `invokeSubAgent` para tarefas que se beneficiam d
 - **Gatilhos:** Criação de novos componentes, formulários, páginas com UI complexa, componentes compartilhados
 - **Exemplo:** Ao criar nova página com formulário, componente de tabela, card de dashboard
 
-### 6. context-gatherer (built-in)
+### 6. senior-reviewer
+
+- **Quando usar:** Auditoria técnica completa do projeto, revisão pré-deploy, análise de prontidão para produção
+- **Gatilhos:** Pedido de revisão geral, auditoria de banco + segurança + frontend + design system, checklist de go-live
+- **Exemplo:** Antes de deploy para produção, revisão completa do sistema, análise de qualidade global
+- **IMPORTANTE:** Este agente NUNCA modifica arquivos — apenas lê, analisa (incluindo browser) e gera relatório
+
+### 7. context-gatherer (built-in)
 
 - **Quando usar:** Explorar codebase desconhecido, investigar bugs cross-file, entender fluxos antes de modificar
 - **Gatilhos:** Início de tarefa complexa, bug em área desconhecida, necessidade de mapear dependências
@@ -98,6 +105,7 @@ Skills fornecem conhecimento especializado e padrões de referência. São ativa
 | Criar nova página Next.js      | skill `nextjs-app-router-patterns`                            |
 | Estilizar componente           | skill `tailwind-design-system`                                |
 | Investigar bug desconhecido    | sub-agente `context-gatherer` primeiro                        |
+| Auditoria completa pré-deploy  | sub-agente `senior-reviewer`                                  |
 | Revisar PR / código existente  | sub-agente `code-quality`                                     |
 | Webhook de pagamento           | sub-agente `payment-gateway` + `security-reviewer`            |
 | Migration com dados sensíveis  | sub-agente `drizzle-migration` + `security-reviewer`          |

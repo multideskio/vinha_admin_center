@@ -1,11 +1,7 @@
 /**
  * @fileoverview Gerador de relatórios em PDF e Excel
- * @version 2.0 - Migrado para exceljs por segurança
+ * @version 2.1 - Dynamic imports para reduzir bundle size (~500KB)
  */
-
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import ExcelJS from 'exceljs'
 
 export type ReportData = {
   title: string
@@ -16,7 +12,10 @@ export type ReportData = {
 }
 
 export const ReportGenerator = {
-  generatePDF(data: ReportData): Blob {
+  async generatePDF(data: ReportData): Promise<Blob> {
+    const jsPDF = (await import('jspdf')).default
+    const autoTable = (await import('jspdf-autotable')).default
+
     const doc = new jsPDF()
 
     // Título
@@ -54,6 +53,7 @@ export const ReportGenerator = {
   },
 
   async generateExcel(data: ReportData): Promise<Blob> {
+    const ExcelJS = (await import('exceljs')).default
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('Relatório')
 

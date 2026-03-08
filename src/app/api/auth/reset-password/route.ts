@@ -3,7 +3,7 @@ import { db } from '@/db/drizzle'
 import { users, passwordResetTokens } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
-import { rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limiter'
+import { rateLimitSync as rateLimit, rateLimitPresets, getClientIP } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 // Schema Zod para validação do reset-password

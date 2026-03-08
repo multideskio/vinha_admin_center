@@ -14,6 +14,7 @@ import { validateRequest } from '@/lib/jwt'
 import { getErrorMessage } from '@/lib/error-types'
 import { env } from '@/lib/env'
 import { configCache, CACHE_KEYS } from '@/lib/config-cache'
+import { encryptGatewayFields, decryptGatewayConfig } from '@/lib/gateway-encryption'
 
 const COMPANY_ID = env.COMPANY_INIT
 const VALIDATED_COMPANY_ID = COMPANY_ID
@@ -113,7 +114,7 @@ export async function GET(): Promise<NextResponse> {
 
     // ✅ SEGURANÇA: Não retornar secrets nem certificado na resposta
     return NextResponse.json({
-      config: sanitizeGatewayResponse(config),
+      config: sanitizeGatewayResponse(decryptGatewayConfig(config)),
     })
   } catch (error: unknown) {
     console.error(`Erro ao buscar configuração do gateway ${GATEWAY_NAME}:`, error)
@@ -189,9 +190,12 @@ export async function PUT(request: Request): Promise<NextResponse> {
         )
     }
 
+    // ✅ SEGURANÇA: Criptografar campos sensíveis antes de salvar
+    const encryptedData = encryptGatewayFields(updateData)
+
     const [updatedConfig] = await db
       .update(gatewayConfigurations)
-      .set(updateData)
+      .set(encryptedData)
       .where(
         and(
           eq(gatewayConfigurations.companyId, VALIDATED_COMPANY_ID),

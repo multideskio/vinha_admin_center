@@ -335,64 +335,72 @@ export const transactions = pgTable(
 )
 
 // Tabela de Configurações e Automações
-export const gatewayConfigurations = pgTable('gateway_configurations', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  companyId: uuid('company_id')
-    .references(() => companies.id)
-    .notNull(),
-  gatewayName: varchar('gateway_name', { length: 50 }).notNull(),
-  isActive: boolean('is_active').default(false).notNull(),
-  environment: varchar('environment', { length: 20 }).default('development').notNull(),
-  prodClientId: text('prod_client_id'),
-  prodClientSecret: text('prod_client_secret'),
-  devClientId: text('dev_client_id'),
-  devClientSecret: text('dev_client_secret'),
-  certificate: text('certificate'),
-  certificatePassword: text('certificate_password'),
-  pixKey: text('pix_key'),
-  acceptedPaymentMethods: text('accepted_payment_methods'),
-  // Credenciais específicas para Boleto Bradesco
-  boletoProdClientId: text('boleto_prod_client_id'),
-  boletoProdClientSecret: text('boleto_prod_client_secret'),
-  boletoProdApiKey: text('boleto_prod_api_key'),
-  boletoDevClientId: text('boleto_dev_client_id'),
-  boletoDevClientSecret: text('boleto_dev_client_secret'),
-  boletoDevApiKey: text('boleto_dev_api_key'),
-  // Credenciais específicas para PIX Bradesco
-  pixProdClientId: text('pix_prod_client_id'),
-  pixProdClientSecret: text('pix_prod_client_secret'),
-  pixProdApiKey: text('pix_prod_api_key'),
-  pixDevClientId: text('pix_dev_client_id'),
-  pixDevClientSecret: text('pix_dev_client_secret'),
-  pixDevApiKey: text('pix_dev_api_key'),
-})
+export const gatewayConfigurations = pgTable(
+  'gateway_configurations',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id')
+      .references(() => companies.id)
+      .notNull(),
+    gatewayName: varchar('gateway_name', { length: 50 }).notNull(),
+    isActive: boolean('is_active').default(false).notNull(),
+    environment: varchar('environment', { length: 20 }).default('development').notNull(),
+    prodClientId: text('prod_client_id'),
+    prodClientSecret: text('prod_client_secret'),
+    devClientId: text('dev_client_id'),
+    devClientSecret: text('dev_client_secret'),
+    certificate: text('certificate'),
+    certificatePassword: text('certificate_password'),
+    pixKey: text('pix_key'),
+    acceptedPaymentMethods: text('accepted_payment_methods'),
+    // Credenciais específicas para Boleto Bradesco
+    boletoProdClientId: text('boleto_prod_client_id'),
+    boletoProdClientSecret: text('boleto_prod_client_secret'),
+    boletoProdApiKey: text('boleto_prod_api_key'),
+    boletoDevClientId: text('boleto_dev_client_id'),
+    boletoDevClientSecret: text('boleto_dev_client_secret'),
+    boletoDevApiKey: text('boleto_dev_api_key'),
+    // Credenciais específicas para PIX Bradesco
+    pixProdClientId: text('pix_prod_client_id'),
+    pixProdClientSecret: text('pix_prod_client_secret'),
+    pixProdApiKey: text('pix_prod_api_key'),
+    pixDevClientId: text('pix_dev_client_id'),
+    pixDevClientSecret: text('pix_dev_client_secret'),
+    pixDevApiKey: text('pix_dev_api_key'),
+  },
+  (table) => [index('gateway_configurations_company_id_idx').on(table.companyId)],
+)
 
-export const otherSettings = pgTable('other_settings', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  companyId: uuid('company_id')
-    .references(() => companies.id, { onDelete: 'no action' })
-    .notNull(),
-  smtpHost: varchar('smtp_host'),
-  smtpPort: integer('smtp_port'),
-  smtpUser: varchar('smtp_user'),
-  smtpPass: text('smtp_pass'),
-  smtpFrom: varchar('smtp_from'),
-  whatsappApiUrl: text('whatsapp_api_url'),
-  whatsappApiKey: text('whatsapp_api_key'),
-  whatsappApiInstance: varchar('whatsapp_api_instance'),
-  s3Endpoint: text('s3_endpoint'),
-  s3Bucket: varchar('s3_bucket'),
-  s3Region: varchar('s3_region'),
-  s3AccessKeyId: text('s3_access_key_id'),
-  s3SecretAccessKey: text('s3_secret_access_key'),
-  s3ForcePathStyle: boolean('s3_force_path_style').default(false),
-  s3CloudfrontUrl: text('s3_cloudfront_url'),
-  openaiApiKey: text('openai_api_key'),
-})
+export const otherSettings = pgTable(
+  'other_settings',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    companyId: uuid('company_id')
+      .references(() => companies.id, { onDelete: 'no action' })
+      .notNull(),
+    smtpHost: varchar('smtp_host'),
+    smtpPort: integer('smtp_port'),
+    smtpUser: varchar('smtp_user'),
+    smtpPass: text('smtp_pass'),
+    smtpFrom: varchar('smtp_from'),
+    whatsappApiUrl: text('whatsapp_api_url'),
+    whatsappApiKey: text('whatsapp_api_key'),
+    whatsappApiInstance: varchar('whatsapp_api_instance'),
+    s3Endpoint: text('s3_endpoint'),
+    s3Bucket: varchar('s3_bucket'),
+    s3Region: varchar('s3_region'),
+    s3AccessKeyId: text('s3_access_key_id'),
+    s3SecretAccessKey: text('s3_secret_access_key'),
+    s3ForcePathStyle: boolean('s3_force_path_style').default(false),
+    s3CloudfrontUrl: text('s3_cloudfront_url'),
+    openaiApiKey: text('openai_api_key'),
+  },
+  (table) => [index('other_settings_company_id_idx').on(table.companyId)],
+)
 
 export const notificationRules = pgTable('notification_rules', {
   id: uuid('id')

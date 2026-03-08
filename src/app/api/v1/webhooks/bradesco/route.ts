@@ -5,6 +5,7 @@ import { reconcileTransactionState } from '@/lib/webhook-reconciliation'
 import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
 import { onTransactionCreated } from '@/lib/notification-hooks'
+import { validateBradescoWebhook } from '@/lib/webhook-security'
 import { z } from 'zod'
 
 // Zod schemas para validação de webhooks Bradesco
@@ -33,6 +34,16 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Validação de origem do webhook (IP + rate limiting)
+    const webhookValidation = validateBradescoWebhook(request)
+    if (!webhookValidation.valid) {
+      logger.warn('Webhook Bradesco rejeitado', {
+        reason: webhookValidation.reason,
+        ip: webhookValidation.clientIP,
+      })
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 })
+    }
+
     const body = await request.json()
 
     logger.setContext({ operation: 'bradesco_webhook' })
