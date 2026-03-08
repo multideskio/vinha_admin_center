@@ -251,7 +251,11 @@ export default async function DashboardPage() {
     revenueByMethod: revenueByMethod.map((item) => ({
       ...item,
       fill:
-        item.method === 'pix' ? '#10b981' : item.method === 'credit_card' ? '#3b82f6' : '#f59e0b',
+        item.method === 'pix'
+          ? 'hsl(var(--chart-4))' // Green (success)
+          : item.method === 'credit_card'
+            ? 'hsl(var(--chart-2))' // Blue
+            : 'hsl(var(--chart-5))', // Orange (warning)
     })),
     revenueByRegion: [],
     churchesByRegion: [],

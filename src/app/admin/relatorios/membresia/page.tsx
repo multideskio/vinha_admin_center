@@ -39,7 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, LazyLineChart as LineChart } from '@/components/shared/LazyRecharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 
 type Member = {
@@ -434,6 +434,7 @@ export default function RelatorioMembresiaPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Primeira página"
                       onClick={() => fetchData(1)}
                       disabled={!membersPagination.hasPrev}
                     >
@@ -442,6 +443,7 @@ export default function RelatorioMembresiaPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Página anterior"
                       onClick={() => fetchData(currentPage - 1)}
                       disabled={!membersPagination.hasPrev}
                     >
@@ -455,6 +457,7 @@ export default function RelatorioMembresiaPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Próxima página"
                       onClick={() => fetchData(currentPage + 1)}
                       disabled={!membersPagination.hasNext}
                     >
@@ -463,6 +466,7 @@ export default function RelatorioMembresiaPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Última página"
                       onClick={() => fetchData(membersPagination.totalPages)}
                       disabled={!membersPagination.hasNext}
                     >

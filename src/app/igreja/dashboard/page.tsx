@@ -19,16 +19,16 @@ import { ptBR } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
 import {
   Bar,
-  BarChart,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
-  PieChart,
   Pie,
   Cell,
   Legend,
-} from 'recharts'
+  LazyBarChart as BarChart,
+  LazyPieChart as PieChart,
+} from '@/components/shared/LazyRecharts'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

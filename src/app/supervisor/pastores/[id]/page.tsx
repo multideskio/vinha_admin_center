@@ -34,6 +34,17 @@ import { ptBR } from 'date-fns/locale'
 import { useParams, useRouter } from 'next/navigation'
 import { PhoneInput } from '@/components/ui/phone-input'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -157,7 +168,7 @@ const TransactionsTab = ({ pastorId }: { pastorId: string }) => {
         <CardDescription>Histórico de transações financeiras do pastor.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border-2">
+        <div className="rounded-md border-2 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
@@ -210,7 +221,7 @@ const TransactionsTab = ({ pastorId }: { pastorId: string }) => {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <Button aria-haspopup="true" aria-label="Abrir menu de ações" size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -384,6 +395,7 @@ export default function PastorProfilePage() {
 
   const form = useForm<z.infer<typeof pastorUpdateSchema>>({
     resolver: zodResolver(pastorUpdateSchema),
+    mode: 'onBlur',
     defaultValues: {},
   })
 
@@ -441,11 +453,10 @@ export default function PastorProfilePage() {
 
   const [isDeleting, setIsDeleting] = React.useState(false)
 
-  const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir este pastor? Esta ação é irreversível.')) {
-      return
-    }
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
 
+  const handleDelete = async () => {
+    setShowDeleteDialog(false)
     setIsDeleting(true)
     try {
       const response = await fetch(`/api/v1/supervisor/pastores/${id}`, { method: 'DELETE' })
@@ -592,6 +603,7 @@ export default function PastorProfilePage() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Voltar para pastores"
               className="bg-white/20 hover:bg-white/30 text-white"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -1020,10 +1032,31 @@ export default function PastorProfilePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isDeleting ? 'Excluindo...' : 'Excluir permanentemente'}
-                  </Button>
+                  <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={isDeleting}>
+                        {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isDeleting ? 'Excluindo...' : 'Excluir permanentemente'}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir este pastor? Esta ação é irreversível.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </CardContent>
               </Card>
             </TabsContent>

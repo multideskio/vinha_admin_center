@@ -87,6 +87,7 @@ import { cn } from '@/lib/utils'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { ClickableAvatar } from '@/components/ui/clickable-avatar'
 import { useToast } from '@/hooks/use-toast'
+import { PaginationControls } from '@/components/shared/PaginationControls'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRange } from 'react-day-picker'
 
@@ -133,6 +134,7 @@ const ChurchFormModal = ({
 
   const form = useForm<z.infer<typeof churchSchema>>({
     resolver: zodResolver(churchSchema),
+    mode: 'onBlur',
     defaultValues: {
       razaoSocial: '',
       nomeFantasia: '',
@@ -666,7 +668,7 @@ export default function IgrejasPage() {
   const TableView = () => (
     <Card className="shadow-lg border-t-4 border-t-videira-purple">
       <CardContent className="pt-6">
-        <div className="rounded-md border-2">
+        <div className="rounded-md border-2 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
@@ -765,7 +767,14 @@ export default function IgrejasPage() {
             </TableBody>
           </Table>
         </div>
-        <PaginationControls />
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredChurches.length}
+          itemsPerPage={itemsPerPage}
+          isLoading={isLoading}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
   )
@@ -841,32 +850,15 @@ export default function IgrejasPage() {
           <div className="col-span-full text-center">Nenhuma igreja encontrada.</div>
         )}
       </div>
-      <PaginationControls />
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredChurches.length}
+        itemsPerPage={itemsPerPage}
+        isLoading={isLoading}
+        onPageChange={setCurrentPage}
+      />
     </>
-  )
-
-  const PaginationControls = () => (
-    <div className="flex items-center justify-end space-x-2 py-4">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handlePreviousPage}
-        disabled={currentPage === 1 || isLoading}
-      >
-        <ChevronLeft className="h-4 w-4" /> Anterior
-      </Button>
-      <span className="text-sm text-muted-foreground">
-        Página {currentPage} de {totalPages}
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleNextPage}
-        disabled={currentPage === totalPages || isLoading}
-      >
-        Próximo <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
   )
 
   return (
@@ -921,6 +913,7 @@ export default function IgrejasPage() {
                     <Button
                       variant={viewMode === 'table' ? 'secondary' : 'ghost'}
                       size="icon"
+                      aria-label="Visualizar em tabela"
                       onClick={() => setViewMode('table')}
                       className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-white/30"
                     >
@@ -934,6 +927,7 @@ export default function IgrejasPage() {
                     <Button
                       variant={viewMode === 'card' ? 'secondary' : 'ghost'}
                       size="icon"
+                      aria-label="Visualizar em cards"
                       onClick={() => setViewMode('card')}
                       className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white border-white/30"
                     >

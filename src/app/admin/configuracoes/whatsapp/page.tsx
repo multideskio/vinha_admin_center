@@ -39,6 +39,14 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import Link from 'next/link'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 const whatsappSettingsSchema = z.object({
   apiUrl: z.string().url('URL da API inválida.'),
@@ -69,6 +77,7 @@ export default function WhatsappSettingsPage() {
 
   const form = useForm<WhatsappSettingsValues>({
     resolver: zodResolver(whatsappSettingsSchema),
+    mode: 'onBlur',
     defaultValues: {
       apiUrl: '',
       apiKey: '',
@@ -562,16 +571,25 @@ export default function WhatsappSettingsPage() {
 
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
-            <Link href="/admin/configuracoes">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white/90 hover:text-white hover:bg-white/20"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Voltar
-              </Button>
-            </Link>
+            <Breadcrumb>
+              <BreadcrumbList className="text-white/80">
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/admin/dashboard" className="hover:text-white">
+                    Dashboard
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="text-white/60" />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/admin/configuracoes" className="hover:text-white">
+                    Configurações
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="text-white/60" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-white font-semibold">WhatsApp</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>

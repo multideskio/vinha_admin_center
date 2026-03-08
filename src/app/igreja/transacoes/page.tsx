@@ -204,6 +204,7 @@ export default function TransacoesPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
               <TableRow>
@@ -302,6 +303,7 @@ export default function TransacoesPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

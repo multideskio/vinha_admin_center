@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -15,47 +16,11 @@ import {
   ArrowRightLeft,
   Sparkles,
 } from 'lucide-react'
+import { ADMIN_NAV_ITEMS, ADMIN_SETTINGS_ITEM } from '../_config/navigation'
 import { cn } from '@/lib/utils'
 import { useSidebar } from '@/contexts/SidebarContext'
 import packageJson from '../../../../package.json'
-
-const Logo = (props: React.SVGProps<SVGSVGElement>): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-    <path d="M12 2v2" />
-    <path d="M12 18v-8" />
-    <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-  </svg>
-)
-
-const menuItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'cyan' },
-  { href: '/admin/transacoes', label: 'Transações', icon: ArrowRightLeft, gradient: 'blue' },
-  { href: '/admin/regioes', label: 'Regiões', icon: Map, gradient: 'purple' },
-  { href: '/admin/gerentes', label: 'Gerentes', icon: UserCheck, gradient: 'cyan' },
-  { href: '/admin/supervisores', label: 'Supervisores', icon: UserCog, gradient: 'blue' },
-  { href: '/admin/pastores', label: 'Pastores', icon: User, gradient: 'purple' },
-  { href: '/admin/igrejas', label: 'Igrejas', icon: Church, gradient: 'cyan' },
-  { href: '/admin/administradores', label: 'Administradores', icon: Shield, gradient: 'blue' },
-  { href: '/admin/relatorios', label: 'Relatórios', icon: FileText, gradient: 'purple' },
-]
-
-const settingsItem = {
-  href: '/admin/configuracoes',
-  label: 'Configurações',
-  icon: Settings,
-}
+import { Logo } from '@/components/shared/Logo'
 
 type AppSidebarProps = {
   companyLogo?: string
@@ -106,13 +71,12 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
         <div className="flex h-16 items-center border-b border-border/40 px-6 videira-gradient">
           <Link href="/admin/dashboard" className="flex items-center gap-3 font-bold group">
             {companyLogo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={companyLogo}
                 alt={companyName || 'Logo'}
                 width={32}
                 height={32}
-                className="h-8 object-contain flex-shrink-0"
+                className="h-8 w-auto object-contain flex-shrink-0"
               />
             ) : (
               <div className="relative flex-shrink-0">
@@ -146,7 +110,7 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
                 </p>
               </div>
             )}
-            {menuItems.map((item) => {
+            {ADMIN_NAV_ITEMS.map((item) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/admin/dashboard' && pathname.startsWith(item.href))
@@ -232,29 +196,29 @@ export function AppSidebar({ companyLogo, companyName }: AppSidebarProps = {}): 
               {!isCollapsed && <span className="text-base">Meu Perfil</span>}
             </Link>
             <Link
-              href={settingsItem.href}
-              data-active={pathname.startsWith(settingsItem.href)}
-              aria-current={pathname.startsWith(settingsItem.href) ? 'page' : undefined}
-              title={isCollapsed ? settingsItem.label : undefined}
+              href={ADMIN_SETTINGS_ITEM.href}
+              data-active={pathname.startsWith(ADMIN_SETTINGS_ITEM.href)}
+              aria-current={pathname.startsWith(ADMIN_SETTINGS_ITEM.href) ? 'page' : undefined}
+              title={isCollapsed ? ADMIN_SETTINGS_ITEM.label : undefined}
               className={cn(
                 'group flex items-center gap-3 rounded-xl transition-all duration-200',
                 'border-l-3 border-l-transparent',
                 'hover:shadow-sm hover:bg-primary/10',
-                pathname.startsWith(settingsItem.href)
+                pathname.startsWith(ADMIN_SETTINGS_ITEM.href)
                   ? 'bg-primary/15 border-l-4 border-l-primary font-semibold text-primary'
                   : 'font-medium text-muted-foreground hover:text-foreground',
                 isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3',
               )}
             >
-              <settingsItem.icon
+              <ADMIN_SETTINGS_ITEM.icon
                 className={cn(
                   'h-5 w-5 transition-all flex-shrink-0',
-                  pathname.startsWith(settingsItem.href)
+                  pathname.startsWith(ADMIN_SETTINGS_ITEM.href)
                     ? 'text-primary'
                     : 'text-muted-foreground group-hover:text-foreground',
                 )}
               />
-              {!isCollapsed && <span className="text-base">{settingsItem.label}</span>}
+              {!isCollapsed && <span className="text-base">{ADMIN_SETTINGS_ITEM.label}</span>}
             </Link>
           </nav>
         </div>

@@ -7,16 +7,16 @@ import { DollarSign, Users, Church, UserCog, User, RefreshCw, ArrowRightLeft } f
 import { sanitizeText } from '@/lib/sanitize'
 import {
   Bar,
-  BarChart,
-  CartesianGrid,
-  Tooltip,
   XAxis,
   YAxis,
+  Tooltip,
+  CartesianGrid,
   Pie,
-  PieChart,
   Cell,
   Legend,
-} from 'recharts'
+  LazyBarChart as BarChart,
+  LazyPieChart as PieChart,
+} from '@/components/shared/LazyRecharts'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
@@ -265,7 +265,7 @@ export default function GerenteDashboardPage() {
               asChild
               className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg"
             >
-              <a href="/manager/perfil">Completar Perfil</a>
+              <Link href="/manager/perfil">Completar Perfil</Link>
             </Button>
           </CardContent>
         </Card>
@@ -346,7 +346,7 @@ export default function GerenteDashboardPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border-2">
+            <div className="rounded-md border-2 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">

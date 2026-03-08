@@ -8,6 +8,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   User,
   LifeBuoy,
@@ -28,6 +29,7 @@ import {
   History,
   Package,
 } from 'lucide-react'
+import { ADMIN_NAV_ITEMS, ADMIN_SETTINGS_ITEM } from '../_config/navigation'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -49,44 +51,7 @@ import {
 import { logoutUser } from '@/actions/auth'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { GlobalSearch } from '@/components/global-search'
-
-const menuItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/transacoes', label: 'Transações', icon: ArrowRightLeft },
-  { href: '/admin/regioes', label: 'Regiões', icon: Map },
-  { href: '/admin/gerentes', label: 'Gerentes', icon: UserCheck },
-  { href: '/admin/supervisores', label: 'Supervisores', icon: UserCog },
-  { href: '/admin/pastores', label: 'Pastores', icon: User },
-  { href: '/admin/igrejas', label: 'Igrejas', icon: Church },
-  { href: '/admin/administradores', label: 'Administradores', icon: Shield },
-  { href: '/admin/relatorios', label: 'Relatórios', icon: FileText },
-]
-
-const settingsItem = {
-  href: '/admin/configuracoes',
-  label: 'Configurações',
-  icon: Settings,
-}
-
-const Logo = (props: React.SVGProps<SVGSVGElement>): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-    <path d="M12 2v2" />
-    <path d="M12 18v-8" />
-    <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-  </svg>
-)
+import { Logo } from '@/components/shared/Logo'
 
 type AdminHeaderProps = {
   userName: string
@@ -143,20 +108,19 @@ export function AdminHeader({
           <nav className="grid gap-2 text-lg font-medium">
             <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold">
               {companyLogo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={companyLogo}
                   alt={companyName || 'Logo'}
                   width={24}
                   height={24}
-                  className="h-6 object-contain"
+                  className="h-6 w-auto object-contain"
                 />
               ) : (
                 <Logo className="h-6 w-6 text-primary" />
               )}
               <span className="truncate">{companyName || 'Vinha Ministérios'}</span>
             </Link>
-            {menuItems.map((item) => (
+            {ADMIN_NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -167,11 +131,11 @@ export function AdminHeader({
               </Link>
             ))}
             <Link
-              href={settingsItem.href}
+              href={ADMIN_SETTINGS_ITEM.href}
               className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
             >
-              <settingsItem.icon className="h-5 w-5" />
-              {settingsItem.label}
+              <ADMIN_SETTINGS_ITEM.icon className="h-5 w-5" />
+              {ADMIN_SETTINGS_ITEM.label}
             </Link>
           </nav>
         </SheetContent>

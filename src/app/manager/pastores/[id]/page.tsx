@@ -358,7 +358,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
         <CardDescription>Histórico de transações financeiras do usuário</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border-2">
+        <div className="rounded-md border-2 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
@@ -454,6 +454,7 @@ export default function PastorProfilePage(): JSX.Element {
 
   const form = useForm<PastorFormData>({
     resolver: zodResolver(pastorUpdateSchema),
+    mode: 'onBlur',
     defaultValues: {},
   })
 

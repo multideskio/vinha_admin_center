@@ -22,6 +22,14 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import Image from 'next/image'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 const generalSettingsSchema = z.object({
   name: z.string().min(1, 'O nome da aplicação é obrigatório.'),
@@ -41,6 +49,7 @@ export default function GeneralSettingsPage() {
 
   const form = useForm<GeneralSettingsValues>({
     resolver: zodResolver(generalSettingsSchema),
+    mode: 'onBlur',
     defaultValues: {
       name: '',
       supportEmail: '',
@@ -201,16 +210,25 @@ export default function GeneralSettingsPage() {
 
         <div className="relative z-10 p-8">
           <div className="flex items-center gap-3 mb-4">
-            <Link href="/admin/configuracoes">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white/90 hover:text-white hover:bg-white/20"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Voltar
-              </Button>
-            </Link>
+            <Breadcrumb>
+              <BreadcrumbList className="text-white/80">
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/admin/dashboard" className="hover:text-white">
+                    Dashboard
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="text-white/60" />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/admin/configuracoes" className="hover:text-white">
+                    Configurações
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="text-white/60" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-white font-semibold">Gerais</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-lg flex items-center gap-3">

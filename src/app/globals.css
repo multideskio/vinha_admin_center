@@ -111,7 +111,9 @@
   body {
     @apply bg-background text-foreground;
   }
+}
 
+@layer utilities {
   /* Classe de gradiente Videira */
   .videira-gradient,
   .bg-videira-gradient {

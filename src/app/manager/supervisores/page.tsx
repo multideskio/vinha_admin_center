@@ -13,8 +13,6 @@ import {
   Pencil,
   Map,
   Search,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -79,6 +77,7 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
+import { PaginationControls } from '@/components/shared/PaginationControls'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { sanitizeText } from '@/lib/sanitize'
@@ -129,6 +128,7 @@ const SupervisorFormModal = ({
 
   const form = useForm<z.infer<typeof supervisorSchema>>({
     resolver: zodResolver(supervisorSchema),
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -535,18 +535,12 @@ export default function SupervisoresPage() {
     currentPage * itemsPerPage,
   )
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1)
-  }
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1)
-  }
 
   const TableView = () => (
     <Card className="shadow-lg border-t-4 border-t-videira-blue">
       <CardContent className="pt-6">
-        <div className="rounded-md border-2">
+        <div className="rounded-md border-2 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
@@ -661,7 +655,14 @@ export default function SupervisoresPage() {
             </TableBody>
           </Table>
         </div>
-        <PaginationControls />
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredSupervisors.length}
+          itemsPerPage={itemsPerPage}
+          isLoading={isLoading}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
   )
@@ -749,37 +750,17 @@ export default function SupervisoresPage() {
           </div>
         )}
       </div>
-      <PaginationControls />
+      <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredSupervisors.length}
+          itemsPerPage={itemsPerPage}
+          isLoading={isLoading}
+          onPageChange={setCurrentPage}
+        />
     </>
   )
 
-  const PaginationControls = () => (
-    <div className="flex items-center justify-between px-2 py-4">
-      <p className="text-sm text-muted-foreground">
-        Página {currentPage} de {totalPages || 1}
-      </p>
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1 || isLoading}
-          className="border-2"
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages || isLoading}
-          className="border-2"
-        >
-          Próximo <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
-    </div>
-  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -827,6 +808,7 @@ export default function SupervisoresPage() {
               <Button
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="icon"
+                aria-label="Visualizar em tabela"
                 onClick={() => setViewMode('table')}
                 className={cn(viewMode === 'table' && 'bg-videira-blue text-white')}
               >
@@ -840,6 +822,7 @@ export default function SupervisoresPage() {
               <Button
                 variant={viewMode === 'card' ? 'default' : 'outline'}
                 size="icon"
+                aria-label="Visualizar em cards"
                 onClick={() => setViewMode('card')}
                 className={cn(viewMode === 'card' && 'bg-videira-blue text-white')}
               >

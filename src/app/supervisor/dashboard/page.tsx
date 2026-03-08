@@ -12,16 +12,16 @@ import * as React from 'react'
 import { DollarSign, Users, Church, User, RefreshCw, ArrowRightLeft, Search } from 'lucide-react'
 import {
   Bar,
-  BarChart,
   Tooltip,
   XAxis,
   YAxis,
   Pie,
-  PieChart,
   Cell,
   Legend,
   CartesianGrid,
-} from 'recharts'
+  LazyBarChart as BarChart,
+  LazyPieChart as PieChart,
+} from '@/components/shared/LazyRecharts'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
@@ -305,7 +305,7 @@ export default function SupervisorDashboardPage(): JSX.Element {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border-2">
+            <div className="rounded-md border-2 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">

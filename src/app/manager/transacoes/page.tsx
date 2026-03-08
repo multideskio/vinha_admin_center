@@ -211,7 +211,7 @@ export default function TransacoesPage() {
                 onDateRangeChange={handleDateRangeChange}
               />
             </div>
-            <div className="rounded-md border-2">
+            <div className="rounded-md border-2 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">

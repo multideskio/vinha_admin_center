@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Search,
   User,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Logo } from '@/components/shared/Logo'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -50,26 +52,6 @@ const settingsItem = {
   label: 'Meu Perfil',
   icon: Settings,
 }
-
-const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M12 22a2.5 2.5 0 0 1-2.5-2.5V18h5v1.5A2.5 2.5 0 0 1 12 22Z" />
-    <path d="M12 2v2" />
-    <path d="M12 18v-8" />
-    <path d="M15 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M19 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-    <path d="M9 14a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-  </svg>
-)
 
 type HeaderProps = {
   userName: string
@@ -137,13 +119,12 @@ export function ManagerHeader({
               <Link href="/manager/dashboard" className="flex items-center gap-3 group">
                 <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm ring-2 ring-white/30 shadow-lg">
                   {companyLogo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={companyLogo}
                       alt="Logo"
                       width={24}
                       height={24}
-                      className="h-6 w-6 object-contain"
+                      className="h-6 w-auto object-contain"
                       onError={handleLogoError}
                     />
                   ) : (

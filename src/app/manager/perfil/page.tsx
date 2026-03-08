@@ -223,7 +223,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
             </select>
           </div>
         </div>
-        <div className="rounded-md border-2">
+        <div className="rounded-md border-2 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-videira-cyan/10 via-videira-blue/10 to-videira-purple/10">
@@ -276,7 +276,7 @@ const TransactionsTab = ({ userId }: { userId: string }) => {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <Button aria-haspopup="true" aria-label="Abrir menu de ações" size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -524,6 +524,7 @@ export default function GerenteProfilePage() {
 
   const form = useForm<ManagerProfile>({
     resolver: zodResolver(managerUpdateSchema),
+    mode: 'onBlur',
     defaultValues: {},
   })
 
