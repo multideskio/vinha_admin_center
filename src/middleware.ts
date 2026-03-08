@@ -12,11 +12,16 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  const isVercelPreview =
+    process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development'
+  const scriptSrc = isVercelPreview
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
   response.headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.cloudfront.net https://*.s3.amazonaws.com https://placehold.co",
       "font-src 'self'",
