@@ -63,6 +63,7 @@ export function PastorFormModal({ onSave, supervisors, children }: PastorFormMod
 
   const form = useForm<PastorFormData>({
     resolver: zodResolver(pastorProfileSchema),
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',

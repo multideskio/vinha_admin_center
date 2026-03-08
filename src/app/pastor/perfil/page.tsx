@@ -244,6 +244,7 @@ export default function PastorProfilePage() {
 
   const form = useForm<PastorProfile>({
     resolver: zodResolver(pastorProfileSchema),
+    mode: 'onBlur',
     defaultValues: {},
   })
 

@@ -81,6 +81,7 @@ const NewKeyModal = ({ onKeyCreated }: { onKeyCreated: () => void }) => {
 
   const form = useForm<z.infer<typeof newKeySchema>>({
     resolver: zodResolver(newKeySchema),
+    mode: 'onBlur',
     defaultValues: { name: '' },
   })
 

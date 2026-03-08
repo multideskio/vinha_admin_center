@@ -100,6 +100,7 @@ const RegionFormModal = ({
   const { toast } = useToast()
   const form = useForm<z.infer<typeof regionSchema>>({
     resolver: zodResolver(regionSchema),
+    mode: 'onBlur',
     defaultValues: region || {
       name: '',
       color: '#3F51B5',

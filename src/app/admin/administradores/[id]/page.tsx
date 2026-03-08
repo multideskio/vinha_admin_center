@@ -157,6 +157,7 @@ export default function AdminProfilePage() {
 
   const form = useForm<AdminProfile>({
     resolver: zodResolver(adminProfileSchema),
+    mode: 'onBlur',
     defaultValues: {},
   })
 

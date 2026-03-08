@@ -69,6 +69,7 @@ export function SupervisorFormModal({
 
   const form = useForm<SupervisorFormData>({
     resolver: zodResolver(supervisorProfileSchema),
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',

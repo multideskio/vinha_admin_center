@@ -27,6 +27,7 @@ type RecoveryFormValues = z.infer<typeof recoverySchema>
 export default function RecuperarSenhaPage() {
   const form = useForm<RecoveryFormValues>({
     resolver: zodResolver(recoverySchema),
+    mode: 'onBlur',
     defaultValues: {
       email: '',
     },

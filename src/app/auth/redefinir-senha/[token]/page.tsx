@@ -42,6 +42,7 @@ export default function RedefinirSenhaPage() {
 
   const form = useForm<ResetFormValues>({
     resolver: zodResolver(resetSchema),
+    mode: 'onBlur',
     defaultValues: { password: '', confirm: '' },
   })
 

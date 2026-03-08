@@ -234,6 +234,7 @@ export default function ChurchProfilePage() {
 
   const form = useForm<ChurchProfile>({
     resolver: zodResolver(churchProfileSchema),
+    mode: 'onBlur',
     defaultValues: {
       cnpj: '',
       razaoSocial: '',

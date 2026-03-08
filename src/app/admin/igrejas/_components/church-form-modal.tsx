@@ -85,6 +85,7 @@ export function ChurchFormModal({ onSave, supervisors, children }: ChurchFormMod
 
   const form = useForm<ChurchFormData>({
     resolver: zodResolver(churchSchema),
+    mode: 'onBlur',
     defaultValues: {
       supervisorId: '',
       cnpj: '',

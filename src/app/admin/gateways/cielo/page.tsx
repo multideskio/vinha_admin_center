@@ -72,6 +72,7 @@ export default function CieloGatewayPage() {
 
   const form = useForm<CieloGatewayValues>({
     resolver: zodResolver(cieloGatewaySchema),
+    mode: 'onBlur',
     defaultValues: {
       isActive: false,
       environment: 'development',

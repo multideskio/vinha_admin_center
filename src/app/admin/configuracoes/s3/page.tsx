@@ -44,6 +44,7 @@ export default function S3SettingsPage() {
 
   const form = useForm<S3SettingsValues>({
     resolver: zodResolver(s3SettingsSchema),
+    mode: 'onBlur',
     defaultValues: {
       endpoint: '',
       bucket: '',

@@ -230,6 +230,7 @@ export default function BradescoGatewayPage() {
 
   const form = useForm<BradescoGatewayValues>({
     resolver: zodResolver(bradescoGatewaySchema),
+    mode: 'onBlur',
     defaultValues: {
       isActive: false,
       environment: 'development',

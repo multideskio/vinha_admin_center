@@ -46,6 +46,7 @@ export function ManagerFormModal({ onSave, children }: ManagerFormModalProps) {
 
   const form = useForm<z.infer<typeof managerProfileSchema>>({
     resolver: zodResolver(managerProfileSchema),
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',

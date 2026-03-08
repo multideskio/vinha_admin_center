@@ -87,6 +87,7 @@ const WebhookFormModal = ({
   const { toast } = useToast()
   const form = useForm<Webhook>({
     resolver: zodResolver(webhookSchema),
+    mode: 'onBlur',
     defaultValues: webhook ? { ...webhook } : { url: '', secret: '', events: [], isActive: true },
   })
 

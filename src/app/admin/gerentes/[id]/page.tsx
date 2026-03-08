@@ -444,6 +444,7 @@ export default function GerenteProfilePage() {
     resolver: zodResolver(
       managerProfileSchema.extend({ newPassword: z.string().optional() }).partial(),
     ),
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',

@@ -46,6 +46,7 @@ export default function ContributionDataForm({
 
   const form = useForm<ContributionFormData>({
     resolver: zodResolver(contributionDataSchema),
+    mode: 'onBlur',
     defaultValues: {
       amount: defaultValues?.amount || 0,
       contributionType: defaultValues?.contributionType || 'dizimo',

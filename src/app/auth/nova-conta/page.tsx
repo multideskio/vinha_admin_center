@@ -149,6 +149,7 @@ const PastorForm = ({
 
   const form = useForm<PastorFormValues>({
     resolver: zodResolver(pastorSchema),
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -420,6 +421,7 @@ const ChurchForm = ({
 
   const form = useForm<ChurchFormValues>({
     resolver: zodResolver(churchSchema),
+    mode: 'onBlur',
     defaultValues: {
       nomeFantasia: '',
       razaoSocial: '',

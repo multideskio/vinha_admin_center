@@ -333,6 +333,7 @@ export default function SupervisorProfilePage(): JSX.Element {
 
   const form = useForm<SupervisorFormData>({
     resolver: zodResolver(supervisorUpdateSchema),
+    mode: 'onBlur',
     defaultValues: {},
   })
 

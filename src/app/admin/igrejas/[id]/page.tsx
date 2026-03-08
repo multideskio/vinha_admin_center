@@ -474,6 +474,7 @@ export default function IgrejaProfilePage(): JSX.Element {
 
   const form = useForm<z.infer<typeof churchUpdateSchema>>({
     resolver: zodResolver(churchUpdateSchema),
+    mode: 'onBlur',
     defaultValues: {
       razaoSocial: '',
       nomeFantasia: '',

@@ -479,6 +479,7 @@ export default function PastorProfilePage(): JSX.Element {
 
   const form = useForm<PastorFormData>({
     resolver: zodResolver(pastorUpdateSchema),
+    mode: 'onBlur',
     defaultValues: {},
   })
 

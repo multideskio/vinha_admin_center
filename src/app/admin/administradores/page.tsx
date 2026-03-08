@@ -178,6 +178,7 @@ const AdminFormModal = ({
 
   const form = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
+    mode: 'onBlur',
     defaultValues: {
       firstName: '',
       lastName: '',

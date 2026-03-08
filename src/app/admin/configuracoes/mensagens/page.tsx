@@ -126,6 +126,7 @@ const NotificationFormModal = ({
 
   const form = useForm<NotificationRule>({
     resolver: zodResolver(notificationRuleSchema),
+    mode: 'onBlur',
     defaultValues: rule
       ? {
           ...rule,
