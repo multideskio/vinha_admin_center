@@ -3,6 +3,7 @@
 // @lastReview 2025-01-05 21:45 - Fixed responsive grid classes for better tablet/iPad support
 
 import * as React from 'react'
+import Link from 'next/link'
 import { DollarSign, Users, Church, UserCog, User, RefreshCw, ArrowRightLeft } from 'lucide-react'
 import { sanitizeText } from '@/lib/sanitize'
 import {
