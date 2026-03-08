@@ -6,6 +6,8 @@
  * @lastReview 2025-01-06 18:30
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import {
@@ -20,6 +22,14 @@ import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
 import { SessionUser } from '@/lib/types'
+import { z } from 'zod'
+
+// BUG-05 fix: Schema Zod para validação de searchParams
+const supervisorTransacoesParamsSchema = z.object({
+  startDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+  endDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+  userId: z.string().uuid().optional(),
+})
 
 export async function GET(request: Request): Promise<NextResponse> {
   let sessionUser: SessionUser | null = null
@@ -70,11 +80,22 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    // Extrair parâmetros da URL
+    // Extrair parâmetros da URL com validação Zod (BUG-05 fix)
     const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const userId = searchParams.get('userId') // Novo parâmetro para buscar transações de um usuário específico
+    const paramsValidation = supervisorTransacoesParamsSchema.safeParse({
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+      userId: searchParams.get('userId') || undefined,
+    })
+
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+
+    const { startDate, endDate, userId } = paramsValidation.data
 
     // Se userId for fornecido, buscar apenas transações desse usuário (se ele estiver na rede do supervisor)
     if (userId) {
@@ -163,10 +184,6 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Incluir o próprio supervisor na rede
     const networkUserIds = [sessionUser.id, ...pastorIds, ...churchIds]
-    if (networkUserIds.length === 1) {
-      // Se só tem o supervisor (sem pastores/igrejas), retorna array vazio
-      return NextResponse.json({ transactions: [] })
-    }
 
     // Construir condições de filtro
     const conditions = [inArray(transactionsTable.contributorId, networkUserIds)]
@@ -198,6 +215,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .leftJoin(churchProfiles, eq(transactionsTable.originChurchId, churchProfiles.userId))
       .where(and(...conditions))
       .orderBy(desc(transactionsTable.createdAt))
+      .limit(500) // BUG-04 fix: evitar resultado ilimitado
 
     const formattedTransactions = results.map((t) => ({
       ...t,
@@ -213,10 +231,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       timestamp: new Date().toISOString(),
     })
 
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-    return NextResponse.json(
-      { error: 'Erro interno do servidor', details: errorMessage },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

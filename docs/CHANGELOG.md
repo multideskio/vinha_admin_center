@@ -4,6 +4,59 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.17.0] - 2026-03-08 - Auditoria Neon Serverless, Validação Zod & Segurança de API
+
+### ✨ Novas Funcionalidades
+
+- **Driver Neon HTTP para Vercel** — `@neondatabase/serverless` com connection cache para melhor desempenho em ambiente serverless; pg Pool mantido para desenvolvimento local
+- **Scripts de qualidade** — `format:check` e `quality:check` (format → lint → typecheck)
+
+### 🐛 Correções de Bugs
+
+- **BUG-05: Validação Zod com safeParse()** — todos os searchParams de API routes agora validados com Zod antes de uso (manager/transacoes, pastor/transacoes, supervisor/transacoes, supervisor/dashboard, supervisor/igrejas, supervisor/pastores, supervisores, transacoes/export, igreja/transacoes)
+- **BUG-06: Busca case-insensitive** — `like` substituído por `ilike` em rotas de transações (igreja, pastor)
+- **BUG-10: Detalhes de erro removidos** — respostas 500 não expõem mais `details` ou `error.message` ao cliente (dashboard/admin, igreja/transacoes, pastor/transacoes, supervisor/transacoes, supervisor/dashboard, supervisor/igrejas, notification-logs/resend, users/fraud-stats)
+- **BUG-11: Isolamento multi-tenant** — filtro `companyId` adicionado em queries de transações (dashboard/admin, transacoes, transacoes/export)
+- **BUG-04: Queries sem limite** — `.limit(500)` em supervisor/transacoes, `.limit(500)` e `.limit(200)` em admin/igrejas
+- **inArray com guard** — queries com `inArray` protegidas contra arrays vazios (evita erro no driver Neon)
+
+### ♻️ Refatorações
+
+- **drizzle.ts** — reescrito com `createNeonDb()` / `createPgDb()` condicional por ambiente
+- **cache.ts** — cache Redis desabilitado temporariamente (early return, sem import redis)
+- **Layouts** — `.then(res => res[0])` substituído por indexação direta `rows[0]` em 5 layouts
+- **Relatórios** — `parse()` substituído por `safeParse()` em 5 rotas de relatórios (contribuicoes, financeiro, igrejas, inadimplentes, membresia)
+- **Tipagem explícita** — variáveis `churchData`, `churchInfo`, `profileInfo`, `results`, `instances`, `DefaulterItem`, `SearchResult`, `DataRow` tipadas explicitamente
+
+### 🔧 Melhorias Técnicas
+
+- **Pre-commit** — reordenado: lint-staged (format + lint) → typecheck
+- **lint-staged** — `eslint --fix --max-warnings=200` (consistente com script lint)
+- **tsconfig** — `noImplicitAny: false` temporário (~150 params implícitos para migração gradual)
+- **force-dynamic** — adicionado em rotas que dependem de dados dinâmicos (dashboard/admin, manager/transacoes, pastor/transacoes, supervisor/transacoes, transacoes, transacoes/export, relatorios/contribuicoes, relatorios/inadimplentes, supervisores)
+
+### 🗑️ Remoções
+
+- Specs obsoletos removidos (code-quality-fixes, financial-reports-improvements)
+- Relatórios temporários removidos (PRODUCTION_AUDIT_REPORT.md, RELATORIO_TRADUCOES_PT-BR.md)
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- 46 arquivos (44 modificados, 2 novos scripts, 8 deletados)
+- `.husky/pre-commit` — reordenação de validação
+- `package.json` — versão, scripts, dependência @neondatabase/serverless, lint-staged
+- `tsconfig.json` — noImplicitAny temporário
+- `src/db/drizzle.ts` — driver Neon HTTP + pg Pool
+- `src/lib/cache.ts` — cache desabilitado (TEMP)
+- 5 layouts — force-dynamic, tipagem de query
+- 2 páginas admin — .limit(), tipagem churchData
+- 1 página supervisor — tipagem churchInfo
+- 1 componente compartilhado — tipagem churchInfo
+- 20+ API routes — validação Zod, safeParse, ilike, companyId, remoção de error details
+- 6 arquivos deletados (specs e relatórios)
+
+---
+
 ## [0.16.0] - 2026-02-12 - Credenciais Bradesco Separadas por Produto
 
 ### ✨ Novas Funcionalidades

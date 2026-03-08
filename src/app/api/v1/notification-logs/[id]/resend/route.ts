@@ -132,9 +132,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
     })
-    return NextResponse.json(
-      { error: 'Erro ao reenviar notificação', details: errorMessage },
-      { status: 500 },
-    )
+    // BUG-10 fix: Não expor detalhes do erro
+    return NextResponse.json({ error: 'Erro ao reenviar notificação' }, { status: 500 })
   }
 }

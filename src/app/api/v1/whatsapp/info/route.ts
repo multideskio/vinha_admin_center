@@ -55,7 +55,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const instances = await response.json()
+    const instances = (await response.json()) as Array<{
+      instance?: {
+        connectionStatus?: string
+        profileName?: string
+        profilePictureUrl?: string
+        owner?: string
+        createdAt?: string
+        serverUrl?: string
+        integration?: string
+      }
+    }>
     const instance = instances[0]
 
     if (!instance) {
@@ -79,7 +89,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get additional profile information if available
-    let profileInfo = null
+    let profileInfo: {
+      name?: string
+      picture?: string
+      wuid?: string
+      business?: unknown
+      description?: string
+    } | null = null
     try {
       const profileController = new AbortController()
       const profileTimeoutId = setTimeout(() => profileController.abort(), 10_000)

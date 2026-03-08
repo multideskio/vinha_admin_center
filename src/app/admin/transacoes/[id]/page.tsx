@@ -105,7 +105,7 @@ export default async function TransacaoDetalhePage({
   }
 
   // Buscar dados da igreja de origem (se houver)
-  let churchData = null
+  let churchData: { name: string; address: string | null } | null = null
   if (transactionData.originChurchId) {
     const [church] = await db
       .select({ nomeFantasia: churchProfiles.nomeFantasia, address: churchProfiles.address })
@@ -114,7 +114,7 @@ export default async function TransacaoDetalhePage({
       .limit(1)
     if (church) {
       churchData = {
-        name: church.nomeFantasia,
+        name: church.nomeFantasia ?? '',
         address: church.address,
       }
     }

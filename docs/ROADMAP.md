@@ -58,6 +58,7 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.17.0 | ✅ Concluída | 08/03/2026 |
 | v0.16.0 | ✅ Concluída | 12/02/2026 |
 | v0.15.0 | ✅ Concluída | 12/02/2026 |
 | v0.14.1 | ✅ Concluída | 12/02/2026 |
@@ -66,6 +67,15 @@
 | v0.12.0 | ✅ Concluída | 11/02/2026 |
 | v0.11.0 | ✅ Concluída | 11/02/2026 |
 | v0.5.0  | 📋 Planejada | Q2 2026    |
+
+### ✅ Itens Concluídos (v0.17.0)
+
+- ✅ Driver Neon HTTP serverless para Vercel
+- ✅ Validação Zod com safeParse() em todas as API routes
+- ✅ Remoção de detalhes de erro das respostas 500
+- ✅ Filtro companyId para isolamento multi-tenant
+- ✅ Limites em queries sem paginação
+- ✅ Tipagem explícita em variáveis implícitas
 
 ### ✅ Itens Concluídos (v0.16.0)
 
@@ -110,4 +120,4 @@
 - ✅ Scripts de gerenciamento de índices
 - ✅ Documentação de refatoração admin
 
-_Última atualização: 12 de Fevereiro de 2026_
+_Última atualização: 08 de Março de 2026_

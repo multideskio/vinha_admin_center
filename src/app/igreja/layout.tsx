@@ -43,7 +43,7 @@ export default async function ChurchLayout({
     redirect('/auth/login')
   }
 
-  const [userData] = await Promise.all([
+  const [userRows] = await Promise.all([
     db
       .select({
         avatarUrl: users.avatarUrl,
@@ -53,10 +53,10 @@ export default async function ChurchLayout({
       .from(users)
       .leftJoin(churchProfiles, eq(users.id, churchProfiles.userId))
       .where(eq(users.id, user.id))
-      .limit(1)
-      .then((res) => res[0]),
+      .limit(1),
     getCompanySettings(),
   ])
+  const userData = userRows[0]
 
   const churchName =
     userData?.nomeFantasia || userData?.razaoSocial || user.email?.split('@')[0] || 'Igreja'

@@ -5,6 +5,9 @@
  * @author PH
  */
 
+// TEMP: CACHE DISABLED — restore before production release
+export const dynamic = 'force-dynamic'
+
 import type { Metadata } from 'next'
 import { AppSidebar } from './_components/sidebar'
 import { AdminHeader } from './_components/header'
@@ -37,7 +40,7 @@ export default async function AdminLayout({
     return redirect('/auth/login')
   }
 
-  const [userData, company] = await Promise.all([
+  const [userRows, company] = await Promise.all([
     db
       .select({
         avatarUrl: users.avatarUrl,
@@ -47,10 +50,10 @@ export default async function AdminLayout({
       .from(users)
       .leftJoin(adminProfiles, eq(users.id, adminProfiles.userId))
       .where(eq(users.id, user.id))
-      .limit(1)
-      .then((res) => res[0]),
+      .limit(1),
     getCompanySettings(),
   ])
+  const userData = userRows[0]
 
   // Verificar se está em modo impersonation
   const { isImpersonating } = await checkImpersonationStatus()

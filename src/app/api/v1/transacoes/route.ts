@@ -6,6 +6,8 @@
  * @lastReview 2025-01-05 21:45 - Rate limiting and structured logging implemented
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import {
@@ -16,7 +18,7 @@ import {
   supervisorProfiles,
   pastorProfiles,
 } from '@/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, and, gte, lt, type SQL } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { createPixPayment, createCreditCardPayment, createBoletoPayment } from '@/lib/cielo'
 import {
@@ -101,6 +103,12 @@ export async function GET(request: NextRequest) {
     const { userId, from, to, page, limit } = paramsValidation.data
     const offset = (page - 1) * limit
 
+    // BUG-11 fix: Adicionar filtro companyId para isolamento multi-tenant
+    const conditions: SQL[] = [eq(transactions.companyId, COMPANY_ID)]
+    if (userId) conditions.push(eq(transactions.contributorId, userId))
+    if (from) conditions.push(gte(transactions.createdAt, new Date(from)))
+    if (to) conditions.push(lt(transactions.createdAt, new Date(to)))
+
     let query = db
       .select({
         id: transactions.id,
@@ -132,18 +140,8 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(transactions.createdAt))
       .$dynamic()
 
-    if (userId) {
-      query = query.where(eq(transactions.contributorId, userId))
-    }
-
-    if (from) {
-      const { gte } = await import('drizzle-orm')
-      query = query.where(gte(transactions.createdAt, new Date(from)))
-    }
-
-    if (to) {
-      const { lt } = await import('drizzle-orm')
-      query = query.where(lt(transactions.createdAt, new Date(to)))
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions))
     }
 
     const userTransactions = await query.limit(limit).offset(offset)

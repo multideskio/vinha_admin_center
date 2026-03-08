@@ -24,9 +24,9 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
-    let firstName = null
-    let lastName = null
-    let avatarUrl = null
+    let firstName: string | null = null
+    let lastName: string | null = null
+    let avatarUrl: string | null = null
 
     // Buscar avatar do users
     const [userData] = await db
@@ -35,7 +35,7 @@ export async function GET(): Promise<NextResponse> {
       .where(eq(users.id, user.id))
       .limit(1)
 
-    avatarUrl = userData?.avatarUrl
+    avatarUrl = userData?.avatarUrl ?? null
 
     // Buscar nome baseado no role
     if (user.role === 'admin') {

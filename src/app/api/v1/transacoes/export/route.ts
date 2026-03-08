@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { db } from '@/db/drizzle'
 import {
   transactions,
@@ -8,8 +10,10 @@ import {
   supervisorProfiles,
   pastorProfiles,
 } from '@/db/schema'
-import { eq, gte, lt, desc, inArray } from 'drizzle-orm'
+import { eq, gte, lt, desc, inArray, and, type SQL } from 'drizzle-orm'
+import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
+import { env } from '@/lib/env'
 
 export async function GET(request: NextRequest) {
   const { user } = await validateRequest()
@@ -19,8 +23,28 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const from = searchParams.get('from')
-    const to = searchParams.get('to')
+    // BUG-05 fix: Validação Zod dos parâmetros de exportação
+    const exportParamsSchema = z.object({
+      from: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+      to: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+    })
+    const paramsValidation = exportParamsSchema.safeParse({
+      from: searchParams.get('from') || undefined,
+      to: searchParams.get('to') || undefined,
+    })
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+    const { from, to } = paramsValidation.data
+
+    // BUG-11 fix: Adicionar filtro companyId para isolamento multi-tenant
+    const COMPANY_ID = env.COMPANY_INIT
+    const conditions: SQL[] = [eq(transactions.companyId, COMPANY_ID)]
+    if (from) conditions.push(gte(transactions.createdAt, new Date(from)))
+    if (to) conditions.push(lt(transactions.createdAt, new Date(to)))
 
     let query = db
       .select({
@@ -39,33 +63,30 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(transactions.createdAt))
       .$dynamic()
 
-    if (from) {
-      query = query.where(gte(transactions.createdAt, new Date(from)))
-    }
-
-    if (to) {
-      query = query.where(lt(transactions.createdAt, new Date(to)))
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions))
     }
 
     const data = await query.limit(10000)
+    type DataRow = (typeof data)[number]
 
     // ✅ OTIMIZADO: Buscar todos os perfis de uma vez com inArray por role (em vez de query por transação)
-    const contributorIds = [...new Set(data.map((t) => t.contributorId))]
+    const contributorIds = [...new Set(data.map((t: DataRow) => t.contributorId))]
     const nameMap = new Map<string, string>()
 
     if (contributorIds.length > 0) {
       const managerIds = data
-        .filter((t) => t.contributorRole === 'manager')
-        .map((t) => t.contributorId)
+        .filter((t: DataRow) => t.contributorRole === 'manager')
+        .map((t: DataRow) => t.contributorId) as string[]
       const supervisorIds = data
-        .filter((t) => t.contributorRole === 'supervisor')
-        .map((t) => t.contributorId)
+        .filter((t: DataRow) => t.contributorRole === 'supervisor')
+        .map((t: DataRow) => t.contributorId) as string[]
       const pastorIds = data
-        .filter((t) => t.contributorRole === 'pastor')
-        .map((t) => t.contributorId)
+        .filter((t: DataRow) => t.contributorRole === 'pastor')
+        .map((t: DataRow) => t.contributorId) as string[]
       const churchIds = data
-        .filter((t) => t.contributorRole === 'church_account')
-        .map((t) => t.contributorId)
+        .filter((t: DataRow) => t.contributorRole === 'church_account')
+        .map((t: DataRow) => t.contributorId) as string[]
 
       const [managers, supervisors, pastors, churches] = await Promise.all([
         managerIds.length > 0
@@ -112,7 +133,7 @@ export async function GET(request: NextRequest) {
       for (const p of churches) nameMap.set(p.userId, p.nomeFantasia || '')
     }
 
-    const enrichedData = data.map((t) => ({
+    const enrichedData = data.map((t: DataRow) => ({
       ...t,
       contributorName: nameMap.get(t.contributorId) || t.contributorEmail,
     }))
@@ -132,7 +153,7 @@ export async function GET(request: NextRequest) {
 
     const csv = [
       'ID,Data,Contribuinte,Email,Valor,Método,Status,Motivo Reembolso',
-      ...enrichedData.map((t) => {
+      ...enrichedData.map((t: DataRow & { contributorName: string }) => {
         const date = new Date(t.createdAt).toLocaleDateString('pt-BR')
         const amount = parseFloat(t.amount).toFixed(2)
         const status = statusMap[t.status] || t.status

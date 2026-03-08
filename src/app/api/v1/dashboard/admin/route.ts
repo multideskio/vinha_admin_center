@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { db } from '@/db/drizzle'
 import {
   users,
@@ -13,7 +15,6 @@ import {
 import { count, sum, eq, isNull, and, desc, sql, gte, lt, inArray } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import type { UserRole } from '@/lib/types'
-import { getErrorMessage } from '@/lib/error-types'
 import { getCache, setCache } from '@/lib/cache'
 import {
   getBrazilDate,
@@ -24,6 +25,9 @@ import {
   toBrazilDate,
 } from '@/lib/date-utils'
 import { dashboardParamsSchema } from '@/lib/types/dashboard-types'
+import { env } from '@/lib/env'
+
+const COMPANY_ID = env.COMPANY_INIT
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -91,6 +95,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         .from(transactions)
         .where(
           and(
+            eq(transactions.companyId, COMPANY_ID),
             eq(transactions.status, 'approved'),
             gte(transactions.createdAt, startDate),
             lt(transactions.createdAt, endDate),
@@ -102,6 +107,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         .from(transactions)
         .where(
           and(
+            eq(transactions.companyId, COMPANY_ID),
             eq(transactions.status, 'approved'),
             gte(transactions.createdAt, startOfPreviousMonth),
             lt(transactions.createdAt, startOfCurrentMonth),
@@ -112,18 +118,27 @@ export async function GET(request: Request): Promise<NextResponse> {
       // 5. Novos membros este mês
       db.select({ value: count() }).from(users).where(gte(users.createdAt, startOfCurrentMonth)),
       // 6. Total transações
-      db.select({ value: count() }).from(transactions),
+      db
+        .select({ value: count() })
+        .from(transactions)
+        .where(eq(transactions.companyId, COMPANY_ID)),
       // 7. Transações este mês
       db
         .select({ value: count() })
         .from(transactions)
-        .where(gte(transactions.createdAt, startOfCurrentMonth)),
+        .where(
+          and(
+            eq(transactions.companyId, COMPANY_ID),
+            gte(transactions.createdAt, startOfCurrentMonth),
+          ),
+        ),
       // 8. Transações mês passado
       db
         .select({ value: count() })
         .from(transactions)
         .where(
           and(
+            eq(transactions.companyId, COMPANY_ID),
             gte(transactions.createdAt, startOfPreviousMonth),
             lt(transactions.createdAt, startOfCurrentMonth),
           ),
@@ -153,6 +168,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .from(transactions)
       .where(
         and(
+          eq(transactions.companyId, COMPANY_ID),
           eq(transactions.status, 'approved'),
           gte(transactions.createdAt, startDate),
           lt(transactions.createdAt, endDate),
@@ -245,7 +261,13 @@ export async function GET(request: Request): Promise<NextResponse> {
       })
       .from(transactions)
       .innerJoin(users, eq(transactions.contributorId, users.id))
-      .where(and(gte(transactions.createdAt, startDate), lt(transactions.createdAt, endDate)))
+      .where(
+        and(
+          eq(transactions.companyId, COMPANY_ID),
+          gte(transactions.createdAt, startDate),
+          lt(transactions.createdAt, endDate),
+        ),
+      )
       .orderBy(desc(transactions.createdAt))
       .limit(10)
 
@@ -253,46 +275,60 @@ export async function GET(request: Request): Promise<NextResponse> {
     const contributorIds = recentTransactionsData.map((t) => t.contributorId)
 
     // ✅ OTIMIZADO: Buscar nomes de todos os perfis em paralelo
-    const [pastorNames, supervisorNames, churchNames, managerNames, adminNames] =
+    const pastorNames =
       contributorIds.length > 0
-        ? await Promise.all([
-            db
-              .select({
-                id: pastorProfiles.userId,
-                name: sql<string>`${pastorProfiles.firstName} || ' ' || ${pastorProfiles.lastName}`,
-              })
-              .from(pastorProfiles)
-              .where(inArray(pastorProfiles.userId, contributorIds)),
-            db
-              .select({
-                id: supervisorProfiles.userId,
-                name: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
-              })
-              .from(supervisorProfiles)
-              .where(inArray(supervisorProfiles.userId, contributorIds)),
-            db
-              .select({
-                id: churchProfiles.userId,
-                name: churchProfiles.nomeFantasia,
-              })
-              .from(churchProfiles)
-              .where(inArray(churchProfiles.userId, contributorIds)),
-            db
-              .select({
-                id: managerProfiles.userId,
-                name: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
-              })
-              .from(managerProfiles)
-              .where(inArray(managerProfiles.userId, contributorIds)),
-            db
-              .select({
-                id: adminProfiles.userId,
-                name: sql<string>`${adminProfiles.firstName} || ' ' || ${adminProfiles.lastName}`,
-              })
-              .from(adminProfiles)
-              .where(inArray(adminProfiles.userId, contributorIds)),
-          ])
-        : [[], [], [], [], []]
+        ? await db
+            .select({
+              id: pastorProfiles.userId,
+              name: sql<string>`${pastorProfiles.firstName} || ' ' || ${pastorProfiles.lastName}`,
+            })
+            .from(pastorProfiles)
+            .where(inArray(pastorProfiles.userId, contributorIds))
+        : []
+
+    const supervisorNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: supervisorProfiles.userId,
+              name: sql<string>`${supervisorProfiles.firstName} || ' ' || ${supervisorProfiles.lastName}`,
+            })
+            .from(supervisorProfiles)
+            .where(inArray(supervisorProfiles.userId, contributorIds))
+        : []
+
+    const churchNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: churchProfiles.userId,
+              name: churchProfiles.nomeFantasia,
+            })
+            .from(churchProfiles)
+            .where(inArray(churchProfiles.userId, contributorIds))
+        : []
+
+    const managerNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: managerProfiles.userId,
+              name: sql<string>`${managerProfiles.firstName} || ' ' || ${managerProfiles.lastName}`,
+            })
+            .from(managerProfiles)
+            .where(inArray(managerProfiles.userId, contributorIds))
+        : []
+
+    const adminNames =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              id: adminProfiles.userId,
+              name: sql<string>`${adminProfiles.firstName} || ' ' || ${adminProfiles.lastName}`,
+            })
+            .from(adminProfiles)
+            .where(inArray(adminProfiles.userId, contributorIds))
+        : []
 
     // Criar mapa de nomes
     const nameMap = new Map<string, string>()
@@ -391,16 +427,26 @@ export async function GET(request: Request): Promise<NextResponse> {
             .where(
               and(
                 eq(transactions.status, 'approved'),
-                sql`${transactions.contributorId} IN ${allContributorIds}`,
+                inArray(transactions.contributorId, allContributorIds),
               ),
             )
             .groupBy(transactions.contributorId)
         : []
 
     // Criar Map para acesso O(1)
-    const lastPaymentMap = new Map(lastPaymentsData.map((p) => [p.contributorId, p.lastPayment]))
+    const lastPaymentMap = new Map<string, Date>(
+      lastPaymentsData.map((p) => [p.contributorId, p.lastPayment]),
+    )
 
-    const defaulters = []
+    type DefaulterItem = {
+      id: string
+      name: string
+      type: 'pastor' | 'church'
+      titheDay: number | null
+      lastPayment: string | null
+      daysLate: number
+    }
+    const defaulters: DefaulterItem[] = []
 
     // ✅ CORRIGIDO: Verificar pastores sem queries adicionais
     for (const pastor of pastorsWithTitheDay) {
@@ -409,7 +455,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       // Se não tem pagamento OU o último foi antes de 3 meses atrás
       if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
         const daysSince = lastPaymentDate
-          ? getDaysSince(lastPaymentDate)
+          ? getDaysSince(lastPaymentDate as Date)
           : getDaysSince(threeMonthsAgo)
 
         defaulters.push({
@@ -417,7 +463,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           name: `${pastor.firstName} ${pastor.lastName}`,
           type: 'pastor' as const,
           titheDay: pastor.titheDay,
-          lastPayment: lastPaymentDate ? formatBrazilDate(lastPaymentDate) : null,
+          lastPayment: lastPaymentDate ? formatBrazilDate(lastPaymentDate as Date) : null,
           daysLate: daysSince,
         })
       }
@@ -430,7 +476,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       // Se não tem pagamento OU o último foi antes de 3 meses atrás
       if (!lastPaymentDate || lastPaymentDate < threeMonthsAgo) {
         const daysSince = lastPaymentDate
-          ? getDaysSince(lastPaymentDate)
+          ? getDaysSince(lastPaymentDate as Date)
           : getDaysSince(threeMonthsAgo)
 
         defaulters.push({
@@ -438,7 +484,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           name: church.nomeFantasia,
           type: 'church' as const,
           titheDay: church.titheDay,
-          lastPayment: lastPaymentDate ? formatBrazilDate(lastPaymentDate) : null,
+          lastPayment: lastPaymentDate ? formatBrazilDate(lastPaymentDate as Date) : null,
           daysLate: daysSince,
         })
       }
@@ -502,11 +548,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     await setCache(cacheKey, result, 120)
     return NextResponse.json(result)
   } catch (error: unknown) {
-    const errorMessage = getErrorMessage(error)
     console.error('Erro ao buscar dados para o dashboard do admin:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar dados do dashboard', details: errorMessage },
-      { status: 500 },
-    )
+    // BUG-10 fix: Não expor detalhes do erro
+    return NextResponse.json({ error: 'Erro ao buscar dados do dashboard' }, { status: 500 })
   }
 }

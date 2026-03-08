@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { db } from '@/db/drizzle'
 import {
   transactions,
@@ -10,6 +12,17 @@ import {
 import { validateRequest } from '@/lib/jwt'
 import { eq, inArray, desc, asc, count, and, gte, lte } from 'drizzle-orm'
 import { rateLimit } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+// BUG-05/BUG-07 fix: Schema Zod para validação de searchParams
+const managerTransacoesParamsSchema = z.object({
+  userId: z.string().uuid().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  startDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+  endDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+  sort: z.enum(['asc', 'desc']).default('desc'),
+})
 
 // @lastReview 2025-01-05 21:30
 
@@ -37,13 +50,25 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const paramsValidation = managerTransacoesParamsSchema.safeParse({
+      userId: searchParams.get('userId') || undefined,
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+      sort: searchParams.get('sort') || undefined,
+    })
+
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+
+    const { userId, page, limit, startDate, endDate, sort } = paramsValidation.data
     const offset = (page - 1) * limit
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const sortOrder = searchParams.get('sort') === 'asc' ? asc : desc
+    const sortOrder = sort === 'asc' ? asc : desc
 
     // If userId is provided and it's the manager's own ID, return their transactions
     if (userId && userId === user.id) {
@@ -146,38 +171,51 @@ export async function GET(request: Request) {
     ])
 
     // Get contributor names from profiles
-    const contributorIds = [...new Set(allTransactions.map((t) => t.contributorId))]
+    const contributorIds = [...new Set(allTransactions.map((t) => t.contributorId))] as string[]
 
-    const [managers, supervisorsData, pastorsData, churchesData] = await Promise.all([
-      db
-        .select({
-          userId: managerProfiles.userId,
-          firstName: managerProfiles.firstName,
-          lastName: managerProfiles.lastName,
-        })
-        .from(managerProfiles)
-        .where(inArray(managerProfiles.userId, contributorIds)),
-      db
-        .select({
-          userId: supervisorProfiles.userId,
-          firstName: supervisorProfiles.firstName,
-          lastName: supervisorProfiles.lastName,
-        })
-        .from(supervisorProfiles)
-        .where(inArray(supervisorProfiles.userId, contributorIds)),
-      db
-        .select({
-          userId: pastorProfiles.userId,
-          firstName: pastorProfiles.firstName,
-          lastName: pastorProfiles.lastName,
-        })
-        .from(pastorProfiles)
-        .where(inArray(pastorProfiles.userId, contributorIds)),
-      db
-        .select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
-        .from(churchProfiles)
-        .where(inArray(churchProfiles.userId, contributorIds)),
-    ])
+    const managers =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              userId: managerProfiles.userId,
+              firstName: managerProfiles.firstName,
+              lastName: managerProfiles.lastName,
+            })
+            .from(managerProfiles)
+            .where(inArray(managerProfiles.userId, contributorIds))
+        : []
+
+    const supervisorsData =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              userId: supervisorProfiles.userId,
+              firstName: supervisorProfiles.firstName,
+              lastName: supervisorProfiles.lastName,
+            })
+            .from(supervisorProfiles)
+            .where(inArray(supervisorProfiles.userId, contributorIds))
+        : []
+
+    const pastorsData =
+      contributorIds.length > 0
+        ? await db
+            .select({
+              userId: pastorProfiles.userId,
+              firstName: pastorProfiles.firstName,
+              lastName: pastorProfiles.lastName,
+            })
+            .from(pastorProfiles)
+            .where(inArray(pastorProfiles.userId, contributorIds))
+        : []
+
+    const churchesData =
+      contributorIds.length > 0
+        ? await db
+            .select({ userId: churchProfiles.userId, nomeFantasia: churchProfiles.nomeFantasia })
+            .from(churchProfiles)
+            .where(inArray(churchProfiles.userId, contributorIds))
+        : []
 
     const contributorMap = new Map<string, string>()
     managers.forEach((m) => contributorMap.set(m.userId, `${m.firstName} ${m.lastName}`))

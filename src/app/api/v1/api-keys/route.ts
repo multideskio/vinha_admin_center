@@ -63,7 +63,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         key: newRawKey, // Em um cenário real, você faria o hash disso
         status: 'active',
       })
-      .returning({ id: apiKeys.id })
+      .returning()
 
     if (!newKeyRecord) {
       throw new Error('Falha ao criar a chave de API.')

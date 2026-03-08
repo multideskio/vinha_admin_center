@@ -80,10 +80,23 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    // Extrair parâmetros de data da URL
+    // BUG-05 fix: Validação Zod dos parâmetros de data
     const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
+    const pastoresParamsSchema = z.object({
+      startDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+      endDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+    })
+    const paramsValidation = pastoresParamsSchema.safeParse({
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+    })
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+    const { startDate, endDate } = paramsValidation.data
 
     // Construir condições de filtro
     const conditions = [

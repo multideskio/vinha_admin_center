@@ -36,7 +36,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const searchTerm = `%${query.toLowerCase()}%`
-    const results = []
+    type SearchResult = {
+      id: string
+      type: string
+      title: string
+      subtitle: string
+      description: string
+      href: string
+    }
+    const results: SearchResult[] = []
 
     // Buscar administradores
     const admins = await db

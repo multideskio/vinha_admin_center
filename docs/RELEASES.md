@@ -4,6 +4,43 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.17.0 - Auditoria Neon Serverless, Validação Zod & Segurança de API (Março 2026)
+
+### 🔧 Infraestrutura — Driver Neon Serverless
+
+Conexão com banco reescrita para usar `@neondatabase/serverless` (HTTP) em Vercel e `pg Pool` em desenvolvimento local, melhorando desempenho e compatibilidade com edge runtime.
+
+### 🔒 Segurança de API
+
+- Respostas 500 não expõem mais detalhes internos de erro ao cliente (8 rotas corrigidas)
+- Filtro `companyId` adicionado para isolamento multi-tenant em queries de transações
+- Validação Zod com `safeParse()` em todos os searchParams de API routes (~15 rotas)
+- Busca case-insensitive (`ilike`) em rotas de transações
+
+### ⚡ Performance e Estabilidade
+
+- Queries sem paginação agora possuem `.limit()` para evitar result sets ilimitados
+- Guard contra `inArray` com arrays vazios (previne erro no driver Neon)
+- Cache Redis desabilitado temporariamente para estabilidade em serverless
+- `force-dynamic` em rotas que dependem de dados dinâmicos
+
+### ♻️ Qualidade de Código
+
+- Relatórios migrados de `parse()` para `safeParse()` com tratamento de erro estruturado
+- Tipagem explícita em variáveis implícitas (churchData, results, instances, etc.)
+- Layouts refatorados: `.then(res[0])` → indexação direta
+- Pre-commit reordenado: lint-staged → typecheck
+- Scripts `format:check` e `quality:check` adicionados
+
+### 📊 Métricas
+
+- Arquivos modificados: 46
+- API routes com validação Zod: ~15
+- Rotas com remoção de error details: 8
+- Rotas com filtro companyId: 3
+
+---
+
 ## v0.16.0 - Credenciais Bradesco Separadas por Produto (Fevereiro 2026)
 
 ### 💳 Gateway Bradesco — Credenciais Independentes

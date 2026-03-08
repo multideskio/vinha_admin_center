@@ -1,5 +1,9 @@
 /**
  * @fileoverview Rota da API para buscar transações da igreja logada.
+ */
+export const dynamic = 'force-dynamic'
+
+/**
  * @version 1.2
  * @date 2024-08-07
  * @author PH
@@ -8,11 +12,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions as transactionsTable, users, churchProfiles } from '@/db/schema'
-import { eq, desc, and, isNull, or, like, gte, lte, type SQL } from 'drizzle-orm'
+import { eq, desc, and, isNull, or, ilike, gte, lte, type SQL } from 'drizzle-orm'
 import { format } from 'date-fns'
+import { z } from 'zod'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
-import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
 import { SessionUser } from '@/lib/types'
 
@@ -57,11 +61,33 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Acesso negado. Role igreja necessária.' }, { status: 403 })
     }
 
-    // Extrair parâmetros de busca e filtro
+    // Extrair e validar parâmetros de busca e filtro
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
+    const paramsSchema = z.object({
+      search: z.string().max(200).optional().nullable(),
+      startDate: z
+        .string()
+        .refine((v) => !v || !isNaN(new Date(v).getTime()), 'Data inicial inválida')
+        .optional()
+        .nullable(),
+      endDate: z
+        .string()
+        .refine((v) => !v || !isNaN(new Date(v).getTime()), 'Data final inválida')
+        .optional()
+        .nullable(),
+    })
+    const parsed = paramsSchema.safeParse({
+      search: searchParams.get('search'),
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+    })
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: parsed.error.flatten() },
+        { status: 400 },
+      )
+    }
+    const { search, startDate, endDate } = parsed.data
 
     // Construir condições de filtro
     const conditions = [
@@ -69,22 +95,23 @@ export async function GET(request: Request): Promise<NextResponse> {
       isNull(transactionsTable.deletedAt),
     ]
 
-    // Filtro de busca (ID da transação ou gatewayTransactionId)
-    if (search) {
+    // BUG-06 fix: Usar ilike para busca case-insensitive
+    if (search && search.trim()) {
+      const searchTerm = search.trim()
       const searchCondition = or(
-        like(transactionsTable.id, `%${search}%`),
-        like(transactionsTable.gatewayTransactionId, `%${search}%`),
+        ilike(transactionsTable.id, `%${searchTerm}%`),
+        ilike(transactionsTable.gatewayTransactionId, `%${searchTerm}%`),
       )
       if (searchCondition) {
         conditions.push(searchCondition as SQL)
       }
     }
 
-    // Filtro de data
-    if (startDate) {
+    // Filtro de data (valores já validados por Zod)
+    if (startDate && startDate.trim()) {
       conditions.push(gte(transactionsTable.createdAt, new Date(startDate)))
     }
-    if (endDate) {
+    if (endDate && endDate.trim()) {
       const endDateObj = new Date(endDate)
       endDateObj.setHours(23, 59, 59, 999) // Fim do dia
       conditions.push(lte(transactionsTable.createdAt, endDateObj))
@@ -129,9 +156,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       error: error instanceof Error ? error.message : 'Erro desconhecido',
       timestamp: new Date().toISOString(),
     })
-    return NextResponse.json(
-      { error: 'Erro interno do servidor.', details: getErrorMessage(error) },
-      { status: 500 },
-    )
+    // BUG-10 fix: Não expor detalhes do erro
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }

@@ -96,7 +96,7 @@ export default function TransacaoDetalhePage() {
       }
 
       // Buscar informações da igreja se originChurchId estiver disponível
-      let churchInfo = null
+      let churchInfo: { name: string; address: string } | null = null
       if (data.originChurchId) {
         try {
           const churchResponse = await fetch(`/api/v1/supervisor/igrejas/${data.originChurchId}`)

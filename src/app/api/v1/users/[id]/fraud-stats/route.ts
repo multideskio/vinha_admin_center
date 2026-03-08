@@ -80,9 +80,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   } catch (error) {
     console.error('Error fetching fraud stats:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Erro ao buscar estatísticas de fraude' },
-      { status: 500 },
-    )
+    // BUG-10 fix: Não expor detalhes do erro
+    return NextResponse.json({ error: 'Erro ao buscar estatísticas de fraude' }, { status: 500 })
   }
 }

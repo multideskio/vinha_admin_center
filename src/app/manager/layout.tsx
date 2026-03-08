@@ -42,7 +42,7 @@ export default async function ManagerLayout({
     redirect('/auth/login')
   }
 
-  const [userData, company] = await Promise.all([
+  const [userRows, company] = await Promise.all([
     db
       .select({
         avatarUrl: users.avatarUrl,
@@ -52,10 +52,10 @@ export default async function ManagerLayout({
       .from(users)
       .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
       .where(eq(users.id, user.id))
-      .limit(1)
-      .then((res) => res[0]),
+      .limit(1),
     getCompanySettings(),
   ])
+  const userData = userRows[0]
 
   // Verificar se está em modo impersonation
   const { isImpersonating } = await checkImpersonationStatus()

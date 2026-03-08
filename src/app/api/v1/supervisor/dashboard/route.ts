@@ -16,6 +16,13 @@ import { validateRequest } from '@/lib/jwt'
 import { type UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+// BUG-05 fix: Schema Zod para validação de searchParams
+const supervisorDashboardParamsSchema = z.object({
+  startDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+  endDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+})
 
 const calculateChange = (current: number, previous: number): string => {
   if (previous === 0) {
@@ -74,10 +81,21 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
     const supervisorId = sessionUser.id
 
-    // Extrair parâmetros de data da URL
+    // Extrair parâmetros de data da URL com validação Zod (BUG-05 fix)
     const { searchParams } = new URL(request.url)
-    const startDateParam = searchParams.get('startDate')
-    const endDateParam = searchParams.get('endDate')
+    const paramsValidation = supervisorDashboardParamsSchema.safeParse({
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+    })
+
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+
+    const { startDate: startDateParam, endDate: endDateParam } = paramsValidation.data
 
     // Usar datas fornecidas ou padrão (mês atual)
     const now = new Date()
@@ -367,8 +385,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       error: errorMessage,
       timestamp: new Date().toISOString(),
     })
+    // BUG-10 fix: Não expor detalhes do erro
     return NextResponse.json(
-      { error: 'Erro ao buscar dados do dashboard do supervisor', details: errorMessage },
+      { error: 'Erro ao buscar dados do dashboard do supervisor' },
       { status: 500 },
     )
   }

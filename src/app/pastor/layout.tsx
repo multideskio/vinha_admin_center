@@ -42,7 +42,7 @@ export default async function PastorLayout({
     redirect('/auth/login')
   }
 
-  const [userData] = await Promise.all([
+  const [userRows] = await Promise.all([
     db
       .select({
         avatarUrl: users.avatarUrl,
@@ -52,10 +52,10 @@ export default async function PastorLayout({
       .from(users)
       .leftJoin(pastorProfiles, eq(users.id, pastorProfiles.userId))
       .where(eq(users.id, user.id))
-      .limit(1)
-      .then((res) => res[0]),
+      .limit(1),
     getCompanySettings(),
   ])
+  const userData = userRows[0]
 
   // Verificar se está em modo impersonation
   const { isImpersonating } = await checkImpersonationStatus()

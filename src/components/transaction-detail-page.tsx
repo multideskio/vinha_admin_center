@@ -107,7 +107,7 @@ export function TransactionDetailPage({
 
       // Buscar informações da igreja se originChurchId estiver disponível e fetchChurchInfo for fornecido
       // Nota: Pastor e Igreja são perfis separados (PF vs PJ), então nem todos os perfis precisam buscar igreja
-      let churchInfo = null
+      let churchInfo: { name: string; address: string } | null = null
       if (data.originChurchId && fetchChurchInfo) {
         try {
           churchInfo = await fetchChurchInfo(data.originChurchId)

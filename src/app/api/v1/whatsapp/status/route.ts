@@ -91,12 +91,23 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    type EvolutionInstance = {
+      connectionStatus?: string
+      ownerJid?: string
+      profilePicUrl?: string
+      profileName?: string
+      businessId?: string
+      integration?: string
+      createdAt?: string
+      updatedAt?: string
+    }
+    const inst = instance as EvolutionInstance
     // A nova API retorna os dados diretamente no objeto da instância
-    const connectionState = instance.connectionStatus || 'close'
+    const connectionState = inst.connectionStatus || 'close'
     const isConnected = connectionState === 'open'
 
     // Extrair o número do ownerJid (formato: 556281204120@s.whatsapp.net)
-    const phoneNumber = instance.ownerJid ? instance.ownerJid.split('@')[0] : null
+    const phoneNumber = inst.ownerJid ? inst.ownerJid.split('@')[0] : null
 
     return NextResponse.json({
       status: connectionState,
@@ -104,14 +115,14 @@ export async function POST(request: NextRequest) {
       instance: {
         name: instanceName,
         state: connectionState,
-        profilePictureUrl: instance.profilePicUrl || null,
-        profileName: instance.profileName || null,
+        profilePictureUrl: inst.profilePicUrl || null,
+        profileName: inst.profileName || null,
         number: phoneNumber,
-        ownerJid: instance.ownerJid || null,
-        businessId: instance.businessId || null,
-        integration: instance.integration || null,
-        createdAt: instance.createdAt || null,
-        updatedAt: instance.updatedAt || null,
+        ownerJid: inst.ownerJid || null,
+        businessId: inst.businessId || null,
+        integration: inst.integration || null,
+        createdAt: inst.createdAt || null,
+        updatedAt: inst.updatedAt || null,
       },
     })
   } catch (error) {

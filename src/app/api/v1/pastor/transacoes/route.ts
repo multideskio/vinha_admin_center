@@ -5,16 +5,18 @@
  * @author PH
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { db } from '@/db/drizzle'
 import { transactions as transactionsTable, users, churchProfiles } from '@/db/schema'
-import { eq, desc, and, isNull, or, like, gte, lte } from 'drizzle-orm'
+import { eq, desc, and, isNull, or, ilike, gte, lte } from 'drizzle-orm'
 import { format } from 'date-fns'
 import { authenticateApiKey } from '@/lib/api-auth'
 import { validateRequest } from '@/lib/jwt'
-import { getErrorMessage } from '@/lib/error-types'
 import { rateLimit } from '@/lib/rate-limit'
 import { SessionUser } from '@/lib/types'
+import { z } from 'zod'
 
 export async function GET(request: Request): Promise<NextResponse> {
   let sessionUser: SessionUser | null = null
@@ -57,11 +59,25 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Acesso negado. Role pastor necessária.' }, { status: 403 })
     }
 
-    // Extrair parâmetros de busca e filtro
+    // BUG-05 fix: Validação Zod dos parâmetros
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
+    const pastorTransacoesParamsSchema = z.object({
+      search: z.string().max(200).optional(),
+      startDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+      endDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+    })
+    const paramsValidation = pastorTransacoesParamsSchema.safeParse({
+      search: searchParams.get('search') || undefined,
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+    })
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+    const { search, startDate, endDate } = paramsValidation.data
 
     // Construir condições de filtro
     const conditions = [
@@ -69,11 +85,11 @@ export async function GET(request: Request): Promise<NextResponse> {
       isNull(transactionsTable.deletedAt),
     ]
 
-    // Filtro de busca (ID da transação ou gatewayTransactionId)
+    // BUG-06 fix: Usar ilike para busca case-insensitive
     if (search) {
       const searchCondition = or(
-        like(transactionsTable.id, `%${search}%`),
-        like(transactionsTable.gatewayTransactionId, `%${search}%`),
+        ilike(transactionsTable.id, `%${search}%`),
+        ilike(transactionsTable.gatewayTransactionId, `%${search}%`),
       )
       if (searchCondition) {
         conditions.push(searchCondition)
@@ -130,9 +146,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       error: error instanceof Error ? error.message : 'Erro desconhecido',
       timestamp: new Date().toISOString(),
     })
-    return NextResponse.json(
-      { error: 'Erro interno do servidor.', details: getErrorMessage(error) },
-      { status: 500 },
-    )
+    // BUG-10 fix: Não expor detalhes do erro
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }

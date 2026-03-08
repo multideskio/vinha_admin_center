@@ -86,10 +86,23 @@ export async function GET(request: Request): Promise<NextResponse> {
       )
     }
 
-    // Extrair parâmetros de data da URL
+    // BUG-05 fix: Validação Zod dos parâmetros de data
     const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
+    const igrejasParamsSchema = z.object({
+      startDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+      endDate: z.string().datetime({ offset: true }).optional().or(z.string().date().optional()),
+    })
+    const paramsValidation = igrejasParamsSchema.safeParse({
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+    })
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+    const { startDate, endDate } = paramsValidation.data
 
     // Construir condições de filtro
     const conditions = [
@@ -135,11 +148,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       timestamp: new Date().toISOString(),
     })
 
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-    return NextResponse.json(
-      { error: 'Erro interno do servidor.', details: errorMessage },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
 

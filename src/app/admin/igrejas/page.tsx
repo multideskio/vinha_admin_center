@@ -14,6 +14,7 @@ export default async function IgrejasPage() {
   await requireAdmin()
 
   // Buscar igrejas diretamente do banco (evita problema de cookies)
+  // BUGFIX: .limit(500) para evitar unbounded result set no Neon
   const churchesData = await db
     .select({
       id: users.id,
@@ -42,6 +43,7 @@ export default async function IgrejasPage() {
     .from(users)
     .innerJoin(churchProfiles, eq(users.id, churchProfiles.userId))
     .where(and(eq(users.role, 'church_account'), isNull(users.deletedAt)))
+    .limit(500)
 
   // Buscar supervisores para o formulário
   const supervisorsData = await db
@@ -53,6 +55,7 @@ export default async function IgrejasPage() {
     .from(users)
     .innerJoin(supervisorProfiles, eq(users.id, supervisorProfiles.userId))
     .where(and(eq(users.role, 'supervisor'), isNull(users.deletedAt)))
+    .limit(200)
 
   // Formatar dados para o client
   const churches = churchesData.map((church) => ({

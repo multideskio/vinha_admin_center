@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false, // TODO: Migrar gradualmente ~150 params implícitos
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,

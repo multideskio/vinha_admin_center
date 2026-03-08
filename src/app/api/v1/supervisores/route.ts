@@ -1,5 +1,9 @@
 /**
  * @fileoverview API para gerenciamento de supervisores (acesso de administrador).
+ */
+export const dynamic = 'force-dynamic'
+
+/**
  * @version 1.2
  * @date 2024-08-07
  * @author PH
@@ -47,10 +51,24 @@ export async function GET(request: Request): Promise<NextResponse> {
   const minimal = url.searchParams.get('minimal') === 'true'
 
   if (minimal) {
-    // ✅ Paginação e busca para evitar retornar milhares de registros
-    const search = url.searchParams.get('search') || ''
-    const limit = parseInt(url.searchParams.get('limit') || '50', 10)
-    const offset = parseInt(url.searchParams.get('offset') || '0', 10)
+    // BUG-05 fix: Validação Zod dos parâmetros
+    const supervisoresParamsSchema = z.object({
+      search: z.string().max(200).optional(),
+      limit: z.coerce.number().int().positive().max(200).default(50),
+      offset: z.coerce.number().int().min(0).default(0),
+    })
+    const paramsValidation = supervisoresParamsSchema.safeParse({
+      search: url.searchParams.get('search') || undefined,
+      limit: url.searchParams.get('limit') || undefined,
+      offset: url.searchParams.get('offset') || undefined,
+    })
+    if (!paramsValidation.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', details: paramsValidation.error.errors },
+        { status: 400 },
+      )
+    }
+    const { search, limit, offset } = paramsValidation.data
 
     let query = db
       .select({

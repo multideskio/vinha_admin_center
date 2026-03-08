@@ -9,7 +9,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
 import { logUserAction } from '@/lib/action-logger'
@@ -37,10 +36,16 @@ export async function GET(request: NextRequest) {
   try {
     // 3. Validação Zod dos parâmetros de query
     const params = Object.fromEntries(new URL(request.url).searchParams)
-    const validated = membershipReportSchema.parse(params)
+    const validated = membershipReportSchema.safeParse(params)
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: 'Parâmetros inválidos', detalhes: validated.error.errors.map((e) => e.message) },
+        { status: 400 },
+      )
+    }
 
     // 4. Delegar ao serviço
-    const result = await generateMembershipReport(user.companyId, validated)
+    const result = await generateMembershipReport(user.companyId, validated.data)
 
     // 5. Audit log assíncrono (fire-and-forget)
     logUserAction(
@@ -48,22 +53,11 @@ export async function GET(request: NextRequest) {
       'generate_report',
       'report',
       'membresia',
-      JSON.stringify(validated),
+      JSON.stringify(validated.data),
     ).catch((err) => console.error('[AUDIT_LOG_ERROR]', err))
 
     return NextResponse.json(result)
   } catch (error) {
-    // Erros de validação Zod → 400
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Parâmetros inválidos',
-          detalhes: error.errors.map((e) => e.message),
-        },
-        { status: 400 },
-      )
-    }
-
     // Erros internos → 500
     console.error('[RELATORIO_MEMBRESIA_ERROR]', error)
     return NextResponse.json(
