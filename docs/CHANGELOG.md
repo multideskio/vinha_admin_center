@@ -4,6 +4,58 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.18.0] - 2026-03-08 - Componentes Compartilhados, Acessibilidade & Error Boundaries
+
+### ✨ Novas Funcionalidades
+
+- **Error Boundaries e Loading States** — `error.tsx` e `loading.tsx` adicionados em 15 rotas (admin dashboard/gerentes/igrejas/pastores/supervisores/transacoes, igreja dashboard/transacoes, manager dashboard/transacoes, pastor dashboard/transacoes, supervisor dashboard/transacoes)
+- **Componentes compartilhados** — 6 novos componentes em `src/components/shared/`: Logo, PaginationControls, LazyRecharts, EmptyState, StatusBadge, VideiraTableHeader
+- **Configuração de navegação centralizada** — `src/app/admin/_config/navigation.ts` com `ADMIN_NAV_ITEMS` e `ADMIN_SETTINGS_ITEM`
+- **Breadcrumbs** nas páginas de configuração (Gerais, SMTP, WhatsApp)
+- **Estado de loading na exportação CSV** — botão com spinner `Loader2` e texto dinâmico
+
+### 🐛 Correções de Bugs
+
+- **`confirm()` nativo substituído por AlertDialog** — ações destrutivas (marcar fraude, excluir igreja, excluir pastor) agora usam diálogos acessíveis do Radix UI
+- **`router.back()` substituído por `<Link>`** — navegação determinística no header de detalhes de transação
+- **CSP para Vercel Preview** — `Content-Security-Policy` agora inclui `https://vercel.live` apenas em ambientes preview/development
+- **`<img>` substituído por `<Image>` do Next.js** — otimização de imagens em headers e sidebars (admin e manager)
+- **`<a>` substituído por `<Link>`** — botão "Completar Perfil" no dashboard do manager
+
+### ♻️ Refatorações
+
+- **Logo SVG extraído** — componente `Logo` compartilhado elimina duplicação em 4 arquivos (admin header, admin sidebar, manager header, manager sidebar)
+- **PaginationControls compartilhado** — paginação inline removida de 6 páginas (manager/supervisor: igrejas, pastores, supervisores) e substituída por componente reutilizável com contagem de resultados e navegação completa
+- **LazyRecharts** — `BarChart`, `PieChart` e `LineChart` com lazy loading via `next/dynamic` (redução de ~200KB no bundle inicial) em 5 dashboards e relatório de membresia
+- **Cores hardcoded → CSS variables** — gráficos do dashboard admin usam `hsl(var(--chart-*))` ao invés de hex fixo
+- **CSS** — `.videira-gradient` movido de `@layer base` para `@layer utilities`
+- **`React.useCallback`** em handlers de transações (`handleSyncTransaction`, `handleResendReceipt`)
+
+### 🎨 Melhorias de Acessibilidade
+
+- **`aria-label`** adicionado em ~30+ botões de ícone em todo o sistema (paginação, refresh, menu de ações, fechar, voltar, visualização tabela/cards)
+- **`overflow-x-auto`** em ~15 tabelas para scroll horizontal em telas pequenas
+- **`overflow-x-hidden`** no body para evitar scroll horizontal global
+
+### 🔧 Melhorias Técnicas
+
+- **`mode: 'onBlur'`** adicionado em ~30 instâncias de `useForm()` em todas as áreas (admin, manager, supervisor, pastor, igreja, auth, contribuições) — validação ocorre ao sair do campo, melhorando UX
+- **`isExporting` state** — controle de estado durante exportação CSV com feedback visual
+
+### 📚 Documentação
+
+- **FRONTEND_AUDIT_REPORT.md** — relatório de auditoria do frontend
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- ~98 arquivos (68 modificados, ~30 novos)
+- 6 novos componentes compartilhados (`src/components/shared/`)
+- 1 nova configuração de navegação (`src/app/admin/_config/navigation.ts`)
+- 15 novos error boundaries e loading states
+- 1 novo relatório de auditoria
+
+---
+
 ## [0.17.0] - 2026-03-08 - Auditoria Neon Serverless, Validação Zod & Segurança de API
 
 ### ✨ Novas Funcionalidades

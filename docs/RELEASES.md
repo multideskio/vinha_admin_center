@@ -4,6 +4,48 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.18.0 - Componentes Compartilhados, Acessibilidade & Error Boundaries (Março 2026)
+
+### ♻️ Arquitetura — Componentes Compartilhados
+
+Extração de 6 componentes reutilizáveis para `src/components/shared/` eliminando duplicação massiva: Logo SVG (4 arquivos), PaginationControls (6 páginas), LazyRecharts com lazy loading via `next/dynamic` (~200KB reduzidos no bundle inicial), EmptyState, StatusBadge e VideiraTableHeader. Navegação admin centralizada em `_config/navigation.ts`.
+
+### 🎨 Acessibilidade e UX
+
+- `aria-label` em ~30+ botões de ícone em todo o sistema
+- `confirm()` nativo substituído por AlertDialog acessível do Radix UI em 3 ações destrutivas
+- `overflow-x-auto` em ~15 tabelas para responsividade mobile
+- Breadcrumbs nas páginas de configuração (Gerais, SMTP, WhatsApp)
+- Validação `mode: 'onBlur'` em ~30 formulários para melhor UX
+- Estado de loading visual na exportação CSV
+
+### ⚡ Performance
+
+- Recharts com lazy loading em 5 dashboards e relatório de membresia
+- `<img>` → `<Image>` do Next.js em headers e sidebars
+- `React.useCallback` em handlers de transações
+- Cores hardcoded → CSS variables nos gráficos
+
+### 🛡️ Resiliência
+
+- Error boundaries (`error.tsx`) e loading states (`loading.tsx`) em 15 rotas
+- CSP dinâmico para Vercel preview/development
+- Navegação determinística (`<Link>` no lugar de `router.back()`)
+
+### 📚 Documentação
+
+- Relatório de auditoria do frontend (FRONTEND_AUDIT_REPORT.md)
+
+### 📊 Métricas
+
+- Arquivos modificados: ~98 (68 modificados, ~30 novos)
+- Componentes compartilhados criados: 6
+- Error boundaries adicionados: 15
+- Formulários com mode onBlur: ~30
+- Botões com aria-label: ~30+
+
+---
+
 ## v0.17.0 - Auditoria Neon Serverless, Validação Zod & Segurança de API (Março 2026)
 
 ### 🔧 Infraestrutura — Driver Neon Serverless

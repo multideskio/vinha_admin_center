@@ -49,7 +49,7 @@
 - [ ] Command Palette (Ctrl+K) — Busca global + ações rápidas
 - [ ] Bulk Actions — Ações em massa nas tabelas
 - [ ] Notificações In-App — Bell icon com badge
-- [ ] Breadcrumbs — Integração nas páginas
+- [ ] Breadcrumbs — Integração completa em todas as páginas (parcialmente implementado em configurações)
 - [ ] Atalhos de Teclado — Navegação rápida
 
 ---
@@ -58,6 +58,7 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.18.0 | ✅ Concluída | 08/03/2026 |
 | v0.17.0 | ✅ Concluída | 08/03/2026 |
 | v0.16.0 | ✅ Concluída | 12/02/2026 |
 | v0.15.0 | ✅ Concluída | 12/02/2026 |
@@ -67,6 +68,17 @@
 | v0.12.0 | ✅ Concluída | 11/02/2026 |
 | v0.11.0 | ✅ Concluída | 11/02/2026 |
 | v0.5.0  | 📋 Planejada | Q2 2026    |
+
+### ✅ Itens Concluídos (v0.18.0)
+
+- ✅ Componentes compartilhados extraídos (Logo, PaginationControls, LazyRecharts, EmptyState, StatusBadge, VideiraTableHeader)
+- ✅ Error boundaries e loading states em 15 rotas
+- ✅ Acessibilidade: aria-label em ~30+ botões, AlertDialog em ações destrutivas
+- ✅ Lazy loading de Recharts em 5 dashboards (~200KB reduzidos)
+- ✅ Validação mode onBlur em ~30 formulários
+- ✅ Breadcrumbs nas páginas de configuração (Gerais, SMTP, WhatsApp)
+- ✅ CSP dinâmico para Vercel preview
+- ✅ Navegação admin centralizada em \_config/navigation.ts
 
 ### ✅ Itens Concluídos (v0.17.0)
 
