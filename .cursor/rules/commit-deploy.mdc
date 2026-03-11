@@ -1,0 +1,18 @@
+---
+description: Nunca commitar com erros que possam quebrar o deploy
+alwaysApply: true
+---
+
+# Política de Commit e Deploy
+
+**Nunca fazer commit com erros que possam quebrar o deploy.**
+
+Antes de sugerir ou executar `git commit`:
+
+1. **Garantir que o build passa** – `npm run build` deve concluir sem erros.
+2. **Garantir que o typecheck passa** – `npm run typecheck` ou `tsc --noEmit` deve passar.
+3. **Garantir que o lint passa** – o pre-commit (ESLint, Prettier) não deve falhar.
+4. **Não usar `--no-verify`** exceto em situações excepcionais e com explicação explícita ao usuário sobre os riscos.
+5. **Corrigir erros pré-existentes** – se o pre-commit falhar por causa de arquivos do projeto, corrigir esses erros antes do commit em vez de ignorar o hook.
+
+Se houver erros de TypeScript, lint ou build: **corrija primeiro, commite depois**. Um deploy quebrado impacta produção.
