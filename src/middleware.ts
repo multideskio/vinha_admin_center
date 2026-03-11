@@ -19,14 +19,16 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   const vercelScriptSrc = isVercel ? ' https://vercel.live' : ''
   const vercelConnectSrc = isVercel ? ' https://vercel.live https://*.vercel.live' : ''
   const vercelFrameSrc = isVercel ? ' https://vercel.live' : ''
+  const vercelFontSrc = isVercel ? ' https://vercel.live' : ''
+  const vercelImgSrc = isVercel ? ' https://vercel.com https://vercel.live' : ''
   response.headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
       `script-src 'self' 'unsafe-inline' 'unsafe-eval'${vercelScriptSrc}`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.cloudfront.net https://*.s3.amazonaws.com https://placehold.co",
-      "font-src 'self'",
+      `img-src 'self' data: blob: https://*.cloudfront.net https://*.s3.amazonaws.com https://placehold.co${vercelImgSrc}`,
+      `font-src 'self'${vercelFontSrc}`,
       `connect-src 'self' https://viacep.com.br https://brasilapi.com.br https://api.cieloecommerce.cielo.com.br https://apiquery.cieloecommerce.cielo.com.br https://transactionsandbox.cieloecommerce.cielo.com.br https://apisandbox.cieloecommerce.cielo.com.br${vercelConnectSrc}`,
       `frame-src 'self'${vercelFrameSrc}`,
       "frame-ancestors 'self'",
