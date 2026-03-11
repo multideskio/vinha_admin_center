@@ -3,6 +3,7 @@
  */
 
 import { NotificationService } from './notifications'
+import { env } from '@/lib/env'
 import { db } from '@/db/drizzle'
 import { otherSettings, users, transactions, notificationRules } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -67,7 +68,7 @@ export async function onUserCreated(userId: string): Promise<void> {
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
       whatsappApiKey: settings.whatsappApiKey || undefined,
       whatsappApiInstance: settings.whatsappApiInstance || undefined,
-      sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+      sesRegion: env.AWS_SES_REGION || 'us-east-1',
       sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
       sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
       fromEmail: settings.smtpFrom || undefined,
@@ -291,7 +292,7 @@ export async function onTransactionFailed(transactionId: string): Promise<void> 
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
       whatsappApiKey: settings.whatsappApiKey || undefined,
       whatsappApiInstance: settings.whatsappApiInstance || undefined,
-      sesRegion: 'us-east-1',
+      sesRegion: env.AWS_SES_REGION || 'us-east-1',
       sesAccessKeyId: settings.smtpUser || undefined,
       sesSecretAccessKey: settings.smtpPass || undefined,
       fromEmail: settings.smtpFrom || undefined,
@@ -421,7 +422,7 @@ export async function onUserDeleted(
     if (deletedByUser.email) {
       const emailService = new (await import('./notifications')).EmailService({
         companyId: user.companyId,
-        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+        sesRegion: env.AWS_SES_REGION || 'us-east-1',
         sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
         fromEmail: settings.smtpFrom || undefined,
@@ -551,7 +552,7 @@ export async function processNotificationEvent(
       whatsappApiUrl: settings.whatsappApiUrl || undefined,
       whatsappApiKey: settings.whatsappApiKey || undefined,
       whatsappApiInstance: settings.whatsappApiInstance || undefined,
-      sesRegion: 'us-east-1',
+      sesRegion: env.AWS_SES_REGION || 'us-east-1',
       sesAccessKeyId: settings.smtpUser || undefined,
       sesSecretAccessKey: settings.smtpPass || undefined,
       fromEmail: settings.smtpFrom || undefined,
@@ -671,7 +672,7 @@ export async function testNotifications(companyId: string): Promise<void> {
     whatsappApiUrl: settings.whatsappApiUrl || undefined,
     whatsappApiKey: settings.whatsappApiKey || undefined,
     whatsappApiInstance: settings.whatsappApiInstance || undefined,
-    sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region fixa
+    sesRegion: env.AWS_SES_REGION || 'us-east-1',
     sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
     sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Usar credenciais SES, não S3
     fromEmail: settings.smtpFrom || undefined,

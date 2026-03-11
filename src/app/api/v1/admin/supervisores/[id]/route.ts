@@ -13,7 +13,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { supervisorProfileSchema } from '@/lib/types'
+import { supervisorProfileSchema, deleteSchemaRequired } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { onUserDeleted } from '@/lib/notification-hooks'
 import { invalidateCache } from '@/lib/cache'
@@ -26,10 +26,6 @@ const supervisorUpdateSchema = supervisorProfileSchema
     newPassword: z.string().optional().or(z.literal('')),
   })
   .partial()
-
-const deleteSchema = z.object({
-  deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
-})
 
 export async function GET(
   request: Request,
@@ -225,7 +221,7 @@ export async function DELETE(
 
   try {
     const body = await request.json()
-    const { deletionReason } = deleteSchema.parse(body)
+    const { deletionReason } = deleteSchemaRequired.parse(body)
 
     await db
       .update(users)

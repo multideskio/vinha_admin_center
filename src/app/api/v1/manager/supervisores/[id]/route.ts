@@ -13,7 +13,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { supervisorProfileSchema } from '@/lib/types'
+import { supervisorProfileSchema, deleteSchemaRequired } from '@/lib/types'
 import { ApiError } from '@/lib/errors'
 import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
@@ -224,11 +224,7 @@ export async function DELETE(
 
   try {
     const body = await request.json()
-    const { deletionReason } = body
-
-    if (!deletionReason?.trim()) {
-      throw new ApiError(400, 'Motivo da exclusão é obrigatório.')
-    }
+    const { deletionReason } = deleteSchemaRequired.parse(body)
 
     const isAuthorized = await verifySupervisor(id, sessionUser.id)
     if (!isAuthorized) {
@@ -263,6 +259,12 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: 'Supervisor excluído com sucesso.' })
   } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados inválidos.', details: error.errors },
+        { status: 400 },
+      )
+    }
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

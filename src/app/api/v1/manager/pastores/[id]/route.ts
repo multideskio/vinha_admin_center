@@ -13,7 +13,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { pastorProfileSchema } from '@/lib/types'
+import { pastorProfileSchema, deleteSchemaOptional } from '@/lib/types'
 import { ApiError } from '@/lib/errors'
 import { rateLimit } from '@/lib/rate-limit'
 import type { UserRole } from '@/lib/types'
@@ -238,7 +238,8 @@ export async function DELETE(
     }
 
     const body = await request.json()
-    const deletionReason = body.deletionReason || 'Sem motivo informado'
+    const { deletionReason: parsedReason } = deleteSchemaOptional.parse(body)
+    const deletionReason = parsedReason?.trim() || 'Sem motivo informado'
 
     // Get pastor data for audit logging before deletion
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -268,6 +269,12 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados inválidos.', details: error.errors },
+        { status: 400 },
+      )
+    }
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

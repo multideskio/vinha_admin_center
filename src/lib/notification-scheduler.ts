@@ -3,6 +3,7 @@
  */
 
 import { db } from '@/db/drizzle'
+import { env } from '@/lib/env'
 import { users, otherSettings, userNotificationSettings } from '@/db/schema'
 import { NotificationService } from './notifications'
 import { eq, and, isNull, gte } from 'drizzle-orm'
@@ -92,7 +93,7 @@ export class NotificationScheduler {
         whatsappApiUrl: settings.whatsappApiUrl || undefined,
         whatsappApiKey: settings.whatsappApiKey || undefined,
         whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region
+        sesRegion: env.AWS_SES_REGION || 'us-east-1',
         sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Credenciais SES
         sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Credenciais SES
         fromEmail: settings.smtpFrom || undefined,
@@ -132,7 +133,7 @@ export class NotificationScheduler {
         whatsappApiUrl: settings.whatsappApiUrl || undefined,
         whatsappApiKey: settings.whatsappApiKey || undefined,
         whatsappApiInstance: settings.whatsappApiInstance || undefined,
-        sesRegion: 'us-east-1', // ✅ CORRIGIDO: SES region
+        sesRegion: env.AWS_SES_REGION || 'us-east-1',
         sesAccessKeyId: settings.smtpUser || undefined, // ✅ CORRIGIDO: Credenciais SES
         sesSecretAccessKey: settings.smtpPass || undefined, // ✅ CORRIGIDO: Credenciais SES
         fromEmail: settings.smtpFrom || undefined,

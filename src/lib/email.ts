@@ -60,7 +60,7 @@ export async function sendEmail({
   }
 
   const sesClient = new SESClient({
-    region: 'us-east-1',
+    region: env.AWS_SES_REGION || 'us-east-1',
     credentials: {
       accessKeyId: settings.smtpUser,
       secretAccessKey: settings.smtpPass,

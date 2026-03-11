@@ -17,13 +17,7 @@ import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
 import { onTransactionCreated } from '@/lib/notification-hooks'
 import { validateCieloWebhook } from '@/lib/webhook-security'
-import { z } from 'zod'
-
-// Schema Zod para validação do webhook da Cielo
-const cieloWebhookSchema = z.object({
-  PaymentId: z.string().uuid(),
-  ChangeType: z.number().int().min(1).max(6),
-})
+import { cieloWebhookSchema } from '@/lib/webhook-schemas'
 
 const COMPANY_ID = env.COMPANY_INIT
 

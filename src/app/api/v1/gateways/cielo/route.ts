@@ -12,6 +12,7 @@ import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/jwt'
 import { env } from '@/lib/env'
+import { getErrorMessage } from '@/lib/error-types'
 import { configCache, CACHE_KEYS } from '@/lib/config-cache'
 import { encryptGatewayFields, decryptGatewayConfig } from '@/lib/gateway-encryption'
 
@@ -89,7 +90,7 @@ export async function GET(): Promise<NextResponse> {
     })
   } catch (error) {
     console.error(`Erro ao buscar configuração do gateway ${GATEWAY_NAME}:`, error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: `Erro ao buscar configuração do gateway ${GATEWAY_NAME}`, details: errorMessage },
       { status: 500 },
@@ -163,7 +164,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       )
     }
     console.error(`Erro ao atualizar configuração do gateway ${GATEWAY_NAME}:`, error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: `Erro ao atualizar configuração do gateway ${GATEWAY_NAME}`, details: errorMessage },
       { status: 500 },

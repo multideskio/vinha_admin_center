@@ -13,7 +13,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { churchProfileSchema, type UserRole } from '@/lib/types'
+import { churchProfileSchema, deleteSchemaOptional, type UserRole } from '@/lib/types'
 import { rateLimit } from '@/lib/rate-limit'
 import { invalidateCache } from '@/lib/cache'
 
@@ -178,7 +178,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Dados inválidos.', details: error.errors },
@@ -224,7 +224,8 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     }
 
     const body = await request.json()
-    const deletionReason = body.deletionReason || 'Sem motivo informado'
+    const { deletionReason: parsedReason } = deleteSchemaOptional.parse(body)
+    const deletionReason = parsedReason?.trim() || 'Sem motivo informado'
 
     // Get church data for audit logging before deletion
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -253,7 +254,13 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     await invalidateCache('relatorio:membresia:*')
 
     return NextResponse.json({ success: true, message: 'Igreja excluída com sucesso.' })
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados inválidos.', details: error.errors },
+        { status: 400 },
+      )
+    }
     // Structured logging instead of console.error
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('[MANAGER_CHURCH_DELETE_ERROR]', {

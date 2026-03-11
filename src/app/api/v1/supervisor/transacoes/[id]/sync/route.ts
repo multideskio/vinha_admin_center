@@ -20,6 +20,7 @@ import { validateRequest } from '@/lib/jwt'
 import { rateLimit } from '@/lib/rate-limit'
 import { queryBradescoPixPayment, queryBradescoBoletoPayment } from '@/lib/bradesco'
 import { SessionUser } from '@/lib/types'
+import { mapCieloStatus } from '@/lib/cielo-status'
 
 async function getCieloCredentials(): Promise<{
   merchantId: string | null
@@ -78,14 +79,6 @@ async function verifyTransactionOwnership(
   if (churchIds.includes(contributorId)) return true
 
   return false
-}
-
-function mapCieloStatus(status: number): 'approved' | 'pending' | 'refused' | 'refunded' {
-  // Mapear status da Cielo: 0=Pendente, 1=Autorizado, 2=Pago, 3=Negado, 10=Cancelado, 13=Estornado
-  if (status === 2) return 'approved'
-  if (status === 3) return 'refused'
-  if (status === 10 || status === 13) return 'refunded'
-  return 'pending'
 }
 
 export async function POST(

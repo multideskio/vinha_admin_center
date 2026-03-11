@@ -16,6 +16,7 @@ import { TransactionDetailLayout } from '@/components/transaction-detail-layout'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { format, parseISO } from 'date-fns'
+import { mapCieloStatus } from '@/lib/cielo-status'
 
 type TransactionDetail = {
   id: string
@@ -85,14 +86,6 @@ export default function TransacaoDetalhePage() {
       const cieloData = data.transaction
       if (!cieloData || !cieloData.Payment) {
         throw new Error('Dados da transação inválidos')
-      }
-
-      // Mapear status da Cielo: 0=Pendente, 1=Autorizado, 2=Pago, 3=Negado, 10=Cancelado, 13=Estornado
-      const mapCieloStatus = (status: number): 'approved' | 'pending' | 'refused' | 'refunded' => {
-        if (status === 2) return 'approved'
-        if (status === 3) return 'refused'
-        if (status === 10 || status === 13) return 'refunded'
-        return 'pending'
       }
 
       // Buscar informações da igreja se originChurchId estiver disponível

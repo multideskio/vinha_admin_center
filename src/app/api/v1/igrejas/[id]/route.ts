@@ -13,7 +13,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { churchProfileSchema, type UserRole } from '@/lib/types'
+import { churchProfileSchema, deleteSchemaRequired, type UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 import { onUserDeleted } from '@/lib/notification-hooks'
 import { invalidateCache } from '@/lib/cache'
@@ -23,10 +23,6 @@ const churchUpdateSchema = churchProfileSchema
     newPassword: z.string().optional().or(z.literal('')),
   })
   .partial()
-
-const deleteSchema = z.object({
-  deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
-})
 
 export async function GET(
   request: Request,
@@ -183,7 +179,7 @@ export async function DELETE(
 
   try {
     const body = await request.json()
-    const { deletionReason } = deleteSchema.parse(body)
+    const { deletionReason } = deleteSchemaRequired.parse(body)
 
     await db
       .update(users)

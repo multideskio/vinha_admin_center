@@ -129,7 +129,7 @@ export async function createPixPayment(
   }
 
   const payload = {
-    MerchantOrderId: `PIX-${Date.now()}`,
+    MerchantOrderId: `PIX-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     Customer: customer,
     Payment: {
       Type: 'Pix',
@@ -242,7 +242,7 @@ export async function createCreditCardPayment(
   }
 
   const payload = {
-    MerchantOrderId: `ORDER-${Date.now()}`,
+    MerchantOrderId: `ORDER-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     Customer: customer,
     Payment: {
       Type: 'CreditCard',
@@ -341,7 +341,7 @@ export async function createBoletoPayment(
   const apiUrl = getCieloApiUrl(config.environment)
 
   const payload = {
-    MerchantOrderId: `ORDER-${Date.now()}`,
+    MerchantOrderId: `ORDER-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     Customer: {
       Name: customerName,
       Identity: customerCpf.replace(/\D/g, ''),

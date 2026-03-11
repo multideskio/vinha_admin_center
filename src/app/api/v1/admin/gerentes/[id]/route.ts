@@ -13,9 +13,10 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { managerProfileSchema } from '@/lib/types'
+import { managerProfileSchema, deleteSchemaRequired } from '@/lib/types'
 import { onUserDeleted } from '@/lib/notification-hooks'
 import { invalidateCache } from '@/lib/cache'
+import { getErrorMessage } from '@/lib/error-types'
 import { env } from '@/lib/env'
 
 const VALIDATED_COMPANY_ID = env.COMPANY_INIT
@@ -25,10 +26,6 @@ const managerUpdateSchema = managerProfileSchema
     newPassword: z.string().optional().or(z.literal('')),
   })
   .partial()
-
-const deleteSchema = z.object({
-  deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
-})
 
 export async function GET(
   request: Request,
@@ -62,7 +59,7 @@ export async function GET(
     return NextResponse.json({ ...userWithoutPassword, ...result[0].profile })
   } catch (error) {
     console.error('Erro ao buscar gerente:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: 'Erro ao buscar gerente', details: errorMessage },
       { status: 500 },
@@ -159,7 +156,7 @@ export async function PUT(
       )
     }
     console.error('Erro ao atualizar gerente:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: 'Erro ao atualizar gerente', details: errorMessage },
       { status: 500 },
@@ -180,7 +177,7 @@ export async function DELETE(
 
   try {
     const body = await request.json()
-    const { deletionReason } = deleteSchema.parse(body)
+    const { deletionReason } = deleteSchemaRequired.parse(body)
 
     const [deletedUser] = await db
       .update(users)
@@ -217,7 +214,7 @@ export async function DELETE(
       )
     }
     console.error('Erro ao excluir gerente:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: 'Erro ao excluir gerente', details: errorMessage },
       { status: 500 },

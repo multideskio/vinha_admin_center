@@ -5,6 +5,17 @@ import { eq } from 'drizzle-orm'
 import { validateRequest } from '@/lib/jwt'
 import { z } from 'zod'
 
+// Tons permitidos para mitigar prompt injection
+const ALLOWED_TONES = [
+  'formal',
+  'amigável',
+  'neutro',
+  'cordial',
+  'respeitoso',
+  'profissional',
+] as const
+const DEFAULT_TONE = 'respeitoso, claro e objetivo'
+
 // Schema Zod para validação da sugestão de template por IA
 const aiSuggestSchema = z.object({
   eventTrigger: z.enum([
@@ -15,7 +26,12 @@ const aiSuggestSchema = z.object({
   ]),
   daysOffset: z.number().int().optional(),
   variables: z.array(z.string()).optional(),
-  tone: z.string().optional(),
+  tone: z
+    .string()
+    .optional()
+    .transform((val) =>
+      val && ALLOWED_TONES.includes(val as (typeof ALLOWED_TONES)[number]) ? val : DEFAULT_TONE,
+    ),
 })
 
 export async function POST(request: NextRequest) {
@@ -52,7 +68,7 @@ export async function POST(request: NextRequest) {
       variables && variables.length
         ? variables.join(', ')
         : '{nome_usuario}, {data_vencimento}, {link_pagamento}'
-    const ptTone = tone || 'respeitoso, claro e objetivo'
+    const ptTone = tone ?? DEFAULT_TONE
 
     const system = `Você é um assistente que escreve mensagens curtas e eficazes em PT-BR para um sistema de gestão de igrejas. As mensagens devem aceitar variáveis delimitadas por chaves, que serão substituídas pelo sistema (ex.: {nome_usuario}). Evite links se não fornecidos nas variáveis.`
 

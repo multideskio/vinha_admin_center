@@ -35,7 +35,13 @@ export async function GET(request: Request): Promise<NextResponse> {
         })
         .from(managerProfiles)
         .innerJoin(users, eq(users.id, managerProfiles.userId))
-        .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
+        .where(
+          and(
+            eq(users.role, 'manager'),
+            eq(users.companyId, VALIDATED_COMPANY_ID),
+            isNull(users.deletedAt),
+          ),
+        )
         .orderBy(desc(users.createdAt))
       return NextResponse.json({ managers: result })
     }

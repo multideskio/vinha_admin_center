@@ -153,7 +153,7 @@ export class EmailService {
       // Se as credenciais SMTP são na verdade AWS SES, configurar SES
       if (config.smtpUser && config.smtpPass) {
         this.sesClient = new SESClient({
-          region: 'us-east-1', // Região padrão para AWS SES
+          region: config.sesRegion || env.AWS_SES_REGION || 'us-east-1',
           credentials: {
             accessKeyId: config.smtpUser,
             secretAccessKey: config.smtpPass,

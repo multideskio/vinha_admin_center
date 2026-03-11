@@ -13,6 +13,7 @@ import { eq, and, isNull, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
+import { getErrorMessage } from '@/lib/error-types'
 import { managerProfileSchema } from '@/lib/types'
 import { env } from '@/lib/env'
 import { getCache, setCache, invalidateCache } from '@/lib/cache'
@@ -50,7 +51,13 @@ export async function GET(request: Request): Promise<NextResponse> {
         })
         .from(managerProfiles)
         .innerJoin(users, eq(users.id, managerProfiles.userId))
-        .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
+        .where(
+          and(
+            eq(users.role, 'manager'),
+            eq(users.companyId, VALIDATED_COMPANY_ID),
+            isNull(users.deletedAt),
+          ),
+        )
         .orderBy(desc(users.createdAt))
 
       const response = { managers: result }
@@ -65,7 +72,13 @@ export async function GET(request: Request): Promise<NextResponse> {
       })
       .from(users)
       .leftJoin(managerProfiles, eq(users.id, managerProfiles.userId))
-      .where(and(eq(users.role, 'manager'), isNull(users.deletedAt)))
+      .where(
+        and(
+          eq(users.role, 'manager'),
+          eq(users.companyId, VALIDATED_COMPANY_ID),
+          isNull(users.deletedAt),
+        ),
+      )
       .orderBy(desc(users.createdAt))
 
     const managers = result.map((r) => ({
@@ -78,7 +91,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     await setCache(cacheKey, response, MANAGERS_CACHE_TTL)
     return NextResponse.json(response)
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorMessage = getErrorMessage(error)
     console.error('Erro ao buscar gerentes:', error)
     return NextResponse.json(
       { error: 'Erro ao buscar gerentes', details: errorMessage },
@@ -116,7 +129,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       const [newUser] = await tx.insert(users).values([userInsertData]).returning()
 
       if (!newUser) {
-        tx.rollback()
         throw new Error('Falha ao criar o usuário.')
       }
 
@@ -127,15 +139,15 @@ export async function POST(request: Request): Promise<NextResponse> {
           firstName: validatedData.firstName,
           lastName: validatedData.lastName,
           cpf: validatedData.cpf,
-          landline: validatedData.landline,
-          cep: validatedData.cep,
-          state: validatedData.state,
-          city: validatedData.city,
-          neighborhood: validatedData.neighborhood,
-          address: validatedData.address,
-          facebook: validatedData.facebook,
-          instagram: validatedData.instagram,
-          website: validatedData.website,
+          landline: validatedData.landline ?? null,
+          cep: validatedData.cep ?? null,
+          state: validatedData.state ?? null,
+          city: validatedData.city ?? null,
+          neighborhood: validatedData.neighborhood ?? null,
+          address: validatedData.address ?? null,
+          facebook: validatedData.facebook ?? null,
+          instagram: validatedData.instagram ?? null,
+          website: validatedData.website ?? null,
         })
         .returning()
 
@@ -166,7 +178,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Este e-mail já está em uso.' }, { status: 409 })
     }
 
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorMessage = getErrorMessage(error)
     return NextResponse.json(
       { error: 'Erro ao criar gerente', details: errorMessage },
       { status: 500 },

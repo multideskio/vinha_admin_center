@@ -96,7 +96,6 @@ export async function POST(request: Request): Promise<NextResponse> {
         .returning()
 
       if (!newUser) {
-        tx.rollback()
         throw new Error('Falha ao criar o usuário.')
       }
 

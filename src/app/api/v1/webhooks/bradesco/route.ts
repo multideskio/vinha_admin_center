@@ -6,29 +6,7 @@ import { logger } from '@/lib/logger'
 import { invalidateCache } from '@/lib/cache'
 import { onTransactionCreated } from '@/lib/notification-hooks'
 import { validateBradescoWebhook } from '@/lib/webhook-security'
-import { z } from 'zod'
-
-// Zod schemas para validação de webhooks Bradesco
-const bradescoPixWebhookSchema = z.object({
-  pix: z
-    .array(
-      z.object({
-        endToEndId: z.string(),
-        txid: z.string(),
-        valor: z.string(),
-        horario: z.string(),
-        infoPagador: z.string().optional(),
-      }),
-    )
-    .min(1),
-})
-
-const bradescoBoletoWebhookSchema = z.object({
-  nossoNumero: z.string(),
-  status: z.string(),
-  valorPago: z.number().optional(),
-  dataPagamento: z.string().optional(),
-})
+import { bradescoPixWebhookSchema, bradescoBoletoWebhookSchema } from '@/lib/webhook-schemas'
 
 export const runtime = 'nodejs'
 

@@ -159,6 +159,16 @@ export const churchProfileSchema = z.object({
   ...socialLinksSchema,
 })
 
+/** Schema para exclusão com motivo obrigatório (admin, supervisor) */
+export const deleteSchemaRequired = z.object({
+  deletionReason: z.string().min(1, 'O motivo da exclusão é obrigatório.'),
+})
+
+/** Schema para exclusão com motivo opcional (gerente: igreja, pastor) */
+export const deleteSchemaOptional = z.object({
+  deletionReason: z.string().optional(),
+})
+
 // Tipos para uso no Frontend
 export type AdminProfile = z.infer<typeof adminProfileSchema>
 export type ManagerProfile = z.infer<typeof managerProfileSchema>

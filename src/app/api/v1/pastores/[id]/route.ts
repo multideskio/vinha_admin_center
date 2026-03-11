@@ -12,7 +12,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import * as bcrypt from 'bcrypt'
 import { validateRequest } from '@/lib/jwt'
-import { pastorProfileSchema } from '@/lib/types'
+import { pastorProfileSchema, deleteSchemaRequired } from '@/lib/types'
 import type { UserRole } from '@/lib/types'
 import { getErrorMessage } from '@/lib/error-types'
 import { invalidateCache } from '@/lib/cache'
@@ -169,7 +169,7 @@ export async function DELETE(
 
   try {
     const body = await request.json()
-    const { deletionReason } = body
+    const { deletionReason } = deleteSchemaRequired.parse(body)
 
     await db
       .update(users)
@@ -177,7 +177,7 @@ export async function DELETE(
         deletedAt: new Date(),
         status: 'inactive',
         deletedBy: user.id,
-        deletionReason: deletionReason || null,
+        deletionReason,
       })
       .where(eq(users.id, id))
 
@@ -186,6 +186,12 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: 'Pastor excluído com sucesso.' })
   } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados inválidos.', details: error.errors },
+        { status: 400 },
+      )
+    }
     const errorMessage = getErrorMessage(error)
     console.error('Erro ao excluir pastor:', error)
     return NextResponse.json(
