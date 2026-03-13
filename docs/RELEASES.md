@@ -4,6 +4,14 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.19.1 - Correção de Link do Perfil (Março 2026)
+
+### 🐛 Correções
+
+- Link "Ver Perfil Completo" na página de detalhes da transação agora redireciona para a rota correta baseada no role do contribuinte
+
+---
+
 ## v0.19.0 - Transação Manual e Baixa Manual (Março 2026)
 
 ### ✨ Funcionalidades

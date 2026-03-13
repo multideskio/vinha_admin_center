@@ -30,6 +30,18 @@ export function TransactionContributorCard({ contributor }: TransactionContribut
     church_account: 'Igreja',
   }
 
+  // Mapear role para rota correta
+  const roleToRoute: Record<string, string> = {
+    admin: 'administradores',
+    manager: 'gerentes',
+    supervisor: 'supervisores',
+    pastor: 'pastores',
+    church_account: 'igrejas',
+  }
+
+  const profileRoute = roleToRoute[contributor.role]
+  const profileUrl = profileRoute ? `/admin/${profileRoute}/${contributor.id}` : null
+
   return (
     <Card>
       <CardHeader>
@@ -70,9 +82,11 @@ export function TransactionContributorCard({ contributor }: TransactionContribut
           <p className="text-sm font-medium">{roleDisplay[contributor.role] || contributor.role}</p>
         </div>
 
-        <Button asChild variant="outline" className="w-full">
-          <Link href={`/admin/usuarios/${contributor.id}`}>Ver Perfil Completo</Link>
-        </Button>
+        {profileUrl && (
+          <Button asChild variant="outline" className="w-full">
+            <Link href={profileUrl}>Ver Perfil Completo</Link>
+          </Button>
+        )}
       </CardContent>
     </Card>
   )

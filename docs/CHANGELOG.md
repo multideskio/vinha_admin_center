@@ -4,6 +4,18 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.19.1] - 2026-03-13 - Correção de Link do Perfil do Contribuinte
+
+### 🐛 Correções de Bugs
+
+- **Link "Ver Perfil Completo" corrigido** — na página de detalhes da transação, o botão apontava para `/admin/usuarios/[id]` que não existe. Agora mapeia o role do contribuinte para a rota correta (administradores, gerentes, supervisores, pastores, igrejas)
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- `src/app/admin/transacoes/[id]/_components/transaction-contributor-card.tsx` — mapeamento de role para rota correta
+
+---
+
 ## [0.19.0] - 2026-03-13 - Transação Manual e Baixa Manual
 
 ### ✨ Novas Funcionalidades
