@@ -78,10 +78,10 @@ const channelMap = {
 }
 
 const typeMap: Record<string, string> = {
-  rem_: 'Lembrete de Vencimento',
-  ovr_: 'Aviso de Atraso',
+  reminder_: 'Lembrete de Vencimento',
+  overdue_: 'Aviso de Atraso',
   payment_received: 'Pagamento Confirmado',
-  welcome: 'Boas-vindas',
+  welcome_: 'Boas-vindas',
 }
 
 function getNotificationType(notificationType: string): string {
@@ -392,10 +392,10 @@ export default function LogsLembretesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os tipos</SelectItem>
-                  <SelectItem value="rem_">Lembretes</SelectItem>
-                  <SelectItem value="ovr_">Avisos de Atraso</SelectItem>
+                  <SelectItem value="reminder_">Lembretes</SelectItem>
+                  <SelectItem value="overdue_">Avisos de Atraso</SelectItem>
                   <SelectItem value="payment_received">Pagamento Confirmado</SelectItem>
-                  <SelectItem value="welcome">Boas-vindas</SelectItem>
+                  <SelectItem value="welcome_">Boas-vindas</SelectItem>
                 </SelectContent>
               </Select>
             </div>

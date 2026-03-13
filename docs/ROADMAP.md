@@ -58,6 +58,7 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.20.0 | ✅ Concluída | 13/03/2026 |
 | v0.19.1 | ✅ Concluída | 13/03/2026 |
 | v0.19.0 | ✅ Concluída | 13/03/2026 |
 | v0.18.3 | ✅ Concluída | 13/03/2026 |
@@ -136,5 +137,12 @@
 - ✅ Sistema de autenticação com helpers (requireRole, requireAdmin, etc.)
 - ✅ Scripts de gerenciamento de índices
 - ✅ Documentação de refatoração admin
+
+### ✅ Itens Concluídos (v0.20.0)
+
+- ✅ Filtros avançados na API de logs de notificações (busca, canal, status, tipo, período)
+- ✅ Registro de logs de notificações de boas-vindas
+- ✅ Campos recipient e subject em todos os logs de notificação
+- ✅ Padronização de prefixos de tipo de notificação
 
 _Última atualização: 13 de Março de 2026_

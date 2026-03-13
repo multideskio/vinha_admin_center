@@ -4,6 +4,32 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.20.0] - 2026-03-13 - Filtros Avançados e Melhorias em Logs de Notificações
+
+### ✨ Novas Funcionalidades
+
+- **Filtros avançados na API de logs de notificações** — busca por texto (email, destinatário, conteúdo), filtro por canal, status, tipo e período (data inicial/final)
+- **Registro de logs de boas-vindas** — notificações de welcome agora são registradas no histórico
+- **Campos adicionais nos logs** — `recipient` e `subject` adicionados em todas as notificações (pagamento confirmado, lembretes, avisos de atraso)
+
+### 🐛 Correções de Bugs
+
+- **Prefixos de tipo de notificação corrigidos** — `rem_` → `reminder_`, `ovr_` → `overdue_`, `welcome` → `welcome_` para consistência com o backend
+
+### 🎨 Melhorias de UI/UX
+
+- **Tabela de logs de email** — coluna "Data" renomeada para "Data de Envio" para maior clareza
+- **Tabela de emails bloqueados** — nova coluna "Data de Bloqueio" adicionada
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- `src/app/api/v1/notification-logs/route.ts` — filtros avançados com construção dinâmica de WHERE
+- `src/app/api/v1/cron/notifications/route.ts` — registro de logs de boas-vindas + campos recipient/subject
+- `src/app/admin/configuracoes/logs-lembretes/page.tsx` — correção de prefixos de tipo
+- `src/app/admin/configuracoes/smtp/page.tsx` — melhorias nas tabelas de logs e bloqueados
+
+---
+
 ## [0.19.1] - 2026-03-13 - Correção de Link do Perfil do Contribuinte
 
 ### 🐛 Correções de Bugs

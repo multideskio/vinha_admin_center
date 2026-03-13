@@ -440,7 +440,7 @@ export default function SmtpSettingsPage() {
                         <TableHead>Destinatário</TableHead>
                         <TableHead>Assunto</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Data</TableHead>
+                        <TableHead>Data de Envio</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -723,6 +723,7 @@ export default function SmtpSettingsPage() {
                         <TableHead>Email</TableHead>
                         <TableHead>Motivo</TableHead>
                         <TableHead>Tentativas</TableHead>
+                        <TableHead>Data de Bloqueio</TableHead>
                         <TableHead>Última Tentativa</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
@@ -741,6 +742,11 @@ export default function SmtpSettingsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>{item.attemptCount ?? 0}x</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {item.createdAt
+                              ? new Date(item.createdAt).toLocaleString('pt-BR')
+                              : 'N/A'}
+                          </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {item.lastAttemptAt
                               ? new Date(item.lastAttemptAt).toLocaleString('pt-BR')

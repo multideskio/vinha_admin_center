@@ -42,6 +42,45 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
 
+    // Filtros
+    const search = searchParams.get('search') || ''
+    const channel = searchParams.get('channel') || ''
+    const status = searchParams.get('status') || ''
+    const type = searchParams.get('type') || ''
+    const fromDate = searchParams.get('from') || ''
+    const toDate = searchParams.get('to') || ''
+
+    // Construir condições WHERE dinamicamente
+    let whereConditions = sql`nl.company_id = ${companyId}`
+
+    if (search) {
+      whereConditions = sql`${whereConditions} AND (
+        u.email ILIKE ${'%' + search + '%'} OR 
+        nl.recipient ILIKE ${'%' + search + '%'} OR 
+        nl.message_content ILIKE ${'%' + search + '%'}
+      )`
+    }
+
+    if (channel && channel !== 'all') {
+      whereConditions = sql`${whereConditions} AND nl.channel = ${channel}`
+    }
+
+    if (status && status !== 'all') {
+      whereConditions = sql`${whereConditions} AND nl.status = ${status}`
+    }
+
+    if (type && type !== 'all') {
+      whereConditions = sql`${whereConditions} AND nl.notification_type LIKE ${type + '%'}`
+    }
+
+    if (fromDate) {
+      whereConditions = sql`${whereConditions} AND nl.sent_at >= ${fromDate}::timestamp`
+    }
+
+    if (toDate) {
+      whereConditions = sql`${whereConditions} AND nl.sent_at <= ${toDate}::timestamp`
+    }
+
     // Query com JOIN para evitar N+1 queries
     const logsResult = await db.execute(sql`
       SELECT 
@@ -58,15 +97,16 @@ export async function GET(request: NextRequest) {
         u.email as user_email
       FROM notification_logs nl
       LEFT JOIN users u ON u.id = nl.user_id
-      WHERE nl.company_id = ${companyId}
+      WHERE ${whereConditions}
       ORDER BY nl.sent_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `)
 
     const countResult = await db.execute(sql`
       SELECT COUNT(*)::int as count
-      FROM notification_logs
-      WHERE company_id = ${companyId}
+      FROM notification_logs nl
+      LEFT JOIN users u ON u.id = nl.user_id
+      WHERE ${whereConditions}
     `)
 
     const statsResult = await db.execute(sql`

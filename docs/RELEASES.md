@@ -4,6 +4,29 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.20.0 - Filtros Avançados em Logs de Notificações (Março 2026)
+
+### ✨ Funcionalidades
+
+- **Filtros avançados** na API de logs de notificações: busca por texto, canal, status, tipo e período
+- **Registro completo** de notificações de boas-vindas no histórico
+- **Campos recipient e subject** em todos os tipos de notificação
+
+### 🐛 Correções
+
+- Prefixos de tipo de notificação padronizados (`reminder_`, `overdue_`, `welcome_`)
+
+### 🎨 UX
+
+- Colunas de data mais descritivas nas tabelas de logs e emails bloqueados
+
+### 📊 Métricas
+
+- Arquivos modificados: 4
+- Novos filtros na API: 6 (search, channel, status, type, from, to)
+
+---
+
 ## v0.19.1 - Correção de Link do Perfil (Março 2026)
 
 ### 🐛 Correções

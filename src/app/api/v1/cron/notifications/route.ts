@@ -224,6 +224,19 @@ async function processNewUsers(rule: {
         })
       }
 
+      // Registrar log da notificação de boas-vindas
+      const emailSubject = `Bem-vindo(a) à ${companyName}!`
+      await db.insert(notificationLogs).values({
+        companyId: user.companyId,
+        userId: user.id,
+        notificationType: `welcome_${user.id}`,
+        channel: canSendWhatsapp ? 'whatsapp' : 'email',
+        status: 'sent',
+        recipient: canSendWhatsapp ? user.phone! : user.email,
+        subject: canSendEmail ? emailSubject : null,
+        messageContent: message,
+      })
+
       await db.update(users).set({ welcomeSent: true }).where(eq(users.id, user.id))
       sent++
     } catch (error) {
@@ -317,6 +330,8 @@ async function processPayments(rule: {
         notificationType: `payment_received_${transaction.id}`,
         channel: canSendWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
+        recipient: canSendWhatsapp ? user.phone! : user.email,
+        subject: canSendEmail ? `✅ Pagamento Confirmado - ${companyName}` : null,
         messageContent: message,
       })
       sent++
@@ -419,12 +434,15 @@ async function processReminders(rule: {
         await notificationService.sendWhatsApp({ phone: user.phone!, message })
       }
 
+      const emailSubject = `💰 Lembrete: Vencimento em ${dueDate} - ${companyName}`
       await db.insert(notificationLogs).values({
         companyId: user.companyId,
         userId: user.id,
         notificationType,
         channel: canSendWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
+        recipient: canSendWhatsapp ? user.phone! : user.email,
+        subject: canSendEmail ? emailSubject : null,
         messageContent: message,
       })
       sent++
@@ -526,12 +544,15 @@ async function processOverdue(rule: {
         await notificationService.sendWhatsApp({ phone: user.phone!, message })
       }
 
+      const emailSubject = `🚨 Aviso: Pagamento em atraso - ${companyName}`
       await db.insert(notificationLogs).values({
         companyId: user.companyId,
         userId: user.id,
         notificationType,
         channel: canSendWhatsapp ? 'whatsapp' : 'email',
         status: 'sent',
+        recipient: canSendWhatsapp ? user.phone! : user.email,
+        subject: canSendEmail ? emailSubject : null,
         messageContent: message,
       })
       sent++
