@@ -20,7 +20,6 @@ import { TransactionRow } from './transaction-row'
 import { PAGINATION_DEFAULTS } from '@/lib/constants/pagination'
 import { transactionsApiResponseSchema } from '@/types/transaction'
 import type { Transaction, TransactionStatus } from '@/types/transaction'
-import { z } from 'zod'
 
 // Lazy load do modal pesado
 const QuickProfileModal = dynamic(
@@ -70,23 +69,26 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
       }
 
       const rawData = await response.json()
-      const validatedData = transactionsApiResponseSchema.parse(rawData)
-      setTransactions(validatedData.transactions)
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+      const validation = transactionsApiResponseSchema.safeParse(rawData)
+
+      if (!validation.success) {
+        console.error('[TRANSACTIONS] Erro de validação Zod:', validation.error.errors)
         toast({
           title: 'Erro de Validação',
           description: 'Dados recebidos da API estão em formato inválido',
           variant: 'destructive',
         })
-      } else {
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-        toast({
-          title: 'Erro',
-          description: errorMessage,
-          variant: 'destructive',
-        })
+        return
       }
+
+      setTransactions(validation.data.transactions)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -222,6 +224,45 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
     [toast],
   )
 
+  const handleApproveTransaction = React.useCallback(
+    async (transactionId: string) => {
+      const actionKey = `approve-${transactionId}`
+      setLoadingActions((prev) => new Set(prev).add(actionKey))
+
+      try {
+        const response = await fetch(`/api/v1/transacoes/${transactionId}/approve`, {
+          method: 'POST',
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Falha ao aprovar transação')
+        }
+
+        toast({
+          title: 'Sucesso',
+          description: 'Transação aprovada com sucesso (baixa manual)',
+          variant: 'success',
+        })
+
+        fetchTransactions()
+      } catch (error) {
+        toast({
+          title: 'Erro',
+          description: error instanceof Error ? error.message : 'Erro ao aprovar transação',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoadingActions((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(actionKey)
+          return newSet
+        })
+      }
+    },
+    [toast, fetchTransactions],
+  )
+
   // Filtrar transações
   const filteredTransactions = transactions
     .filter(
@@ -345,9 +386,11 @@ export function TransactionsTable({ initialData }: TransactionsTableProps) {
                         }}
                         onSyncTransaction={handleSyncTransaction}
                         onResendReceipt={handleResendReceipt}
+                        onApproveTransaction={handleApproveTransaction}
                         isLoading={
                           loadingActions.has(`sync-${transaction.id}`) ||
-                          loadingActions.has(`resend-${transaction.id}`)
+                          loadingActions.has(`resend-${transaction.id}`) ||
+                          loadingActions.has(`approve-${transaction.id}`)
                         }
                       />
                     ))

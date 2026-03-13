@@ -2,7 +2,14 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Search, MoreHorizontal, Loader2, RefreshCw, ArrowRightLeft } from 'lucide-react'
+import {
+  Search,
+  MoreHorizontal,
+  Loader2,
+  RefreshCw,
+  ArrowRightLeft,
+  CheckCircle,
+} from 'lucide-react'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,6 +18,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
@@ -23,6 +31,7 @@ type TransactionRowProps = {
   onOpenQuickProfile: (contributorId: string) => void
   onSyncTransaction: (transactionId: string) => void
   onResendReceipt: (transactionId: string) => void
+  onApproveTransaction?: (transactionId: string) => void
   isLoading: boolean
 }
 
@@ -31,6 +40,7 @@ export function TransactionRow({
   onOpenQuickProfile,
   onSyncTransaction,
   onResendReceipt,
+  onApproveTransaction,
   isLoading,
 }: TransactionRowProps) {
   return (
@@ -142,22 +152,36 @@ export function TransactionRow({
             <DropdownMenuItem asChild>
               <Link href={`/admin/transacoes/${transaction.id}`}>Ver Detalhes</Link>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {/* Baixa Manual - só aparece para transações pendentes */}
+            {transaction.status === 'pending' && onApproveTransaction && (
+              <DropdownMenuItem
+                onClick={() => onApproveTransaction(transaction.id)}
+                disabled={isLoading}
+                className="flex items-center gap-2 text-green-600 focus:text-green-600"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Dar Baixa Manual
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={() => onSyncTransaction(transaction.id)}
               disabled={isLoading}
               className="flex items-center gap-2"
             >
               <RefreshCw className="h-4 w-4" />
-              Sincronizar com Cielo
+              Sincronizar com Gateway
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onResendReceipt(transaction.id)}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <ArrowRightLeft className="h-4 w-4" />
-              Reenviar Comprovante
-            </DropdownMenuItem>
+            {transaction.status === 'approved' && (
+              <DropdownMenuItem
+                onClick={() => onResendReceipt(transaction.id)}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                Reenviar Comprovante
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>

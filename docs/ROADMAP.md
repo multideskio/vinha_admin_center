@@ -58,6 +58,7 @@
 
 | Versão  | Status       | Previsão   |
 | ------- | ------------ | ---------- |
+| v0.19.0 | ✅ Concluída | 13/03/2026 |
 | v0.18.3 | ✅ Concluída | 13/03/2026 |
 | v0.18.2 | ✅ Concluída | 08/03/2026 |
 | v0.18.1 | ✅ Concluída | 08/03/2026 |
@@ -135,4 +136,4 @@
 - ✅ Scripts de gerenciamento de índices
 - ✅ Documentação de refatoração admin
 
-_Última atualização: 08 de Março de 2026_
+_Última atualização: 13 de Março de 2026_

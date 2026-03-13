@@ -4,6 +4,22 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.19.0 - Transação Manual e Baixa Manual (Março 2026)
+
+### ✨ Funcionalidades
+
+- **Transação manual**: admin pode registrar pagamentos feitos fora do sistema (transferência, dinheiro, etc.)
+- **Baixa manual**: aprovar transações pendentes sem passar pelo gateway — útil para pagamentos já recebidos
+- **Busca de contribuintes**: autocomplete para seleção de usuário no modal
+
+### ♻️ Melhorias
+
+- Sistema de notificações respeita preferências do usuário (`userNotificationSettings`)
+- Worker de notificações com graceful shutdown e logging estruturado
+- Validação Zod com `safeParse()` na tabela de transações
+
+---
+
 ## v0.18.3 - Dockerfile para Worker de Notificações (Março 2026)
 
 ### ♻️ Arquitetura

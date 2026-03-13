@@ -4,6 +4,36 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.19.0] - 2026-03-13 - Transação Manual e Baixa Manual
+
+### ✨ Novas Funcionalidades
+
+- **Criar transação manual** — admin pode registrar pagamentos feitos por transferência, dinheiro ou outros meios fora do sistema de gateway
+- **Dar baixa manual** — aprovar transações pendentes manualmente sem passar pelo gateway (para pagamentos já recebidos)
+- **Busca de contribuintes** — endpoint de busca com autocomplete para seleção de usuário no modal de transação manual
+- **Modal de transação manual** — interface completa com busca de contribuinte, valor, método de pagamento e opção de aprovar imediatamente
+
+### ♻️ Refatorações
+
+- **Cron de notificações reescrito** — agora respeita `userNotificationSettings` antes de enviar lembretes e avisos de atraso
+- **Worker de notificações melhorado** — logging estruturado, graceful shutdown com SIGTERM/SIGINT, keep-alive
+- **Validação Zod com safeParse()** — tabela de transações agora usa safeParse ao invés de parse para tratamento de erros
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- `src/app/admin/transacoes/_components/manual-transaction-modal.tsx` — novo modal de transação manual
+- `src/app/admin/transacoes/_components/transaction-filters.tsx` — botão de nova transação manual
+- `src/app/admin/transacoes/_components/transaction-row.tsx` — ação de baixa manual no dropdown
+- `src/app/admin/transacoes/_components/transactions-table.tsx` — handler de aprovação + safeParse
+- `src/app/api/v1/admin/transacoes/manual/route.ts` — novo endpoint de transação manual
+- `src/app/api/v1/admin/users/search/route.ts` — novo endpoint de busca de usuários
+- `src/app/api/v1/transacoes/[id]/approve/route.ts` — novo endpoint de baixa manual
+- `src/app/api/v1/cron/notifications/route.ts` — reescrito para respeitar preferências
+- `src/lib/notification-hooks.ts` — verificação de preferências antes de enviar
+- `src/workers/notification-worker.ts` — logging e graceful shutdown
+
+---
+
 ## [0.18.3] - 2026-03-13 - Dockerfile para Worker de Notificações
 
 ### ♻️ Refatorações

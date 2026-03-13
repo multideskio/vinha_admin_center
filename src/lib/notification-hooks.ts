@@ -128,6 +128,35 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
       operation: 'onTransactionCreated',
     })
 
+    // ✅ VERIFICAR PREFERÊNCIAS DO USUÁRIO
+    const { userNotificationSettings } = await import('@/db/schema')
+    const [userPrefs] = await db
+      .select({
+        email: userNotificationSettings.email,
+        whatsapp: userNotificationSettings.whatsapp,
+      })
+      .from(userNotificationSettings)
+      .where(
+        and(
+          eq(userNotificationSettings.userId, user.id),
+          eq(userNotificationSettings.notificationType, 'payment_notifications'),
+        ),
+      )
+      .limit(1)
+
+    // Padrão: aceita tudo se não configurou
+    const canSendEmail = userPrefs?.email ?? true
+    const canSendWhatsapp = userPrefs?.whatsapp ?? true
+
+    if (!canSendEmail && !canSendWhatsapp) {
+      logger.info('Usuário optou por não receber notificações de pagamento', {
+        userId: user.id,
+        transactionId: transaction.id,
+      })
+      logger.clearContext()
+      return
+    }
+
     // ✅ DEDUPLICAÇÃO: Verificar se notificação já foi enviada
     const shouldSend = await shouldSendNotificationWithConfig(user.id, 'payment_confirmation')
     if (!shouldSend) {
@@ -153,8 +182,8 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
 
     let emailEnviado = false
 
-    // ✅ EMAIL: Sempre enviar comprovante bonito direto
-    if (user.email) {
+    // ✅ EMAIL: Enviar comprovante se usuário permitiu
+    if (canSendEmail && user.email) {
       try {
         const { createTransactionReceiptEmail } = await import('./email-templates')
         const { sendEmail } = await import('./email')
@@ -190,26 +219,24 @@ export async function onTransactionCreated(transactionId: string): Promise<void>
       }
     }
 
-    // ✅ WHATSAPP: Disparar via regras de notificação (notificationRules)
-    processNotificationEvent('payment_received', {
-      userId: user.id,
-      transactionId: transaction.id,
-      nome_usuario: name,
-      valor_transacao: `R$ ${Number(transaction.amount).toFixed(2).replace('.', ',')}`,
-      data_pagamento: paidAt,
-      nome_igreja: companyName,
-    }).catch((err) => {
-      logger.error('Erro ao processar regras de notificação (WhatsApp)', err, {
+    // ✅ WHATSAPP: Disparar via fila se usuário permitiu
+    if (canSendWhatsapp && user.phone) {
+      await addNotificationJob('payment_received', {
         userId: user.id,
         transactionId: transaction.id,
+        nome_usuario: name,
+        valor_transacao: `R$ ${Number(transaction.amount).toFixed(2).replace('.', ',')}`,
+        data_pagamento: paidAt,
+        nome_igreja: companyName,
       })
-    })
+    }
 
     logger.info('Resultado final da notificação de pagamento', {
       userId: user.id,
       transactionId: transaction.id,
       amount: '***',
       emailEnviado,
+      whatsappEnfileirado: canSendWhatsapp && !!user.phone,
     })
 
     logger.clearContext()
@@ -584,7 +611,7 @@ export async function processNotificationEvent(
 
       let message = rule.messageTemplate
       // Substituir variáveis conhecidas e remover tags não preenchidas
-      message = message.replace(/\{(\w+)\}/g, (match, key) => {
+      message = message.replace(/\{(\w+)\}/g, (_, key) => {
         const value = variables[key]
         return value || ''
       })
@@ -642,12 +669,25 @@ export async function processNotificationEvent(
 export async function addNotificationJob(eventType: string, data: Record<string, unknown>) {
   if (!notificationQueue) {
     console.error(
-      '[NOTIFICATION_QUEUE] Fila indisponível — Redis não conectado. Job descartado:',
-      eventType,
+      '[NOTIFICATION_QUEUE] Fila indisponível — Redis não conectado. Processando diretamente...',
     )
+    // Fallback: processar diretamente se Redis não disponível
+    try {
+      await processNotificationEvent(eventType, data)
+    } catch (err) {
+      console.error('[NOTIFICATION_QUEUE] Erro ao processar diretamente:', err)
+    }
     return
   }
-  await notificationQueue.add('send', { eventType, data })
+
+  try {
+    const job = await notificationQueue.add('send', { eventType, data })
+    console.log(`[NOTIFICATION_QUEUE] Job enfileirado: ${job.id} - ${eventType}`)
+  } catch (err) {
+    console.error('[NOTIFICATION_QUEUE] Erro ao enfileirar job:', err)
+    // Fallback: processar diretamente
+    await processNotificationEvent(eventType, data)
+  }
 }
 
 // Função utilitária para testar notificações (apenas em desenvolvimento)

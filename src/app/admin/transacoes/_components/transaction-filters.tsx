@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { STATUS_MAP } from '@/lib/constants/transaction-maps'
 import { useDebounce } from '@/hooks/use-debounce'
+import { ManualTransactionModal } from './manual-transaction-modal'
 import type { TransactionStatus } from '@/types/transaction'
 
 type TransactionFiltersProps = {
@@ -54,14 +55,17 @@ export function TransactionFilters({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{totalResults} transações encontradas</p>
-        <Button
-          onClick={onRefresh}
-          size="icon"
-          aria-label="Atualizar transações"
-          className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <ManualTransactionModal onSuccess={onRefresh} />
+          <Button
+            onClick={onRefresh}
+            size="icon"
+            aria-label="Atualizar transações"
+            className="bg-white dark:bg-background border-2 border-videira-blue text-videira-blue hover:bg-videira-blue hover:text-white transition-all shadow-sm hover:shadow-md"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-3">
