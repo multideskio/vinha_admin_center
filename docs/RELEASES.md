@@ -4,6 +4,17 @@ Histórico de todas as versões lançadas do sistema.
 
 ---
 
+## v0.18.3 - Dockerfile para Worker de Notificações (Março 2026)
+
+### ♻️ Arquitetura
+
+- Dockerfile refatorado: container agora executa apenas o worker BullMQ de notificações
+- App Next.js migrou para Vercel — Docker dedicado ao worker
+- Node.js 18 → 20, build multi-stage → single-stage
+- Healthcheck para monitoramento do processo worker
+
+---
+
 ## v0.18.2 - Correção de Crash nas Ações de Transação (Março 2026)
 
 ### 🐛 Correções

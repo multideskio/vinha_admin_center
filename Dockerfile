@@ -1,43 +1,43 @@
-# Build stage
-FROM node:18-alpine AS builder
+# =============================================================================
+# Dockerfile - Worker de Notificações para EasyPanel
+# Vinha Admin Center
+# =============================================================================
+# Este container roda APENAS o worker de notificações (BullMQ)
+# O app principal roda na Vercel
+# =============================================================================
+
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Instalar dependências do sistema
+RUN apk add --no-cache libc6-compat
 
-# Install dependencies
-RUN npm ci
+# Copiar arquivos de dependências
+COPY package.json package-lock.json ./
 
-# Copy source code
-COPY . .
+# Instalar dependências (incluindo devDependencies para tsx)
+RUN npm ci --legacy-peer-deps
 
-# Generate Prisma client and build
-RUN npm run db:generate
-RUN npm run build
+# Copiar código fonte necessário para o worker
+COPY src ./src
+COPY drizzle ./drizzle
+COPY drizzle.config.ts ./
+COPY tsconfig.json ./
 
-# Production stage
-FROM node:18-alpine AS runner
-
-WORKDIR /app
-
+# Variáveis de ambiente
 ENV NODE_ENV=production
-ENV PORT=9002
 
-# Copy necessary files from builder
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/drizzle ./drizzle
-COPY --from=builder /app/src ./src
-
-# Create non-root user
+# Criar usuário não-root
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-RUN chown -R nextjs:nodejs /app
+RUN adduser --system --uid 1001 worker
+RUN chown -R worker:nodejs /app
 
-USER nextjs
+USER worker
 
-EXPOSE 9002
+# Health check simples (verifica se processo está rodando)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD pgrep -f "notification-worker" || exit 1
 
-CMD ["npm", "start"]
+# Executar worker com tsx
+CMD ["npx", "tsx", "src/workers/notification-worker.ts"]

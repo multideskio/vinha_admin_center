@@ -4,6 +4,23 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
+## [0.18.3] - 2026-03-13 - Dockerfile para Worker de Notificações
+
+### ♻️ Refatorações
+
+- **Dockerfile refatorado para worker dedicado** — container agora executa apenas o worker de notificações BullMQ (app principal migrou para Vercel)
+- **Node.js atualizado** — de 18-alpine para 20-alpine
+- **Build simplificado** — removido multi-stage build, agora single-stage com apenas arquivos necessários
+- **Healthcheck adicionado** — monitoramento do processo worker via `pgrep`
+- **Usuário renomeado** — de `nextjs` para `worker` (reflete novo propósito)
+- **Execução via tsx** — TypeScript executado diretamente sem compilação prévia
+
+### 📝 ARQUIVOS MODIFICADOS
+
+- `Dockerfile` — refatoração completa para worker de notificações
+
+---
+
 ## [0.18.2] - 2026-03-08 - Correção de Crash nas Ações de Transação
 
 ### 🐛 Correções de Bugs
